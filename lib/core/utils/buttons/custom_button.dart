@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
+import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:repair_cms/core/enums/app_button_type.dart';
 
 class CustomButton extends StatelessWidget {
@@ -20,6 +20,7 @@ class CustomButton extends StatelessWidget {
   final double? borderRadius;
   final double? borderWidth;
   final Widget? icon;
+  final Widget? trailingIcon;
   final bool isLoading;
   final bool isFullWidth;
   final double? width;
@@ -46,6 +47,7 @@ class CustomButton extends StatelessWidget {
     this.borderRadius = 8.0,
     this.borderWidth = 2.0,
     this.icon,
+    this.trailingIcon,
     this.isLoading = false,
     this.isFullWidth = true,
     this.width,
@@ -61,22 +63,44 @@ class CustomButton extends StatelessWidget {
     final primaryColor = backgroundColor ?? AppColors.primary;
 
     // Use disabled colors if button is disabled
-    final buttonBackgroundColor = isDisabled ? (disabledBackgroundColor ?? AppColors.disabledButtonColor) : (type == AppButtonType.filled ? (backgroundColor ?? AppColors.primary) : (backgroundColor ?? AppColors.whiteColor));
+    final buttonBackgroundColor = isDisabled
+        ? (disabledBackgroundColor ?? AppColors.disabledButtonColor)
+        : (type == AppButtonType.filled
+              ? (backgroundColor ?? AppColors.primary)
+              : (backgroundColor ?? AppColors.whiteColor));
 
-    final buttonForegroundColor = isDisabled ? (disabledForegroundColor ?? AppColors.whiteColor) : (type == AppButtonType.filled ? (foregroundColor ?? AppColors.whiteColor) : (foregroundColor ?? AppColors.blackColor));
+    final buttonForegroundColor = isDisabled
+        ? (disabledForegroundColor ?? AppColors.whiteColor)
+        : (type == AppButtonType.filled
+              ? (foregroundColor ?? AppColors.whiteColor)
+              : (foregroundColor ?? AppColors.blackColor));
 
-    final buttonBorderColor = type == AppButtonType.outlined ? (isDisabled ? (disabledBackgroundColor ?? AppColors.disabledButtonColor) : (borderColor ?? AppColors.blackColor)) : Colors.transparent;
+    final buttonBorderColor = type == AppButtonType.outlined
+        ? (isDisabled
+              ? (disabledBackgroundColor ?? AppColors.disabledButtonColor)
+              : (borderColor ?? AppColors.blackColor))
+        : Colors.transparent;
 
-    final finalTextStyle = textStyle ?? TextStyle(fontSize: fontSize ?? 20.sp, fontWeight: fontWeight, color: buttonForegroundColor);
+    final finalTextStyle = textStyle ?? AppTypography.primaryButtonTextStyle;
 
     Widget buttonContent = isLoading
-        ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(type == AppButtonType.filled ? AppColors.whiteColor : AppColors.whiteColor)))
+        ? SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation(
+                type == AppButtonType.filled ? AppColors.whiteColor : AppColors.whiteColor,
+              ),
+            ),
+          )
         : Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[icon!, const SizedBox(width: 8)],
               Text(text, style: finalTextStyle, textAlign: TextAlign.center),
+              if (trailingIcon != null) ...[const SizedBox(width: 8), trailingIcon!],
             ],
           );
 
