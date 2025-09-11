@@ -46,16 +46,23 @@ abstract class AppTypography {
   );
 
   //button text style
-  static TextStyle primaryButtonTextStyle = GoogleFonts.roboto(
-    fontSize: 20.sp,
-    fontWeight: FontWeight.w700,
+  static TextStyle primaryButtonTextStyle = TextStyle(
+    fontFamily: fontFamilySFProText,
+    fontSize: 17.sp,
+    fontWeight: FontWeight.w500,
 
     color: Color(0xFFFFFFFF),
   );
 
-  static TextStyle sfProHeadLineTextStyle = GoogleFonts.getFont(
-    fontFamilySFProText,
+  static TextStyle sfProHeadLineTextStyle28 = TextStyle(
+    fontFamily: fontFamilySFProText,
     fontSize: 28.sp,
+    fontWeight: FontWeight.w400,
+    color: AppColors.fontMainColor,
+  );
+  static TextStyle sfProHintTextStyle17 = TextStyle(
+    fontFamily: fontFamilySFProText,
+    fontSize: 17.sp,
     fontWeight: FontWeight.w400,
     color: AppColors.fontMainColor,
   );

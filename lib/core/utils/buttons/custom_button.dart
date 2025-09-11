@@ -118,7 +118,7 @@ class CustomButton extends StatelessWidget {
           disabledBackgroundColor: AppColors.disabledButtonColor,
           elevation: elevation,
           shadowColor: primaryColor.withValues(alpha: 0.3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius ?? 8.0)),
+          shape: StadiumBorder(),
           textStyle: finalTextStyle,
         ),
         child: buttonContent,
