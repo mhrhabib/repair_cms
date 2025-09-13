@@ -89,7 +89,6 @@ class GetStartedScreen extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: PaddingConstants.lg),
                 child: CustomButton(
-                  trailingIcon: Icon(Icons.login, size: 24.sp),
                   text: 'Log In',
                   onPressed: () {
                     context.go(RouteNames.signIn);

@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:repair_cms/core/routes/router.dart';
+import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,11 +15,14 @@ class MyApp extends StatelessWidget {
       designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-        routerConfig: AppRouter.router,
+      child: MultiBlocProvider(
+        providers: [BlocProvider(create: (_) => ForgotPasswordCubit())],
+        child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'Flutter Demo',
+          theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+          routerConfig: AppRouter.router,
+        ),
       ),
     );
   }

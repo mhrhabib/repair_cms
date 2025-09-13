@@ -8,6 +8,7 @@ class AppColors {
   static const Color whiteColor = Color(0xFFFFFFFF);
   static const Color blackColor = Color(0xFF000000);
   static const Color diviverColor = Color(0xFFC6C6C8);
+  static const Color greenColor = Color(0xFF48BB78);
   static const Color disabledButtonColor = Color(0xFFBDBDBD);
   // Add other colors as needed
 }

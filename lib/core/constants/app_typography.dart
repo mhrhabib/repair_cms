@@ -39,8 +39,9 @@ abstract class AppTypography {
 
     color: Color(0xFF000000),
   );
-  static TextStyle fontSize12 = GoogleFonts.roboto(
-    fontSize: 12.sp,
+  static TextStyle fontSize10 = TextStyle(
+    fontFamily: fontFamilySFProText,
+    fontSize: 10.sp,
     fontWeight: FontWeight.w400,
     color: Color(0xFF000000),
   );
@@ -52,6 +53,13 @@ abstract class AppTypography {
     fontWeight: FontWeight.w500,
 
     color: Color(0xFFFFFFFF),
+  );
+
+  static TextStyle sfProText15 = TextStyle(
+    fontFamily: fontFamilySFProText,
+    fontSize: 15.sp,
+    fontWeight: FontWeight.w400,
+    color: AppColors.blackColor,
   );
 
   static TextStyle sfProHeadLineTextStyle28 = TextStyle(

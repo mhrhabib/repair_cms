@@ -2,14 +2,16 @@ import 'package:go_router/go_router.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
 
-class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
+import 'cubit/forgot_password_cubit.dart';
+
+class PasswordForgottenScreen extends StatefulWidget {
+  const PasswordForgottenScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => SignInScreenState();
+  State<PasswordForgottenScreen> createState() => PasswordForgottenScreenState();
 }
 
-class SignInScreenState extends State<SignInScreen> {
+class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
   final TextEditingController _emailController = TextEditingController();
   final FocusNode _emailFocusNode = FocusNode();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -34,7 +36,9 @@ class SignInScreenState extends State<SignInScreen> {
 
   void _navigateToNextScreen() {
     if (_formKey.currentState!.validate() && _isEmailValid) {
-      context.push(RouteNames.passwordInput);
+      final cubit = context.read<ForgotPasswordCubit>();
+      cubit.sendResetEmail(_emailController.text);
+      context.push(RouteNames.verifyCode, extra: _emailController.text);
     }
   }
 
@@ -67,6 +71,7 @@ class SignInScreenState extends State<SignInScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       resizeToAvoidBottomInset: true,
+      appBar: AppBar(iconTheme: IconThemeData(color: AppColors.primary, weight: 800, fill: 0.4)),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -81,7 +86,7 @@ class SignInScreenState extends State<SignInScreen> {
                     // Title
                     Center(
                       child: Text(
-                        'Sign Into your Account',
+                        'Password Forgotten',
                         style: AppTypography.sfProHeadLineTextStyle28,
                         textAlign: TextAlign.center,
                       ),
@@ -145,7 +150,7 @@ class SignInScreenState extends State<SignInScreen> {
                     // Confirm Email Button
                     Align(
                       alignment: Alignment.bottomCenter,
-                      child: CustomButton(text: 'Confirm Email', onPressed: _navigateToNextScreen),
+                      child: CustomButton(text: 'Request New Password', onPressed: _navigateToNextScreen),
                     ),
                   ],
                 ),
