@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+import 'dart:ui';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dasboard/dashboard_screen.dart';
+import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
 import 'package:repair_cms/features/messeges/messges_screen.dart';
 import 'package:repair_cms/features/moreSettings/more_settings_screen.dart';
 import 'package:repair_cms/features/myJobs/my_jobs_screen.dart';
@@ -11,19 +14,80 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
     const DashboardScreen(),
     const MyJobsScreen(),
-    const MessgesScreen(),
+    const MessagesScreen(),
     const MoreSettingsScreen(),
   ];
 
+  bool _isExpanded = false;
+  late AnimationController _animationController;
+  late Animation<double> _expandAnimation;
+  late AnimationController _rotationController;
+  late Animation<double> _rotationAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+
+    _rotationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+
+    _expandAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.125, // 45 degrees (0.125 * 360° = 45°)
+    ).animate(CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _rotationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpansion() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController.forward();
+        _rotationController.forward();
+      } else {
+        _animationController.reverse();
+        _rotationController.reverse();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: _screens[_currentIndex], bottomNavigationBar: _buildBottomNavigationBar());
+    return Scaffold(
+      body: Stack(
+        children: [
+          _screens[_currentIndex],
+          // Apply backdrop filter only when expanded
+          if (_isExpanded)
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.4),
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+          // Position the expandable FAB above all content
+          _buildExpandableFAB(),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
   }
 
   Widget _buildBottomNavigationBar() {
@@ -35,7 +99,9 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 80.h,
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -43,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildBottomNavItem(0, Icons.home, 'Home'),
               _buildBottomNavItem(1, Icons.work_outline, 'My Jobs'),
               // Empty container to balance the space for the center button
-              Container(width: 56.w, height: 56.h),
+              SizedBox(width: 56.w, height: 56.h),
               _buildBottomNavItem(2, Icons.message_outlined, 'Messages'),
               _buildBottomNavItem(3, Icons.more_horiz, 'More'),
             ],
@@ -85,20 +151,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCenterAddButton() {
     return GestureDetector(
-      onTap: () {
-        // Handle the add button action
-        _showAddOptions(context);
-      },
+      onTap: _toggleExpansion,
       child: Container(
         width: 64.w, // Slightly larger for emphasis
         height: 64.h,
         decoration: BoxDecoration(
           color: AppColors.primary,
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
+          ],
           border: Border.all(color: AppColors.whiteColor, width: 4.w),
         ),
-        child: Icon(Icons.add, color: AppColors.whiteColor, size: 32.sp),
+        child: AnimatedBuilder(
+          animation: _rotationAnimation,
+          builder: (context, child) {
+            return Transform.rotate(
+              angle: _rotationAnimation.value * 4.2 * math.pi,
+              child: Icon(_isExpanded ? Icons.close : Icons.add, color: AppColors.whiteColor, size: 32.sp),
+            );
+          },
+        ),
       ),
     );
   }
@@ -109,54 +182,113 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showAddOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.whiteColor,
-            borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+  Widget _buildExpandableFAB() {
+    return Positioned(
+      bottom: 20.h, // Position above the navigation bar
+      right: 20.w,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Expandable buttons
+          AnimatedBuilder(
+            animation: _expandAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _expandAnimation.value,
+                child: Opacity(
+                  opacity: _expandAnimation.value,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // QR Scanner Button
+                      _buildExpandableButton(
+                        icon: Icons.add_business,
+                        label: 'New Job',
+                        backgroundColor: const Color(0xFF27AE60),
+                        onTap: () {
+                          // Handle New Job action
+                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingFirstScreen()));
+                          print('New Job tapped');
+                          _toggleExpansion();
+                        },
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // Barcode Scanner Button
+                      _buildExpandableButton(
+                        icon: Icons.document_scanner,
+                        label: 'Barcode Scanner',
+                        backgroundColor: const Color(0xFF9B59B6),
+                        onTap: () {
+                          // Handle Barcode Scanner action
+                          print('Barcode Scanner tapped');
+                          _toggleExpansion();
+                        },
+                      ),
+                      SizedBox(height: 16.h),
+
+                      // New Job Button
+                      _buildExpandableButton(
+                        icon: Icons.qr_code_scanner,
+                        label: 'QR Scanner',
+                        backgroundColor: const Color(0xFF3498DB),
+                        onTap: () {
+                          // Handle QR Scanner action
+                          print('QR Scanner tapped');
+                          _toggleExpansion();
+                        },
+                      ),
+                      SizedBox(height: 20.h),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 8.h),
-              Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-              ),
-              SizedBox(height: 24.h),
-              Text('Create New', style: AppTypography.sfProHeadLineTextStyle28.copyWith(fontSize: 20.sp)),
-              SizedBox(height: 24.h),
-              _buildAddOptionItem(Icons.work_outline, 'New Job', () {
-                Navigator.pop(context);
-                // Navigate to new job screen
-              }),
-              _buildAddOptionItem(Icons.calendar_today, 'New Appointment', () {
-                Navigator.pop(context);
-                // Navigate to new appointment screen
-              }),
-              _buildAddOptionItem(Icons.receipt, 'New Invoice', () {
-                Navigator.pop(context);
-                // Navigate to new invoice screen
-              }),
-              SizedBox(height: 16.h),
-            ],
-          ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  Widget _buildAddOptionItem(IconData icon, String label, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(label, style: AppTypography.fontSize10),
+  Widget _buildExpandableButton({
+    required IconData icon,
+    required String label,
+    required Color backgroundColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
       onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        // decoration: BoxDecoration(
+        //   color: backgroundColor,
+        //   borderRadius: BorderRadius.circular(30.r),
+        //   boxShadow: [
+        //     BoxShadow(color: backgroundColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
+        //   ],
+        // ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, style: AppTypography.fontSize20.copyWith(color: Colors.white)),
+            SizedBox(width: 8.w),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(30.r),
+                boxShadow: [
+                  BoxShadow(color: backgroundColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: Icon(icon, color: Colors.white, size: 20.sp),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

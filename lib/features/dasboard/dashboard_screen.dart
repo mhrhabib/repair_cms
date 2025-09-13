@@ -3,15 +3,19 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/core/constants/app_typography.dart';
+import 'package:repair_cms/features/notifications/notifications_screen.dart';
 import 'dart:math' as math;
 
 import '../profile/profile_options_screen.dart';
-// Import your typography file here
-// import 'package:repair_cms/core/constants/app_typography.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,7 +43,12 @@ class DashboardScreen extends StatelessWidget {
             SizedBox(width: 12.w),
             Stack(
               children: [
-                Icon(Icons.notifications_outlined, color: Colors.grey.shade600, size: 24.sp),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationsScreen()));
+                  },
+                  child: Icon(Icons.notifications_outlined, color: Colors.grey.shade600, size: 24.sp),
+                ),
                 Positioned(
                   right: 0,
                   top: 0,
@@ -58,34 +67,43 @@ class DashboardScreen extends StatelessWidget {
               },
               child: CircleAvatar(
                 radius: 16.r,
-                backgroundImage: const AssetImage('assets/images/logo.png'), // Add your image
+                backgroundImage: const AssetImage('assets/images/logo.png'),
                 backgroundColor: Colors.grey.shade300,
               ),
             ),
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Greeting Section
-            _buildGreetingSection(),
-            SizedBox(height: 24.h),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Greeting Section
+                _buildGreetingSection(),
+                SizedBox(height: 24.h),
 
-            // Incomplete To-Do's Card
-            _buildIncompleteToDoCard(),
-            SizedBox(height: 16.h),
+                // Incomplete To-Do's Card
+                _buildIncompleteToDoCard(),
+                SizedBox(height: 16.h),
 
-            // Completed Jobs Card
-            _buildCompletedJobsCard(),
-            SizedBox(height: 16.h),
+                // Completed Jobs Card
+                _buildCompletedJobsCard(),
+                SizedBox(height: 16.h),
 
-            // Job Progress Card
-            _buildJobProgressCard(),
-          ],
-        ),
+                // Job Progress Card
+                _buildJobProgressCard(),
+
+                // Add bottom padding for FAB
+                SizedBox(height: 100.h),
+              ],
+            ),
+          ),
+
+          // Expandable FAB
+        ],
       ),
     );
   }

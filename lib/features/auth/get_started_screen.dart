@@ -14,8 +14,8 @@ class GetStartedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Scaffold(
-      //appBar: AppBar(title: const Text('Get Started')),
       backgroundColor: const Color(0xFFF7F7F7),
       body: SafeArea(
         child: Center(
@@ -25,7 +25,7 @@ class GetStartedScreen extends StatelessWidget {
               Image.asset(AssetsConstant.logo1PNG, height: 55.39.h, width: 123.w),
 
               SizedBox(height: 30.h),
-              Image.asset(AssetsConstant.startingGraphicsPNG),
+              Image.asset(AssetsConstant.startingGraphicsPNG, height: isTablet ? 400 : null),
               SizedBox(height: 20.h),
               Column(
                 mainAxisSize: MainAxisSize.min,

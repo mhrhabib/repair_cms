@@ -83,7 +83,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
         child: Center(
           child: SingleChildScrollView(
             child: SizedBox(
-              width: isLargeScreen ? 400 : screenWidth * 0.9,
+              width: isLargeScreen ? 600 : screenWidth * 0.9,
               child: Form(
                 key: _formKey,
                 child: Column(

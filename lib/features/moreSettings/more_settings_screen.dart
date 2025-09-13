@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:repair_cms/features/moreSettings/notification_settings_screen.dart';
+import 'package:repair_cms/features/moreSettings/labelContent/label_content_screen.dart';
+import 'package:repair_cms/features/moreSettings/notificationSetting/notification_settings_screen.dart';
 
 class MoreSettingsScreen extends StatelessWidget {
   const MoreSettingsScreen({super.key});
@@ -40,7 +41,7 @@ class MoreSettingsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Label Content',
               onTap: () {
-                // Navigate to label content
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => LabelContentScreen()));
               },
             ),
 

@@ -13,15 +13,36 @@ abstract class AppTypography {
     color: Color(0xFF000000),
   );
 
+  static TextStyle fontSize38 = GoogleFonts.roboto(
+    fontSize: 38.sp,
+    fontWeight: FontWeight.w700,
+    color: Color(0xFF000000),
+  );
+
   static TextStyle fontSize24 = GoogleFonts.roboto(
     fontSize: 24.sp,
+    fontWeight: FontWeight.w700,
+    color: Color(0xFF000000),
+  );
+  static TextStyle fontSize12 = GoogleFonts.roboto(
+    fontSize: 12.sp,
+    fontWeight: FontWeight.w400,
+    color: Color(0xFF000000),
+  );
+  static TextStyle fontSize16 = GoogleFonts.roboto(
+    fontSize: 16.sp,
     fontWeight: FontWeight.w400,
     color: Color(0xFF000000),
   );
   static TextStyle fontSize20 = GoogleFonts.roboto(
     fontSize: 20.sp,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w700,
     color: Color(0xFF000000),
+  );
+  static TextStyle fontSize22 = GoogleFonts.roboto(
+    fontSize: 22.sp,
+    fontWeight: FontWeight.w500,
+    color: AppColors.fontMainColor,
   );
   static TextStyle fontSize16Normal = GoogleFonts.roboto(
     fontSize: 16.sp,

@@ -51,7 +51,7 @@ class CustomButton extends StatelessWidget {
     this.isLoading = false,
     this.isFullWidth = true,
     this.width,
-    this.height = 56.0,
+    this.height,
     this.elevation = 2.0,
     this.textStyle,
     this.expandWidth = true,

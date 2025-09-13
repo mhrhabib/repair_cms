@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:repair_cms/features/profile/personal_details_screen.dart';
+import 'package:repair_cms/features/profile/personalDetails/personal_details_screen.dart';
 
 class ProfileOptionsScreen extends StatelessWidget {
   const ProfileOptionsScreen({super.key});
