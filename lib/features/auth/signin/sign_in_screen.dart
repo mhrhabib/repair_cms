@@ -18,7 +18,14 @@ class SignInScreenState extends State<SignInScreen> {
   @override
   void initState() {
     super.initState();
+
     _emailController.addListener(_validateEmail);
+
+    // Open keyboard automatically
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(_emailFocusNode);
+    });
+
     _emailFocusNode.addListener(() {
       setState(() {});
     });
@@ -66,10 +73,11 @@ class SignInScreenState extends State<SignInScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: true, // important!
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 20), // give space for button
             child: SizedBox(
               width: isLargeScreen ? 600 : screenWidth * 0.9,
               child: Form(
@@ -79,6 +87,7 @@ class SignInScreenState extends State<SignInScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title
+                    SizedBox(height: 30),
                     Center(
                       child: Text(
                         'Sign Into your Account',
@@ -89,10 +98,7 @@ class SignInScreenState extends State<SignInScreen> {
 
                     SizedBox(height: screenHeight * 0.08),
 
-                    // Email Label
-                    const SizedBox(height: 8),
-
-                    // Email Input Field
+                    // Email Input
                     Container(
                       decoration: BoxDecoration(
                         border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
@@ -131,7 +137,7 @@ class SignInScreenState extends State<SignInScreen> {
                       ),
                     ),
 
-                    SizedBox(height: screenHeight * 0.12),
+                    SizedBox(height: screenHeight * 0.18),
 
                     // Progress Indicator
                     ThreeDotsPointerWidget(
@@ -139,20 +145,23 @@ class SignInScreenState extends State<SignInScreen> {
                       secondaryColor: AppColors.secondary,
                       activeIndex: 1,
                     ),
-
-                    const SizedBox(height: 32),
-
-                    // Confirm Email Button
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: CustomButton(text: 'Confirm Email', onPressed: _navigateToNextScreen),
-                    ),
                   ],
                 ),
               ),
             ),
           ),
         ),
+      ),
+
+      // 👇 Stick the button to bottom and move it with keyboard
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16, // moves with keyboard
+          left: 16,
+          right: 16,
+          top: 8,
+        ),
+        child: CustomButton(text: 'Confirm Email', onPressed: _navigateToNextScreen),
       ),
     );
   }

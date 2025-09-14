@@ -1,11 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:feather_icons/feather_icons.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/constants/app_colors.dart';
-import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:repair_cms/features/notifications/notifications_screen.dart';
+import 'package:solar_icons/solar_icons.dart';
 import 'dart:math' as math;
-
 import '../profile/profile_options_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -16,6 +14,9 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  Shader linearGradient = const LinearGradient(
+    colors: <Color>[Color(0xFFDB00FF), Color(0xFF432BFF)],
+  ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0));
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,19 +24,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.scaffoldBackgroundColor,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Row(
           children: [
             Expanded(
               child: Container(
                 height: 40.h,
-                decoration: BoxDecoration(color: AppColors.whiteColor, borderRadius: BorderRadius.circular(12.r)),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.whiteColor,
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(color: Color(0xFFDEE3E8)),
+                ),
+
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Search job',
-                    hintStyle: AppTypography.fontSize14.copyWith(color: Colors.grey.shade500),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 20.sp),
+                    hintStyle: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                    prefixIcon: Icon(FeatherIcons.search, color: Colors.black, size: 22.sp),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    contentPadding: EdgeInsets.only(top: 6.h),
                   ),
                 ),
               ),
@@ -47,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onTap: () {
                     Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationsScreen()));
                   },
-                  child: Icon(Icons.notifications_outlined, color: Colors.grey.shade600, size: 24.sp),
+                  child: Icon(Icons.notifications_none, color: Colors.grey.shade600, size: 24.sp),
                 ),
                 Positioned(
                   right: 0,
@@ -77,17 +85,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: EdgeInsets.all(16.w),
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Greeting Section
                 _buildGreetingSection(),
-                SizedBox(height: 24.h),
+                SizedBox(height: 12.h),
 
                 // Incomplete To-Do's Card
                 _buildIncompleteToDoCard(),
-                SizedBox(height: 16.h),
+                SizedBox(height: 12.h),
 
                 // Completed Jobs Card
                 _buildCompletedJobsCard(),
@@ -114,7 +122,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Row(
           children: [
-            Text('Good Morning, John', style: AppTypography.fontSize24.copyWith(fontWeight: FontWeight.w500)),
+            Text(
+              'Good Morning, John',
+              textHeightBehavior: const TextHeightBehavior(
+                applyHeightToFirstAscent: false,
+                applyHeightToLastDescent: false,
+              ),
+              style: AppTypography.fontSize22.copyWith(fontWeight: FontWeight.w500),
+            ),
             SizedBox(width: 8.w),
             Transform(
               alignment: Alignment.center,
@@ -123,46 +138,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        SizedBox(height: 4.h),
-        Text('3. August, 2023', style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600)),
+
+        Text(
+          '3. August, 2023',
+          textHeightBehavior: const TextHeightBehavior(
+            applyHeightToFirstAscent: false,
+            applyHeightToLastDescent: false,
+          ),
+          style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
+        ),
       ],
     );
   }
 
   Widget _buildIncompleteToDoCard() {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(8.w),
       decoration: BoxDecoration(
         color: AppColors.whiteColor,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('Incomplete To-Do\'s', style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600)),
+                Text('Incomplete To-Do\'s', style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor)),
                 SizedBox(height: 8.h),
                 Text('5', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600)),
               ],
             ),
           ),
+          SizedBox(width: 8.w),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.whiteColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(color: AppColors.borderColor),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.list_alt, color: AppColors.primary, size: 16.sp),
+                Icon(Icons.today_rounded, color: AppColors.primary, size: 22.sp),
                 SizedBox(width: 4.w),
                 Text(
                   'See All To-Do\'s',
-                  style: AppTypography.fontSize10.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+                  style: AppTypography.fontSize16.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -174,44 +198,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildCompletedJobsCard() {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: AppColors.whiteColor,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 40.w,
-            height: 40.h,
-            decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), borderRadius: BorderRadius.circular(8.r)),
-            child: Icon(Icons.work_outline, color: Colors.purple, size: 20.sp),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 40.w,
+                height: 40.h,
+                decoration: BoxDecoration(color: Color(0xFFC507FF), borderRadius: BorderRadius.circular(8.r)),
+                child: Icon(Icons.work_outline, color: Colors.white, size: 30.sp),
+              ),
+              SizedBox(width: 16.w),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
+                child: Row(
                   children: [
-                    Text('Today, 2025', style: AppTypography.fontSize16Bold),
+                    Text('Today, 2025', style: AppTypography.fontSize16),
+                    SizedBox(width: 2.w),
+                    Container(height: 28.h, color: Color(0x898FA0B2), width: 2.w),
+                    SizedBox(width: 2.w),
+                    Icon(Icons.calendar_month),
                     Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600, size: 20.sp),
                   ],
                 ),
-                SizedBox(height: 4.h),
-                Text('01.02.2024 - 28.02.2024', style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade600)),
-                SizedBox(height: 4.h),
-                Text(
-                  'Completed Jobs',
-                  style: AppTypography.fontSize10.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          SizedBox(width: 16.w),
-          Text('156', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 4.h),
+                  Text(
+                    '01.02.2024 - 28.02.2024',
+                    style: AppTypography.fontSize14.copyWith(color: AppColors.fontMainColor),
+                  ),
+
+                  // SizedBox(height: 4.h),
+                  Text(
+                    'Completed Jobs',
+                    style: AppTypography.fontSize24.copyWith(
+                      fontWeight: FontWeight.w500,
+                      foreground: Paint()..shader = linearGradient,
+                    ),
+                  ),
+                ],
+              ),
+              Text('156', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w800)),
+            ],
+          ),
         ],
       ),
     );
@@ -219,11 +264,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildJobProgressCard() {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: AppColors.whiteColor,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,13 +285,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          SizedBox(height: 24.h),
+          SizedBox(height: 12.h),
 
           // Donut Chart
           Center(
             child: SizedBox(
-              width: 200.w,
-              height: 200.h,
+              width: 180.w,
+              height: 180.h,
               child: Stack(
                 children: [
                   CustomPaint(size: Size(200.w, 200.h), painter: DonutChartPainter()),

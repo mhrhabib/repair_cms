@@ -6,6 +6,8 @@ class AppColors {
   static const Color secondary = Color(0xFFD9D9D9);
   static const Color scaffoldBackgroundColor = Color(0xFFF0F3F7);
   static const Color whiteColor = Color(0xFFFFFFFF);
+  static const Color lightFontColor = Color(0xFF71788F);
+  static const Color borderColor = Color(0xFFD4DDE7);
   static const Color blackColor = Color(0xFF000000);
   static const Color diviverColor = Color(0xFFC6C6C8);
   static const Color greenColor = Color(0xFF48BB78);
