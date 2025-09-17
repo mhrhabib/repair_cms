@@ -12,5 +12,6 @@ class AppColors {
   static const Color diviverColor = Color(0xFFC6C6C8);
   static const Color greenColor = Color(0xFF48BB78);
   static const Color disabledButtonColor = Color(0xFFBDBDBD);
+  static const Color warningColor = Color(0xFFFF8924);
   // Add other colors as needed
 }

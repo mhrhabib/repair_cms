@@ -6,6 +6,7 @@ import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.
 import 'package:repair_cms/features/messeges/messges_screen.dart';
 import 'package:repair_cms/features/moreSettings/more_settings_screen.dart';
 import 'package:repair_cms/features/myJobs/my_jobs_screen.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -107,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildBottomNavItem(0, Icons.home, 'Home'),
-              _buildBottomNavItem(1, Icons.work_outline, 'My Jobs'),
+              _buildBottomNavItem(1, SolarIconsBold.caseMinimalistic, 'My Jobs'),
               // Empty container to balance the space for the center button
               SizedBox(width: 56.w, height: 56.h),
               _buildBottomNavItem(2, Icons.message_outlined, 'Messages'),
@@ -204,9 +205,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       // QR Scanner Button
                       _buildExpandableButton(
-                        icon: Icons.add_business,
+                        icon: SolarIconsBold.caseRoundMinimalistic,
                         label: 'New Job',
-                        backgroundColor: const Color(0xFF27AE60),
+                        backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
                           // Handle New Job action
                           Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingFirstScreen()));
@@ -221,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       _buildExpandableButton(
                         icon: Icons.document_scanner,
                         label: 'Barcode Scanner',
-                        backgroundColor: const Color(0xFF9B59B6),
+                        backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
                           // Handle Barcode Scanner action
                           print('Barcode Scanner tapped');
@@ -234,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       _buildExpandableButton(
                         icon: Icons.qr_code_scanner,
                         label: 'QR Scanner',
-                        backgroundColor: const Color(0xFF3498DB),
+                        backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
                           // Handle QR Scanner action
                           print('QR Scanner tapped');
@@ -276,6 +277,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(label, style: AppTypography.fontSize20.copyWith(color: Colors.white)),
             SizedBox(width: 8.w),
             Container(
+              height: 64.w,
+              width: 64.w,
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: backgroundColor,
@@ -284,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   BoxShadow(color: backgroundColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
                 ],
               ),
-              child: Icon(icon, color: Colors.white, size: 20.sp),
+              child: Icon(icon, color: Colors.white, size: 32.sp),
             ),
           ],
         ),

@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/profile/password&security/password_security_screen.dart';
 import 'package:repair_cms/features/profile/personalDetails/personal_details_screen.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class ProfileOptionsScreen extends StatelessWidget {
   const ProfileOptionsScreen({super.key});
@@ -7,9 +9,9 @@ class ProfileOptionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
           onPressed: () {
@@ -24,41 +26,63 @@ class ProfileOptionsScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0.w),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             // Personal Details
             _buildProfileOption(
-              icon: Icons.person_outline,
+              icon: SolarIconsOutline.userId,
               iconColor: Colors.blue,
               title: 'Personal Details',
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonalDetailsScreen()));
               },
             ),
-
+            Container(
+              height: 1,
+              width: MediaQuery.of(context).size.width * .78,
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+              ),
+            ),
             const SizedBox(height: 16),
 
             // Language & Region
             _buildProfileOption(
-              icon: Icons.language,
+              icon: SolarIconsOutline.globus,
               iconColor: Colors.blue,
               title: 'Language & Region',
               onTap: () {
                 // Navigate to language & region
               },
             ),
+            Container(
+              height: 1,
+              width: MediaQuery.of(context).size.width * .78,
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+              ),
+            ),
 
             const SizedBox(height: 16),
 
             // Password & Security
             _buildProfileOption(
-              icon: Icons.security,
+              icon: SolarIconsOutline.shield,
               iconColor: Colors.blue,
               title: 'Password & Security',
               onTap: () {
-                // Navigate to password & security
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => PasswordSecurityScreen()));
               },
+            ),
+            Container(
+              height: 1,
+              alignment: Alignment.centerRight,
+              width: MediaQuery.of(context).size.width * .78,
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+              ),
             ),
           ],
         ),
@@ -72,36 +96,36 @@ class ProfileOptionsScreen extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Icon(icon, color: iconColor, size: 24),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  // color: iconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
+                child: Icon(icon, color: iconColor, size: 24.sp),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTypography.sfProHintTextStyle17.copyWith(
+                    color: AppColors.fontMainColor,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: Colors.black26, size: 24),
-              ],
-            ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
+            ],
           ),
         ),
       ),
