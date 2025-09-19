@@ -89,6 +89,14 @@ abstract class AppTypography {
     fontWeight: FontWeight.w400,
     color: AppColors.fontMainColor,
   );
+
+  static TextStyle sfProHeadLineTextStyle22 = TextStyle(
+    fontFamily: fontFamilySFProText,
+    fontSize: 22.sp,
+    fontWeight: FontWeight.w500,
+    color: AppColors.fontMainColor,
+  );
+
   static TextStyle sfProHintTextStyle17 = TextStyle(
     fontFamily: fontFamilySFProText,
     fontSize: 17.sp,

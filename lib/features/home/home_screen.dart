@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:feather_icons/feather_icons.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dasboard/dashboard_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
@@ -107,12 +109,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildBottomNavItem(0, Icons.home, 'Home'),
-              _buildBottomNavItem(1, SolarIconsBold.caseMinimalistic, 'My Jobs'),
+              _buildBottomNavItem(0, SolarIconsOutline.pinCircle, 'Home'),
+              _buildBottomNavItem(1, SolarIconsOutline.caseRoundMinimalistic, 'My Jobs'),
               // Empty container to balance the space for the center button
               SizedBox(width: 56.w, height: 56.h),
-              _buildBottomNavItem(2, Icons.message_outlined, 'Messages'),
-              _buildBottomNavItem(3, Icons.more_horiz, 'More'),
+              _buildBottomNavItem(2, SolarIconsOutline.chatUnread, 'Messages'),
+              _buildBottomNavItem(3, SolarIconsOutline.menuDots, 'More'),
             ],
           ),
         ),
@@ -220,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                       // Barcode Scanner Button
                       _buildExpandableButton(
-                        icon: Icons.document_scanner,
+                        icon: FontAwesomeIcons.barcode,
                         label: 'Barcode Scanner',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
@@ -233,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                       // New Job Button
                       _buildExpandableButton(
-                        icon: Icons.qr_code_scanner,
+                        icon: SolarIconsBold.qrCode,
                         label: 'QR Scanner',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {

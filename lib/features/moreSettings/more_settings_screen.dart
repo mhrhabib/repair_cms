@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/features/moreSettings/labelContent/label_content_screen.dart';
 import 'package:repair_cms/features/moreSettings/notificationSetting/notification_settings_screen.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class MoreSettingsScreen extends StatelessWidget {
   const MoreSettingsScreen({super.key});
@@ -25,7 +27,7 @@ class MoreSettingsScreen extends StatelessWidget {
           children: [
             // Printer Settings
             _buildSettingsItem(
-              icon: Icons.print,
+              icon: SolarIconsOutline.printer,
               iconColor: Colors.blue,
               title: 'Printer Settings',
               onTap: () {
@@ -33,11 +35,18 @@ class MoreSettingsScreen extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 16),
+            Container(
+              height: 1,
+              alignment: Alignment.centerRight,
+              width: MediaQuery.of(context).size.width * .78,
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+              ),
+            ),
 
             // Label Content
             _buildSettingsItem(
-              icon: Icons.label,
+              icon: SolarIconsOutline.laptopMinimalistic,
               iconColor: Colors.blue,
               title: 'Label Content',
               onTap: () {
@@ -45,16 +54,31 @@ class MoreSettingsScreen extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 16),
+            Container(
+              height: 1,
+              alignment: Alignment.centerRight,
+              width: MediaQuery.of(context).size.width * .78,
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+              ),
+            ),
 
             // Notification Settings
             _buildSettingsItem(
-              icon: Icons.notifications,
+              icon: SolarIconsOutline.bell,
               iconColor: Colors.blue,
               title: 'Notification Settings',
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationSettingsScreen()));
               },
+            ),
+            Container(
+              height: 1,
+              alignment: Alignment.centerRight,
+              width: MediaQuery.of(context).size.width * .78,
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+              ),
             ),
           ],
         ),
@@ -68,36 +92,29 @@ class MoreSettingsScreen extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Icon(icon, color: iconColor, size: 24),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.black26, size: 24),
-              ],
-            ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
+            ],
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:flutter/material.dart';
 
 import 'one/job_booking_start_booking_job_screen.dart';
 
@@ -11,6 +12,7 @@ class JobBookingFirstScreen extends StatefulWidget {
 
 class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   bool _hasSearchResults = false;
   List<ServiceItem> _selectedServices = [];
@@ -73,370 +75,436 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
     });
   }
 
-  void _toggleServiceSelection(ServiceItem service) {
+  void _addService(ServiceItem service) {
     setState(() {
-      if (_selectedServices.contains(service)) {
-        _selectedServices.remove(service);
-      } else {
+      // Check if service is already selected to prevent duplicates
+      if (!_selectedServices.any((item) => item.id == service.id)) {
         _selectedServices.add(service);
       }
     });
+
+    // Clear search and hide keyboard
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    _filterServices('');
   }
 
   void _removeService(ServiceItem service) {
     setState(() {
-      _selectedServices.remove(service);
+      _selectedServices.removeWhere((item) => item.id == service.id);
     });
   }
 
-  void _clearAllSelectedServices() {
-    setState(() {
-      _selectedServices.clear();
-    });
+  Widget _buildHighlightedText(String text, String query) {
+    if (query.isEmpty) {
+      return Text(text, style: AppTypography.fontSize16Bold.copyWith(color: Colors.black));
+    }
+
+    final List<TextSpan> spans = [];
+    final String lowerText = text.toLowerCase();
+    final String lowerQuery = query.toLowerCase();
+
+    int start = 0;
+    int index = lowerText.indexOf(lowerQuery);
+
+    while (index != -1) {
+      // Add text before match
+      if (index > start) {
+        spans.add(
+          TextSpan(
+            text: text.substring(start, index),
+            style: AppTypography.fontSize16Bold.copyWith(color: Colors.black),
+          ),
+        );
+      }
+
+      // Add highlighted match
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style: AppTypography.fontSize16Bold.copyWith(color: Colors.black, backgroundColor: Colors.yellow),
+        ),
+      );
+
+      start = index + query.length;
+      index = lowerText.indexOf(lowerQuery, start);
+    }
+
+    // Add remaining text
+    if (start < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(start),
+          style: AppTypography.fontSize16Bold.copyWith(color: Colors.black),
+        ),
+      );
+    }
+
+    return RichText(text: TextSpan(children: spans));
+  }
+
+  Widget _buildHighlightedCategory(String text, String query) {
+    if (query.isEmpty) {
+      return Text(text, style: AppTypography.fontSize12.copyWith(color: Colors.blue));
+    }
+
+    final List<TextSpan> spans = [];
+    final String lowerText = text.toLowerCase();
+    final String lowerQuery = query.toLowerCase();
+
+    int start = 0;
+    int index = lowerText.indexOf(lowerQuery);
+
+    while (index != -1) {
+      // Add text before match
+      if (index > start) {
+        spans.add(
+          TextSpan(
+            text: text.substring(start, index),
+            style: AppTypography.fontSize12.copyWith(color: Colors.blue),
+          ),
+        );
+      }
+
+      // Add highlighted match
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style: AppTypography.fontSize12.copyWith(color: Colors.blue, backgroundColor: Colors.yellow),
+        ),
+      );
+
+      start = index + query.length;
+      index = lowerText.indexOf(lowerQuery, start);
+    }
+
+    // Add remaining text
+    if (start < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(start),
+          style: AppTypography.fontSize12.copyWith(color: Colors.blue),
+        ),
+      );
+    }
+
+    return RichText(text: TextSpan(children: spans));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Container(
-            margin: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(color: Colors.black.withOpacity(0.1), borderRadius: BorderRadius.circular(8.r)),
-            child: Icon(Icons.close, color: Colors.black.withOpacity(0.7), size: 20.sp),
-          ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 12.h),
+            // Top colored bar
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12.r)),
-              child: Text(
-                'Express Job',
-                style: AppTypography.fontSize10.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (_selectedServices.isNotEmpty)
-            IconButton(
-              icon: Icon(Icons.clear_all, color: AppColors.primary),
-              onPressed: _clearAllSelectedServices,
-              tooltip: 'Clear all selections',
-            ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Section
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: 16.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Service Pricing',
-                      style: AppTypography.fontSize38.copyWith(fontWeight: FontWeight.w700, color: Colors.black),
-                    ),
-                    SizedBox(width: 8.w),
-                    GestureDetector(
-                      onTap: () {
-                        showDialog(context: context, builder: (context) => _buildInfoDialog());
-                      },
-                      child: Icon(Icons.help_outline, color: Colors.grey.shade500, size: 20.sp),
-                    ),
-                  ],
-                ),
-                Text(
-                  'List your service & book a job',
-                  style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600, fontWeight: FontWeight.w400),
-                ),
-                SizedBox(height: 24.h),
-              ],
-            ),
-          ),
-
-          // Search Bar
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Container(
-              height: 48.h,
+              height: 12.h,
+              width: MediaQuery.of(context).size.width * .071,
               decoration: BoxDecoration(
-                color: AppColors.whiteColor,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: Colors.grey.shade300),
+                color: AppColors.primary,
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
+                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
               ),
-              child: Row(
+            ),
+
+            SizedBox(height: 12.h),
+
+            // Close button
+            Padding(
+              padding: EdgeInsets.only(left: 16.w),
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 32.w,
+                  height: 32.h,
+                  decoration: BoxDecoration(color: Color(0xFF71788F), borderRadius: BorderRadius.circular(8.r)),
+                  child: Icon(Icons.close, color: Colors.white, size: 20.sp),
+                ),
+              ),
+            ),
+
+            SizedBox(height: 16.h),
+
+            // Express Job badge
+            Align(
+              alignment: Alignment.center,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12.r)),
+                child: Text(
+                  'Express Job',
+                  style: AppTypography.fontSize12.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+
+            SizedBox(height: 20.h),
+
+            // Header Section
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _filterServices,
-                      decoration: InputDecoration(
-                        hintText: 'Search services...',
-                        hintStyle: AppTypography.fontSize14.copyWith(color: Colors.grey.shade500),
-                        prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 20.sp),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Service Pricing',
+                        style: AppTypography.fontSize38.copyWith(fontWeight: FontWeight.w700, color: Colors.black),
                       ),
-                    ),
+                      SizedBox(width: 8.w),
+                      GestureDetector(
+                        onTap: () {
+                          showDialog(context: context, builder: (context) => _buildInfoDialog());
+                        },
+                        child: Icon(Icons.help_outline, color: Colors.grey.shade500, size: 20.sp),
+                      ),
+                    ],
                   ),
-                  if (_searchController.text.isNotEmpty)
-                    GestureDetector(
-                      onTap: () {
-                        _searchController.clear();
-                        _filterServices('');
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 12.w),
-                        child: Icon(Icons.close, color: Colors.grey.shade400, size: 20.sp),
-                      ),
-                    ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    'List your service & book a job',
+                    style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600, fontWeight: FontWeight.w400),
+                  ),
                 ],
               ),
             ),
-          ),
 
-          SizedBox(height: 16.h),
+            SizedBox(height: 24.h),
 
-          // Selected Services Section
-          if (_selectedServices.isNotEmpty) _buildSelectedServices(),
+            // Search Bar
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Container(
+                height: 48.h,
+                decoration: BoxDecoration(
+                  color: AppColors.whiteColor,
+                  borderRadius: BorderRadius.circular(24.r),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(width: 16.w),
+                    Icon(Icons.search, color: Colors.grey.shade400, size: 20.sp),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        onChanged: _filterServices,
+                        decoration: InputDecoration(
+                          hintText: _selectedServices.isEmpty ? 'Search services...' : 'iPhone 16 lcd repair...',
+                          hintStyle: AppTypography.fontSize14.copyWith(color: Colors.grey.shade400),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
+                    if (_searchController.text.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          _searchController.clear();
+                          _filterServices('');
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.only(right: 16.w),
+                          child: Icon(Icons.close, color: Colors.grey.shade400, size: 20.sp),
+                        ),
+                      )
+                    else
+                      SizedBox(width: 16.w),
+                  ],
+                ),
+              ),
+            ),
 
-          // Search Results (expanded to fill remaining space)
-          Expanded(child: _buildContent()),
-        ],
+            // Search Results
+            if (_searchController.text.isNotEmpty && _hasSearchResults) ...[
+              SizedBox(height: 8.h),
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 16.w),
+                decoration: BoxDecoration(
+                  color: AppColors.whiteColor,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: _filteredServices.length,
+                  separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey.shade200),
+                  itemBuilder: (context, index) {
+                    final service = _filteredServices[index];
+                    final isAlreadySelected = _selectedServices.any((item) => item.id == service.id);
+
+                    return GestureDetector(
+                      onTap: () => _addService(service),
+                      child: Container(
+                        padding: EdgeInsets.all(16.w),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildHighlightedText(service.name, _searchController.text),
+                                  SizedBox(height: 4.h),
+                                  _buildHighlightedCategory(service.category, _searchController.text),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${service.price.toStringAsFixed(2)} €',
+                                  style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  'incl. 20% VAT',
+                                  style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500),
+                                ),
+                              ],
+                            ),
+                            if (isAlreadySelected) ...[
+                              SizedBox(width: 8.w),
+                              Icon(Icons.check_circle, color: Colors.green, size: 20.sp),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+
+            // No results message
+            if (_searchController.text.isNotEmpty && !_hasSearchResults) ...[
+              SizedBox(height: 16.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.whiteColor,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Text(
+                    'no service found',
+                    style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade500),
+                  ),
+                ),
+              ),
+            ],
+
+            // Selected Services
+            if (_selectedServices.isNotEmpty && _searchController.text.isEmpty) ...[
+              SizedBox(height: 20.h),
+              Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  itemCount: _selectedServices.length,
+                  itemBuilder: (context, index) {
+                    final service = _selectedServices[index];
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 12.h),
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.whiteColor,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: AppColors.primary, width: 1.5),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(service.name, style: AppTypography.fontSize16Bold.copyWith(color: Colors.black)),
+                                SizedBox(height: 4.h),
+                                Text(service.category, style: AppTypography.fontSize12.copyWith(color: Colors.blue)),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${service.price.toStringAsFixed(2)} €',
+                                style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                'incl. 20% VAT',
+                                style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 12.w),
+                          GestureDetector(
+                            onTap: () => _removeService(service),
+                            child: Container(
+                              width: 24.w,
+                              height: 24.h,
+                              decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: Icon(Icons.close, color: Colors.white, size: 16.sp),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+
+            // Empty state
+            if (_selectedServices.isEmpty && _searchController.text.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search, size: 48.sp, color: Colors.grey.shade300),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Search for services',
+                        style: AppTypography.fontSize16.copyWith(color: Colors.grey.shade500),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Type in the search bar to find services',
+                        style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade400),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
 
       // Bottom Button
-      bottomNavigationBar: _selectedServices.isNotEmpty ? _buildBookingButton() : null,
-    );
-  }
-
-  Widget _buildContent() {
-    if (_hasSearchResults) {
-      return _buildSearchResults();
-    } else if (_searchController.text.isNotEmpty && !_hasSearchResults) {
-      return _buildNoResults();
-    } else {
-      return _buildEmptyState();
-    }
-  }
-
-  Widget _buildSearchResults() {
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      itemCount: _filteredServices.length,
-      itemBuilder: (context, index) {
-        final service = _filteredServices[index];
-        final isSelected = _selectedServices.contains(service);
-
-        return GestureDetector(
-          onTap: () => _toggleServiceSelection(service),
-          onLongPress: () => _toggleServiceSelection(service),
-          child: Container(
-            margin: EdgeInsets.only(bottom: 8.h),
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.whiteColor,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.grey.shade200,
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                // Selection indicator
-                Container(
-                  width: 24.w,
-                  height: 24.h,
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade400),
-                  ),
-                  child: isSelected ? Icon(Icons.check, color: Colors.white, size: 16.sp) : null,
-                ),
-                SizedBox(width: 12.w),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        service.name,
-                        style: AppTypography.fontSize16Bold.copyWith(
-                          color: isSelected ? AppColors.primary : Colors.black,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        service.category,
-                        style: AppTypography.fontSize10.copyWith(color: isSelected ? AppColors.primary : Colors.blue),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${service.price.toStringAsFixed(2)} €',
-                      style: AppTypography.fontSize16Bold.copyWith(
-                        color: isSelected ? AppColors.primary : AppColors.primary,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      'incl. 20% VAT',
-                      style: AppTypography.fontSize10.copyWith(
-                        color: isSelected ? AppColors.primary.withOpacity(0.7) : Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSelectedServices() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Selected Services (${_selectedServices.length})',
-                style: AppTypography.fontSize16Bold.copyWith(color: Colors.black),
-              ),
-              if (_selectedServices.isNotEmpty)
-                GestureDetector(
-                  onTap: _clearAllSelectedServices,
-                  child: Text(
-                    'Clear all',
-                    style: AppTypography.fontSize12.copyWith(color: Colors.red, fontWeight: FontWeight.w500),
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          ..._selectedServices.map((service) => _buildSelectedServiceItem(service)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSelectedServiceItem(ServiceItem service) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: AppColors.whiteColor,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: AppColors.primary, width: 1.5),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(service.name, style: AppTypography.fontSize16Bold.copyWith(color: Colors.black)),
-                      SizedBox(height: 2.h),
-                      Text(service.category, style: AppTypography.fontSize10.copyWith(color: Colors.blue)),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${service.price.toStringAsFixed(2)} €',
-                      style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text('incl. 20% VAT', style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500)),
-                  ],
-                ),
-                SizedBox(width: 8.w),
-                Icon(Icons.done, color: Colors.green, size: 20.sp),
-              ],
-            ),
-          ),
-          Positioned(
-            right: -6.w,
-            top: -6.h,
-            child: GestureDetector(
-              onTap: () => _removeService(service),
-              child: Container(
-                width: 20.w,
-                height: 20.h,
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                child: Icon(Icons.close, color: Colors.white, size: 12.sp),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoResults() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-      child: Center(
-        child: Text('No services found', style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade500)),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.search, size: 48.sp, color: Colors.grey.shade300),
-          SizedBox(height: 16.h),
-          Text('Search for services', style: AppTypography.fontSize16.copyWith(color: Colors.grey.shade500)),
-          SizedBox(height: 8.h),
-          Text(
-            'Type in the search bar to find services',
-            style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade400),
-          ),
-        ],
-      ),
+      bottomNavigationBar: _selectedServices.isNotEmpty && _searchController.text.isEmpty
+          ? _buildBookingButton()
+          : null,
     );
   }
 
   Widget _buildInfoDialog() {
     return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(20.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -446,7 +514,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                   width: 32.w,
                   height: 32.h,
                   decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                  child: Icon(Icons.info, color: Colors.white, size: 20.sp),
+                  child: Icon(Icons.question_mark_outlined, color: Colors.white, size: 20.sp),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
@@ -460,16 +528,15 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
             SizedBox(height: 16.h),
             Text(
               'Use your desktop computer at\nhttps://my.repairmc.com/service',
-              style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade600),
+              style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
             ),
             SizedBox(height: 24.h),
             SizedBox(
               width: double.infinity,
               height: 44.h,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22.r)),
@@ -499,18 +566,9 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${_selectedServices.length} service${_selectedServices.length > 1 ? 's' : ''} selected',
-                  style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600),
-                ),
-                Text(
-                  'Total: ${totalPrice.toStringAsFixed(2)} €',
-                  style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
-                ),
-              ],
+            Text(
+              '${_selectedServices.length} x Service selected',
+              style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600),
             ),
             SizedBox(height: 12.h),
             SizedBox(
@@ -518,13 +576,6 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
               height: 50.h,
               child: ElevatedButton(
                 onPressed: () {
-                  // Navigate to booking details
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Starting booking process with ${_selectedServices.length} services...'),
-                      backgroundColor: AppColors.primary,
-                    ),
-                  );
                   Navigator.of(
                     context,
                   ).push(MaterialPageRoute(builder: (context) => JobBookingStartBookingJobScreen()));
@@ -545,6 +596,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 }
