@@ -13,12 +13,7 @@ class BottomButtonsGroup extends StatelessWidget {
         // Back button
         GestureDetector(
           onTap: () => Navigator.of(context).pop(),
-          child: Container(
-            width: 81.w,
-            height: 52.h,
-            decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle),
-            child: Image.asset(AssetsConstant.liquiedButton),
-          ),
+          child: SizedBox(width: 81.w, height: 52.h, child: Image.asset(AssetsConstant.liquiedButton)),
         ),
 
         SizedBox(width: 16.w),

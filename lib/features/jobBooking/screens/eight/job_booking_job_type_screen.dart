@@ -1,4 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
+import 'package:repair_cms/features/jobBooking/screens/nine/job_booking_problem_description_screen.dart';
+import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:repair_cms/core/app_exports.dart';
 
 class JobBookingJobTypeScreen extends StatefulWidget {
   const JobBookingJobTypeScreen({super.key});
@@ -8,6 +11,7 @@ class JobBookingJobTypeScreen extends StatefulWidget {
 }
 
 class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
+  final TextEditingController _jobTypeController = TextEditingController();
   final TextEditingController _referenceController = TextEditingController();
   String? selectedJobType;
 
@@ -18,97 +22,111 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
-        child: Column(
-          children: [
+        child: CustomScrollView(
+          slivers: [
             // Progress bar
-            Container(
-              height: 4,
-              width: double.infinity,
-              color: Colors.grey[300],
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(height: 4, width: MediaQuery.of(context).size.width * 0.8, color: Colors.blue),
-              ),
-            ),
-
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.close, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Step indicator
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-              child: const Center(
-                child: Text(
-                  '8',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            SliverToBoxAdapter(
+              child: Container(
+                height: 4,
+                width: double.infinity,
+                color: Colors.grey[300],
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(height: 4, width: MediaQuery.of(context).size.width * 0.8, color: Colors.blue),
                 ),
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            // Title and subtitle
-            const Text(
-              'Job Type',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+            // Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.close, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
 
-            const SizedBox(height: 8),
+            // Step indicator
+            SliverToBoxAdapter(
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                  child: const Center(
+                    child: Text(
+                      '8',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
-            Text('(Warranty, ReRepair, Quote req...)', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+            SliverToBoxAdapter(child: const SizedBox(height: 24)),
 
-            const SizedBox(height: 32),
+            // Title and subtitle
+            SliverToBoxAdapter(
+              child: const Column(
+                children: [
+                  Text(
+                    'Job Type',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                  ),
+                  SizedBox(height: 8),
+                  Text('(Warranty, ReRepair, Quote req...)', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                ],
+              ),
+            ),
+
+            SliverToBoxAdapter(child: const SizedBox(height: 32)),
 
             // Form content
-            Expanded(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Job Type Dropdown
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300),
-                        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: selectedJobType,
-                          hint: Text('Answer here', style: TextStyle(color: Colors.grey[400], fontSize: 16)),
-                          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-                          isExpanded: true,
-                          style: const TextStyle(color: Colors.black87, fontSize: 16),
-                          items: jobTypes.map((String jobType) {
-                            return DropdownMenuItem<String>(value: jobType, child: Text(jobType));
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedJobType = newValue;
-                            });
-                          },
-                        ),
-                      ),
+                    // Job Type Dropdown (Custom Search)
+                    CustomDropdownSearch<String>(
+                      controller: _jobTypeController,
+                      items: jobTypes,
+                      hintText: 'Answer here',
+                      noItemsText: 'No job types found',
+                      onSuggestionSelected: (String jobType) {
+                        setState(() {
+                          selectedJobType = jobType;
+                          _jobTypeController.text = jobType;
+                        });
+                      },
+                      itemBuilder: (BuildContext context, String jobType) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                          child: Text(
+                            jobType,
+                            style: TextStyle(fontSize: 16.sp, color: Colors.black87),
+                          ),
+                        );
+                      },
+                      suggestionsCallback: (String pattern) {
+                        return jobTypes
+                            .where((jobType) => jobType.toLowerCase().contains(pattern.toLowerCase()))
+                            .toList();
+                      },
+                      displayAllSuggestionWhenTap: true,
+                      isMultiSelectDropdown: false,
+                      maxHeight: 200.h,
                     ),
 
                     const SizedBox(height: 32),
@@ -134,57 +152,9 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                       style: const TextStyle(fontSize: 16),
                     ),
 
-                    const Spacer(),
-
-                    // Navigation buttons
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20)),
-                            child: const Icon(Icons.chevron_left, color: Colors.grey, size: 24),
-                          ),
-                        ),
-
-                        const Spacer(),
-
-                        Container(
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // Handle form submission
-                              if (selectedJobType != null) {
-                                // Process the selected job type and reference
-                                Navigator.pop(context);
-                              } else {
-                                // Show error or validation message
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Please select a job type'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              'OK',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
                     const SizedBox(height: 32),
+
+                    const SizedBox(height: 100), // Extra space for bottom button
                   ],
                 ),
               ),
@@ -192,11 +162,31 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
+        child: BottomButtonsGroup(
+          onPressed: () {
+            // Handle form submission
+            if (selectedJobType != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const JobBookingProblemDescriptionScreen()),
+              );
+            } else {
+              // Show error or validation message
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Please select a job type'), backgroundColor: Colors.red));
+            }
+          },
+        ),
+      ),
     );
   }
 
   @override
   void dispose() {
+    _jobTypeController.dispose();
     _referenceController.dispose();
     super.dispose();
   }

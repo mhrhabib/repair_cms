@@ -165,6 +165,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         return Padding(
           padding: EdgeInsets.only(bottom: 16.h),
           child: jobCardWidget(
+            context: context,
             status: statuses[statusIndex],
             statusColor: statusColors[statusIndex],
             priority: priorities[priorityIndex],

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
+import 'package:repair_cms/features/jobBooking/screens/eleven/job_booking_file_upload_screen.dart';
+import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:drop_down_search_field/drop_down_search_field.dart';
+import 'package:repair_cms/core/app_exports.dart';
 
 class JobBookingAddItemsScreen extends StatefulWidget {
   const JobBookingAddItemsScreen({super.key});
@@ -8,287 +13,269 @@ class JobBookingAddItemsScreen extends StatefulWidget {
 }
 
 class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
-  String selectedCategory = 'Protection case';
-  List<String> selectedItems = [];
+  final TextEditingController _itemController = TextEditingController();
+  List<ItemModel> selectedItems = [];
 
-  final Map<String, List<ItemModel>> itemCategories = {
-    'Protection case': [
-      ItemModel(name: 'Protection case', price: 29.90, quality: 'Premium'),
-      ItemModel(name: 'Good case', price: 19.90, quality: 'Good'),
-    ],
-    'Insurance': [
-      ItemModel(name: 'Basic Insurance', price: 15.50, quality: 'Standard'),
-      ItemModel(name: 'Premium Insurance', price: 35.00, quality: 'Premium'),
-    ],
-    'Screen Protector': [
-      ItemModel(name: 'Tempered Glass', price: 12.90, quality: 'Premium'),
-      ItemModel(name: 'Plastic Film', price: 7.50, quality: 'Basic'),
-    ],
-  };
+  final List<ItemModel> items = [
+    ItemModel(name: 'Protection case', price: 29.90, quality: 'Premium'),
+    ItemModel(name: 'Good case', price: 19.90, quality: 'Good'),
+    ItemModel(name: 'Basic Insurance', price: 15.50, quality: 'Standard'),
+    ItemModel(name: 'Premium Insurance', price: 35.00, quality: 'Premium'),
+    ItemModel(name: 'Tempered Glass', price: 12.90, quality: 'Premium'),
+    ItemModel(name: 'Plastic Film', price: 7.50, quality: 'Basic'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _itemController.text = '';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
-        child: Column(
-          children: [
+        child: CustomScrollView(
+          slivers: [
             // Progress bar
-            Container(
-              height: 4,
-              width: double.infinity,
-              color: Colors.grey[300],
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(height: 4, width: MediaQuery.of(context).size.width * 1.0, color: Colors.blue),
-              ),
-            ),
-
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.close, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Step indicator
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-              child: const Center(
-                child: Text(
-                  '10',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            SliverToBoxAdapter(
+              child: Container(
+                height: 4,
+                width: double.infinity,
+                color: Colors.grey[300],
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(height: 4, width: MediaQuery.of(context).size.width * 1.0, color: Colors.blue),
                 ),
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            // Title and subtitle
-            const Text(
-              'Add Items',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+            // Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.close, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
 
-            const SizedBox(height: 8),
+            // Step indicator
+            SliverToBoxAdapter(
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                  child: const Center(
+                    child: Text(
+                      '10',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
-            Text('(Protection case, Insurance...)', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+            SliverToBoxAdapter(child: const SizedBox(height: 24)),
 
-            const SizedBox(height: 32),
+            // Title and subtitle
+            SliverToBoxAdapter(
+              child: const Column(
+                children: [
+                  Text(
+                    'Add Items',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                  ),
+                  SizedBox(height: 8),
+                  Text('(Protection case, Insurance...)', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                ],
+              ),
+            ),
 
-            // Form content
-            Expanded(
+            SliverToBoxAdapter(child: const SizedBox(height: 32)),
+
+            // Item Dropdown
+            SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Category Dropdown
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue, width: 2),
-                        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.blue[300]!, Colors.blue[600]!],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                            child: const Center(child: Icon(Icons.shield_outlined, color: Colors.white, size: 12)),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: selectedCategory,
-                                icon: const Icon(Icons.keyboard_arrow_up, color: Colors.black54),
-                                isExpanded: true,
-                                style: const TextStyle(
-                                  color: Colors.black87,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                    const Text(
+                      'Select Item',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 8),
+                    CustomDropdownSearch<ItemModel>(
+                      controller: _itemController,
+                      items: items,
+                      hintText: 'Select item',
+                      noItemsText: 'No items found',
+                      onSuggestionSelected: (ItemModel item) {
+                        setState(() {
+                          if (!selectedItems.contains(item)) {
+                            selectedItems.add(item);
+                          }
+                          _itemController.text = '';
+                        });
+                      },
+                      itemBuilder: (BuildContext context, ItemModel item) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.blue[300]!, Colors.blue[600]!],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
-                                items: itemCategories.keys.map((String category) {
-                                  return DropdownMenuItem<String>(value: category, child: Text(category));
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    selectedCategory = newValue!;
-                                  });
-                                },
+                                child: const Center(child: Icon(Icons.shield_outlined, color: Colors.white, size: 12)),
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name,
+                                      style: TextStyle(fontSize: 16.sp, color: Colors.black87),
+                                    ),
+                                    Text(
+                                      '${item.price.toStringAsFixed(2)} € - ${item.quality}',
+                                      style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
+                      suggestionsCallback: (String pattern) {
+                        return items.where((item) => item.name.toLowerCase().contains(pattern.toLowerCase())).toList();
+                      },
+                      displayAllSuggestionWhenTap: true,
+                      isMultiSelectDropdown: false,
+                      maxHeight: 200.h,
                     ),
-
                     const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
 
-                    // Items List
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                        child: Column(
-                          children: itemCategories[selectedCategory]!.map((item) => _buildItemCard(item)).toList(),
-                        ),
+            // Selected Items
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Selected Items',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 12),
+                    if (selectedItems.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        child: Text('No items selected yet', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: selectedItems.map((item) => _buildSelectedItemCard(item)).toList(),
                       ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Navigation buttons
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20)),
-                            child: const Icon(Icons.chevron_left, color: Colors.grey, size: 24),
-                          ),
-                        ),
-
-                        const Spacer(),
-
-                        Container(
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // Handle form submission with selected items
-                              Navigator.pop(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              'OK',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
                     const SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
+
+            // Add extra space at the bottom for the button
+            SliverToBoxAdapter(child: const SizedBox(height: 100)),
           ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
+        child: BottomButtonsGroup(
+          onPressed: () {
+            // Handle form submission with selected items
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingFileUploadScreen()));
+          },
         ),
       ),
     );
   }
 
-  Widget _buildItemCard(ItemModel item) {
-    final isSelected = selectedItems.contains(item.name);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            if (isSelected) {
-              selectedItems.remove(item.name);
-            } else {
-              selectedItems.add(item.name);
-            }
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.all(16),
+  Widget _buildSelectedItemCard(ItemModel item) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.grey[50],
+            color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade300, width: isSelected ? 2 : 1),
+            border: Border.all(color: Colors.blue, width: 1),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          item.name,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: isSelected ? Colors.blue : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: item.quality == 'Good' ? Colors.orange : Colors.blue,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            item.quality,
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${item.price.toStringAsFixed(2)} €',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.blue : Colors.black87,
-                    ),
+                    item.name,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.blue),
                   ),
-                  Text('Incl. 20% VAT', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${item.price.toStringAsFixed(2)} € - ${item.quality}',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.blue),
+                  ),
                 ],
               ),
             ],
           ),
         ),
-      ),
+        Positioned(
+          top: -8,
+          right: -8,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedItems.remove(item);
+              });
+            },
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -299,4 +286,21 @@ class ItemModel {
   final String quality;
 
   ItemModel({required this.name, required this.price, required this.quality});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ItemModel &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          price == other.price &&
+          quality == other.quality;
+
+  @override
+  int get hashCode => name.hashCode ^ price.hashCode ^ quality.hashCode;
+
+  @override
+  String toString() {
+    return name;
+  }
 }

@@ -41,19 +41,26 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
       backgroundColor: AppColors.scaffoldBackgroundColor,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 12.h,
-              width: MediaQuery.of(context).size.width * .071 * 5,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 12.h,
+                    width: MediaQuery.of(context).size.width * .071 * 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
+                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                    ),
+                  ),
+                ],
               ),
             ),
-            Expanded(
+
+            SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: Column(
@@ -95,8 +102,17 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
                     Text('Device Security', style: AppTypography.fontSize22, textAlign: TextAlign.center),
 
                     SizedBox(height: 12.h),
+                  ],
+                ),
+              ),
+            ),
 
-                    // Security options
+            // Security options
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Column(
+                  children: [
                     _buildSecurityOption(
                       icon: Icons.security,
                       title: 'No Security',
@@ -123,28 +139,49 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
                     ),
 
                     SizedBox(height: 12.h),
-
-                    // Dynamic content based on selection
-                    if (selectedOption == 'password') ...[
-                      _buildPasswordInput(),
-                    ] else if (selectedOption == 'pattern') ...[
-                      _buildPatternInput(),
-                    ],
-
-                    const Spacer(),
-
-                    BottomButtonsGroup(
-                      onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => ChooseContactTypeScreen()));
-                      },
-                    ),
-
-                    SizedBox(height: 32.h),
                   ],
                 ),
               ),
             ),
+
+            // Dynamic content based on selection
+            if (selectedOption == 'password') ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: _buildPasswordInput(),
+                ),
+              ),
+            ] else if (selectedOption == 'pattern') ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: _buildPatternInput(),
+                ),
+              ),
+            ],
+
+            // Spacer to push buttons to bottom
+            const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
           ],
+        ),
+      ),
+      // Sticky bottom navigation bar with keyboard handling
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 8.h : 8.h,
+          left: 24.w,
+          right: 24.w,
+        ),
+        child: BottomButtonsGroup(
+          onPressed: () {
+            // Use a post-frame callback to avoid the deactivated widget error
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => ChooseContactTypeScreen()));
+              }
+            });
+          },
         ),
       ),
     );
@@ -242,55 +279,103 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
 
   Widget _buildPatternInput() {
     return Container(
-      width: 260.w,
-      height: 260.h,
-      padding: EdgeInsets.all(12.w),
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
       ),
-      child: CustomPaint(
-        painter: PatternPainter(dotPositions: dotPositions, connectedDots: connectedDots, patternPoints: patternPoints),
-        child: GestureDetector(
-          onPanStart: (details) {
-            setState(() {
-              isDrawing = true;
-              _handlePatternTouch(details.localPosition);
-            });
-          },
-          onPanUpdate: (details) {
-            if (isDrawing) {
-              setState(() {
-                _handlePatternTouch(details.localPosition);
-              });
-            }
-          },
-          onPanEnd: (details) {
-            setState(() {
-              isDrawing = false;
-            });
-          },
-          child: Container(width: double.infinity, height: double.infinity, color: Colors.transparent),
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Responsive pattern container centered horizontally
+          Center(
+            child: Container(
+              width: 260.w,
+              height: 260.h,
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: CustomPaint(
+                painter: PatternPainter(
+                  dotPositions: dotPositions,
+                  connectedDots: connectedDots,
+                  patternPoints: patternPoints,
+                  containerSize: 260.w - 24.w, // Subtract padding
+                ),
+                child: GestureDetector(
+                  onPanStart: (details) {
+                    setState(() {
+                      isDrawing = true;
+                      _handlePatternTouch(details.localPosition, 260.w - 24.w);
+                    });
+                  },
+                  onPanUpdate: (details) {
+                    if (isDrawing) {
+                      setState(() {
+                        _handlePatternTouch(details.localPosition, 260.w - 24.w);
+                      });
+                    }
+                  },
+                  onPanEnd: (details) {
+                    setState(() {
+                      isDrawing = false;
+                    });
+                  },
+                  child: Container(width: double.infinity, height: double.infinity, color: Colors.transparent),
+                ),
+              ),
+            ),
+          ),
+
+          SizedBox(height: 16.h),
+
+          if (connectedDots.isNotEmpty)
+            Text(
+              'Pattern: ${connectedDots.map((dot) => dot + 1).join(' → ')}',
+              style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+
+          if (connectedDots.isNotEmpty) SizedBox(height: 12.h),
+
+          if (connectedDots.isNotEmpty)
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    connectedDots.clear();
+                    patternPoints.clear();
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade100,
+                  foregroundColor: Colors.red,
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                ),
+                child: Text('Clear Pattern', style: AppTypography.fontSize12),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  void _handlePatternTouch(Offset position) {
-    // Calculate which dot was touched based on position
-    const double dotSize = 20.0;
-    const double gridSize = 150.0;
-    const double spacing = gridSize / 2;
+  void _handlePatternTouch(Offset position, double containerSize) {
+    final double dotRadius = containerSize * 0.06; // adjust size as needed
+    final double spacing = containerSize / 3;
 
+    // Centering: each dot is at (col + 0.5) * spacing
     for (int i = 0; i < dotPositions.length; i++) {
-      final dotPos = Offset(
-        dotPositions[i].dx * spacing + spacing / 2 + dotSize,
-        dotPositions[i].dy * spacing + spacing / 2 + dotSize,
-      );
+      final pos = Offset((dotPositions[i].dx + 0.5) * spacing, (dotPositions[i].dy + 0.5) * spacing);
 
-      if ((position - dotPos).distance < dotSize) {
+      // In _handlePatternTouch → check touch distance
+      if ((position - pos).distance < dotRadius * 2) {
         if (!connectedDots.contains(i)) {
           connectedDots.add(i);
           patternPoints.add(position);
@@ -311,8 +396,14 @@ class PatternPainter extends CustomPainter {
   final List<Offset> dotPositions;
   final List<int> connectedDots;
   final List<Offset> patternPoints;
+  final double containerSize;
 
-  PatternPainter({required this.dotPositions, required this.connectedDots, required this.patternPoints});
+  PatternPainter({
+    required this.dotPositions,
+    required this.connectedDots,
+    required this.patternPoints,
+    required this.containerSize,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -329,16 +420,13 @@ class PatternPainter extends CustomPainter {
       ..color = Colors.blue
       ..style = PaintingStyle.fill;
 
-    // Draw grid dots
-    const double dotRadius = 10.0;
-    const double gridSize = 150.0;
-    const double spacing = gridSize / 2;
+    // Correct spacing for 3x3 grid
+    final double dotRadius = containerSize * 0.06;
+    final double spacing = containerSize / 3;
 
+    // Draw grid dots (centered)
     for (int i = 0; i < dotPositions.length; i++) {
-      final pos = Offset(
-        dotPositions[i].dx * spacing + spacing / 2 + 20,
-        dotPositions[i].dy * spacing + spacing / 2 + 20,
-      );
+      final pos = Offset((dotPositions[i].dx + 0.5) * spacing, (dotPositions[i].dy + 0.5) * spacing);
 
       canvas.drawCircle(pos, dotRadius, connectedDots.contains(i) ? connectedPaint : paint);
     }
@@ -349,8 +437,8 @@ class PatternPainter extends CustomPainter {
         final startDot = dotPositions[connectedDots[i]];
         final endDot = dotPositions[connectedDots[i + 1]];
 
-        final startPos = Offset(startDot.dx * spacing + spacing / 2 + 20, startDot.dy * spacing + spacing / 2 + 20);
-        final endPos = Offset(endDot.dx * spacing + spacing / 2 + 20, endDot.dy * spacing + spacing / 2 + 20);
+        final startPos = Offset((startDot.dx + 0.5) * spacing, (startDot.dy + 0.5) * spacing);
+        final endPos = Offset((endDot.dx + 0.5) * spacing, (endDot.dy + 0.5) * spacing);
 
         canvas.drawLine(startPos, endPos, linePaint);
       }

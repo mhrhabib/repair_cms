@@ -1,4 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/myJobs/job_details_screen.dart';
 
 Widget jobCardWidget({
   required String status,
@@ -11,6 +12,7 @@ Widget jobCardWidget({
   required String location,
   required String deviceName,
   required String imei,
+  BuildContext? context,
 }) {
   return Container(
     decoration: BoxDecoration(
@@ -82,7 +84,12 @@ Widget jobCardWidget({
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context!).push(MaterialPageRoute(builder: (context) => JobDetailsScreen()));
+                },
+                child: const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
+              ),
             ],
           ),
         ),

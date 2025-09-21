@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class JobBookingFileUploadScreen extends StatefulWidget {
   const JobBookingFileUploadScreen({super.key});
@@ -8,7 +10,8 @@ class JobBookingFileUploadScreen extends StatefulWidget {
 }
 
 class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen> {
-  List<String> uploadedImages = [];
+  List<XFile> uploadedImages = [];
+  final ImagePicker _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
@@ -85,8 +88,8 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
                   Expanded(
                     child: _buildUploadOption(
                       icon: Icons.folder_outlined,
-                      label: 'Phone',
-                      onTap: () => _handlePhoneUpload(),
+                      label: 'Gallery',
+                      onTap: () => _handleGalleryUpload(),
                     ),
                   ),
                 ],
@@ -100,38 +103,42 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Sample uploaded images
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildImagePreview(
-                            'assets/phone_back.jpg', // This would be actual image path
-                            hasRedDot: true,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildImagePreview(
-                            'assets/phone_camera.jpg', // This would be actual image path
-                            hasRedDot: true,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Uploaded Files (${uploadedImages.length})',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Additional upload slots
-                    Row(
-                      children: [
-                        Expanded(child: _buildEmptyUploadSlot()),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildEmptyUploadSlot()),
-                      ],
+                    Expanded(
+                      child: uploadedImages.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.photo_library_outlined, size: 64, color: Colors.grey[400]),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No files uploaded yet',
+                                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : GridView.builder(
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1,
+                              ),
+                              itemCount: uploadedImages.length,
+                              itemBuilder: (context, index) {
+                                return _buildImagePreview(uploadedImages[index]);
+                              },
+                            ),
                     ),
-
-                    const Spacer(),
+                    const SizedBox(height: 24),
 
                     // Navigation buttons
                     Row(
@@ -206,85 +213,76 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
     );
   }
 
-  Widget _buildImagePreview(String imagePath, {bool hasRedDot = false}) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[400]!),
-      ),
-      child: Stack(
-        children: [
-          // Placeholder for actual image
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(8)),
-            child: const Center(child: Icon(Icons.phone_iphone, size: 40, color: Colors.white)),
+  Widget _buildImagePreview(XFile imageFile) {
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[400]!),
           ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(File(imageFile.path), width: double.infinity, height: double.infinity, fit: BoxFit.cover),
+          ),
+        ),
 
-          // Red indicator dot
-          if (hasRedDot)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-              ),
-            ),
-
-          // Delete button
-          Positioned(
-            top: 4,
-            right: 4,
-            child: GestureDetector(
-              onTap: () {
-                // Handle image deletion
-              },
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.close, color: Colors.white, size: 16),
-              ),
+        // Delete button
+        Positioned(
+          top: 4,
+          right: 4,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                uploadedImages.remove(imageFile);
+              });
+            },
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), borderRadius: BorderRadius.circular(12)),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildEmptyUploadSlot() {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
-      ),
-      child: Center(child: Icon(Icons.add, size: 32, color: Colors.grey[400])),
-    );
+  Future<void> _handleCameraUpload() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          uploadedImages.add(image);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error capturing image: $e'), backgroundColor: Colors.red));
+    }
   }
 
-  void _handleCameraUpload() {
-    // Implement camera functionality
-    // This would typically use image_picker package
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Camera upload would be implemented here'), backgroundColor: Colors.blue),
-    );
-  }
+  Future<void> _handleGalleryUpload() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage(maxWidth: 1200, maxHeight: 1200, imageQuality: 80);
 
-  void _handlePhoneUpload() {
-    // Implement gallery/file picker functionality
-    // This would typically use file_picker or image_picker package
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Phone gallery upload would be implemented here'), backgroundColor: Colors.blue),
-    );
+      if (images.isNotEmpty) {
+        setState(() {
+          uploadedImages.addAll(images);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error selecting images: $e'), backgroundColor: Colors.red));
+    }
   }
 }

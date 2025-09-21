@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:repair_cms/features/jobBooking/screens/eight/job_booking_job_type_screen.dart';
+import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 
 class JobBookingAddressScreen extends StatefulWidget {
   const JobBookingAddressScreen({super.key});
@@ -25,130 +27,107 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: CustomScrollView(
+          slivers: [
             // Progress bar
-            Container(
-              height: 4,
-              width: double.infinity,
-              color: Colors.grey[300],
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(height: 4, width: MediaQuery.of(context).size.width * 0.7, color: Colors.blue),
-              ),
-            ),
-
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.close, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Step indicator
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-              child: const Center(
-                child: Text(
-                  '7',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            SliverToBoxAdapter(
+              child: Container(
+                height: 4,
+                width: double.infinity,
+                color: Colors.grey[300],
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(height: 4, width: MediaQuery.of(context).size.width * 0.7, color: Colors.blue),
                 ),
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            // Title
-            const Text(
-              'Address details',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Page view for address forms
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    currentPage = index;
-                  });
-                },
-                children: [_buildFirstAddressForm(), _buildSecondAddressForm()],
-              ),
-            ),
-
-            // Navigation buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  if (currentPage > 0)
+            // Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
                     GestureDetector(
-                      onTap: () {
-                        _pageController.previousPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      },
+                      onTap: () => Navigator.pop(context),
                       child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20)),
-                        child: const Icon(Icons.chevron_left, color: Colors.grey, size: 24),
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 40),
-
-                  const Spacer(),
-
-                  Container(
-                    width: MediaQuery.of(context).size.width * 0.6,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (currentPage == 0) {
-                          _pageController.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        } else {
-                          // Handle final submission
-                          Navigator.pop(context);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'OK',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.close, color: Colors.white, size: 20),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
-            const SizedBox(height: 32),
+            // Step indicator
+            SliverToBoxAdapter(
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                  child: const Center(
+                    child: Text(
+                      '7',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(child: const SizedBox(height: 24)),
+
+            // Title
+            SliverToBoxAdapter(
+              child: const Center(
+                child: Text(
+                  'Address details',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(child: const SizedBox(height: 32)),
+
+            // Page view for address forms - FIXED: Use SliverToBoxAdapter instead of SliverFillRemaining
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.5, // Fixed height to avoid intrinsic dimension issues
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      currentPage = index;
+                    });
+                  },
+                  children: [_buildFirstAddressForm(), _buildSecondAddressForm()],
+                ),
+              ),
+            ),
+
+            // Add extra space at the bottom for the button
+            SliverToBoxAdapter(child: const SizedBox(height: 100)),
           ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
+        child: SizedBox(
+          height: 48,
+          child: BottomButtonsGroup(
+            onPressed: () {
+              if (currentPage == 0) {
+                _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+              } else {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingJobTypeScreen()));
+              }
+            },
+          ),
         ),
       ),
     );
@@ -243,7 +222,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
             style: const TextStyle(fontSize: 16),
           ),
 
-          const Spacer(),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -317,7 +296,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
             style: const TextStyle(fontSize: 16),
           ),
 
-          const Spacer(),
+          const SizedBox(height: 32),
         ],
       ),
     );

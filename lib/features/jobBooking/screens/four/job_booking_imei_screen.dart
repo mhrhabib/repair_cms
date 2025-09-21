@@ -88,13 +88,13 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                     // Dropdown list
                     const Spacer(),
 
-                    BottomButtonsGroup(
-                      onPressed: () {
-                        Navigator.of(
-                          context,
-                        ).push(MaterialPageRoute(builder: (context) => JobBookingDeviceSecurityScreen()));
-                      },
-                    ),
+                    // BottomButtonsGroup(
+                    //   onPressed: () {
+                    //     Navigator.of(
+                    //       context,
+                    //     ).push(MaterialPageRoute(builder: (context) => JobBookingDeviceSecurityScreen()));
+                    //   },
+                    // ),
 
                     // Navigation buttons
                     SizedBox(height: 32.h),
@@ -103,6 +103,24 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
               ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 2.h : 8.h,
+          left: 24.w,
+          right: 24.w,
+        ),
+        child: BottomButtonsGroup(
+          onPressed: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingDeviceSecurityScreen()));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Selected accessory: ${_imeiController.text}'),
+                backgroundColor: AppColors.primary,
+              ),
+            );
+          },
         ),
       ),
     );

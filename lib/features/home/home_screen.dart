@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:feather_icons/feather_icons.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dasboard/dashboard_screen.dart';
@@ -213,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         onTap: () {
                           // Handle New Job action
                           Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingFirstScreen()));
-                          print('New Job tapped');
+                          debugPrint('New Job tapped');
                           _toggleExpansion();
                         },
                       ),
@@ -227,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
                           // Handle Barcode Scanner action
-                          print('Barcode Scanner tapped');
+                          debugPrint('Barcode Scanner tapped');
                           _toggleExpansion();
                         },
                       ),
@@ -240,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
                           // Handle QR Scanner action
-                          print('QR Scanner tapped');
+                          debugPrint('QR Scanner tapped');
                           _toggleExpansion();
                         },
                       ),

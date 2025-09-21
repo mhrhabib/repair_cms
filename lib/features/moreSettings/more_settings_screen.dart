@@ -10,9 +10,9 @@ class MoreSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.scaffoldBackgroundColor,
         elevation: 0,
         title: const Text(
           'More',
@@ -22,7 +22,7 @@ class MoreSettingsScreen extends StatelessWidget {
         leading: Container(), // Empty container to hide back button
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Column(
           children: [
             // Printer Settings

@@ -46,6 +46,8 @@ dependencies:
   font_awesome_flutter: ^10.9.1
   feather_icons: ^1.2.0
   solar_icons: ^0.0.5
+  drop_down_search_field: ^1.2.2
+  image_picker: ^1.2.0
 
 dev_dependencies:
   flutter_test:
