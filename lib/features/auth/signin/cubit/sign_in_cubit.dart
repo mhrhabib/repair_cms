@@ -1,0 +1,63 @@
+// cubits/sign_in_cubit.dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
+
+import '../models/find_user_response_model.dart';
+import '../models/login_response_model.dart';
+
+part 'sign_in_states.dart';
+
+class SignInCubit extends Cubit<SignInStates> {
+  final SignInRepository repository;
+
+  SignInCubit({required this.repository}) : super(SignInInitial());
+
+  Future<void> findUserByEmail(String email) async {
+    emit(SignInLoading());
+    try {
+      final FindUserResponseModel response = await repository.findUserByEmail(email);
+
+      if (response.success) {
+        emit(SignInSuccess(email: email, message: response.message));
+      } else {
+        emit(SignInError(message: response.message));
+      }
+    } catch (e) {
+      emit(SignInError(message: e.toString()));
+    }
+  }
+
+  Future<void> login(String email, String password) async {
+    emit(SignInLoading());
+    try {
+      final LoginResponseModel response = await repository.login(email, password);
+
+      if (response.success) {
+        // Save token and user data to storage
+        if (response.data != null) {
+          await storage.write('token', response.data!.accessToken);
+          await storage.write('user', response.data!.user.toJson());
+          await storage.write('isLoggedIn', true);
+        }
+
+        emit(
+          LoginSuccess(
+            email: email,
+            message: response.message,
+            user: response.data?.user,
+            token: response.data?.accessToken,
+          ),
+        );
+      } else {
+        emit(SignInError(message: response.error ?? response.message));
+      }
+    } catch (e) {
+      emit(SignInError(message: e.toString()));
+    }
+  }
+
+  void reset() {
+    emit(SignInInitial());
+  }
+}

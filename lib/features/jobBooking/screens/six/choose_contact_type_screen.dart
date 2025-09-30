@@ -305,7 +305,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                                       ),
                                     ),
                                   );
-                                }).toList(),
+                                }),
                               ],
                             ),
                           ),

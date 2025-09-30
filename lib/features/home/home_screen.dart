@@ -170,7 +170,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           builder: (context, child) {
             return Transform.rotate(
               angle: _rotationAnimation.value * 4.2 * math.pi,
-              child: Icon(_isExpanded ? Icons.close : Icons.add, color: AppColors.whiteColor, size: 32.sp),
+              child: Icon(
+                _isExpanded ? Icons.close : Icons.add,
+                color: AppColors.whiteColor,
+                size: 32.sp,
+                weight: 800,
+                fill: 0.8,
+              ),
             );
           },
         ),

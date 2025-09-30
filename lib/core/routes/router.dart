@@ -19,7 +19,10 @@ class AppRouter {
       GoRoute(path: RouteNames.dashboard, builder: (context, state) => DashboardScreen()),
       GoRoute(path: RouteNames.getStarted, builder: (context, state) => const GetStartedScreen()),
       GoRoute(path: RouteNames.signIn, builder: (context, state) => SignInScreen()),
-      GoRoute(path: RouteNames.passwordInput, builder: (context, state) => PasswordInputScreen()),
+      GoRoute(
+        path: RouteNames.passwordInput,
+        builder: (context, state) => PasswordInputScreen(email: state.extra as String),
+      ),
       GoRoute(path: RouteNames.passwordForgotten, builder: (context, state) => PasswordForgottenScreen()),
       GoRoute(
         path: RouteNames.verifyCode,

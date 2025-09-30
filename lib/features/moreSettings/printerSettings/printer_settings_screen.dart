@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/features/moreSettings/labelContent/label_content_screen.dart';
 import 'package:repair_cms/features/moreSettings/notificationSetting/notification_settings_screen.dart';
-import 'package:repair_cms/features/moreSettings/printerSettings/printer_settings_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 
-class MoreSettingsScreen extends StatelessWidget {
-  const MoreSettingsScreen({super.key});
+class PrinterSettingsScreen extends StatelessWidget {
+  const PrinterSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +15,7 @@ class MoreSettingsScreen extends StatelessWidget {
         backgroundColor: AppColors.scaffoldBackgroundColor,
         elevation: 0,
         title: const Text(
-          'More',
+          'Printer Settings',
           style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
@@ -28,11 +27,11 @@ class MoreSettingsScreen extends StatelessWidget {
           children: [
             // Printer Settings
             _buildSettingsItem(
-              icon: SolarIconsOutline.printer,
+              icon: SolarIconsOutline.document1,
               iconColor: Colors.blue,
-              title: 'A4 Printer Settings',
+              title: 'A4 Receipt Printer',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
+                // Navigate to printer settings
               },
             ),
 
@@ -47,9 +46,9 @@ class MoreSettingsScreen extends StatelessWidget {
 
             // Label Content
             _buildSettingsItem(
-              icon: SolarIconsOutline.laptopMinimalistic,
+              icon: SolarIconsOutline.documentMedicine,
               iconColor: Colors.blue,
-              title: 'Label Content',
+              title: 'Thermal Printer (80mm)',
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => LabelContentScreen()));
               },
@@ -66,9 +65,9 @@ class MoreSettingsScreen extends StatelessWidget {
 
             // Notification Settings
             _buildSettingsItem(
-              icon: SolarIconsOutline.bell,
+              icon: SolarIconsOutline.document,
               iconColor: Colors.blue,
-              title: 'Notification Settings',
+              title: 'Label Printer',
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationSettingsScreen()));
               },

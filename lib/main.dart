@@ -1,9 +1,16 @@
+import 'package:get_storage/get_storage.dart';
+import 'package:oktoast/oktoast.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
+import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
+import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
+import 'package:repair_cms/set_up_di.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  await GetStorage.init();
+  await SetUpDI.instance.init();
+  runApp(OKToast(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -11,17 +18,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      child: MultiBlocProvider(
-        providers: [BlocProvider(create: (_) => ForgotPasswordCubit())],
-        child: MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          title: 'Flutter Demo',
-          theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-          routerConfig: AppRouter.router,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => SignInCubit(repository: SetUpDI.getIt<SignInRepository>())),
+        BlocProvider(create: (context) => ForgotPasswordCubit()),
+      ],
+      child: ScreenUtilInit(
+        designSize: const Size(375, 812),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        child: MultiBlocProvider(
+          providers: [BlocProvider(create: (_) => ForgotPasswordCubit())],
+          child: MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            title: 'Repair CMS',
+            theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+            routerConfig: AppRouter.router,
+          ),
         ),
       ),
     );

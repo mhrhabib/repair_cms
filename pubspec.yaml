@@ -48,6 +48,11 @@ dependencies:
   solar_icons: ^0.0.5
   drop_down_search_field: ^1.2.2
   image_picker: ^1.2.0
+  local_auth: ^2.3.0
+  local_auth_ios: ^1.1.7
+  local_auth_android: ^1.0.52
+  get_it: ^8.2.0
+  oktoast: ^3.4.0
 
 dev_dependencies:
   flutter_test:

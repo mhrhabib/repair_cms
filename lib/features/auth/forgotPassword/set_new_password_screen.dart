@@ -1,6 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
 import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
+import 'package:repair_cms/features/home/home_screen.dart';
 
 class SetNewPasswordScreen extends StatefulWidget {
   const SetNewPasswordScreen({super.key, required this.email});
@@ -69,6 +69,9 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
   Widget build(BuildContext context) {
     return BlocListener<ForgotPasswordCubit, ForgotPasswordState>(
       listener: (context, state) {
+        if (state is ForgotPasswordSuccess) {
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const HomeScreen()));
+        }
         if (state is ForgotPasswordError) {
           ScaffoldMessenger.of(
             context,

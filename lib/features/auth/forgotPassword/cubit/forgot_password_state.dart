@@ -11,6 +11,8 @@ class ForgotPasswordInitial extends ForgotPasswordState {}
 
 class ForgotPasswordLoading extends ForgotPasswordState {}
 
+class ForgotPasswordSuccess extends ForgotPasswordState {}
+
 class ForgotPasswordEmailSent extends ForgotPasswordState {
   final String email;
   const ForgotPasswordEmailSent(this.email);

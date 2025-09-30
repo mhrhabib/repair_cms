@@ -121,12 +121,12 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                             onPanStart: _onPanStart,
                             onPanUpdate: _onPanUpdate,
                             onPanEnd: _onPanEnd,
-                            child: Container(
+                            child: SizedBox(
                               width: double.infinity,
                               height: double.infinity,
                               child: CustomPaint(
                                 painter: SignaturePainter(signaturePaths: _signaturePaths, currentPath: _currentPath),
-                                child: Container(
+                                child: SizedBox(
                                   width: double.infinity,
                                   height: double.infinity,
                                   child: Center(

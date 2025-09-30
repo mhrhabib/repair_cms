@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -155,7 +157,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
 
                         const Spacer(),
 
-                        Container(
+                        SizedBox(
                           width: MediaQuery.of(context).size.width * 0.6,
                           height: 48,
                           child: ElevatedButton(
@@ -240,7 +242,10 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
             child: Container(
               width: 24,
               height: 24,
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: const Icon(Icons.close, color: Colors.white, size: 16),
             ),
           ),

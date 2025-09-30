@@ -16,7 +16,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
-  bool _isTwoFactorEnabled = true;
+  final bool _isTwoFactorEnabled = true;
   bool _isTrustedEmailEnabled = true;
 
   // Track original values to detect changes
@@ -303,16 +303,18 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
       // Bottom Save Button (same pattern as Personal Details)
       bottomNavigationBar: _hasChanges
-          ? Container(
-              color: Colors.transparent,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 2,
-                  left: 12.w,
-                  right: 12.w,
-                  top: 2,
+          ? SafeArea(
+              child: Container(
+                color: Colors.transparent,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 2,
+                    left: 12.w,
+                    right: 12.w,
+                    top: 2,
+                  ),
+                  child: CustomButton(text: 'Save', onPressed: _canSave ? _saveChanges : null),
                 ),
-                child: CustomButton(text: 'Save', onPressed: _canSave ? _saveChanges : null),
               ),
             )
           : const SizedBox.shrink(),

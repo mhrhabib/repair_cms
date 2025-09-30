@@ -57,7 +57,7 @@ class ForgotPasswordCubit extends Cubit<ForgotPasswordState> {
       }
 
       // Simulate successful password reset
-      emit(ForgotPasswordInitial()); // Return to initial state after success
+      emit(ForgotPasswordSuccess()); // Return to initial state after success
     } catch (e) {
       emit(ForgotPasswordError('Password reset failed: ${e.toString()}'));
     }

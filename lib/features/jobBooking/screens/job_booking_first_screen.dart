@@ -13,7 +13,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   final FocusNode _searchFocusNode = FocusNode();
 
   bool _hasSearchResults = false;
-  List<ServiceItem> _selectedServices = [];
+  final List<ServiceItem> _selectedServices = [];
 
   final List<ServiceItem> _allServices = [
     ServiceItem(

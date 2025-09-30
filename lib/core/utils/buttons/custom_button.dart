@@ -55,6 +55,7 @@ class CustomButton extends StatelessWidget {
     this.elevation = 2.0,
     this.textStyle,
     this.expandWidth = true,
+    SizedBox? child,
   });
 
   @override

@@ -122,7 +122,7 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
 
                         const Spacer(),
 
-                        Container(
+                        SizedBox(
                           width: MediaQuery.of(context).size.width * 0.6,
                           height: 48,
                           child: ElevatedButton(

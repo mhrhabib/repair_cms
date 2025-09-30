@@ -53,7 +53,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   void _saveChanges() {
     // Implement save logic here
-    print('Saving changes...');
+    debugPrint('Saving changes...');
     // After saving, you might want to update the original values
     // _originalName = _nameController.text;
     // etc.
@@ -208,16 +208,18 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
       // 👇 Stick the button to bottom and move it with keyboard (like the sign-in screen)
       bottomNavigationBar: _hasChanges
-          ? Container(
-              color: Colors.transparent,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 2, // Moves with keyboard
-                  left: 12.w,
-                  right: 12.w,
-                  top: 2,
+          ? SafeArea(
+              child: Container(
+                color: Colors.transparent,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 2, // Moves with keyboard
+                    left: 12.w,
+                    right: 12.w,
+                    top: 2,
+                  ),
+                  child: CustomButton(text: 'Save', onPressed: _saveChanges),
                 ),
-                child: CustomButton(text: 'Save', onPressed: _saveChanges),
               ),
             )
           : const SizedBox.shrink(),
