@@ -1,10 +1,12 @@
+// screens/password_forgotten_screen.dart
+
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
-
 import 'cubit/forgot_password_cubit.dart';
 
 class PasswordForgottenScreen extends StatefulWidget {
-  const PasswordForgottenScreen({super.key});
+  const PasswordForgottenScreen({super.key, required this.email});
+  final String email;
 
   @override
   State<PasswordForgottenScreen> createState() => PasswordForgottenScreenState();
@@ -19,10 +21,12 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
   @override
   void initState() {
     super.initState();
+    _emailController.text = widget.email;
     _emailController.addListener(_validateEmail);
     _emailFocusNode.addListener(() {
       setState(() {});
     });
+    _validateEmail(); // Validate initial email
   }
 
   void _validateEmail() {
@@ -33,11 +37,10 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
     });
   }
 
-  void _navigateToNextScreen() {
+  void _handleSendOtp() {
     if (_formKey.currentState!.validate() && _isEmailValid) {
       final cubit = context.read<ForgotPasswordCubit>();
-      cubit.sendResetEmail(_emailController.text);
-      context.push(RouteNames.verifyCode, extra: _emailController.text);
+      cubit.sendResetEmail(_emailController.text.trim());
     }
   }
 
@@ -67,91 +70,119 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenWidth > 600;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(iconTheme: IconThemeData(color: AppColors.primary, weight: 800, fill: 0.4)),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: SizedBox(
-              width: isLargeScreen ? 400 : screenWidth * 0.9,
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title
-                    Center(
-                      child: Text(
-                        'Password Forgotten',
-                        style: AppTypography.sfProHeadLineTextStyle28,
-                        textAlign: TextAlign.center,
+    return BlocListener<ForgotPasswordCubit, ForgotPasswordState>(
+      listener: (context, state) {
+        if (state is ForgotPasswordEmailSent) {
+          showCustomToast(state.message, isError: false);
+          // Navigate to verify code screen
+          context.push(RouteNames.verifyCode, extra: _emailController.text.trim());
+        } else if (state is ForgotPasswordError) {
+          showCustomToast(state.message, isError: true);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(iconTheme: IconThemeData(color: AppColors.primary, weight: 800, fill: 0.4)),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              child: SizedBox(
+                width: isLargeScreen ? 400 : screenWidth * 0.9,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Center(
+                        child: Text(
+                          'Password Forgotten',
+                          style: AppTypography.sfProHeadLineTextStyle28,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                    ),
 
-                    SizedBox(height: screenHeight * 0.08),
+                      SizedBox(height: screenHeight * 0.08),
 
-                    // Email Label
-                    const SizedBox(height: 8),
+                      // Email Label
+                      const SizedBox(height: 8),
 
-                    // Email Input Field
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
-                      ),
-                      child: Row(
-                        children: [
-                          Text('Email', style: AppTypography.sfProHintTextStyle17),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _emailController,
-                              focusNode: _emailFocusNode,
-                              style: AppTypography.sfProHintTextStyle17,
-                              decoration: InputDecoration(
-                                hintText: 'your@business.com',
-                                hintStyle: AppTypography.sfProHintTextStyle17,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
+                      // Email Input Field
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
+                        ),
+                        child: Row(
+                          children: [
+                            Text('Email', style: AppTypography.sfProHintTextStyle17),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _emailController,
+                                focusNode: _emailFocusNode,
+                                style: AppTypography.sfProHintTextStyle17,
+                                decoration: InputDecoration(
+                                  hintText: 'your@business.com',
+                                  hintStyle: AppTypography.sfProHintTextStyle17,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  suffixIcon: _isEmailValid
+                                      ? Container(
+                                          margin: EdgeInsets.only(right: RadiusConstants.md),
+                                          child: Icon(Icons.check_circle, color: AppColors.greenColor, size: 30.w),
+                                        )
+                                      : null,
+                                  errorStyle: const TextStyle(color: Colors.red, fontSize: 14),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                suffixIcon: _isEmailValid
-                                    ? Container(
-                                        margin: EdgeInsets.only(right: RadiusConstants.md),
-                                        child: Icon(Icons.check_circle, color: AppColors.greenColor, size: 30.w),
-                                      )
-                                    : null,
-                                errorStyle: TextStyle(color: Colors.red, fontSize: 14),
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.done,
+                                validator: _emailValidator,
+                                onFieldSubmitted: (_) => _handleSendOtp(),
                               ),
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.done,
-                              validator: _emailValidator,
-                              onFieldSubmitted: (_) => _navigateToNextScreen(),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    SizedBox(height: screenHeight * 0.12),
+                      SizedBox(height: screenHeight * 0.12),
 
-                    // Progress Indicator
-                    ThreeDotsPointerWidget(
-                      primaryColor: AppColors.primary,
-                      secondaryColor: AppColors.secondary,
-                      activeIndex: 1,
-                    ),
+                      // Progress Indicator
+                      ThreeDotsPointerWidget(
+                        primaryColor: AppColors.primary,
+                        secondaryColor: AppColors.secondary,
+                        activeIndex: 1,
+                      ),
 
-                    const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                    // Confirm Email Button
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: CustomButton(text: 'Request New Password', onPressed: _navigateToNextScreen),
-                    ),
-                  ],
+                      // Request New Password Button
+                      BlocBuilder<ForgotPasswordCubit, ForgotPasswordState>(
+                        builder: (context, state) {
+                          return Align(
+                            alignment: Alignment.bottomCenter,
+                            child: CustomButton(
+                              text: 'Request New Password',
+                              onPressed: state is ForgotPasswordLoading ? null : _handleSendOtp,
+                              child: state is ForgotPasswordLoading
+                                  ? SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

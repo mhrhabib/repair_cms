@@ -1,7 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
-import 'package:repair_cms/core/helpers/storage.dart';
-import 'package:repair_cms/core/services/biometric_service.dart';
+import 'package:repair_cms/core/services/biometric_storage_service.dart';
 import 'package:repair_cms/features/auth/signin/models/login_response_model.dart';
 import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
@@ -19,13 +17,12 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _passwordFocusNode = FocusNode();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final BiometricService _biometricService = BiometricService();
 
   bool _isPasswordValid = false;
   bool _obscureText = true;
-  bool _isBiometricEnabled = false;
-  bool _isBiometricAvailable = false;
-  String _biometricType = 'Biometric';
+
+  bool _hasStoredCredentials = false;
+  final String _biometricType = 'Biometric';
 
   @override
   void initState() {
@@ -33,32 +30,6 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     _passwordController.addListener(_validatePassword);
     _passwordFocusNode.addListener(() {
       setState(() {});
-    });
-    _checkBiometricAvailability();
-    _loadBiometricPreference();
-  }
-
-  void _checkBiometricAvailability() async {
-    final canCheckBiometrics = await _biometricService.checkBiometrics();
-    final availableBiometrics = await _biometricService.getAvailableBiometrics();
-
-    setState(() {
-      _isBiometricAvailable = canCheckBiometrics && availableBiometrics.isNotEmpty;
-      _biometricType = _biometricService.getBiometricTypeName(availableBiometrics);
-    });
-  }
-
-  void _loadBiometricPreference() async {
-    final isEnabled = await storage.read('biometric_enabled') ?? false;
-    setState(() {
-      _isBiometricEnabled = isEnabled;
-    });
-  }
-
-  void _saveBiometricPreference(bool value) async {
-    await storage.write('biometric_enabled', value);
-    setState(() {
-      _isBiometricEnabled = value;
     });
   }
 
@@ -73,24 +44,43 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     context.pushReplacement(RouteNames.home);
   }
 
-  void _navigateToDashboard(User user) {
-    context.pushReplacement(RouteNames.dashboard);
+  Future<void> _saveBiometricCredentials() async {
+    try {
+      await BiometricStorageService.saveBiometricCredentials(email: widget.email, password: _passwordController.text);
+      showCustomToast('$_biometricType authentication enabled', isError: false);
+    } catch (e) {
+      showCustomToast('Failed to save $_biometricType credentials', isError: true);
+    }
   }
 
-  Future<void> _authenticateWithBiometrics() async {
-    final isAuthenticated = await _biometricService.authenticate();
-    if (isAuthenticated) {
-      // Try to login with stored credentials
-      final storedEmail = await storage.read('last_email');
-      final storedPassword = await storage.read('last_password');
-
-      if (storedEmail != null && storedPassword != null) {
-        context.read<SignInCubit>().login(storedEmail, storedPassword);
-      } else {
-        showCustomToast('No stored credentials found', isError: true);
-      }
+  Future<void> _toggleBiometricAuthentication() async {
+    if (_hasStoredCredentials) {
+      // Disable biometric
+      await BiometricStorageService.disableBiometric();
+      setState(() {
+        _hasStoredCredentials = false;
+      });
+      showCustomToast('$_biometricType authentication disabled');
     } else {
-      showCustomToast('Authentication failed', isError: true);
+      // Enable biometric - Show confirmation dialog
+      bool? shouldEnable = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Enable $_biometricType?'),
+          content: Text('Do you want to enable $_biometricType authentication for quick login?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text('Enable')),
+          ],
+        ),
+      );
+
+      if (shouldEnable == true) {
+        await _saveBiometricCredentials();
+        setState(() {
+          _hasStoredCredentials = true;
+        });
+      }
     }
   }
 
@@ -143,20 +133,8 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                   if (state is LoginSuccess) {
                     showCustomToast(state.message, isError: false);
 
-                    // Store credentials if biometric is enabled
-                    if (_isBiometricEnabled) {
-                      storage.write('last_email', widget.email);
-                      storage.write('last_password', _passwordController.text);
-                    }
-
                     // Navigate based on user role or other conditions
                     if (state.user != null) {
-                      if (state.user!.repaircmsAccess) {
-                        _navigateToDashboard(state.user!);
-                      } else {
-                        _navigateToHome(state.user!);
-                      }
-                    } else {
                       _navigateToHome(state.user!);
                     }
                   } else if (state is SignInError) {
@@ -173,7 +151,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                         // Title
                         Center(
                           child: Text(
-                            'Sign Into your Account',
+                            'Enter Your Password',
                             style: AppTypography.sfProHeadLineTextStyle28,
                             textAlign: TextAlign.center,
                           ),
@@ -181,8 +159,12 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
 
                         SizedBox(height: screenHeight * 0.08),
 
-                        // Password Label
-                        const SizedBox(height: 8),
+                        // Email display
+                        Center(
+                          child: Text(widget.email, style: AppTypography.sfProText15.copyWith(color: Colors.grey)),
+                        ),
+
+                        SizedBox(height: 20),
 
                         // Password Input Field
                         Container(
@@ -216,7 +198,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                                             child: Container(
                                               margin: const EdgeInsets.only(right: 8),
                                               child: Icon(
-                                                _obscureText ? Icons.visibility : Icons.visibility_off,
+                                                _obscureText ? Icons.visibility_off : Icons.visibility,
                                                 color: Colors.grey[600],
                                                 size: 24,
                                               ),
@@ -242,32 +224,29 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                         SizedBox(height: 16),
 
                         // Biometric Authentication Toggle
-                        if (_isBiometricAvailable) ...[
-                          GestureDetector(
-                            onTap: () {
-                              _saveBiometricPreference(!_isBiometricEnabled);
-                            },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: _isBiometricEnabled ? AppColors.greenColor : Colors.transparent,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.grey[400]!, width: 1),
-                                  ),
-                                  child: _isBiometricEnabled ? Icon(Icons.check, color: Colors.white, size: 18) : null,
+                        GestureDetector(
+                          onTap: _toggleBiometricAuthentication,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: _hasStoredCredentials ? AppColors.greenColor : Colors.transparent,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.grey[400]!, width: 1),
                                 ),
-                                const SizedBox(width: 12),
-                                Text('Enable $_biometricType for authentication', style: AppTypography.sfProText15),
-                              ],
-                            ),
+                                child: _hasStoredCredentials ? Icon(Icons.check, color: Colors.white, size: 18) : null,
+                              ),
+                              const SizedBox(width: 12),
+                              Text('Enable $_biometricType for quick login', style: AppTypography.sfProText15),
+                            ],
                           ),
-                          SizedBox(height: 20.h),
-                        ],
+                        ),
+                        SizedBox(height: 12),
 
+                        //
                         Container(
                           height: 1,
                           decoration: BoxDecoration(
@@ -297,21 +276,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                           activeIndex: 2,
                         ),
 
-                        const SizedBox(height: 12),
-
-                        // Biometric Login Button (if available and enabled)
-                        if (_isBiometricAvailable && _isBiometricEnabled) ...[
-                          CustomButton(
-                            trailingIcon: Icon(
-                              _biometricType.contains('Face') ? Icons.face : Icons.fingerprint,
-                              size: 24.sp,
-                            ),
-                            text: 'Login with $_biometricType',
-                            onPressed: _authenticateWithBiometrics,
-                            backgroundColor: AppColors.secondary,
-                          ),
-                          const SizedBox(height: 12),
-                        ],
+                        const SizedBox(height: 20),
 
                         // Sign In Button
                         CustomButton(

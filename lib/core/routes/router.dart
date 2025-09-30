@@ -23,7 +23,10 @@ class AppRouter {
         path: RouteNames.passwordInput,
         builder: (context, state) => PasswordInputScreen(email: state.extra as String),
       ),
-      GoRoute(path: RouteNames.passwordForgotten, builder: (context, state) => PasswordForgottenScreen()),
+      GoRoute(
+        path: RouteNames.passwordForgotten,
+        builder: (context, state) => PasswordForgottenScreen(email: state.extra as String),
+      ),
       GoRoute(
         path: RouteNames.verifyCode,
         builder: (context, state) => VerifyCodeScreen(email: state.extra as String),

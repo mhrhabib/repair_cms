@@ -28,6 +28,14 @@ class SignInCubit extends Cubit<SignInStates> {
     }
   }
 
+  String userType = '';
+  String userId = '';
+
+  void saveUserTypeandId(String userType, String userId) async {
+    this.userType = userType;
+    this.userId = userId;
+  }
+
   Future<void> login(String email, String password) async {
     emit(SignInLoading());
     try {
@@ -39,6 +47,7 @@ class SignInCubit extends Cubit<SignInStates> {
           await storage.write('token', response.data!.accessToken);
           await storage.write('user', response.data!.user.toJson());
           await storage.write('isLoggedIn', true);
+          saveUserTypeandId(response.data!.user.userType, response.data!.user.id);
         }
 
         emit(

@@ -1,4 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,7 +18,11 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void navigateToGetStarted() {
-    context.go(RouteNames.getStarted);
+    if (storage.read('token') != null) {
+      context.go(RouteNames.home);
+    } else {
+      context.go(RouteNames.getStarted);
+    }
   }
 
   @override

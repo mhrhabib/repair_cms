@@ -1,4 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'dart:math' as math;
 import 'widgets/enhanced_search_widget.dart';
@@ -17,7 +18,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0));
 
   @override
+  void initState() {
+    print(context.read<SignInCubit>().userType);
+    print(context.read<SignInCubit>().userId);
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    print(context.read<SignInCubit>().userType);
+    print(context.read<SignInCubit>().userId);
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundColor,
       body: SafeArea(

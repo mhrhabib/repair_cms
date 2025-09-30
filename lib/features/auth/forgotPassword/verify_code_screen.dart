@@ -1,5 +1,5 @@
+// screens/verify_code_screen.dart
 import 'dart:async';
-
 import 'package:pinput/pinput.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
@@ -64,12 +64,13 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     return BlocConsumer<ForgotPasswordCubit, ForgotPasswordState>(
       listener: (context, state) {
         if (state is ForgotPasswordError) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: Colors.red));
+          showCustomToast(state.message, isError: true);
         } else if (state is ForgotPasswordOtpVerified) {
+          showCustomToast(state.message, isError: false);
           // Navigate to reset password screen
           context.push(RouteNames.setNewPassword, extra: widget.email);
+        } else if (state is ForgotPasswordEmailSent) {
+          showCustomToast('Verification code sent successfully!', isError: false);
         }
       },
       builder: (context, state) {

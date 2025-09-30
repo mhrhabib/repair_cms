@@ -1,5 +1,8 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'package:local_auth/local_auth.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:repair_cms/core/services/biometric_storage_service.dart';
 import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
@@ -16,21 +19,46 @@ class _SignInScreenState extends State<SignInScreen> {
   final FocusNode _emailFocusNode = FocusNode();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isEmailValid = false;
+  bool _showBiometricOption = false;
+  bool _hasCheckedBiometric = false;
 
   @override
   void initState() {
     super.initState();
-
     _emailController.addListener(_validateEmail);
 
     // Open keyboard automatically
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_emailFocusNode);
+      _checkBiometricOnStart();
     });
 
     _emailFocusNode.addListener(() {
       setState(() {});
     });
+  }
+
+  void _checkBiometricOnStart() async {
+    try {
+      final isBiometricEnabled = await BiometricStorageService.isBiometricEnabled();
+      final hasCredentials = await BiometricStorageService.hasBiometricCredentials();
+
+      setState(() {
+        _showBiometricOption = isBiometricEnabled && hasCredentials;
+        _hasCheckedBiometric = true;
+      });
+
+      // SHOW DIALOG AUTOMATICALLY if biometric is enabled
+      if (isBiometricEnabled && hasCredentials) {
+        // Add a small delay to ensure the screen is fully built
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+    } catch (e) {
+      debugPrint('Error checking biometric status: $e');
+      setState(() {
+        _hasCheckedBiometric = true;
+      });
+    }
   }
 
   void _validateEmail() {
@@ -71,6 +99,14 @@ class _SignInScreenState extends State<SignInScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenWidth > 600;
 
+    //Show loading until biometric check is complete
+    if (!_hasCheckedBiometric) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
+
     return BlocProvider(
       create: (context) => SignInCubit(repository: SignInRepository()),
       child: Scaffold(
@@ -108,7 +144,22 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
 
-                          SizedBox(height: screenHeight * 0.08),
+                          // Biometric Quick Access Button
+                          // if (_showBiometricOption) ...[
+                          //   SizedBox(height: screenHeight * 0.04),
+                          //   CustomButton(
+                          //     trailingIcon: Icon(Icons.fingerprint, size: 24.sp),
+                          //     text: 'Quick Login with Biometric',
+                          //     onPressed: _showBiometricLoginDialog,
+                          //     backgroundColor: AppColors.secondary,
+                          //   ),
+                          //   SizedBox(height: screenHeight * 0.04),
+                          //   const Center(
+                          //     child: Text('or', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                          //   ),
+                          //   SizedBox(height: screenHeight * 0.02),
+                          // ],
+                          SizedBox(height: screenHeight * 0.02),
 
                           // Email Input
                           Container(
@@ -174,32 +225,106 @@ class _SignInScreenState extends State<SignInScreen> {
         // Bottom Button
         bottomNavigationBar: Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16, left: 16, right: 16, top: 8),
-          child: BlocBuilder<SignInCubit, SignInStates>(
-            builder: (context, state) {
-              return CustomButton(
-                text: 'Confirm Email',
-                onPressed: state is SignInLoading
-                    ? null
-                    : () {
-                        if (_formKey.currentState!.validate() && _isEmailValid) {
-                          context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
-                        }
-                      },
-                child: state is SignInLoading
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
-                        ),
-                      )
-                    : null,
-              );
-            },
+          child: Row(
+            children: [
+              Expanded(
+                child: BlocBuilder<SignInCubit, SignInStates>(
+                  builder: (context, state) {
+                    return CustomButton(
+                      text: 'Confirm Email',
+                      onPressed: state is SignInLoading
+                          ? null
+                          : () {
+                              if (_formKey.currentState!.validate() && _isEmailValid) {
+                                context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
+                              }
+                            },
+                      child: state is SignInLoading
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
+                              ),
+                            )
+                          : null,
+                    );
+                  },
+                ),
+              ),
+              if (_showBiometricOption) ...[
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
+                  child: IconButton(
+                    onPressed: _authenticateWithBiometric,
+                    icon: Icon(Icons.fingerprint, size: 28, color: Colors.white),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _authenticateWithBiometric() async {
+    try {
+      debugPrint('🟢 Button clicked - starting biometric auth');
+
+      final LocalAuthentication auth = LocalAuthentication();
+
+      // Check availability - exactly like your demo
+      final bool isAvailable = await auth.canCheckBiometrics;
+      final bool isDeviceSupported = await auth.isDeviceSupported();
+
+      debugPrint('📱 isAvailable: $isAvailable, isDeviceSupported: $isDeviceSupported');
+
+      if (!isAvailable || !isDeviceSupported) {
+        showCustomToast('Biometric not available', isError: true);
+        return;
+      }
+
+      debugPrint('🚀 Calling authenticate - system prompt should appear now...');
+
+      // Call authenticate - THIS should show the system bottom sheet
+      final bool didAuthenticate = await auth.authenticate(
+        localizedReason: 'Scan your fingerprint or face to continue',
+        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
+      );
+
+      debugPrint('✅ Authentication completed: $didAuthenticate');
+
+      if (didAuthenticate) {
+        debugPrint('🎉 Authentication successful!');
+
+        // Get saved credentials
+        final credentials = await BiometricStorageService.getBiometricCredentials();
+
+        if (credentials['email'] != null && credentials['password'] != null) {
+          _emailController.text = credentials['email']!;
+          setState(() {
+            _isEmailValid = true;
+          });
+
+          showCustomToast('Login successful!', isError: false);
+
+          if (mounted) {
+            context.push(RouteNames.home, extra: credentials['email']!);
+          }
+        } else {
+          showCustomToast('Credentials not found', isError: true);
+        }
+      } else {
+        debugPrint('❌ Authentication failed or canceled');
+        showCustomToast('Authentication canceled', isError: true);
+      }
+    } catch (e) {
+      debugPrint('💥 Error: $e');
+      showCustomToast('Error: $e', isError: true);
+    }
   }
 }

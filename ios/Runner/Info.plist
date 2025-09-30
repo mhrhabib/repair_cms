@@ -16,6 +16,8 @@
 	<string>repair_cms</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to quickly and securely access your account</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
