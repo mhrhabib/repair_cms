@@ -1,9 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
+import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 
 class JobDetailsScreen extends StatefulWidget {
-  const JobDetailsScreen({super.key});
+  final Job job;
+
+  const JobDetailsScreen({super.key, required this.job});
 
   @override
   State<JobDetailsScreen> createState() => _JobDetailsScreenState();
@@ -22,52 +26,74 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   String selectedAssignee = 'Susan Lemmes';
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize job complete status based on actual job status
+    isJobComplete = widget.job.status.toLowerCase() == 'complete';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Peter Rankovic',
-              style: GoogleFonts.roboto(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
-            ),
-            Text(
-              'Auftrag-Nr: 5922001',
-              style: GoogleFonts.roboto(color: Colors.grey.shade600, fontSize: 12.sp, fontWeight: FontWeight.w400),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        actions: [
-          Stack(
+    return BlocListener<JobCubit, JobStates>(
+      listener: (context, state) {
+        if (state is JobError) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: ${state.message}'), backgroundColor: Colors.red));
+        }
+
+        if (state is JobStatusUpdated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Job status updated successfully'), backgroundColor: Colors.green),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+              Text(
+                widget.job.customerName,
+                style: GoogleFonts.roboto(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
               ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 8.w,
-                  height: 8.h,
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                ),
+              Text(
+                'Auftrag-Nr: ${widget.job.jobNo}',
+                style: GoogleFonts.roboto(color: Colors.grey.shade600, fontSize: 12.sp, fontWeight: FontWeight.w400),
               ),
             ],
           ),
-        ],
+          centerTitle: true,
+          actions: [
+            Stack(
+              children: [
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                ),
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 8.w,
+                    height: 8.h,
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        body: _buildCurrentScreen(),
+        bottomNavigationBar: _buildBottomNavBar(),
       ),
-      body: _buildCurrentScreen(),
-      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
@@ -110,6 +136,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       setState(() {
                         isJobComplete = value;
                       });
+                      // Update job status in backend
+                      if (value) {
+                        context.read<JobCubit>().updateJobStatus(widget.job.id, 'complete', 'Job marked as complete');
+                      }
                     },
                     activeTrackColor: Colors.grey.shade400,
                   ),
@@ -168,9 +198,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       ),
                     ),
                     SizedBox(height: 8.h),
+
                     _buildDropdownField(
                       icon: Icons.flag_outlined,
-                      value: selectedPriority,
+                      value: _getCurrentPriority(),
                       items: ['High', 'Medium', 'Neutral'],
                       onChanged: (value) {
                         setState(() {
@@ -178,7 +209,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         });
                       },
                     ),
-
                     SizedBox(height: 20.h),
 
                     // Due Date
@@ -191,17 +221,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       ),
                     ),
                     SizedBox(height: 8.h),
+
                     _buildDropdownField(
                       icon: Icons.calendar_today_outlined,
-                      value: selectedDueDate,
-                      items: ['14. March 2025', '15. March 2025', '16. March 2025'],
+                      value: '',
+                      items: [],
                       onChanged: (value) {
                         setState(() {
                           selectedDueDate = value!;
                         });
                       },
                     ),
-
                     SizedBox(height: 20.h),
 
                     // Assignee
@@ -214,19 +244,52 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       ),
                     ),
                     SizedBox(height: 8.h),
-                    _buildDropdownField(
-                      icon: Icons.person_outline,
-                      value: selectedAssignee,
-                      items: ['Susan Lemmes', 'John Doe', 'Jane Smith'],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedAssignee = value!;
-                        });
-                      },
-                      hasAvatar: true,
-                    ),
+                    // _buildDropdownField(
+                    //   icon: Icons.person_outline,
+                    //   value: '',
+                    //   items: ['Susan Lemmes', 'John Doe', 'Jane Smith'],
+                    //   onChanged: (value) {
+                    //     setState(() {
+                    //       selectedAssignee = value!;
+                    //     });
+                    //   },
+                    //   hasAvatar: true,
+                    // ),
                   ],
                 ),
+
+                SizedBox(height: 24.h),
+
+                // Customer Information
+                _buildInfoCard(
+                  title: 'Customer Information',
+                  children: [
+                    _buildInfoRow('Name', widget.job.customerName),
+                    SizedBox(height: 12.h),
+                    _buildInfoRow('Email', widget.job.customerDetails.email),
+                    SizedBox(height: 12.h),
+                    _buildInfoRow('Phone', widget.job.customerDetails.telephone),
+                    SizedBox(height: 12.h),
+                    _buildInfoSection('Address', widget.job.customerDetails.shippingAddress.formattedAddress),
+                  ],
+                ),
+
+                SizedBox(height: 24.h),
+
+                // Financial Information
+                if (widget.job.total != '0')
+                  _buildInfoCard(
+                    title: 'Financial Information',
+                    children: [
+                      _buildInfoRow('Subtotal', '€${widget.job.subTotal}'),
+                      SizedBox(height: 8.h),
+                      _buildInfoRow('VAT', '€${widget.job.vat}'),
+                      SizedBox(height: 8.h),
+                      _buildInfoRow('Discount', '€${widget.job.discount}'),
+                      SizedBox(height: 8.h),
+                      _buildInfoRow('Total', '€${widget.job.total}'),
+                    ],
+                  ),
 
                 SizedBox(height: 24.h),
               ],
@@ -237,7 +300,42 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  // New single card that contains tabs and the content styled like the provided image
+  // Helper methods to get real data
+  String _getCurrentPriority() {
+    final lastStatus = widget.job.jobStatus.isNotEmpty ? widget.job.jobStatus.last : null;
+    return lastStatus?.priority?.toString() ?? selectedPriority;
+  }
+
+  // String _getDueDate() {
+  //   // You can calculate due date based on created date + standard turnaround
+  //   final dueDate = widget.job.createdAt.add(const Duration(days: 7));
+  //   return '${dueDate.day}. ${_getMonthName(dueDate.month)} ${dueDate.year}';
+  // }
+
+  String _getCurrentAssignee() {
+    final lastStatus = widget.job.jobStatus.isNotEmpty ? widget.job.jobStatus.last : null;
+    return lastStatus?.userName ?? selectedAssignee;
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[month - 1];
+  }
+
+  // Rest of your existing methods remain the same, but updated with real data:
   Widget _buildTabCard() {
     return Container(
       decoration: BoxDecoration(
@@ -282,7 +380,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           ),
                         ),
                         SizedBox(height: 8.h),
-                        // underline
                         Container(
                           height: 3.h,
                           width: 60.w,
@@ -301,7 +398,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
           Divider(height: 1, color: Colors.grey.shade300),
 
-          // Content area matching the image: labels bold, values lighter and below
+          // Content area with real data
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
             child: _selectedTabIndex == 0 ? _jobDetailsCardContent() : _deviceDetailsCardContent(),
@@ -315,11 +412,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCardInfoRow('Physical location:', '15D'),
+        _buildCardInfoRow('Physical location:', widget.job.physicalLocation ?? 'Not specified'),
         SizedBox(height: 12.h),
-        _buildCardInfoRow('Defect type:', 'LCD-Broken'),
+        _buildCardInfoRow('Defect type:', _getDefectType()),
         SizedBox(height: 12.h),
-        _buildCardInfoSection('Problem Description:', 'Please check LCD & send quote customer in mail'),
+        _buildCardInfoSection('Problem Description:', _getProblemDescription()),
       ],
     );
   }
@@ -328,10 +425,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCardInfoRow('Device:', 'iPhone Xs 64GB Black'),
+        _buildCardInfoRow('Device:', widget.job.deviceInfo),
         SizedBox(height: 12.h),
-        _buildCardInfoRow('IMEI/SN:', '974300791048'),
+        _buildCardInfoRow('IMEI/SN:', widget.job.deviceData.imei ?? 'N/A'),
         SizedBox(height: 12.h),
+        if (widget.job.deviceData.color != null) _buildCardInfoRow('Color:', widget.job.deviceData.color!),
+        if (widget.job.deviceData.color != null) SizedBox(height: 12.h),
         Align(
           alignment: Alignment.center,
           child: Text(
@@ -349,54 +448,24 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  // New stylings that match the reference image
-  Widget _buildCardInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.roboto(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF3A4A67), // slightly muted blue/gray like the reference
-          ),
-        ),
-        SizedBox(width: 6.h),
-        Text(
-          value,
-          style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
-        ),
-      ],
-    );
+  String _getDefectType() {
+    if (widget.job.defect.isNotEmpty && widget.job.defect.first.defect.isNotEmpty) {
+      return widget.job.defect.first.defect.first.value;
+    }
+    return 'Not specified';
   }
 
-  Widget _buildCardInfoSection(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w700, color: Color(0xFF3A4A67)),
-        ),
-        SizedBox(height: 6.h),
-        Text(
-          value,
-          style: GoogleFonts.roboto(
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
-            height: 1.25,
-          ),
-        ),
-      ],
-    );
+  String _getProblemDescription() {
+    if (widget.job.defect.isNotEmpty) {
+      return widget.job.defect.first.description ?? 'No description provided';
+    }
+    return 'No description provided';
   }
 
+  // Updated receipts screen with real data
   Widget _buildReceiptsScreen() {
     return Column(
       children: [
-        // Header
         Container(
           color: Colors.white,
           padding: EdgeInsets.all(16.r),
@@ -411,19 +480,39 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           child: ListView(
             padding: EdgeInsets.all(16.r),
             children: [
-              _buildReceiptItem('Invoice #5922001-01', 'March 14, 2025', '€89.99', Icons.receipt_long, Colors.blue),
+              if (widget.job.total != '0')
+                _buildReceiptItem(
+                  'Invoice #${widget.job.jobNo}',
+                  widget.job.formattedDate,
+                  '€${widget.job.total}',
+                  Icons.receipt_long,
+                  Colors.blue,
+                ),
+
               SizedBox(height: 12.h),
-              _buildReceiptItem('Quote #5922001-QT', 'March 12, 2025', '€89.99', Icons.request_quote, Colors.orange),
-              SizedBox(height: 12.h),
-              _buildReceiptItem('Diagnostic Report', 'March 12, 2025', 'PDF', Icons.description, Colors.green),
-              SizedBox(height: 12.h),
+
               _buildReceiptItem(
-                'Customer Authorization',
-                'March 12, 2025',
-                'Signed',
-                Icons.verified_user,
-                Colors.purple,
+                'Quote #${widget.job.jobNo}-QT',
+                widget.job.formattedDate,
+                '€${widget.job.total}',
+                Icons.request_quote,
+                Colors.orange,
               ),
+
+              SizedBox(height: 12.h),
+
+              _buildReceiptItem('Diagnostic Report', widget.job.formattedDate, 'PDF', Icons.description, Colors.green),
+
+              if (widget.job.signatureFilePath != null) ...[
+                SizedBox(height: 12.h),
+                _buildReceiptItem(
+                  'Customer Authorization',
+                  widget.job.formattedDate,
+                  'Signed',
+                  Icons.verified_user,
+                  Colors.purple,
+                ),
+              ],
             ],
           ),
         ),
@@ -431,10 +520,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
+  // Updated status screen with real job status history
   Widget _buildStatusScreen() {
+    final statusHistory = widget.job.jobStatus;
+
     return Column(
       children: [
-        // Header
         Container(
           color: Colors.white,
           padding: EdgeInsets.all(16.r),
@@ -449,42 +540,29 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           child: ListView(
             padding: EdgeInsets.all(16.r),
             children: [
-              _buildStatusItem(
-                'Job Created',
-                'March 12, 2025 - 09:30 AM',
-                'Job created by reception',
-                true,
-                Colors.blue,
-              ),
-              _buildStatusItem(
-                'Initial Diagnosis',
-                'March 12, 2025 - 11:15 AM',
-                'LCD damage confirmed, quote sent to customer',
-                true,
-                Colors.orange,
-              ),
-              _buildStatusItem(
-                'Quote Approved',
-                'March 12, 2025 - 02:45 PM',
-                'Customer approved repair quote via email',
-                true,
-                Colors.green,
-              ),
-              _buildStatusItem(
-                'Parts Ordered',
-                'March 13, 2025 - 08:20 AM',
-                'LCD screen ordered from supplier',
-                true,
-                Colors.purple,
-              ),
-              _buildStatusItem(
-                'Repair in Progress',
-                'March 14, 2025 - 10:00 AM',
-                'Assigned to Susan Lemmes',
-                false,
-                Colors.blue,
-              ),
-              _buildStatusItem('Quality Check', 'Pending', 'Waiting for repair completion', false, Colors.grey),
+              ...statusHistory.asMap().entries.map((entry) {
+                final index = entry.key;
+                final status = entry.value;
+                final isCompleted = index < statusHistory.length - 1 || widget.job.status.toLowerCase() == 'complete';
+
+                return _buildStatusItem(
+                  status.title,
+                  _formatTimestamp(status.createAtStatus),
+                  status.notes.isNotEmpty ? status.notes : 'Status updated',
+                  isCompleted,
+                  _getStatusColor(status.colorCode),
+                );
+              }).toList(),
+
+              // Add current status if not in history
+              if (statusHistory.isEmpty)
+                _buildStatusItem(
+                  widget.job.status,
+                  widget.job.formattedDate,
+                  'Job created',
+                  true,
+                  widget.job.statusColor,
+                ),
             ],
           ),
         ),
@@ -492,10 +570,25 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
+  String _formatTimestamp(int timestamp) {
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    return '${date.day}. ${_getMonthName(date.month)} ${date.year} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Color _getStatusColor(String colorCode) {
+    try {
+      return Color(int.parse(colorCode.replaceFirst('#', '0xFF')));
+    } catch (e) {
+      return Colors.blue;
+    }
+  }
+
+  // Updated notes screen with real internal notes
   Widget _buildNotesScreen() {
+    final internalNotes = widget.job.defect.isNotEmpty ? widget.job.defect.first.internalNote : [];
+
     return Column(
       children: [
-        // Header
         Container(
           color: Colors.white,
           padding: EdgeInsets.all(16.r),
@@ -509,7 +602,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               ),
               IconButton(
                 onPressed: () {
-                  // Add new note functionality
+                  _showAddNoteDialog(context);
                 },
                 icon: const Icon(Icons.add, color: Colors.blue),
               ),
@@ -521,26 +614,16 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           child: ListView(
             padding: EdgeInsets.all(16.r),
             children: [
-              _buildNoteItem(
-                'Initial Assessment',
-                'Customer reported that screen went black after dropping phone. Visible crack on LCD. Touch functionality completely lost. Battery seems to be working fine as phone vibrates on calls.',
-                'John Doe',
-                'March 12, 2025 - 11:30 AM',
-              ),
-              SizedBox(height: 16.h),
-              _buildNoteItem(
-                'Customer Communication',
-                'Contacted customer via phone. Explained repair process and timeline. Customer confirmed they want to proceed with repair. Backup of data not needed as they sync with iCloud.',
-                'Reception',
-                'March 12, 2025 - 02:15 PM',
-              ),
-              SizedBox(height: 16.h),
-              _buildNoteItem(
-                'Parts Update',
-                'LCD screen in stock. High quality aftermarket part available. Estimated repair time: 2-3 hours once started.',
-                'Susan Lemmes',
-                'March 14, 2025 - 09:45 AM',
-              ),
+              if (internalNotes.isNotEmpty)
+                ...internalNotes
+                    .map(
+                      (note) =>
+                          _buildNoteItem('Internal Note', note.text, note.userName, _formatTimestamp(note.createdAt)),
+                    )
+                    .toList(),
+
+              if (internalNotes.isEmpty)
+                _buildNoteItem('No notes yet', 'Add the first note for this job', 'System', widget.job.formattedDate),
             ],
           ),
         ),
@@ -548,33 +631,63 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _buildMoreScreen() {
-    return Column(
+  void _showAddNoteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Note'),
+        content: TextField(maxLines: 5, decoration: const InputDecoration(hintText: 'Enter your note...')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              // Add note logic here
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note added successfully')));
+            },
+            child: const Text('Add Note'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Keep all your existing UI helper methods (they're great!):
+  Widget _buildCardInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
-        Container(
-          color: Colors.white,
-          padding: EdgeInsets.all(16.r),
-          width: double.infinity,
+        Text(
+          label,
+          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w700, color: const Color(0xFF3A4A67)),
+        ),
+        SizedBox(width: 6.h),
+        Expanded(
           child: Text(
-            'More Options',
-            style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+            value,
+            style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
           ),
         ),
+      ],
+    );
+  }
 
-        Expanded(
-          child: ListView(
-            padding: EdgeInsets.all(16.r),
-            children: [
-              _buildMoreOption(Icons.photo_camera, 'Take Photos', 'Capture device condition photos', Colors.blue),
-              _buildMoreOption(Icons.share, 'Share Job', 'Send job details to customer or team', Colors.green),
-              _buildMoreOption(Icons.print, 'Print Labels', 'Print job and device labels', Colors.orange),
-              _buildMoreOption(Icons.history, 'Job History', 'View complete job timeline', Colors.purple),
-              _buildMoreOption(Icons.attach_money, 'Update Pricing', 'Modify quotes and billing', Colors.teal),
-              _buildMoreOption(Icons.person_add, 'Reassign Job', 'Change job assignee', Colors.indigo),
-              _buildMoreOption(Icons.priority_high, 'Change Priority', 'Update job priority level', Colors.red),
-              _buildMoreOption(Icons.settings, 'Job Settings', 'Configure job preferences', Colors.grey),
-            ],
+  Widget _buildCardInfoSection(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w700, color: const Color(0xFF3A4A67)),
+        ),
+        SizedBox(height: 6.h),
+        Text(
+          value,
+          style: GoogleFonts.roboto(
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+            height: 1.25,
           ),
         ),
       ],
@@ -634,13 +747,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               decoration: BoxDecoration(color: isCompleted ? color : Colors.grey.shade300, shape: BoxShape.circle),
               child: isCompleted ? Icon(Icons.check, color: Colors.white, size: 14) : null,
             ),
-            if (title != 'Quality Check')
-              Container(
-                width: 2.w,
-                height: 40.h,
-                color: Colors.grey.shade300,
-                margin: EdgeInsets.symmetric(vertical: 8.h),
-              ),
+            Container(
+              width: 2.w,
+              height: 40.h,
+              color: Colors.grey.shade300,
+              margin: EdgeInsets.symmetric(vertical: 8.h),
+            ),
           ],
         ),
         SizedBox(width: 16.w),
@@ -728,6 +840,49 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       ),
     );
   }
+
+  Widget _buildMoreScreen() {
+    return Column(
+      children: [
+        // Header
+        Container(
+          color: Colors.white,
+          padding: EdgeInsets.all(16.r),
+          width: double.infinity,
+          child: Text(
+            'More Options',
+            style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+          ),
+        ),
+
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.all(16.r),
+            children: [
+              _buildMoreOption(Icons.photo_camera, 'Take Photos', 'Capture device condition photos', Colors.blue),
+              _buildMoreOption(Icons.share, 'Share Job', 'Send job details to customer or team', Colors.green),
+              _buildMoreOption(Icons.print, 'Print Labels', 'Print job and device labels', Colors.orange),
+              _buildMoreOption(Icons.history, 'Job History', 'View complete job timeline', Colors.purple),
+              _buildMoreOption(Icons.attach_money, 'Update Pricing', 'Modify quotes and billing', Colors.teal),
+              _buildMoreOption(Icons.person_add, 'Reassign Job', 'Change job assignee', Colors.indigo),
+              _buildMoreOption(Icons.priority_high, 'Change Priority', 'Update job priority level', Colors.red),
+              _buildMoreOption(Icons.settings, 'Job Settings', 'Configure job preferences', Colors.grey),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Keep all your other existing methods (_buildMoreScreen, _buildMoreOption,
+  // _buildInfoCard, _buildInfoRow, _buildInfoSection, _buildDropdownField,
+  // _buildBottomNavBar, _buildNavItem) as they are...
+
+  // [Include all the remaining methods from your original code exactly as they are]
+  // _buildMoreScreen(), _buildMoreOption(), _buildInfoCard(), _buildInfoRow(),
+  // _buildInfoSection(), _buildDropdownField(), _buildBottomNavBar(), _buildNavItem()
+
+  // New single card that contains tabs and the content styled like the provided image
 
   Widget _buildMoreOption(IconData icon, String title, String subtitle, Color color) {
     return Container(

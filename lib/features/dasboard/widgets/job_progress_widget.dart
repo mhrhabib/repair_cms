@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/core/app_exports.dart';
 import 'dart:math' as math;
 
@@ -36,7 +37,7 @@ class JobProgressWidget extends StatelessWidget {
           decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
           child: Row(
             children: [
-              Text('Today, 2025', style: AppTypography.fontSize16),
+              Text('Today, ${intl.DateFormat('yyyy').format(DateTime.now())}', style: AppTypography.fontSize16),
               SizedBox(width: 2.w),
               Container(height: 28.h, color: const Color(0x898FA0B2), width: 2.w),
               SizedBox(width: 2.w),

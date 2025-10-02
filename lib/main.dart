@@ -5,6 +5,10 @@ import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cu
 import 'package:repair_cms/features/auth/forgotPassword/repo/forgot_password_repo.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
+import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
+import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
+import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
+import 'package:repair_cms/features/profile/repository/profile_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
 
 void main() async {
@@ -23,6 +27,8 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (context) => SignInCubit(repository: SetUpDI.getIt<SignInRepository>())),
         BlocProvider(create: (context) => ForgotPasswordCubit(repository: SetUpDI.getIt<ForgotPasswordRepository>())),
+        BlocProvider(create: (context) => ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>())),
+        BlocProvider(create: (context) => JobCubit(repository: SetUpDI.getIt<JobRepository>())),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),

@@ -54,6 +54,8 @@ dependencies:
   get_it: ^8.2.0
   oktoast: ^3.4.0
   flutter_secure_storage: ^9.2.4
+  intl: ^0.18.1
+  syncfusion_flutter_datepicker: ^31.1.19
 
 dev_dependencies:
   flutter_test:

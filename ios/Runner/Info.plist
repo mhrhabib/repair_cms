@@ -18,6 +18,10 @@
 	<string>APPL</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to quickly and securely access your account</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to camera to take photos for your profile picture.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to photo library to select photos for your profile picture.</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>

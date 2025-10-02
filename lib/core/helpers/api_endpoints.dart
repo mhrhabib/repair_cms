@@ -6,5 +6,10 @@ class ApiEndpoints {
   static const String verifyOtp = '$baseUrl/auth/check-otp';
   static const String updatePassword = '$baseUrl/user/email/';
   static const String passwordForgotten = '$baseUrl/auth/forget-password';
-  static const String fetchData = '$baseUrl/data';
+
+  //user profile
+  static const String getUserById = '$baseUrl/user/<id>'; // Replace <id> with actual user ID
+
+  //job
+  static const String getAllJobs = '$baseUrl/job';
 }

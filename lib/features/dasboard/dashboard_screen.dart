@@ -1,6 +1,8 @@
+import 'package:intl/intl.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'dart:math' as math;
 import 'widgets/enhanced_search_widget.dart';
 import 'widgets/job_progress_widget.dart';
@@ -17,6 +19,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     colors: <Color>[Color(0xFFDB00FF), Color(0xFF432BFF)],
   ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0));
 
+  // Move date range state variables to widget level
+  DateTime? _selectedStartDate;
+  DateTime? _selectedEndDate;
+
   @override
   void initState() {
     print(context.read<SignInCubit>().userType);
@@ -24,10 +30,139 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
   }
 
+  // Function to show date range picker bottom sheet
+  void _showDateRangePicker() {
+    // Create local variables for the modal state
+    DateTime? tempStartDate = _selectedStartDate;
+    DateTime? tempEndDate = _selectedEndDate;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: AppColors.whiteColor,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r), topRight: Radius.circular(20.r)),
+          ),
+          child: Column(
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Select date Range', style: AppTypography.fontSize20.copyWith(fontWeight: FontWeight.bold)),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close, size: 24.sp),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+
+              // Selected Date Range Display
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      tempStartDate != null && tempEndDate != null
+                          ? '${DateFormat('dd.MM.yyyy').format(tempStartDate!)} - ${DateFormat('dd.MM.yyyy').format(tempEndDate!)}'
+                          : 'Select start and end dates',
+                      style: AppTypography.fontSize16.copyWith(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20.h),
+
+              // Date Range Picker
+              Expanded(
+                child: SfDateRangePicker(
+                  selectionMode: DateRangePickerSelectionMode.range,
+                  initialSelectedRange: tempStartDate != null && tempEndDate != null
+                      ? PickerDateRange(tempStartDate, tempEndDate)
+                      : null,
+                  onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
+                    if (args.value is PickerDateRange) {
+                      setModalState(() {
+                        tempStartDate = args.value.startDate;
+                        tempEndDate = args.value.endDate;
+                      });
+                    }
+                  },
+                  monthViewSettings: const DateRangePickerMonthViewSettings(enableSwipeSelection: false),
+                  selectionColor: AppColors.primary,
+                  startRangeSelectionColor: AppColors.primary,
+                  endRangeSelectionColor: AppColors.primary,
+                  rangeSelectionColor: AppColors.primary.withValues(alpha: 0.2),
+                  todayHighlightColor: AppColors.primary,
+                ),
+              ),
+              SizedBox(height: 20.h),
+
+              // Action Buttons
+              Row(
+                children: [
+                  // Clear Button
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setModalState(() {
+                          tempStartDate = null;
+                          tempEndDate = null;
+                        });
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        side: BorderSide(color: AppColors.primary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                      ),
+                      child: Text('Clear', style: AppTypography.fontSize16.copyWith(color: AppColors.primary)),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+
+                  // Apply Button
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: tempStartDate != null && tempEndDate != null
+                          ? () {
+                              // Update the main state with selected dates
+                              setState(() {
+                                _selectedStartDate = tempStartDate;
+                                _selectedEndDate = tempEndDate;
+                              });
+                              Navigator.pop(context);
+
+                              // Show success message
+                              showCustomToast('Date range applied successfully');
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                      ),
+                      child: Text('Apply', style: AppTypography.fontSize16.copyWith(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    print(context.read<SignInCubit>().userType);
-    print(context.read<SignInCubit>().userId);
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundColor,
       body: SafeArea(
@@ -192,15 +327,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
-                child: Row(
-                  children: [
-                    Text('Today, 2025', style: AppTypography.fontSize16),
-                    SizedBox(width: 2.w),
-                    Container(height: 28.h, color: const Color(0x898FA0B2), width: 2.w),
-                    SizedBox(width: 2.w),
-                    const Icon(Icons.calendar_month, color: Color(0xFF2589F6)),
-                    Icon(Icons.keyboard_arrow_down, color: const Color(0xFF2589F6), size: 20.sp),
-                  ],
+                child: GestureDetector(
+                  onTap: _showDateRangePicker,
+                  child: Row(
+                    children: [
+                      Text(
+                        _selectedStartDate != null && _selectedEndDate != null
+                            ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
+                            : 'Today, ${DateFormat('yyyy').format(DateTime.now())}',
+                        style: AppTypography.fontSize16,
+                      ),
+                      SizedBox(width: 2.w),
+                      Container(height: 28.h, color: const Color(0x898FA0B2), width: 2.w),
+                      SizedBox(width: 2.w),
+                      const Icon(Icons.calendar_month, color: Color(0xFF2589F6)),
+                      Icon(Icons.keyboard_arrow_down, color: const Color(0xFF2589F6), size: 20.sp),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -213,7 +356,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   SizedBox(height: 4.h),
                   Text(
-                    '01.02.2024 - 28.02.2024',
+                    _selectedStartDate != null && _selectedEndDate != null
+                        ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
+                        : '01.02.2024 - 28.02.2024',
                     style: AppTypography.fontSize14.copyWith(color: AppColors.fontMainColor),
                   ),
                   Text(
