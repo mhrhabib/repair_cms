@@ -2,7 +2,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_card_widget.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
-import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 
 class MyJobsScreen extends StatefulWidget {
   const MyJobsScreen({super.key});
@@ -95,7 +94,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     allJobs = state.jobs.length;
                   }
 
-                  final List<int> _itemCounts = [
+                  final List<int> itemCounts = [
                     allJobs, // My Jobs (all visible jobs)
                     totalJobs, // All Jobs (total from API)
                     rejectedJobs, // Rejected Quotes
@@ -147,7 +146,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(shape: BoxShape.circle, color: _tabColors[index]),
                                 child: Text(
-                                  _itemCounts[index].toString(),
+                                  itemCounts[index].toString(),
                                   style: GoogleFonts.roboto(
                                     color: Colors.white,
                                     fontSize: 13.sp,

@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
-import 'package:repair_cms/features/auth/signin/models/login_response_model.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
+import 'package:repair_cms/features/profile/models/profile_response_model.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -53,19 +53,19 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     _positionFocusNode.addListener(_checkForChanges);
   }
 
-  void _initializeControllers(User user) {
+  void _initializeControllers(UserData user) {
     if (_controllersInitialized) return;
 
-    _nameController.text = user.fullName;
-    _emailController.text = user.email;
-    _positionController.text = user.role;
-    _selectedRole = user.userType;
+    _nameController.text = user.fullName!;
+    _emailController.text = user.email!;
+    _positionController.text = user.position!;
+    _selectedRole = user.userType!;
 
     // Set original values
-    _originalName = user.fullName;
-    _originalEmail = user.email;
-    _originalPosition = user.role;
-    _originalRole = user.userType;
+    _originalName = user.fullName!;
+    _originalEmail = user.email!;
+    _originalPosition = user.position!;
+    _originalRole = user.userType!;
 
     _controllersInitialized = true;
   }
@@ -90,7 +90,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     final profileCubit = context.read<ProfileCubit>();
     final signInCubit = context.read<SignInCubit>();
 
-    final userId = signInCubit.userId.isNotEmpty ? signInCubit.userId : '64106cddcfcedd360d7096cc';
+    final userId = signInCubit.userId;
 
     // First upload avatar if selected
     if (_selectedImage != null) {
@@ -226,7 +226,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       color: Colors.red,
                       onTap: () {
                         Navigator.pop(context);
-                        _removeProfilePicture(state.user.id);
+                        _removeProfilePicture(state.user.id!);
                       },
                     );
                   }
@@ -386,6 +386,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
         // Initialize controllers when user data is loaded
         if (state is ProfileLoaded) {
+          debugPrint('User data loaded: ${state.user.toJson()}');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _initializeControllers(state.user);
           });
@@ -582,17 +583,42 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               const SizedBox(height: 20),
 
               // Role Dropdown
-              _buildDropdownField(
-                label: 'Role',
-                value: _selectedRole,
-                items: ['Owner', 'Manager', 'Technician', 'Assistant'],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedRole = value!;
-                  });
-                  _updateProfileField('userType', value);
-                },
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Role',
+                    style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    initialValue: user!.userType!,
+
+                    enabled: false,
+                    decoration: InputDecoration(
+                      filled: true,
+
+                      fillColor: Colors.grey.shade50,
+                      suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    style: AppTypography.fontSize16Normal,
+                  ),
+                ],
               ),
+
               SizedBox(height: 30.h),
             ],
           ),
@@ -619,7 +645,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       return NetworkImage(avatarUrl);
     } else {
       // If it's just a path, construct the full URL
-      final fullUrl = 'https://api.repaircms.com/$avatarUrl';
+      final fullUrl = 'https://my.repaircms.com/$avatarUrl';
       return NetworkImage(fullUrl);
     }
   }
@@ -665,8 +691,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         TextFormField(
           controller: controller,
           focusNode: focusNode,
+          enabled: true,
           decoration: InputDecoration(
             filled: true,
+
             fillColor: Colors.grey.shade50,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -683,45 +711,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           style: AppTypography.fontSize16Normal,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDropdownField({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.black54, fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: DropdownButtonFormField<String>(
-            value: value.isNotEmpty ? value : null,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            style: const TextStyle(color: Colors.black87, fontSize: 16),
-            dropdownColor: Colors.white,
-            icon: const Icon(Icons.keyboard_arrow_down, color: Colors.blue, size: 24),
-            items: items.map((String item) {
-              return DropdownMenuItem<String>(value: item, child: Text(item));
-            }).toList(),
-            onChanged: onChanged,
-          ),
         ),
       ],
     );

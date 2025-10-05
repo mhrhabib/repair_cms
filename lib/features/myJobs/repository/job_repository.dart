@@ -1,6 +1,7 @@
 // repositories/job_repository.dart
 import 'dart:async';
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
@@ -38,41 +39,41 @@ class JobRepository {
       final responseData = response.data;
 
       if (response.statusCode == 200) {
-        print('✅ API Response data type: ${responseData.runtimeType}');
-        print('✅ API Response data: $responseData');
+        debugPrint('✅ API Response data type: ${responseData.runtimeType}');
+        debugPrint('✅ API Response data: $responseData');
 
         // 🔍 DEBUG: Print field types before parsing
         _debugResponseFields(responseData);
 
         return JobListResponse.fromJson(responseData);
       } else {
-        throw Exception('Failed to fetch jobs: ${response.statusCode} - ${responseData}');
+        throw Exception('Failed to fetch jobs: ${response.statusCode} - $responseData');
       }
     } on dio.DioException catch (e) {
-      print('❌ Dio Error: ${e.message}');
+      debugPrint('❌ Dio Error: ${e.message}');
       if (e.response != null) {
         throw Exception('Server error: ${e.response?.statusCode} - ${e.response?.data}');
       } else {
         throw Exception('Network error: ${e.message}');
       }
     } catch (e, stackTrace) {
-      print('❌ Unexpected error: $e');
-      print('📋 Stack trace: $stackTrace');
+      debugPrint('❌ Unexpected error: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
       throw Exception('Unexpected error: $e');
     }
   }
 
   // 🔍 NEW: Method to debug field types in API response
   void _debugResponseFields(Map<String, dynamic> responseData) {
-    print('\n🔍 DEBUG - API RESPONSE FIELD ANALYSIS:');
-    print('📊 Top-level fields:');
+    debugPrint('\n🔍 DEBUG - API RESPONSE FIELD ANALYSIS:');
+    debugPrint('📊 Top-level fields:');
     responseData.forEach((key, value) {
-      print('   📍 $key: $value (type: ${value.runtimeType})');
+      debugPrint('   📍 $key: $value (type: ${value.runtimeType})');
     });
 
     // Debug the first job result in detail
     if (responseData['results'] != null && responseData['results'] is List && responseData['results'].isNotEmpty) {
-      print('\n🔍 DEBUG - FIRST JOB OBJECT FIELD TYPES:');
+      debugPrint('\n🔍 DEBUG - FIRST JOB OBJECT FIELD TYPES:');
       final firstJob = responseData['results'][0];
 
       if (firstJob is Map<String, dynamic>) {
@@ -82,15 +83,15 @@ class JobRepository {
               ? '${value.toString().substring(0, 50)}...'
               : value.toString();
 
-          print('   🎯 $key: $valuePreview (type: $valueType)');
+          debugPrint('   🎯 $key: $valuePreview (type: $valueType)');
 
           // Special handling for nested objects
           if (value is Map) {
-            print('      📂 Nested Map with keys: ${value.keys}');
+            debugPrint('      📂 Nested Map with keys: ${value.keys}');
           } else if (value is List) {
-            print('      📋 List length: ${value.length}');
+            debugPrint('      📋 List length: ${value.length}');
             if (value.isNotEmpty) {
-              print('      👀 First item type: ${value[0].runtimeType}');
+              debugPrint('      👀 First item type: ${value[0].runtimeType}');
             }
           }
         });
@@ -105,7 +106,7 @@ class JobRepository {
       final responseData = response.data;
 
       if (response.statusCode == 200) {
-        print('🔍 DEBUG - Single Job Response:');
+        debugPrint('🔍 DEBUG - Single Job Response:');
         _debugSingleJobFields(responseData);
 
         return Job.fromJson(responseData);
@@ -119,27 +120,27 @@ class JobRepository {
         throw Exception('Network error: ${e.message}');
       }
     } catch (e, stackTrace) {
-      print('❌ Error in getJobById: $e');
-      print('📋 Stack trace: $stackTrace');
+      debugPrint('❌ Error in getJobById: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
       throw Exception('Unexpected error: $e');
     }
   }
 
   // 🔍 NEW: Method to debug single job fields
   void _debugSingleJobFields(Map<String, dynamic> jobData) {
-    print('\n🔍 DEBUG - SINGLE JOB FIELD TYPES:');
+    debugPrint('\n🔍 DEBUG - SINGLE JOB FIELD TYPES:');
     jobData.forEach((key, value) {
       final valueType = value.runtimeType;
       final valuePreview = value.toString().length > 100
           ? '${value.toString().substring(0, 100)}...'
           : value.toString();
 
-      print('   🎯 $key: $valuePreview');
-      print('      📝 TYPE: $valueType');
+      debugPrint('   🎯 $key: $valuePreview');
+      debugPrint('      📝 TYPE: $valueType');
 
       // Highlight potential type issues
       if (_isPotentialTypeIssue(key, value)) {
-        print('      ⚠️  POTENTIAL TYPE ISSUE - Check model definition!');
+        debugPrint('      ⚠️  POTENTIAL TYPE ISSUE - Check model definition!');
       }
     });
   }
@@ -150,14 +151,14 @@ class JobRepository {
     final numericFields = ['subTotal', 'total', 'vat', 'discount', 'price', 'amount'];
 
     if (numericFields.contains(key) && value is int) {
-      print('      💡 SUGGESTION: API sends $key as int, ensure model handles numeric types');
+      debugPrint('      💡 SUGGESTION: API sends $key as int, ensure model handles numeric types');
       return true;
     }
 
     // ID fields that should be strings
     if (key.contains('Id') || key.contains('_id')) {
       if (value is! String && value != null) {
-        print('      💡 SUGGESTION: $key is ${value.runtimeType}, but should be String?');
+        debugPrint('      💡 SUGGESTION: $key is ${value.runtimeType}, but should be String?');
         return true;
       }
     }
@@ -183,8 +184,8 @@ class JobRepository {
         throw Exception('Network error: ${e.message}');
       }
     } catch (e, stackTrace) {
-      print('❌ Error in updateJobStatus: $e');
-      print('📋 Stack trace: $stackTrace');
+      debugPrint('❌ Error in updateJobStatus: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
       throw Exception('Unexpected error: $e');
     }
   }
@@ -193,18 +194,18 @@ class JobRepository {
   void testFieldParsing(Map<String, dynamic> json, String fieldName) {
     try {
       final value = json[fieldName];
-      print('🧪 Testing $fieldName: $value (type: ${value.runtimeType})');
+      debugPrint('🧪 Testing $fieldName: $value (type: ${value.runtimeType})');
 
       // Try different parsing approaches
       if (value != null) {
-        print('   as String: ${value.toString()}');
+        debugPrint('   as String: ${value.toString()}');
         if (value is num) {
-          print('   as double: ${value.toDouble()}');
-          print('   as int: ${value.toInt()}');
+          debugPrint('   as double: ${value.toDouble()}');
+          debugPrint('   as int: ${value.toInt()}');
         }
       }
     } catch (e) {
-      print('   ❌ Error parsing $fieldName: $e');
+      debugPrint('   ❌ Error parsing $fieldName: $e');
     }
   }
 }

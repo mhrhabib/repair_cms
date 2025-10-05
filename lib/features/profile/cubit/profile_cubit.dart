@@ -1,6 +1,6 @@
-import 'package:repair_cms/features/auth/signin/models/login_response_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/profile/models/profile_response_model.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
 
 part 'profile_state.dart';
@@ -12,7 +12,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
   Future<void> getUserProfile(String userId) async {
     emit(ProfileLoading());
     try {
-      final User user = await repository.getUserById(userId);
+      final UserData user = await repository.getUserById(userId);
       emit(ProfileLoaded(user: user));
     } catch (e) {
       emit(ProfileError(message: e.toString()));
@@ -24,7 +24,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
     try {
       final userData = await storage.read('user');
       if (userData != null) {
-        final User user = User.fromJson(userData);
+        final UserData user = UserData.fromJson(userData);
         emit(ProfileLoaded(user: user));
       } else {
         emit(ProfileError(message: 'No user data found in storage'));
@@ -37,7 +37,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
   Future<void> updateUserProfile(String userId, Map<String, dynamic> updateData) async {
     emit(ProfileLoading());
     try {
-      final User updatedUser = await repository.updateUserProfile(userId, updateData);
+      final UserData updatedUser = await repository.updateUserProfile(userId, updateData);
 
       // Update storage with new user data
       await storage.write('user', updatedUser.toJson());
@@ -52,7 +52,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
   Future<void> updateProfileField(String userId, String field, dynamic value) async {
     emit(ProfileLoading());
     try {
-      final User updatedUser = await repository.updateUserProfile(userId, {field: value});
+      final UserData updatedUser = await repository.updateUserProfile(userId, {field: value});
 
       // Update storage with new user data
       await storage.write('user', updatedUser.toJson());
@@ -70,7 +70,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
       final success = await repository.updateUserAvatar(userId, avatarPath);
       if (success) {
         // Reload user data to get updated avatar URL
-        final User user = await repository.getUserById(userId);
+        final UserData user = await repository.getUserById(userId);
         await storage.write('user', user.toJson());
         emit(ProfileUpdated(user: user));
         emit(ProfileLoaded(user: user));

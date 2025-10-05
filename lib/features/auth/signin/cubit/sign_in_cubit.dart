@@ -47,6 +47,8 @@ class SignInCubit extends Cubit<SignInStates> {
           await storage.write('token', response.data!.accessToken);
           await storage.write('user', response.data!.user.toJson());
           await storage.write('isLoggedIn', true);
+          await storage.write('userType', response.data!.user.userType);
+          await storage.write('userId', response.data!.user.id);
           saveUserTypeandId(response.data!.user.userType, response.data!.user.id);
         }
 

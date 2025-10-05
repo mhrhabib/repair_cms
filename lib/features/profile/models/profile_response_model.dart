@@ -1,121 +1,140 @@
-class User {
-  final String id;
-  final String email;
-  final String fullName;
-  final String password;
-  final bool getFeatureUpdate;
-  final String avatar;
-  final bool isVerified;
-  final bool isNew;
-  final String kindOfWork;
-  final int v;
-  final DateTime updatedAt;
-  final String position;
-  final String shortName;
-  final Currency currency;
-  final DateFormat dateFormat;
-  final Language language;
-  final TimeFormat timeFormat;
-  final TimeZone timeZone;
-  final bool repaircmsAccess;
-  final String userType;
-  final bool isSubUser;
-  final Location location;
-  final String repairTrackingId;
-  final List<dynamic> accessList;
-  final bool appStoreAccess;
-  final bool companyAccess;
-  final bool contactsAccess;
-  final bool ecommerceAccess;
-  final bool emailTemplateAccess;
-  final bool exportDataAccess;
-  final bool invoiceAccess;
-  final bool jobsAccess;
-  final bool labelAccess;
-  final bool paymentMethodAccess;
-  final bool receiptAccess;
-  final bool servicesAccess;
-  final bool settingsAccess;
-  final bool statusAccess;
-  final bool stockAccess;
-  final bool stripeOnboardingComplete;
-  final bool textTemplateAccess;
-  final bool turnoverAccess;
-  final bool isEmailChanged;
-  final String stripeAccountId;
-  final bool forceUpgrade;
-  final String role;
-  final String twoFactorEmail;
-  final bool emailBasedAuthEnabled;
-  final bool appBasedAuthEnabled;
-  final Subscription subscription;
+class ProfileResponseModel {
+  bool? success;
+  String? message;
+  UserData? data;
+  String? error;
 
-  User({
-    required this.id,
-    required this.email,
-    required this.fullName,
-    required this.password,
-    required this.getFeatureUpdate,
-    required this.avatar,
-    required this.isVerified,
-    required this.isNew,
-    required this.kindOfWork,
-    required this.v,
-    required this.updatedAt,
-    required this.position,
-    required this.shortName,
-    required this.currency,
-    required this.dateFormat,
-    required this.language,
-    required this.timeFormat,
-    required this.timeZone,
-    required this.repaircmsAccess,
-    required this.userType,
-    required this.isSubUser,
-    required this.location,
-    required this.repairTrackingId,
-    required this.accessList,
-    required this.appStoreAccess,
-    required this.companyAccess,
-    required this.contactsAccess,
-    required this.ecommerceAccess,
-    required this.emailTemplateAccess,
-    required this.exportDataAccess,
-    required this.invoiceAccess,
-    required this.jobsAccess,
-    required this.labelAccess,
-    required this.paymentMethodAccess,
-    required this.receiptAccess,
-    required this.servicesAccess,
-    required this.settingsAccess,
-    required this.statusAccess,
-    required this.stockAccess,
-    required this.stripeOnboardingComplete,
-    required this.textTemplateAccess,
-    required this.turnoverAccess,
-    required this.isEmailChanged,
-    required this.stripeAccountId,
-    required this.forceUpgrade,
-    required this.role,
-    required this.twoFactorEmail,
-    required this.emailBasedAuthEnabled,
-    required this.appBasedAuthEnabled,
-    required this.subscription,
+  ProfileResponseModel({this.success, this.message, this.data, this.error});
+
+  factory ProfileResponseModel.fromJson(Map<String, dynamic> json) {
+    return ProfileResponseModel(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+      data: UserData.fromJson(json['data'] ?? {}),
+      error: json['error'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'success': success, 'message': message, 'data': data!.toJson(), 'error': error};
+  }
+}
+
+class UserData {
+  String? id;
+  String? email;
+  String? fullName;
+  bool? getFeatureUpdate;
+  String? avatar;
+  bool? isVerified;
+  bool? isNew;
+  String? kindOfWork;
+  int? v;
+  String? updatedAt;
+  String? position;
+  String? shortName;
+  Currency? currency;
+  DateFormat? dateFormat;
+  Language? language;
+  TimeFormat? timeFormat;
+  TimeZone? timeZone;
+  bool? repaircmsAccess;
+  String? userType;
+  bool? isSubUser;
+  Location? location;
+  String? repairTrackingId;
+  List<dynamic>? accessList;
+  bool? appStoreAccess;
+  bool? companyAccess;
+  bool? contactsAccess;
+  bool? ecommerceAccess;
+  bool? emailTemplateAccess;
+  bool? exportDataAccess;
+  bool? invoiceAccess;
+  bool? jobsAccess;
+  bool? labelAccess;
+  bool? paymentMethodAccess;
+  bool? receiptAccess;
+  bool? servicesAccess;
+  bool? settingsAccess;
+  bool? statusAccess;
+  bool? stockAccess;
+  bool? stripeOnboardingComplete;
+  bool? textTemplateAccess;
+  bool? turnoverAccess;
+  bool? isEmailChanged;
+  String? stripeAccountId;
+  bool? forceUpgrade;
+  String? role;
+  String? twoFactorEmail;
+  bool? emailBasedAuthEnabled;
+  bool? appBasedAuthEnabled;
+  Subscription? subscription;
+
+  UserData({
+    this.id,
+    this.email,
+    this.fullName,
+    this.getFeatureUpdate,
+    this.avatar,
+    this.isVerified,
+    this.isNew,
+    this.kindOfWork,
+    this.v,
+    this.updatedAt,
+    this.position,
+    this.shortName,
+    this.currency,
+    this.dateFormat,
+    this.language,
+    this.timeFormat,
+    this.timeZone,
+    this.repaircmsAccess,
+    this.userType,
+    this.isSubUser,
+    this.location,
+    this.repairTrackingId,
+    this.accessList,
+    this.appStoreAccess,
+    this.companyAccess,
+    this.contactsAccess,
+    this.ecommerceAccess,
+    this.emailTemplateAccess,
+    this.exportDataAccess,
+    this.invoiceAccess,
+    this.jobsAccess,
+    this.labelAccess,
+    this.paymentMethodAccess,
+    this.receiptAccess,
+    this.servicesAccess,
+    this.settingsAccess,
+    this.statusAccess,
+    this.stockAccess,
+    this.stripeOnboardingComplete,
+    this.textTemplateAccess,
+    this.turnoverAccess,
+    this.isEmailChanged,
+    this.stripeAccountId,
+    this.forceUpgrade,
+    this.role,
+    this.twoFactorEmail,
+    this.emailBasedAuthEnabled,
+    this.appBasedAuthEnabled,
+    this.subscription,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['_id'] ?? json['id'] ?? '',
+  factory UserData.fromJson(Map<String, dynamic> json) {
+    return UserData(
+      id: json['_id'] ?? '',
       email: json['email'] ?? '',
       fullName: json['fullName'] ?? '',
-      password: json['password'] ?? '',
       getFeatureUpdate: json['getFeatureUpdate'] ?? false,
       avatar: json['avatar'] ?? '',
       isVerified: json['isVerified'] ?? false,
       isNew: json['isNew'] ?? false,
       kindOfWork: json['kindOfWork'] ?? '',
       v: json['__v'] ?? 0,
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: json['updatedAt'] ?? '',
       position: json['position'] ?? '',
       shortName: json['shortName'] ?? '',
       currency: Currency.fromJson(json['currency'] ?? {}),
@@ -163,25 +182,24 @@ class User {
       '_id': id,
       'email': email,
       'fullName': fullName,
-      'password': password,
       'getFeatureUpdate': getFeatureUpdate,
       'avatar': avatar,
       'isVerified': isVerified,
       'isNew': isNew,
       'kindOfWork': kindOfWork,
       '__v': v,
-      'updatedAt': updatedAt.toIso8601String(),
+      'updatedAt': updatedAt,
       'position': position,
       'shortName': shortName,
-      'currency': currency.toJson(),
-      'dateFormat': dateFormat.toJson(),
-      'language': language.toJson(),
-      'timeFormat': timeFormat.toJson(),
-      'timeZone': timeZone.toJson(),
+      'currency': currency?.toJson(),
+      'dateFormat': dateFormat?.toJson(),
+      'language': language?.toJson(),
+      'timeFormat': timeFormat?.toJson(),
+      'timeZone': timeZone?.toJson(),
       'repaircms_access': repaircmsAccess,
       'userType': userType,
       'isSubUser': isSubUser,
-      'location': location.toJson(),
+      'location': location?.toJson(),
       'repair_tracking_id': repairTrackingId,
       'accessList': accessList,
       'app_store_access': appStoreAccess,
@@ -209,18 +227,18 @@ class User {
       'two_factor_email': twoFactorEmail,
       'email_based_auth_enabled': emailBasedAuthEnabled,
       'app_based_auth_enabled': appBasedAuthEnabled,
-      'subscription': subscription.toJson(),
+      'subscription': subscription?.toJson(),
     };
   }
 }
 
 class Currency {
-  final String value;
-  final String name;
-  final String code;
-  final String symbol;
+  String? value;
+  String? name;
+  String? code;
+  String? symbol;
 
-  Currency({required this.value, required this.name, required this.code, required this.symbol});
+  Currency({this.value, this.name, this.code, this.symbol});
 
   factory Currency.fromJson(Map<String, dynamic> json) {
     return Currency(
@@ -237,11 +255,11 @@ class Currency {
 }
 
 class DateFormat {
-  final String value;
-  final String name;
-  final String format;
+  String? value;
+  String? name;
+  String? format;
 
-  DateFormat({required this.value, required this.name, required this.format});
+  DateFormat({this.value, this.name, this.format});
 
   factory DateFormat.fromJson(Map<String, dynamic> json) {
     return DateFormat(value: json['value'] ?? '', name: json['name'] ?? '', format: json['format'] ?? '');
@@ -253,11 +271,11 @@ class DateFormat {
 }
 
 class Language {
-  final String value;
-  final String name;
-  final String code;
+  String? value;
+  String? name;
+  String? code;
 
-  Language({required this.value, required this.name, required this.code});
+  Language({this.value, this.name, this.code});
 
   factory Language.fromJson(Map<String, dynamic> json) {
     return Language(value: json['value'] ?? '', name: json['name'] ?? '', code: json['code'] ?? '');
@@ -269,12 +287,12 @@ class Language {
 }
 
 class TimeFormat {
-  final String value;
-  final String name;
-  final String format;
-  final bool hour12;
+  String? value;
+  String? name;
+  String? format;
+  bool? hour12;
 
-  TimeFormat({required this.value, required this.name, required this.format, required this.hour12});
+  TimeFormat({this.value, this.name, this.format, this.hour12});
 
   factory TimeFormat.fromJson(Map<String, dynamic> json) {
     return TimeFormat(
@@ -291,13 +309,13 @@ class TimeFormat {
 }
 
 class TimeZone {
-  final String value;
-  final String name;
-  final String code;
-  final int offset;
-  final String label;
+  String? value;
+  String? name;
+  String? code;
+  int? offset;
+  String? label;
 
-  TimeZone({required this.value, required this.name, required this.code, required this.offset, required this.label});
+  TimeZone({this.value, this.name, this.code, this.offset, this.label});
 
   factory TimeZone.fromJson(Map<String, dynamic> json) {
     return TimeZone(
@@ -315,59 +333,59 @@ class TimeZone {
 }
 
 class Location {
-  final String id;
-  final String locationId;
-  final String locationName;
-  final String street;
-  final String streetNo;
-  final String zipCode;
-  final String city;
-  final String country;
-  final String email;
-  final String telephone;
-  final bool allowEcommerceSendIn;
-  final bool allowContacts;
-  final bool allowServicesStocks;
-  final bool allowJobsInvoices;
-  final bool allowMultiClient;
-  final bool defaultLocation;
-  final String companyId;
-  final String userId;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final int v;
-  final String openingHours;
-  final String locationPrefix;
+  String? id;
+  String? locationId;
+  String? locationName;
+  String? street;
+  String? streetNo;
+  String? zipCode;
+  String? city;
+  String? country;
+  String? email;
+  String? telephone;
+  bool? allowEcommerceSendIn;
+  bool? allowContacts;
+  bool? allowServicesStocks;
+  bool? allowJobsInvoices;
+  bool? allowMultiClient;
+  bool? defaultLocation;
+  String? companyId;
+  String? userId;
+  String? createdAt;
+  String? updatedAt;
+  int? v;
+  String? openingHours;
+  String? locationPrefix;
 
   Location({
-    required this.id,
-    required this.locationId,
-    required this.locationName,
-    required this.street,
-    required this.streetNo,
-    required this.zipCode,
-    required this.city,
-    required this.country,
-    required this.email,
-    required this.telephone,
-    required this.allowEcommerceSendIn,
-    required this.allowContacts,
-    required this.allowServicesStocks,
-    required this.allowJobsInvoices,
-    required this.allowMultiClient,
-    required this.defaultLocation,
-    required this.companyId,
-    required this.userId,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.v,
-    required this.openingHours,
-    required this.locationPrefix,
+    this.id,
+    this.locationId,
+    this.locationName,
+    this.street,
+    this.streetNo,
+    this.zipCode,
+    this.city,
+    this.country,
+    this.email,
+    this.telephone,
+    this.allowEcommerceSendIn,
+    this.allowContacts,
+    this.allowServicesStocks,
+    this.allowJobsInvoices,
+    this.allowMultiClient,
+    this.defaultLocation,
+    this.companyId,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.openingHours,
+    this.locationPrefix,
   });
 
   factory Location.fromJson(Map<String, dynamic> json) {
     return Location(
-      id: json['_id'] ?? json['id'] ?? '',
+      id: json['_id'] ?? '',
       locationId: json['location_id'] ?? '',
       locationName: json['location_name'] ?? '',
       street: json['street'] ?? '',
@@ -385,8 +403,8 @@ class Location {
       defaultLocation: json['default'] ?? false,
       companyId: json['companyId'] ?? '',
       userId: json['userId'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: json['createdAt'] ?? '',
+      updatedAt: json['updatedAt'] ?? '',
       v: json['__v'] ?? 0,
       openingHours: json['openingHours'] ?? '',
       locationPrefix: json['location_prefix'] ?? '',
@@ -413,8 +431,8 @@ class Location {
       'default': defaultLocation,
       'companyId': companyId,
       'userId': userId,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
       '__v': v,
       'openingHours': openingHours,
       'location_prefix': locationPrefix,
@@ -423,49 +441,49 @@ class Location {
 }
 
 class Subscription {
-  final String id;
-  final String plan;
-  final String status;
-  final DateTime startDate;
-  final DateTime endDate;
-  final String billingPeriod;
-  final String subscriptionId;
-  final String stripeCustomerId;
-  final int seats;
-  final String userId;
-  final int orderNumber;
-  final int additionalSeats;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final int v;
-  final int additionalLocation;
+  String? id;
+  String? plan;
+  String? status;
+  String? startDate;
+  String? endDate;
+  String? billingPeriod;
+  String? subscriptionId;
+  String? stripeCustomerId;
+  int? seats;
+  String? userId;
+  int? orderNumber;
+  int? additionalSeats;
+  String? createdAt;
+  String? updatedAt;
+  int? v;
+  int? additionalLocation;
 
   Subscription({
-    required this.id,
-    required this.plan,
-    required this.status,
-    required this.startDate,
-    required this.endDate,
-    required this.billingPeriod,
-    required this.subscriptionId,
-    required this.stripeCustomerId,
-    required this.seats,
-    required this.userId,
-    required this.orderNumber,
-    required this.additionalSeats,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.v,
-    required this.additionalLocation,
+    this.id,
+    this.plan,
+    this.status,
+    this.startDate,
+    this.endDate,
+    this.billingPeriod,
+    this.subscriptionId,
+    this.stripeCustomerId,
+    this.seats,
+    this.userId,
+    this.orderNumber,
+    this.additionalSeats,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.additionalLocation,
   });
 
   factory Subscription.fromJson(Map<String, dynamic> json) {
     return Subscription(
-      id: json['_id'] ?? json['id'] ?? '',
+      id: json['_id'] ?? '',
       plan: json['plan'] ?? '',
       status: json['status'] ?? '',
-      startDate: DateTime.parse(json['startDate'] ?? DateTime.now().toIso8601String()),
-      endDate: DateTime.parse(json['endDate'] ?? DateTime.now().toIso8601String()),
+      startDate: json['startDate'] ?? '',
+      endDate: json['endDate'] ?? '',
       billingPeriod: json['billing_period'] ?? '',
       subscriptionId: json['subscriptionId'] ?? '',
       stripeCustomerId: json['stripeCustomerId'] ?? '',
@@ -473,8 +491,8 @@ class Subscription {
       userId: json['userId'] ?? '',
       orderNumber: json['order_number'] ?? 0,
       additionalSeats: json['additional_seats'] ?? 0,
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: json['createdAt'] ?? '',
+      updatedAt: json['updatedAt'] ?? '',
       v: json['__v'] ?? 0,
       additionalLocation: json['additional_location'] ?? 0,
     );
@@ -485,8 +503,8 @@ class Subscription {
       '_id': id,
       'plan': plan,
       'status': status,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
+      'startDate': startDate,
+      'endDate': endDate,
       'billing_period': billingPeriod,
       'subscriptionId': subscriptionId,
       'stripeCustomerId': stripeCustomerId,
@@ -494,8 +512,8 @@ class Subscription {
       'userId': userId,
       'order_number': orderNumber,
       'additional_seats': additionalSeats,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
       '__v': v,
       'additional_location': additionalLocation,
     };

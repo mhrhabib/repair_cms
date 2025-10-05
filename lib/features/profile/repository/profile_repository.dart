@@ -3,17 +3,17 @@ import 'dart:async';
 import 'package:dio/dio.dart' as dio;
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
-import 'package:repair_cms/features/auth/signin/models/login_response_model.dart';
+import 'package:repair_cms/features/profile/models/profile_response_model.dart';
 
 class ProfileRepository {
-  Future<User> getUserById(String userId) async {
+  Future<UserData> getUserById(String userId) async {
     try {
       final url = ApiEndpoints.getUserById.replaceFirst('<id>', userId);
 
       dio.Response response = await BaseClient.get(url: url);
 
       if (response.statusCode == 200) {
-        return User.fromJson(response.data);
+        return UserData.fromJson(response.data);
       } else {
         throw Exception('Failed to fetch user: ${response.statusCode}');
       }
@@ -28,14 +28,14 @@ class ProfileRepository {
     }
   }
 
-  Future<User> updateUserProfile(String userId, Map<String, dynamic> updateData) async {
+  Future<UserData> updateUserProfile(String userId, Map<String, dynamic> updateData) async {
     try {
       final url = ApiEndpoints.getUserById.replaceFirst('<id>', userId);
 
       dio.Response response = await BaseClient.put(url: url, payload: updateData);
 
       if (response.statusCode == 200) {
-        return User.fromJson(response.data);
+        return UserData.fromJson(response.data);
       } else {
         throw Exception('Failed to update user: ${response.statusCode}');
       }

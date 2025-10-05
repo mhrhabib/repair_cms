@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:repair_cms/core/app_exports.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -66,83 +68,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [const Color(0xFF4A90E2).withOpacity(0.3), const Color(0xFF4A90E2)],
-              ),
-              borderRadius: BorderRadius.circular(60),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Icon(Icons.notifications_outlined, size: 60, color: Colors.white),
-                // Decorative elements around the bell
-                Positioned(
-                  top: 15,
-                  left: 15,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 20,
-                  right: 10,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 15,
-                  left: 10,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 20,
-                  right: 15,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          SizedBox(
+            width: 220.w,
+            height: 170.h,
+
+            child: SvgPicture.asset(AssetsConstant.noNotificationIconsSVG, width: 60, height: 60),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'No Notifications Yet',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.black87),
+            style: AppTypography.sfProHeadLineTextStyle28.copyWith(fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           Text(
             'When you get notifications, they\'l\nshow up here',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey[600], height: 1.4),
+            style: AppTypography.sfProHeadLineTextStyle22.copyWith(
+              color: AppColors.lightFontColor,
+              height: 1.5,
+              fontSize: 20,
+            ),
           ),
         ],
       ),
@@ -180,7 +125,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,12 +133,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              color: _getNotificationColor(notification.type).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(notification.icon, color: _getNotificationColor(notification.type), size: 20),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+            child: _getNotificationIcon(notification.type),
           ),
+
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -234,14 +177,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Color _getNotificationColor(NotificationType type) {
+  SvgPicture _getNotificationIcon(NotificationType type) {
     switch (type) {
       case NotificationType.stock:
-        return Colors.orange;
+        return SvgPicture.asset('assets/icons/Layers_Minimalistic.svg');
       case NotificationType.job:
-        return const Color(0xFF4A90E2);
+        return SvgPicture.asset('aassets/icons/job.svg');
       case NotificationType.message:
-        return Colors.green;
+        return SvgPicture.asset('assets/icons/messge.svg');
     }
   }
 
@@ -279,7 +222,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4A90E2).withOpacity(0.1),
+                  color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.done_all, color: Color(0xFF4A90E2), size: 18),
@@ -296,7 +239,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               leading: Container(
                 width: 32,
                 height: 32,
-                decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
               ),
               title: const Text(
@@ -377,11 +323,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(
-                      color: _getNotificationColor(notification.type).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(notification.icon, color: _getNotificationColor(notification.type), size: 20),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                    child: _getNotificationIcon(notification.type),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
