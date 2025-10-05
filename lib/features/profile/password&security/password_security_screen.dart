@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/password&security/widgets/change_password_bottom_sheet.dart';
 import 'package:solar_icons/solar_icons.dart';
 
@@ -33,8 +34,6 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
   // Password visibility toggles
   bool _obscureCurrentPassword = true;
-  // bool _obscureNewPassword = true;
-  // bool _obscureConfirmPassword = true;
 
   @override
   void initState() {
@@ -87,11 +86,11 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
     if (!_canSave) return;
 
     // Implement save logic here
-    print('Saving security changes...');
-    print('Current Password: ${_currentPasswordController.text}');
-    print('New Password: ${_newPasswordController.text}');
-    print('Two-Factor Auth: $_isTwoFactorEnabled');
-    print('Trusted Email: $_isTrustedEmailEnabled');
+    debugPrint('Saving security changes...');
+    debugPrint('Current Password: ${_currentPasswordController.text}');
+    debugPrint('New Password: ${_newPasswordController.text}');
+    debugPrint('Two-Factor Auth: $_isTwoFactorEnabled');
+    debugPrint('Trusted Email: $_isTrustedEmailEnabled');
 
     // For now, just show a snackbar
     ScaffoldMessenger.of(context).showSnackBar(
@@ -120,204 +119,153 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-        ),
-        title: const Text(
-          'Password & Security',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 12.w),
-        child: Container(
-          height: 500.h,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Password Section Header
-                const SizedBox(height: 16),
+    return BlocConsumer<ProfileCubit, ProfileStates>(
+      listener: (context, state) {
+        if (state is ProfileError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red, duration: const Duration(seconds: 3)),
+          );
+        }
 
-                // Current Password Field
-                _buildPasswordField(
-                  label: 'Password',
-                  controller: _currentPasswordController,
-                  focusNode: _currentPasswordFocusNode,
-                  obscureText: _obscureCurrentPassword,
-                  onToggleVisibility: () {
-                    setState(() {
-                      _obscureCurrentPassword = !_obscureCurrentPassword;
-                    });
-                  },
-                ),
-
-                SizedBox(height: 4.h),
-
-                // New Password Field
-                // Column(
-                //   crossAxisAlignment: CrossAxisAlignment.start,
-                //   children: [
-                //     _buildPasswordField(
-                //       label: 'New Password',
-                //       controller: _newPasswordController,
-                //       focusNode: _newPasswordFocusNode,
-                //       obscureText: _obscureNewPassword,
-                //       onToggleVisibility: () {
-                //         setState(() {
-                //           _obscureNewPassword = !_obscureNewPassword;
-                //         });
-                //       },
-                //     ),
-                //     if (_newPasswordController.text.isNotEmpty && !_isPasswordValid) ...[
-                //       const SizedBox(height: 8),
-                //       Padding(
-                //         padding: const EdgeInsets.only(left: 4),
-                //         child: Row(
-                //           children: [
-                //             Icon(SolarIconsBold.infoCircle, color: Colors.red, size: 16.w),
-                //             const SizedBox(width: 4),
-                //             Text(
-                //               'Password must be at least 8 characters',
-                //               style: GoogleFonts.roboto(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w400),
-                //             ),
-                //           ],
-                //         ),
-                //       ),
-                //     ],
-                //   ],
-                // ),
-
-                // SizedBox(height: 12.h),
-
-                // // Confirm Password Field
-                // Column(
-                //   crossAxisAlignment: CrossAxisAlignment.start,
-                //   children: [
-                //     _buildPasswordField(
-                //       label: 'Confirm New Password',
-                //       controller: _confirmPasswordController,
-                //       focusNode: _confirmPasswordFocusNode,
-                //       obscureText: _obscureConfirmPassword,
-                //       onToggleVisibility: () {
-                //         setState(() {
-                //           _obscureConfirmPassword = !_obscureConfirmPassword;
-                //         });
-                //       },
-                //     ),
-                //     if (_confirmPasswordController.text.isNotEmpty && !_doPasswordsMatch) ...[
-                //       const SizedBox(height: 8),
-                //       Padding(
-                //         padding: const EdgeInsets.only(left: 4),
-                //         child: Row(
-                //           children: [
-                //             Icon(SolarIconsBold.infoCircle, color: Colors.red, size: 16.w),
-                //             const SizedBox(width: 4),
-                //             Text(
-                //               'Passwords do not match',
-                //               style: GoogleFonts.roboto(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w400),
-                //             ),
-                //           ],
-                //         ),
-                //       ),
-                //     ],
-                //   ],
-                // ),
-
-                // Security Settings Section Header
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () => ChangePasswordBottomSheet.show(context),
-                    child: Text(
-                      'Change Password',
-                      textHeightBehavior: const TextHeightBehavior(
-                        applyHeightToFirstAscent: false,
-                        applyHeightToLastDescent: false,
-                      ),
-                      style: GoogleFonts.roboto(color: AppColors.primary, fontSize: 13.sp, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Two-Factor Authentication Toggle
-                // _buildToggleField(
-                //   label: 'Two-factor authentication (2FA)',
-                //   subtitle: 'Add an extra layer of security to your account',
-                //   value: _isTwoFactorEnabled,
-                //   onChanged: (value) {
-                //     setState(() {
-                //       _isTwoFactorEnabled = value;
-                //     });
-                //   },
-                // ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    'Two-factor authentication (2FA)',
-                    style: GoogleFonts.roboto(
-                      color: AppColors.fontMainColor,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 11.sp,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Trusted Email Toggle
-                _buildToggleField(
-                  label: 'Trusted E-Mail',
-                  value: _isTrustedEmailEnabled,
-                  onChanged: (value) {
-                    setState(() {
-                      _isTrustedEmailEnabled = value;
-                    });
-                  },
-                ),
-
-                SizedBox(height: 30.h),
-              ],
+        if (state is PasswordChanged) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Password changed successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
             ),
+          );
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: AppColors.scaffoldBackgroundColor,
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            backgroundColor: AppColors.scaffoldBackgroundColor,
+            elevation: 0,
+            leading: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+            ),
+            title: const Text(
+              'Password & Security',
+              style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            centerTitle: true,
           ),
-        ),
-      ),
+          body: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            child: Container(
+              height: 500.h,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Password Section Header
+                    const SizedBox(height: 16),
 
-      // Bottom Save Button (same pattern as Personal Details)
-      bottomNavigationBar: _hasChanges
-          ? SafeArea(
-              child: Container(
-                color: Colors.transparent,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 2,
-                    left: 12.w,
-                    right: 12.w,
-                    top: 2,
-                  ),
-                  child: CustomButton(text: 'Save', onPressed: _canSave ? _saveChanges : null),
+                    // Current Password Field
+                    _buildPasswordField(
+                      label: 'Password',
+                      controller: _currentPasswordController,
+                      focusNode: _currentPasswordFocusNode,
+                      obscureText: _obscureCurrentPassword,
+                      onToggleVisibility: () {
+                        setState(() {
+                          _obscureCurrentPassword = !_obscureCurrentPassword;
+                        });
+                      },
+                    ),
+
+                    SizedBox(height: 4.h),
+
+                    // Security Settings Section Header
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () => ChangePasswordBottomSheet.show(context),
+                        child: Text(
+                          'Change Password',
+                          textHeightBehavior: const TextHeightBehavior(
+                            applyHeightToFirstAscent: false,
+                            applyHeightToLastDescent: false,
+                          ),
+                          style: GoogleFonts.roboto(
+                            color: AppColors.primary,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Two-Factor Authentication Toggle
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        'Two-factor authentication (2FA)',
+                        style: GoogleFonts.roboto(
+                          color: AppColors.fontMainColor,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 11.sp,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Trusted Email Toggle
+                    _buildToggleField(
+                      label: 'Trusted E-Mail',
+                      value: _isTrustedEmailEnabled,
+                      onChanged: (value) {
+                        setState(() {
+                          _isTrustedEmailEnabled = value;
+                        });
+                      },
+                    ),
+
+                    SizedBox(height: 30.h),
+                  ],
                 ),
               ),
-            )
-          : const SizedBox.shrink(),
+            ),
+          ),
+
+          // Bottom Save Button (same pattern as Personal Details)
+          bottomNavigationBar: _hasChanges
+              ? SafeArea(
+                  child: Container(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom + 2,
+                        left: 12.w,
+                        right: 12.w,
+                        top: 2,
+                      ),
+                      child: CustomButton(
+                        text: 'Save',
+                        onPressed: _canSave ? _saveChanges : null,
+                        isLoading: state is ProfileLoading,
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        );
+      },
     );
   }
 
@@ -385,7 +333,6 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
           child: CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-
             activeTrackColor: AppColors.primary,
             inactiveThumbColor: Colors.grey.shade400,
             inactiveTrackColor: Colors.grey.shade300,

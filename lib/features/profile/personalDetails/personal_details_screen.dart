@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/error_screen.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/models/profile_response_model.dart';
@@ -18,13 +20,13 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _positionController = TextEditingController();
-  String _selectedRole = '';
+  String selectedRole = '';
 
   // Track original values to detect changes
   String _originalName = '';
-  String _originalEmail = '';
+  String originalEmail = '';
   String _originalPosition = '';
-  String _originalRole = '';
+  String originalRole = '';
 
   // Focus nodes to detect keyboard visibility
   final FocusNode _nameFocusNode = FocusNode();
@@ -56,16 +58,16 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   void _initializeControllers(UserData user) {
     if (_controllersInitialized) return;
 
-    _nameController.text = user.fullName!;
-    _emailController.text = user.email!;
-    _positionController.text = user.position!;
-    _selectedRole = user.userType!;
+    _nameController.text = user.fullName ?? '';
+    _emailController.text = user.email ?? '';
+    _positionController.text = user.position ?? '';
+    selectedRole = user.userType ?? '';
 
     // Set original values
-    _originalName = user.fullName!;
-    _originalEmail = user.email!;
-    _originalPosition = user.position!;
-    _originalRole = user.userType!;
+    _originalName = user.fullName ?? '';
+    originalEmail = user.email ?? '';
+    _originalPosition = user.position ?? '';
+    originalRole = user.userType ?? '';
 
     _controllersInitialized = true;
   }
@@ -79,18 +81,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 
   bool get _hasChanges {
-    return _nameController.text != _originalName ||
-        _emailController.text != _originalEmail ||
-        _positionController.text != _originalPosition ||
-        _selectedRole != _originalRole ||
-        _selectedImage != null;
+    return _nameController.text != _originalName || _positionController.text != _originalPosition;
   }
 
   void _saveChanges() {
     final profileCubit = context.read<ProfileCubit>();
     final signInCubit = context.read<SignInCubit>();
 
-    final userId = signInCubit.userId;
+    final userId = signInCubit.userId == '' ? storage.read('userId') : signInCubit.userId;
 
     // First upload avatar if selected
     if (_selectedImage != null) {
@@ -105,14 +103,26 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 
   void _updateProfileData(String userId, ProfileCubit profileCubit) {
-    final updateData = {
-      'fullName': _nameController.text,
-      'email': _emailController.text,
-      'position': _positionController.text,
-      'userType': _selectedRole,
-    };
+    final updateData = <String, dynamic>{};
 
-    profileCubit.updateUserProfile(userId, updateData);
+    // Only include fields that have changed
+    if (_nameController.text != _originalName) {
+      updateData['fullName'] = _nameController.text;
+    }
+
+    if (_positionController.text != _originalPosition) {
+      updateData['position'] = _positionController.text;
+    }
+
+    // Only call update if there are actual changes
+    if (updateData.isNotEmpty) {
+      profileCubit.updateUserProfile(userId, updateData);
+    } else {
+      // Show message if no changes to save
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No changes to save'), duration: Duration(seconds: 2)));
+    }
   }
 
   void _uploadAvatar(String userId, ProfileCubit profileCubit) {
@@ -127,8 +137,18 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             _isUploadingAvatar = false;
           });
 
-          // After avatar upload, update profile data
-          _updateProfileData(userId, profileCubit);
+          // After avatar upload, update profile data if needed
+          final updateData = <String, dynamic>{};
+          if (_nameController.text != _originalName) {
+            updateData['fullName'] = _nameController.text;
+          }
+          if (_positionController.text != _originalPosition) {
+            updateData['position'] = _positionController.text;
+          }
+
+          if (updateData.isNotEmpty) {
+            _updateProfileData(userId, profileCubit);
+          }
 
           // Clear selected image after upload
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -141,22 +161,21 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           setState(() {
             _isUploadingAvatar = false;
           });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Failed to upload avatar: $error'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload avatar: $error'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
         });
   }
 
-  void _updateProfileField(String field, dynamic value) {
-    final profileCubit = context.read<ProfileCubit>();
-    final signInCubit = context.read<SignInCubit>();
+  // Rest of your existing methods remain the same...
+  // _showImageSourceBottomSheet, _buildBottomSheetOption, _pickImageFromGallery,
+  // _pickImageFromCamera, _removeProfilePicture, _showErrorSnackBar, etc.
 
-    final userId = signInCubit.userId.isNotEmpty ? signInCubit.userId : '64106cddcfcedd360d7096cc';
-
-    profileCubit.updateProfileField(userId, field, value);
-  }
-
-  // Image Picker Methods
+  // Image Picker Methods (keep your existing methods)
   Future<void> _showImageSourceBottomSheet() {
     return showModalBottomSheet(
       context: context,
@@ -359,9 +378,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
           // Update original values after successful save
           _originalName = _nameController.text;
-          _originalEmail = _emailController.text;
           _originalPosition = _positionController.text;
-          _originalRole = _selectedRole;
 
           if (mounted) {
             setState(() {});
@@ -371,15 +388,13 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       builder: (context, state) {
         // Load user data when the screen is first built
         if (state is ProfileInitial) {
-          final signInCubit = context.read<SignInCubit>();
           final profileCubit = context.read<ProfileCubit>();
 
           // Try to load from storage first, then from API if needed
           WidgetsBinding.instance.addPostFrameCallback((_) {
             profileCubit.loadUserFromStorage().then((_) {
               // If no user in storage, fetch from API
-              final userId = signInCubit.userId.isNotEmpty ? signInCubit.userId : '64106cddcfcedd360d7096cc';
-              profileCubit.getUserProfile(userId);
+              profileCubit.getUserProfile();
             });
           });
         }
@@ -418,213 +433,219 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 
   Widget _buildBody(BuildContext context, ProfileStates state) {
-    if (state is ProfileLoading) {
+    if (state is ProfileLoading || state is ProfileInitial) {
       return const Center(child: CircularProgressIndicator());
     }
 
     if (state is ProfileError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Error: ${state.message}'),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                final signInCubit = context.read<SignInCubit>();
-                final userId = signInCubit.userId.isNotEmpty ? signInCubit.userId : '64106cddcfcedd360d7096cc';
-                context.read<ProfileCubit>().getUserProfile(userId);
-              },
-              child: const Text('Retry'),
+      return Error404Screen(
+        errorMessage: state.message,
+        onRetry: () {
+          context.read<ProfileCubit>().getUserProfile();
+        },
+        buttonText: 'Reload Profile',
+      );
+    }
+
+    // Only proceed if we have ProfileLoaded state
+    if (state is ProfileLoaded) {
+      final user = state.user;
+
+      return SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Profile Picture Section
+                Stack(
+                  children: [
+                    Container(
+                      width: 131.w,
+                      height: 131.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.teal.shade300, Colors.teal.shade600],
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Profile Image
+                          CircleAvatar(radius: 80, backgroundImage: _getProfileImage(user.avatar)),
+
+                          // Uploading overlay
+                          if (_isUploadingAvatar)
+                            Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    // Camera Button
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: _showImageSourceBottomSheet,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                        ),
+                      ),
+                    ),
+
+                    // Selected Image Indicator
+                    if (_selectedImage != null)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                          child: const Icon(Icons.check, color: Colors.white, size: 16),
+                        ),
+                      ),
+                  ],
+                ),
+
+                // Selected Image Preview Text
+                if (_selectedImage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'New photo selected',
+                    style: GoogleFonts.roboto(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ],
+
+                const SizedBox(height: 32),
+
+                // Full Name Field
+                _buildInputField(label: 'Full Name', controller: _nameController, focusNode: _nameFocusNode),
+
+                SizedBox(height: 12.h),
+
+                // Email Field (read-only with navigation hint)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildReadOnlyField(label: 'Email', value: user.email ?? ''),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Icon(SolarIconsBold.infoCircle, color: AppColors.warningColor, size: 20.w),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () {
+                              // Navigate to email update screen
+                              // Navigator.push(context, MaterialPageRoute(builder: (context) => UpdateEmailScreen()));
+                            },
+                            child: Text(
+                              'confirm email address',
+                              style: GoogleFonts.roboto(
+                                color: AppColors.warningColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 12.h),
+
+                // Position Field
+                _buildInputField(label: 'Position', controller: _positionController, focusNode: _positionFocusNode),
+
+                const SizedBox(height: 20),
+
+                // Role Dropdown (read-only)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Role',
+                      style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      initialValue: user.userType ?? '',
+                      enabled: false,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      style: AppTypography.fontSize16Normal,
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 30.h),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
 
-    final user = state is ProfileLoaded ? state.user : null;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Profile Picture Section
-              Stack(
-                children: [
-                  Container(
-                    width: 131.w,
-                    height: 131.w,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Colors.teal.shade300, Colors.teal.shade600],
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Profile Image
-                        CircleAvatar(radius: 80, backgroundImage: _getProfileImage(user?.avatar)),
-
-                        // Uploading overlay
-                        if (_isUploadingAvatar)
-                          Container(
-                            width: double.infinity,
-                            height: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  // Camera Button
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: _showImageSourceBottomSheet,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
-                      ),
-                    ),
-                  ),
-
-                  // Selected Image Indicator
-                  if (_selectedImage != null)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                        child: const Icon(Icons.check, color: Colors.white, size: 16),
-                      ),
-                    ),
-                ],
-              ),
-
-              // Selected Image Preview Text
-              if (_selectedImage != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'New photo selected',
-                  style: GoogleFonts.roboto(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-              ],
-
-              const SizedBox(height: 32),
-
-              // Full Name Field
-              _buildInputField(label: 'Full Name', controller: _nameController, focusNode: _nameFocusNode),
-
-              SizedBox(height: 12.h),
-
-              // Email Field with confirmation text
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInputField(label: 'Email', controller: _emailController, focusNode: _emailFocusNode),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Icon(SolarIconsBold.infoCircle, color: AppColors.warningColor, size: 20.w),
-                        const SizedBox(width: 4),
-                        Text(
-                          'confirm my email address',
-                          style: GoogleFonts.roboto(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.w400),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 2.h),
-
-              // Position Field
-              _buildInputField(label: 'Position', controller: _positionController, focusNode: _positionFocusNode),
-
-              const SizedBox(height: 20),
-
-              // Role Dropdown
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Role',
-                    style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    initialValue: user!.userType!,
-
-                    enabled: false,
-                    decoration: InputDecoration(
-                      filled: true,
-
-                      fillColor: Colors.grey.shade50,
-                      suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.blue),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Colors.blue, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                    style: AppTypography.fontSize16Normal,
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 30.h),
-            ],
-          ),
-        ),
-      ),
-    );
+    // Return a loading indicator as fallback for any unexpected states
+    return const Center(child: CircularProgressIndicator());
   }
 
   ImageProvider _getProfileImage(String? avatarUrl) {
@@ -694,7 +715,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           enabled: true,
           decoration: InputDecoration(
             filled: true,
-
             fillColor: Colors.grey.shade50,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -707,6 +727,37 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.blue, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          style: AppTypography.fontSize16Normal,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReadOnlyField({required String label, required String value}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          initialValue: value,
+          enabled: false,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),

@@ -26,3 +26,9 @@ class ProfileError extends ProfileStates {
 
   ProfileError({required this.message});
 }
+
+class EmailUpdated extends ProfileStates {
+  final String email;
+
+  EmailUpdated({required this.email});
+}

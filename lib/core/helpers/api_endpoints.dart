@@ -8,7 +8,11 @@ class ApiEndpoints {
   static const String passwordForgotten = '$baseUrl/auth/forget-password';
 
   //user profile
-  static const String getUserById = '$baseUrl/user/<id>'; // Replace <id> with actual user ID
+  static const String getProfile = '$baseUrl/auth/me';
+  static const String updateProfileById = '$baseUrl/user/<id>';
+  static const String updateProfileEmail = '$baseUrl/user/email/<id>';
+  static const String updateProfilePassword = '$baseUrl/user/password/<id>';
+  static const String updateProfileAvatar = '$baseUrl/user/avatar/<id>';
 
   //job
   static const String getAllJobs = '$baseUrl/job';

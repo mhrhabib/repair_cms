@@ -10,13 +10,13 @@ class ProfileResponseModel {
     return ProfileResponseModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      data: UserData.fromJson(json['data'] ?? {}),
+      data: json['data'] != null ? UserData.fromJson(json['data']) : null,
       error: json['error'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'success': success, 'message': message, 'data': data!.toJson(), 'error': error};
+    return {'success': success, 'message': message, 'data': data?.toJson(), 'error': error};
   }
 }
 
@@ -125,7 +125,7 @@ class UserData {
 
   factory UserData.fromJson(Map<String, dynamic> json) {
     return UserData(
-      id: json['_id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '', // Handle both _id and id
       email: json['email'] ?? '',
       fullName: json['fullName'] ?? '',
       getFeatureUpdate: json['getFeatureUpdate'] ?? false,
@@ -137,15 +137,15 @@ class UserData {
       updatedAt: json['updatedAt'] ?? '',
       position: json['position'] ?? '',
       shortName: json['shortName'] ?? '',
-      currency: Currency.fromJson(json['currency'] ?? {}),
-      dateFormat: DateFormat.fromJson(json['dateFormat'] ?? {}),
-      language: Language.fromJson(json['language'] ?? {}),
-      timeFormat: TimeFormat.fromJson(json['timeFormat'] ?? {}),
-      timeZone: TimeZone.fromJson(json['timeZone'] ?? {}),
+      currency: json['currency'] != null ? Currency.fromJson(json['currency']) : null,
+      dateFormat: json['dateFormat'] != null ? DateFormat.fromJson(json['dateFormat']) : null,
+      language: json['language'] != null ? Language.fromJson(json['language']) : null,
+      timeFormat: json['timeFormat'] != null ? TimeFormat.fromJson(json['timeFormat']) : null,
+      timeZone: json['timeZone'] != null ? TimeZone.fromJson(json['timeZone']) : null,
       repaircmsAccess: json['repaircms_access'] ?? false,
       userType: json['userType'] ?? '',
       isSubUser: json['isSubUser'] ?? false,
-      location: Location.fromJson(json['location'] ?? {}),
+      location: json['location'] != null ? Location.fromJson(json['location']) : null,
       repairTrackingId: json['repair_tracking_id'] ?? '',
       accessList: json['accessList'] ?? [],
       appStoreAccess: json['app_store_access'] ?? false,
@@ -173,7 +173,7 @@ class UserData {
       twoFactorEmail: json['two_factor_email'] ?? '',
       emailBasedAuthEnabled: json['email_based_auth_enabled'] ?? false,
       appBasedAuthEnabled: json['app_based_auth_enabled'] ?? false,
-      subscription: Subscription.fromJson(json['subscription'] ?? {}),
+      subscription: json['subscription'] != null ? Subscription.fromJson(json['subscription']) : null,
     );
   }
 
@@ -385,7 +385,7 @@ class Location {
 
   factory Location.fromJson(Map<String, dynamic> json) {
     return Location(
-      id: json['_id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '',
       locationId: json['location_id'] ?? '',
       locationName: json['location_name'] ?? '',
       street: json['street'] ?? '',
@@ -479,7 +479,7 @@ class Subscription {
 
   factory Subscription.fromJson(Map<String, dynamic> json) {
     return Subscription(
-      id: json['_id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '',
       plan: json['plan'] ?? '',
       status: json['status'] ?? '',
       startDate: json['startDate'] ?? '',
