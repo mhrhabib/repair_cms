@@ -144,21 +144,6 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
 
-                          // Biometric Quick Access Button
-                          // if (_showBiometricOption) ...[
-                          //   SizedBox(height: screenHeight * 0.04),
-                          //   CustomButton(
-                          //     trailingIcon: Icon(Icons.fingerprint, size: 24.sp),
-                          //     text: 'Quick Login with Biometric',
-                          //     onPressed: _showBiometricLoginDialog,
-                          //     backgroundColor: AppColors.secondary,
-                          //   ),
-                          //   SizedBox(height: screenHeight * 0.04),
-                          //   const Center(
-                          //     child: Text('or', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                          //   ),
-                          //   SizedBox(height: screenHeight * 0.02),
-                          // ],
                           SizedBox(height: screenHeight * 0.02),
 
                           // Email Input
@@ -207,11 +192,6 @@ class _SignInScreenState extends State<SignInScreen> {
                           SizedBox(height: screenHeight * 0.18),
 
                           // Progress Indicator
-                          ThreeDotsPointerWidget(
-                            primaryColor: AppColors.primary,
-                            secondaryColor: AppColors.secondary,
-                            activeIndex: 1,
-                          ),
                         ],
                       ),
                     );
@@ -225,45 +205,57 @@ class _SignInScreenState extends State<SignInScreen> {
         // Bottom Button
         bottomNavigationBar: Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16, left: 16, right: 16, top: 8),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Expanded(
-                child: BlocBuilder<SignInCubit, SignInStates>(
-                  builder: (context, state) {
-                    return CustomButton(
-                      text: 'Confirm Email',
-                      onPressed: state is SignInLoading
-                          ? null
-                          : () {
-                              if (_formKey.currentState!.validate() && _isEmailValid) {
-                                context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
-                              }
-                            },
-                      child: state is SignInLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
-                              ),
-                            )
-                          : null,
-                    );
-                  },
-                ),
+              ThreeDotsPointerWidget(
+                primaryColor: AppColors.primary,
+                secondaryColor: AppColors.secondary,
+                activeIndex: 1,
               ),
-              if (_showBiometricOption) ...[
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
-                  child: IconButton(
-                    onPressed: _authenticateWithBiometric,
-                    icon: Icon(Icons.fingerprint, size: 28, color: Colors.white),
-                    padding: const EdgeInsets.all(12),
+              SizedBox(height: screenHeight * 0.02),
+              Row(
+                children: [
+                  Expanded(
+                    child: BlocBuilder<SignInCubit, SignInStates>(
+                      builder: (context, state) {
+                        return CustomButton(
+                          text: 'Confirm Email',
+                          onPressed: state is SignInLoading
+                              ? null
+                              : () {
+                                  if (_formKey.currentState!.validate() && _isEmailValid) {
+                                    context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
+                                  }
+                                },
+                          child: state is SignInLoading
+                              ? SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
+                                  ),
+                                )
+                              : null,
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                  if (_showBiometricOption) ...[
+                    const SizedBox(width: 12),
+                    Container(
+                      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
+                      child: IconButton(
+                        onPressed: _authenticateWithBiometric,
+                        icon: Icon(Icons.fingerprint, size: 28, color: Colors.white),
+                        padding: const EdgeInsets.all(12),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),

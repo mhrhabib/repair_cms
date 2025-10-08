@@ -6,7 +6,7 @@ import 'package:repair_cms/features/auth/get_started_screen.dart';
 import 'package:repair_cms/features/auth/forgotPassword/password_forgotten_screen.dart';
 import 'package:repair_cms/features/auth/signin/password_input_screen.dart';
 import 'package:repair_cms/features/auth/signin/sign_in_screen.dart';
-import 'package:repair_cms/features/dasboard/dashboard_screen.dart';
+import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/home/home_screen.dart';
 import 'package:repair_cms/features/splash/splash_screen.dart';
 

@@ -157,13 +157,12 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                           ),
                         ),
 
-                        SizedBox(height: screenHeight * 0.08),
+                        //SizedBox(height: screenHeight * 0.08),
 
                         // Email display
-                        Center(
-                          child: Text(widget.email, style: AppTypography.sfProText15.copyWith(color: Colors.grey)),
-                        ),
-
+                        // Center(
+                        //   child: Text(widget.email, style: AppTypography.sfProText15.copyWith(color: Colors.grey)),
+                        // ),
                         SizedBox(height: 20),
 
                         // Password Input Field
@@ -270,36 +269,9 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                         const SizedBox(height: 16),
 
                         // Progress Indicator
-                        ThreeDotsPointerWidget(
-                          primaryColor: AppColors.primary,
-                          secondaryColor: AppColors.secondary,
-                          activeIndex: 2,
-                        ),
-
                         const SizedBox(height: 20),
 
                         // Sign In Button
-                        CustomButton(
-                          trailingIcon: Icon(Icons.login, size: 24.sp),
-                          text: 'Log In',
-                          onPressed: state is SignInLoading
-                              ? null
-                              : () {
-                                  if (_formKey.currentState!.validate() && _isPasswordValid) {
-                                    context.read<SignInCubit>().login(widget.email, _passwordController.text);
-                                  }
-                                },
-                          child: state is SignInLoading
-                              ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
-                                  ),
-                                )
-                              : null,
-                        ),
                       ],
                     ),
                   );
@@ -307,6 +279,46 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
               ),
             ),
           ),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16, left: 16, right: 16, top: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            ThreeDotsPointerWidget(
+              primaryColor: AppColors.primary,
+              secondaryColor: AppColors.secondary,
+              activeIndex: 1,
+            ),
+            SizedBox(height: screenHeight * 0.02),
+            BlocBuilder<SignInCubit, SignInStates>(
+              builder: (context, state) {
+                return CustomButton(
+                  trailingIcon: Icon(Icons.login, size: 24.sp),
+                  text: 'Log In',
+                  onPressed: state is SignInLoading
+                      ? null
+                      : () {
+                          if (_formKey.currentState!.validate() && _isPasswordValid) {
+                            context.read<SignInCubit>().login(widget.email, _passwordController.text);
+                          }
+                        },
+                  child: state is SignInLoading
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
+                          ),
+                        )
+                      : null,
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

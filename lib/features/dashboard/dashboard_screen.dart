@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
+import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'dart:math' as math;
@@ -19,7 +21,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     colors: <Color>[Color(0xFFDB00FF), Color(0xFF432BFF)],
   ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0));
 
-  // Move date range state variables to widget level
   DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
 
@@ -27,12 +28,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     print(context.read<SignInCubit>().userType);
     print(context.read<SignInCubit>().userId);
+
+    // Initialize cubit
+
+    // Load initial dashboard data
+    _loadAllDashboardData();
     super.initState();
+  }
+
+  void _loadAllDashboardData() {
+    if (_selectedStartDate != null && _selectedEndDate != null) {
+      context.read<DashboardCubit>().loadAllDashboardData(
+        startDate: _selectedStartDate,
+        endDate: _selectedEndDate,
+        userId: storage.read('userId'),
+      );
+    } else {
+      context.read<DashboardCubit>().getThisMonthStats(storage.read('userId'));
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   // Function to show date range picker bottom sheet
   void _showDateRangePicker() {
-    // Create local variables for the modal state
     DateTime? tempStartDate = _selectedStartDate;
     DateTime? tempEndDate = _selectedEndDate;
 
@@ -140,8 +162,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               });
                               Navigator.pop(context);
 
+                              // Reload dashboard data with new date range
+                              context.read<DashboardCubit>().getDashboardStats(
+                                startDate: _selectedStartDate,
+                                endDate: _selectedEndDate,
+                                userId: storage.read('userId'),
+                              );
+
                               // Show success message
-                              showCustomToast('Date range applied successfully');
+                              showCustomToast('Date range applied successfully', isError: false);
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -163,63 +192,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                // _buildAppBar(),
-                SizedBox(height: 28.h),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 12.h),
-                        // Greeting Section
-                        _buildGreetingSection(),
-                        SizedBox(height: 12.h),
+    return BlocProvider<DashboardCubit>(
+      create: (context) => context.read<DashboardCubit>(),
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  SizedBox(height: 28.h),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 12.h),
+                          // Greeting Section
+                          _buildGreetingSection(),
+                          SizedBox(height: 12.h),
 
-                        // Incomplete To-Do's Card
-                        _buildIncompleteToDoCard(),
-                        SizedBox(height: 12.h),
+                          // Incomplete To-Do's Card
+                          _buildIncompleteToDoCard(),
+                          SizedBox(height: 12.h),
 
-                        // Completed Jobs Card
-                        _buildCompletedJobsCard(),
-                        SizedBox(height: 16.h),
+                          // Completed Jobs Card
+                          _buildCompletedJobsCard(),
+                          SizedBox(height: 16.h),
 
-                        // Job Progress Card - Using the new widget
-                        const JobProgressWidget(),
+                          // Job Progress Card - Using the new widget
+                          const JobProgressWidget(),
 
-                        // Add bottom padding for FAB
-                        SizedBox(height: 100.h),
-                      ],
+                          // Add bottom padding for FAB
+                          SizedBox(height: 100.h),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-
-            // Enhanced Search Widget positioned at top
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: EnhancedSearchWidget(
-                onSearchChanged: (query) {
-                  // Handle search query changes
-                  print('Search query: $query');
-                },
-                onQRScanPressed: () {
-                  // Handle QR scan button press
-                  _showQRScanDialog();
-                },
+                ],
               ),
-            ),
-          ],
+
+              // Enhanced Search Widget positioned at top
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: EnhancedSearchWidget(
+                  onSearchChanged: (query) {
+                    // Handle search query changes
+                    print('Search query: $query');
+                  },
+                  onQRScanPressed: () {
+                    // Handle QR scan button press
+                    _showQRScanDialog();
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -248,7 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         Text(
-          '3. August, 2023',
+          DateFormat('dd.MMM.yyyy').format(DateTime.now()),
           textHeightBehavior: const TextHeightBehavior(
             applyHeightToFirstAscent: false,
             applyHeightToLastDescent: false,
@@ -305,76 +336,140 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildCompletedJobsCard() {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: AppColors.whiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 40.w,
-                height: 40.h,
-                decoration: BoxDecoration(color: const Color(0xFFC507FF), borderRadius: BorderRadius.circular(8.r)),
-                child: Icon(SolarIconsBold.caseMinimalistic, color: Colors.white, size: 30.sp),
-              ),
-              SizedBox(width: 16.w),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
-                child: GestureDetector(
-                  onTap: _showDateRangePicker,
-                  child: Row(
-                    children: [
-                      Text(
-                        _selectedStartDate != null && _selectedEndDate != null
-                            ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
-                            : 'Today, ${DateFormat('yyyy').format(DateTime.now())}',
-                        style: AppTypography.fontSize16,
-                      ),
-                      SizedBox(width: 2.w),
-                      Container(height: 28.h, color: const Color(0x898FA0B2), width: 2.w),
-                      SizedBox(width: 2.w),
-                      const Icon(Icons.calendar_month, color: Color(0xFF2589F6)),
-                      Icon(Icons.keyboard_arrow_down, color: const Color(0xFF2589F6), size: 20.sp),
-                    ],
-                  ),
-                ),
-              ),
+    return BlocBuilder<DashboardCubit, DashboardState>(
+      builder: (context, state) {
+        int completedJobs = 0;
+        String dateRangeText = '01.02.2024 - 28.02.2024';
+
+        if (state is DashboardLoaded) {
+          completedJobs = state.dashboardStats!.completedJobs;
+
+          // Format the date range from the API response
+          final filterRange = state.dashboardStats!.filterRange;
+          if (filterRange.startDate.isNotEmpty && filterRange.endDate.isNotEmpty) {
+            try {
+              final startDate = DateTime.parse(filterRange.startDate);
+              final endDate = DateTime.parse(filterRange.endDate);
+              dateRangeText =
+                  '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}';
+            } catch (e) {
+              debugPrint('Error parsing dates: $e');
+            }
+          }
+        } else if (_selectedStartDate != null && _selectedEndDate != null) {
+          dateRangeText =
+              '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}';
+        }
+
+        return Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: AppColors.whiteColor,
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
             ],
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(height: 4.h),
-                  Text(
-                    _selectedStartDate != null && _selectedEndDate != null
-                        ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
-                        : '01.02.2024 - 28.02.2024',
-                    style: AppTypography.fontSize14.copyWith(color: AppColors.fontMainColor),
+                  Container(
+                    width: 40.w,
+                    height: 40.h,
+                    decoration: BoxDecoration(color: const Color(0xFFC507FF), borderRadius: BorderRadius.circular(8.r)),
+                    child: Icon(SolarIconsBold.caseMinimalistic, color: Colors.white, size: 30.sp),
                   ),
-                  Text(
-                    'Completed Jobs',
-                    style: AppTypography.fontSize24.copyWith(
-                      fontWeight: FontWeight.w500,
-                      foreground: Paint()..shader = linearGradient,
+                  SizedBox(width: 16.w),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
+                    child: GestureDetector(
+                      onTap: _showDateRangePicker,
+                      child: Row(
+                        children: [
+                          Text(
+                            _selectedStartDate != null && _selectedEndDate != null
+                                ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
+                                : 'This Month',
+                            style: AppTypography.fontSize16,
+                          ),
+                          SizedBox(width: 2.w),
+                          Container(height: 28.h, color: const Color(0x898FA0B2), width: 2.w),
+                          SizedBox(width: 2.w),
+                          const Icon(Icons.calendar_month, color: Color(0xFF2589F6)),
+                          Icon(Icons.keyboard_arrow_down, color: const Color(0xFF2589F6), size: 20.sp),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-              Text('156', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w800)),
+              SizedBox(height: 12.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(dateRangeText, style: AppTypography.fontSize14.copyWith(color: AppColors.fontMainColor)),
+                      Text(
+                        'Completed Jobs',
+                        style: AppTypography.fontSize24.copyWith(
+                          fontWeight: FontWeight.w500,
+                          foreground: Paint()..shader = linearGradient,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(completedJobs.toString(), style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w800)),
+                ],
+              ),
+
+              // Loading state
+              if (state is DashboardLoading) ...[
+                SizedBox(height: 12.h),
+                LinearProgressIndicator(
+                  backgroundColor: AppColors.borderColor,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              ],
+
+              // Error state
+              if (state is DashboardError) ...[
+                SizedBox(height: 12.h),
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 16.sp),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text('Failed to load data', style: AppTypography.fontSize12.copyWith(color: Colors.red)),
+                      ),
+                      GestureDetector(
+                        onTap: _loadAllDashboardData,
+                        child: Text(
+                          'Retry',
+                          style: AppTypography.fontSize12.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -3,6 +3,8 @@ import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cu
 import 'package:repair_cms/features/auth/forgotPassword/repo/forgot_password_repo.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
+import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
+import 'package:repair_cms/features/dashboard/repository/dashboard_repository.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
@@ -37,5 +39,7 @@ class SetUpDI {
     // job repository and cubit
     _getIt.registerLazySingleton<JobRepository>(() => JobRepository());
     _getIt.registerFactory<JobCubit>(() => JobCubit(repository: _getIt<JobRepository>()));
+    _getIt.registerLazySingleton<DashboardRepository>(() => DashboardRepository());
+    _getIt.registerFactory<DashboardCubit>(() => DashboardCubit(repository: _getIt<DashboardRepository>()));
   }
 }

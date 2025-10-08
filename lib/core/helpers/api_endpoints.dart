@@ -16,4 +16,5 @@ class ApiEndpoints {
 
   //job
   static const String getAllJobs = '$baseUrl/job';
+  static const String completeUserJob = '$baseUrl/job/user/complete/<id>';
 }
