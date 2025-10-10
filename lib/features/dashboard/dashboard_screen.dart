@@ -3,6 +3,8 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
+import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
+import 'package:repair_cms/features/quickTask/screens/quick_task_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'dart:math' as math;
@@ -29,10 +31,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     print(context.read<SignInCubit>().userType);
     print(context.read<SignInCubit>().userId);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAllDashboardData();
+      context.read<QuickTaskCubit>().getTodos();
+    });
+
     // Initialize cubit
 
-    // Load initial dashboard data
-    _loadAllDashboardData();
     super.initState();
   }
 
@@ -214,7 +219,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           SizedBox(height: 12.h),
 
                           // Incomplete To-Do's Card
-                          _buildIncompleteToDoCard(),
+                          _buildIncompleteToDoCard(context),
                           SizedBox(height: 12.h),
 
                           // Completed Jobs Card
@@ -290,48 +295,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildIncompleteToDoCard() {
-    return Container(
-      padding: EdgeInsets.all(8.w),
-      decoration: BoxDecoration(
-        color: AppColors.whiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text('Incomplete To-Do\'s', style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor)),
-                SizedBox(height: 8.h),
-                Text('5', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+  Widget _buildIncompleteToDoCard(BuildContext context) {
+    return BlocBuilder<QuickTaskCubit, QuickTaskState>(
+      builder: (context, state) {
+        final incompleteCount = context.read<QuickTaskCubit>().getIncompleteTodosCount();
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => QuickTaskScreen()));
+          },
+          child: Container(
+            padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: AppColors.whiteColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: AppColors.borderColor),
+              color: AppColors.whiteColor,
+              borderRadius: BorderRadius.circular(12.r),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.today_rounded, color: AppColors.primary, size: 22.sp),
-                SizedBox(width: 4.w),
-                Text(
-                  'See All To-Do\'s',
-                  style: AppTypography.fontSize16.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Incomplete To-Do\'s',
+                        style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text('$incompleteCount', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.whiteColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: AppColors.borderColor),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.today_rounded, color: AppColors.primary, size: 22.sp),
+                      SizedBox(width: 4.w),
+                      Text(
+                        'See All To-Do\'s',
+                        style: AppTypography.fontSize16.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

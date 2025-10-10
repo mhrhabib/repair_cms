@@ -5,10 +5,18 @@ import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
 import 'package:repair_cms/features/dashboard/repository/dashboard_repository.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
+import 'package:repair_cms/features/jobBooking/cubits/service/service_cubit.dart';
+import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
+import 'package:repair_cms/features/jobBooking/repository/job_booking_repository.dart';
+import 'package:repair_cms/features/jobBooking/repository/service_repository.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
+import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
+import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 
 class SetUpDI {
   static final GetIt _getIt = GetIt.instance;
@@ -41,5 +49,18 @@ class SetUpDI {
     _getIt.registerFactory<JobCubit>(() => JobCubit(repository: _getIt<JobRepository>()));
     _getIt.registerLazySingleton<DashboardRepository>(() => DashboardRepository());
     _getIt.registerFactory<DashboardCubit>(() => DashboardCubit(repository: _getIt<DashboardRepository>()));
+
+    // quick task repository and cubit
+    _getIt.registerLazySingleton<QuickTaskRepository>(() => QuickTaskRepository());
+    _getIt.registerFactory<QuickTaskCubit>(() => QuickTaskCubit(_getIt<QuickTaskRepository>()));
+
+    //service list repository and cubit can be registered here as well
+    _getIt.registerLazySingleton<ServiceRepository>(() => ServiceRepositoryImpl());
+    _getIt.registerFactory<ServiceCubit>(() => ServiceCubit(serviceRepository: _getIt<ServiceRepository>()));
+
+    // job booking cubit
+    _getIt.registerLazySingleton<JobBookingRepository>(() => JobBookingRepositoryImpl());
+    _getIt.registerFactory<JobCreateCubit>(() => JobCreateCubit(jobRepository: _getIt<JobBookingRepository>()));
+    _getIt.registerFactory<JobBookingCubit>(() => JobBookingCubit());
   }
 }

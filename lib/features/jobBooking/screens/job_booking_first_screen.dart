@@ -1,4 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/jobBooking/cubits/service/service_cubit.dart';
+import 'package:repair_cms/features/jobBooking/models/service_response_model.dart';
 import 'one/job_booking_start_booking_job_screen.dart';
 
 class JobBookingFirstScreen extends StatefulWidget {
@@ -11,71 +13,23 @@ class JobBookingFirstScreen extends StatefulWidget {
 class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-
-  bool _hasSearchResults = false;
-  final List<ServiceItem> _selectedServices = [];
-
-  final List<ServiceItem> _allServices = [
-    ServiceItem(
-      id: '1',
-      name: 'Apple iPhone 16 LCD repair',
-      category: 'iPhone 16 | Screen Replacement',
-      price: 179.00,
-      duration: '30-45 mins',
-      description: 'Complete LCD screen replacement service',
-    ),
-    ServiceItem(
-      id: '2',
-      name: 'Apple iPhone 16 Battery replacement',
-      category: 'iPhone 16 | Battery Service',
-      price: 99.00,
-      duration: '20-30 mins',
-      description: 'Battery replacement service',
-    ),
-    ServiceItem(
-      id: '3',
-      name: 'Apple iPhone 16 Camera repair',
-      category: 'iPhone 16 | Camera Replacement',
-      price: 149.00,
-      duration: '40-50 mins',
-      description: 'Camera replacement service',
-    ),
-    ServiceItem(
-      id: '4',
-      name: 'Samsung Galaxy S24 Screen repair',
-      category: 'Galaxy S24 | Screen Replacement',
-      price: 199.00,
-      duration: '35-45 mins',
-      description: 'Complete screen replacement service',
-    ),
-  ];
-
-  List<ServiceItem> _filteredServices = [];
+  final List<ServiceModel> _selectedServices = [];
 
   @override
   void initState() {
     super.initState();
-    _filteredServices = [];
   }
 
-  void _filterServices(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filteredServices = [];
-        _hasSearchResults = false;
-      } else {
-        _filteredServices = _allServices.where((service) {
-          return service.name.toLowerCase().contains(query.toLowerCase()) ||
-              service.category.toLowerCase().contains(query.toLowerCase());
-        }).toList();
-        _hasSearchResults = _filteredServices.isNotEmpty;
-      }
-    });
+  void _onSearchChanged(String query) {
+    if (query.isNotEmpty) {
+      context.read<ServiceCubit>().searchServices(keyword: query);
+    } else {
+      context.read<ServiceCubit>().clearSearch();
+    }
   }
 
-  void _addService(ServiceItem service) {
+  void _addService(ServiceModel service) {
     setState(() {
-      // Check if service is already selected to prevent duplicates
       if (!_selectedServices.any((item) => item.id == service.id)) {
         _selectedServices.add(service);
       }
@@ -84,10 +38,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
     // Clear search and hide keyboard
     _searchController.clear();
     _searchFocusNode.unfocus();
-    _filterServices('');
+    context.read<ServiceCubit>().clearSearch();
   }
 
-  void _removeService(ServiceItem service) {
+  void _removeService(ServiceModel service) {
     setState(() {
       _selectedServices.removeWhere((item) => item.id == service.id);
     });
@@ -106,7 +60,6 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
     int index = lowerText.indexOf(lowerQuery);
 
     while (index != -1) {
-      // Add text before match
       if (index > start) {
         spans.add(
           TextSpan(
@@ -116,7 +69,6 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
         );
       }
 
-      // Add highlighted match
       spans.add(
         TextSpan(
           text: text.substring(index, index + query.length),
@@ -128,7 +80,6 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
       index = lowerText.indexOf(lowerQuery, start);
     }
 
-    // Add remaining text
     if (start < text.length) {
       spans.add(
         TextSpan(
@@ -154,7 +105,6 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
     int index = lowerText.indexOf(lowerQuery);
 
     while (index != -1) {
-      // Add text before match
       if (index > start) {
         spans.add(
           TextSpan(
@@ -164,7 +114,6 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
         );
       }
 
-      // Add highlighted match
       spans.add(
         TextSpan(
           text: text.substring(index, index + query.length),
@@ -176,7 +125,6 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
       index = lowerText.indexOf(lowerQuery, start);
     }
 
-    // Add remaining text
     if (start < text.length) {
       spans.add(
         TextSpan(
@@ -302,7 +250,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
-                              onChanged: _filterServices,
+                              onChanged: _onSearchChanged,
                               decoration: InputDecoration(
                                 hintText: _selectedServices.isEmpty ? 'Search services...' : 'iPhone 16 lcd repair...',
                                 hintStyle: AppTypography.fontSize14.copyWith(color: Colors.grey.shade400),
@@ -315,7 +263,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                             GestureDetector(
                               onTap: () {
                                 _searchController.clear();
-                                _filterServices('');
+                                context.read<ServiceCubit>().clearSearch();
                               },
                               child: Padding(
                                 padding: EdgeInsets.only(right: 16.w),
@@ -328,74 +276,92 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
 
-                  // Search Results
-                  if (_searchController.text.isNotEmpty && _hasSearchResults) ...[
-                    SizedBox(height: 8.h),
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 16.w),
-                      decoration: BoxDecoration(
-                        color: AppColors.whiteColor,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: _filteredServices.length,
-                        separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey.shade200),
-                        itemBuilder: (context, index) {
-                          final service = _filteredServices[index];
-                          final isAlreadySelected = _selectedServices.any((item) => item.id == service.id);
+            // Search Results from API
+            BlocBuilder<ServiceCubit, ServiceState>(
+              builder: (context, state) {
+                if (state is ServiceLoading) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  );
+                }
 
-                          return GestureDetector(
-                            onTap: () => _addService(service),
-                            child: Container(
-                              padding: EdgeInsets.all(16.w),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        _buildHighlightedText(service.name, _searchController.text),
-                                        SizedBox(height: 4.h),
-                                        _buildHighlightedCategory(service.category, _searchController.text),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: 12.w),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
+                if (state is ServiceLoaded) {
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final service = state.servicesResponse.services[index];
+                      final isAlreadySelected = _selectedServices.any((item) => item.id == service.id);
+
+                      return Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.whiteColor,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: GestureDetector(
+                          onTap: () => _addService(service),
+                          child: Container(
+                            padding: EdgeInsets.all(16.w),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        '${service.price.toStringAsFixed(2)} €',
-                                        style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
-                                      ),
-                                      SizedBox(height: 2.h),
-                                      Text(
-                                        'incl. 20% VAT',
-                                        style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500),
-                                      ),
+                                      _buildHighlightedText(service.name, state.searchQuery),
+                                      SizedBox(height: 4.h),
+                                      _buildHighlightedCategory(service.category, state.searchQuery),
+                                      if (service.description.isNotEmpty) ...[
+                                        SizedBox(height: 4.h),
+                                        Text(
+                                          service.description,
+                                          style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ],
                                   ),
-                                  if (isAlreadySelected) ...[
-                                    SizedBox(width: 8.w),
-                                    Icon(Icons.check_circle, color: Colors.green, size: 20.sp),
+                                ),
+                                SizedBox(width: 12.w),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '${service.priceInclVat.toStringAsFixed(2)} €',
+                                      style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                                    ),
+                                    SizedBox(height: 2.h),
+                                    Text(
+                                      'incl. ${service.vat}% VAT',
+                                      style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500),
+                                    ),
                                   ],
+                                ),
+                                if (isAlreadySelected) ...[
+                                  SizedBox(width: 8.w),
+                                  Icon(Icons.check_circle, color: Colors.green, size: 20.sp),
                                 ],
-                              ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                          ),
+                        ),
+                      );
+                    }, childCount: state.servicesResponse.services.length),
+                  );
+                }
 
-                  // No results message
-                  if (_searchController.text.isNotEmpty && !_hasSearchResults) ...[
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                if (state is ServiceNoResults) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                       child: Container(
                         padding: EdgeInsets.all(16.w),
                         width: double.infinity,
@@ -405,107 +371,138 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: Text(
-                          'no service found',
+                          'No services found for "${state.searchQuery}"',
                           style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade500),
                         ),
                       ),
                     ),
-                  ],
+                  );
+                }
 
-                  // Selected Services
-                  if (_selectedServices.isNotEmpty && _searchController.text.isEmpty) ...[
-                    SizedBox(height: 20.h),
-                    ListView.builder(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      itemCount: _selectedServices.length,
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        final service = _selectedServices[index];
-                        return Container(
-                          margin: EdgeInsets.only(bottom: 12.h),
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.whiteColor,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: AppColors.primary, width: 1.5),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      service.name,
-                                      style: AppTypography.fontSize16Bold.copyWith(color: Colors.black),
-                                    ),
+                if (state is ServiceError) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      child: Container(
+                        padding: EdgeInsets.all(16.w),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppColors.whiteColor,
+                          borderRadius: BorderRadius.circular(20.r),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Error: ${state.message}',
+                              style: AppTypography.fontSize14.copyWith(color: Colors.red),
+                            ),
+                            SizedBox(height: 8.h),
+                            ElevatedButton(
+                              onPressed: () => context.read<ServiceCubit>().refreshSearch(),
+                              child: Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                // Selected Services when no search
+                if (_selectedServices.isNotEmpty && _searchController.text.isEmpty) {
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final service = _selectedServices[index];
+                      return Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.whiteColor,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: AppColors.primary, width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(service.name, style: AppTypography.fontSize16Bold.copyWith(color: Colors.black)),
+                                  SizedBox(height: 4.h),
+                                  Text(service.category, style: AppTypography.fontSize12.copyWith(color: Colors.blue)),
+                                  if (service.description.isNotEmpty) ...[
                                     SizedBox(height: 4.h),
                                     Text(
-                                      service.category,
-                                      style: AppTypography.fontSize12.copyWith(color: Colors.blue),
+                                      service.description,
+                                      style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '${service.price.toStringAsFixed(2)} €',
-                                    style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
-                                  ),
-                                  SizedBox(height: 2.h),
-                                  Text(
-                                    'incl. 20% VAT',
-                                    style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500),
-                                  ),
                                 ],
                               ),
-                              SizedBox(width: 12.w),
-                              GestureDetector(
-                                onTap: () => _removeService(service),
-                                child: Container(
-                                  width: 24.w,
-                                  height: 24.h,
-                                  decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                  child: Icon(Icons.close, color: Colors.white, size: 16.sp),
+                            ),
+                            SizedBox(width: 12.w),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${service.priceInclVat.toStringAsFixed(2)} €',
+                                  style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
                                 ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  'incl. ${service.vat}% VAT',
+                                  style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500),
+                                ),
+                              ],
+                            ),
+                            SizedBox(width: 12.w),
+                            GestureDetector(
+                              onTap: () => _removeService(service),
+                              child: Container(
+                                width: 24.w,
+                                height: 24.h,
+                                decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                child: Icon(Icons.close, color: Colors.white, size: 16.sp),
                               ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }, childCount: _selectedServices.length),
+                  );
+                }
 
-            // Empty state as a separate Sliver
-            if (_selectedServices.isEmpty && _searchController.text.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search, size: 48.sp, color: Colors.grey.shade300),
-                      SizedBox(height: 16.h),
-                      Text(
-                        'Search for services',
-                        style: AppTypography.fontSize16.copyWith(color: Colors.grey.shade500),
+                // Empty state when no search and no selected services
+                if (_selectedServices.isEmpty && _searchController.text.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search, size: 48.sp, color: Colors.grey.shade300),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'Search for services',
+                            style: AppTypography.fontSize16.copyWith(color: Colors.grey.shade500),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            'Type in the search bar to find services',
+                            style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade400),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        'Type in the search bar to find services',
-                        style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade400),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
+                  );
+                }
+
+                return SliverToBoxAdapter(child: SizedBox.shrink());
+              },
+            ),
           ],
         ),
       ),
@@ -571,9 +568,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   }
 
   Widget _buildBookingButton() {
-    //final totalPrice = _selectedServices.fold(0.0, (sum, service) => sum + service.price);
     return Container(
-      //padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.transparent,
         boxShadow: [
@@ -581,12 +576,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 2, // Moves with keyboard
-          left: 12.w,
-          right: 12.w,
-          top: 2,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 2, left: 12.w, right: 12.w, top: 2),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -623,31 +613,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    context.read<ServiceCubit>().close();
     super.dispose();
   }
-}
-
-class ServiceItem {
-  final String id;
-  final String name;
-  final String category;
-  final double price;
-  final String duration;
-  final String description;
-
-  ServiceItem({
-    required this.id,
-    required this.name,
-    required this.category,
-    required this.price,
-    required this.duration,
-    required this.description,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is ServiceItem && runtimeType == other.runtimeType && id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
 }

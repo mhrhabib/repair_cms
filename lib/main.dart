@@ -7,10 +7,14 @@ import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
 import 'package:repair_cms/features/dashboard/repository/dashboard_repository.dart';
+import 'package:repair_cms/features/jobBooking/cubits/service/service_cubit.dart';
+import 'package:repair_cms/features/jobBooking/repository/service_repository.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
+import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
+import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
 
 void main() async {
@@ -32,6 +36,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>())),
         BlocProvider(create: (context) => JobCubit(repository: SetUpDI.getIt<JobRepository>())),
         BlocProvider(create: (context) => DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>())),
+        BlocProvider(create: (context) => QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>())),
+        BlocProvider(create: (context) => ServiceCubit(serviceRepository: SetUpDI.getIt<ServiceRepository>())),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),

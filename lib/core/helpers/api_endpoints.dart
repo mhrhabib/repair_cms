@@ -16,5 +16,16 @@ class ApiEndpoints {
 
   //job
   static const String getAllJobs = '$baseUrl/job';
+  static const String createJob = '$baseUrl/job';
+
   static const String completeUserJob = '$baseUrl/job/user/complete/<id>';
+
+  //quick task
+  static const String getAllQuickTasks = '$baseUrl/quick-task/user/<id>';
+  static const String completeTodo = '$baseUrl/quick-task/<id>';
+  static const String deleteTodo = '$baseUrl/quick-task/<id>';
+  static const String createTodo = '$baseUrl/quick-task';
+
+  //services
+  static const String servicesListUrl = '$baseUrl/auth/service';
 }

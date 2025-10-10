@@ -232,6 +232,28 @@ class DonutChartPainter extends CustomPainter {
           paint,
         );
 
+        // Draw value text on segments (ADDED THIS PART)
+        final textAngle = startAngle + sweepAngle / 2;
+        final textRadius = (radius + innerRadius) / 2;
+        final textX = center.dx + textRadius * math.cos(textAngle);
+        final textY = center.dy + textRadius * math.sin(textAngle);
+
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: segment.value.toInt().toString(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Roboto', // Optional: specify font family for consistency
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+
+        textPainter.layout();
+        textPainter.paint(canvas, Offset(textX - textPainter.width / 2, textY - textPainter.height / 2));
+
         startAngle += sweepAngle;
       }
     }
