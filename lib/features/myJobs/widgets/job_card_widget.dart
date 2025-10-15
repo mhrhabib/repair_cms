@@ -27,7 +27,13 @@ class JobCardWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: job.statusColor,
+                    color: job.jobStatus.isNotEmpty
+                        ? (job.status.toLowerCase() == 'completed'
+                              ? Colors.green
+                              : job.status.toLowerCase() == 'in progress'
+                              ? Colors.orange
+                              : Colors.blue)
+                        : Colors.grey,
                     borderRadius: BorderRadius.only(
                       topRight: Radius.circular(30.w),
                       bottomRight: Radius.circular(30.w),
@@ -69,12 +75,12 @@ class JobCardWidget extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${job.formattedDate} | ${_getWarrantyText(job)} | Location: ${job.customerDetails.shippingAddress.city}',
+                        '${job.dueDate} | ${_getWarrantyText(job)} | Location: ${job.customerDetails.shippingAddress.city}',
                         style: const TextStyle(color: Colors.black54, fontSize: 12),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        job.deviceInfo,
+                        job.deviceId,
                         style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 4),
@@ -82,17 +88,17 @@ class JobCardWidget extends StatelessWidget {
                         'IMEI/SN: ${job.deviceData.imei ?? 'N/A'}',
                         style: const TextStyle(color: Colors.black54, fontSize: 12),
                       ),
-                      if (job.customerName.isNotEmpty) ...[
+                      if (job.assignerName.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text(
-                          'Customer: ${job.customerName}',
+                          'Customer: ${job.assignerName}',
                           style: const TextStyle(color: Colors.black54, fontSize: 12),
                         ),
                       ],
                       if (job.total != '0') ...[
                         const SizedBox(height: 8),
                         Text(
-                          'Total: ${job.formattedAmount}',
+                          'Total: ${job.total}',
                           style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w600),
                         ),
                       ],

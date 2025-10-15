@@ -112,6 +112,33 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     }
   }
 
+  // Add this method to your JobBookingCubit
+  void updateContactType({String? type, String? type2, String? organization, String? customerNo, String? position}) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      emit(
+        state.copyWith(
+          contact: state.contact.copyWith(
+            type: type ?? state.contact.type,
+            type2: type2 ?? state.contact.type2,
+            organization: organization ?? state.contact.organization,
+            customerNo: customerNo ?? state.contact.customerNo,
+            position: position ?? state.contact.position,
+          ),
+          job: state.job.copyWith(
+            customerDetails: state.job.customerDetails.copyWith(
+              type: type ?? state.job.customerDetails.type,
+              type2: type2 ?? state.job.customerDetails.type2,
+              organization: organization ?? state.job.customerDetails.organization,
+              customerNo: customerNo ?? state.job.customerDetails.customerNo,
+              position: position ?? state.job.customerDetails.position,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   // Update device information
   void updateDeviceInfo({
     String? category,

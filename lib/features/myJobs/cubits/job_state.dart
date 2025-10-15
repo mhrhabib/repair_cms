@@ -1,4 +1,3 @@
-// cubits/job_states.dart
 part of 'job_cubit.dart';
 
 abstract class JobStates {}
@@ -8,20 +7,22 @@ class JobInitial extends JobStates {}
 class JobLoading extends JobStates {}
 
 class JobSuccess extends JobStates {
+  final JobListResponse response;
   final List<Job> jobs;
   final int totalJobs;
   final int serviceRequestJobs;
-  final int total;
+  final int currentTotalJobs;
   final int pages;
   final int page;
   final int limit;
   final bool hasMore;
 
   JobSuccess({
+    required this.response,
     required this.jobs,
     required this.totalJobs,
     required this.serviceRequestJobs,
-    required this.total,
+    required this.currentTotalJobs,
     required this.pages,
     required this.page,
     required this.limit,

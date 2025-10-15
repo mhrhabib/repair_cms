@@ -28,4 +28,20 @@ class ApiEndpoints {
 
   //services
   static const String servicesListUrl = '$baseUrl/auth/service';
+  //brands
+  static const String brandsListUrl = '$baseUrl/manufacturer/user/<id>';
+  //models
+  static const String modelsListUrl = '$baseUrl/model/brand/<brandId>';
+  static const String createModel = '$baseUrl/model';
+
+  // accessories
+  static const String accessoriesListUrl = '$baseUrl/accessories/user/<id>';
+  static const String createAccessories = '$baseUrl/accessories/create';
+  //business list
+  static const String businessListUrl = '$baseUrl/customer-or-supplier/user/<id>';
+  static const String createBusiness = '$baseUrl/customer-or-supplier';
+  //job types
+  static const String jobTypeListUrl = '$baseUrl/job-type/user/<id>';
+  //items
+  static const String itemsListUrl = '$baseUrl/auth/item/user/<id>';
 }

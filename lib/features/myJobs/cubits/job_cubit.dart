@@ -1,5 +1,5 @@
-// cubits/job_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 part 'job_state.dart';
@@ -46,17 +46,18 @@ class JobCubit extends Cubit<JobStates> {
         status: _currentStatusFilter,
         page: _currentPage,
         pageSize: _pageSize,
+        userID: storage.read('userId'),
       );
 
-      print('✅ JobCubit: Successfully parsed ${response.results.length} jobs');
+      print('✅ JobCubit: Successfully parsed ${response.jobs.length} jobs');
       print('📊 JobCubit: Total jobs: ${response.totalJobs}, Pages: ${response.pages}');
 
       // Check if jobs are properly parsed
-      if (response.results.isNotEmpty) {
-        final firstJob = response.results.first;
+      if (response.jobs.isNotEmpty) {
+        final firstJob = response.jobs.first;
         print('🔍 First job details:');
         print('   - Job No: ${firstJob.jobNo}');
-        print('   - Customer: ${firstJob.customerName}');
+        print('   - Customer: ${firstJob.customerDetails.firstName} ${firstJob.customerDetails.lastName}');
         print('   - Status: ${firstJob.status}');
       }
 
@@ -64,31 +65,33 @@ class JobCubit extends Cubit<JobStates> {
         final currentState = state;
         if (currentState is JobSuccess) {
           // Combine existing jobs with new ones
-          final allJobs = [...currentState.jobs, ...response.results];
+          final allJobs = [...currentState.jobs, ...response.jobs];
           emit(
             JobSuccess(
+              response: response,
               jobs: allJobs,
               totalJobs: response.totalJobs,
               serviceRequestJobs: response.serviceRequestJobs,
-              total: response.total,
+              currentTotalJobs: response.currentTotalJobs,
               pages: response.pages,
-              page: response.page,
-              limit: response.limit,
-              hasMore: response.page < response.pages,
+              page: _currentPage,
+              limit: _pageSize,
+              hasMore: _currentPage < response.pages,
             ),
           );
         }
       } else {
         emit(
           JobSuccess(
-            jobs: response.results,
+            response: response,
+            jobs: response.jobs,
             totalJobs: response.totalJobs,
             serviceRequestJobs: response.serviceRequestJobs,
-            total: response.total,
+            currentTotalJobs: response.currentTotalJobs,
             pages: response.pages,
-            page: response.page,
-            limit: response.limit,
-            hasMore: response.page < response.pages,
+            page: _currentPage,
+            limit: _pageSize,
+            hasMore: _currentPage < response.pages,
           ),
         );
       }
@@ -130,17 +133,20 @@ class JobCubit extends Cubit<JobStates> {
 
   void filterJobsByStatus(String status) {
     _currentStatusFilter = status;
+    _currentPage = 1;
     getJobs(status: status);
   }
 
   void searchJobs(String keyword) {
     _currentKeyword = keyword;
+    _currentPage = 1;
     getJobs(keyword: keyword);
   }
 
   void filterByDateRange(String startDate, String endDate) {
     _currentStartDate = startDate;
     _currentEndDate = endDate;
+    _currentPage = 1;
     getJobs(startDate: startDate, endDate: endDate);
   }
 

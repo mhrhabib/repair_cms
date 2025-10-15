@@ -14,6 +14,7 @@ class JobRepository {
     int page = 1,
     int pageSize = 20,
     String? status,
+    String? userID,
   }) async {
     try {
       final Map<String, dynamic> queryParams = {'page': page, 'pageSize': pageSize};
@@ -35,7 +36,10 @@ class JobRepository {
         queryParams['status'] = status;
       }
 
-      dio.Response response = await BaseClient.get(url: ApiEndpoints.getAllJobs, payload: queryParams);
+      dio.Response response = await BaseClient.get(
+        url: '${ApiEndpoints.getAllJobs}/user/$userID',
+        payload: queryParams,
+      );
       final responseData = response.data;
 
       if (response.statusCode == 200) {

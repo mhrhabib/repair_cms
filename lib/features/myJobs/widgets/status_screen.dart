@@ -54,7 +54,7 @@ Widget _buildStatusScreen(Job job) {
 
             // Add current status if not in history
             if (statusHistory.isEmpty)
-              _buildStatusItem(job.status, job.formattedDate, 'Job created', true, job.statusColor),
+              _buildStatusItem(job.status, job.dueDate!.toString(), 'Job created', true, Colors.amberAccent),
           ],
         ),
       ),

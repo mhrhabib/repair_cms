@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/models/service_response_model.dart';
 
 abstract class ServiceRepository {
@@ -24,67 +26,68 @@ class ServiceRepositoryImpl implements ServiceRepository {
     String keyword = '',
   }) async {
     try {
-      print('🚀 [ServiceRepository] Starting API call with parameters:');
-      print('   📍 URL: ${ApiEndpoints.servicesListUrl}');
-      print('   🔧 manufacturer: $manufacturer (${manufacturer.runtimeType})');
-      print('   🔧 model: $model (${model.runtimeType})');
-      print('   🔧 ase: $ase (${ase.runtimeType})');
-      print('   🔧 name: $name (${name.runtimeType})');
-      print('   🔧 keyword: $keyword (${keyword.runtimeType})');
+      debugPrint('🚀 [ServiceRepository] Starting API call with parameters:');
+      debugPrint('   📍 URL: ${ApiEndpoints.servicesListUrl}');
+      debugPrint('   🔧 manufacturer: $manufacturer (${manufacturer.runtimeType})');
+      debugPrint('   🔧 model: $model (${model.runtimeType})');
+      debugPrint('   🔧 ase: $ase (${ase.runtimeType})');
+      debugPrint('   🔧 name: $name (${name.runtimeType})');
+      debugPrint('   🔧 keyword: $keyword (${keyword.runtimeType})');
 
       dio.Response response = await BaseClient.get(
-        url: ApiEndpoints.servicesListUrl,
+        url: '${ApiEndpoints.servicesListUrl}/user/${storage.read('userId')}',
         payload: {
           'manufacturer': manufacturer,
           'model': model,
           'ase': ase.toString(),
           'name': name,
           'keyword': keyword,
+          'express_service': 'true',
         },
       );
 
-      print('✅ [ServiceRepository] API Response received:');
-      print('   📊 Status Code: ${response.statusCode}');
-      print('   📊 Response Type: ${response.data.runtimeType}');
+      debugPrint('✅ [ServiceRepository] API Response received:');
+      debugPrint('   📊 Status Code: ${response.statusCode}');
+      debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
       // Debug the response data structure
       if (response.data is Map) {
         final data = response.data as Map;
-        print('   📊 Response Keys: ${data.keys}');
+        debugPrint('   📊 Response Keys: ${data.keys}');
 
         // Check critical fields
         if (data.containsKey('success')) {
-          print('   ✅ success: ${data['success']} (${data['success'].runtimeType})');
+          debugPrint('   ✅ success: ${data['success']} (${data['success'].runtimeType})');
         }
         if (data.containsKey('totalServices')) {
-          print('   ✅ totalServices: ${data['totalServices']} (${data['totalServices'].runtimeType})');
+          debugPrint('   ✅ totalServices: ${data['totalServices']} (${data['totalServices'].runtimeType})');
         }
         if (data.containsKey('services')) {
-          print('   ✅ services: ${data['services']} (${data['services'].runtimeType})');
+          debugPrint('   ✅ services: ${data['services']} (${data['services'].runtimeType})');
           if (data['services'] is List) {
-            print('   📋 services list length: ${(data['services'] as List).length}');
+            debugPrint('   📋 services list length: ${(data['services'] as List).length}');
             if ((data['services'] as List).isNotEmpty) {
               final firstService = (data['services'] as List).first;
               if (firstService is Map) {
-                print('   🔍 First service keys: ${(firstService as Map).keys}');
+                debugPrint('   🔍 First service keys: ${(firstService).keys}');
               }
             }
           }
         }
       } else {
-        print('   ⚠️ Response data is not a Map: ${response.data}');
+        debugPrint('   ⚠️ Response data is not a Map: ${response.data}');
       }
 
       if (response.statusCode == 200) {
-        print('🔄 [ServiceRepository] Parsing response with ServiceResponseModel.fromJson');
+        debugPrint('🔄 [ServiceRepository] Parsing response with ServiceResponseModel.fromJson');
         try {
           final result = ServiceResponseModel.fromJson(response.data);
-          print('✅ [ServiceRepository] Successfully parsed response');
+          debugPrint('✅ [ServiceRepository] Successfully parsed response');
           return result;
         } catch (parseError, parseStack) {
-          print('❌ [ServiceRepository] Error in ServiceResponseModel.fromJson:');
-          print('   💥 Parse Error: $parseError');
-          print('   📋 Parse Stack: $parseStack');
+          debugPrint('❌ [ServiceRepository] Error in ServiceResponseModel.fromJson:');
+          debugPrint('   💥 Parse Error: $parseError');
+          debugPrint('   📋 Parse Stack: $parseStack');
           rethrow;
         }
       } else {
@@ -94,17 +97,17 @@ class ServiceRepositoryImpl implements ServiceRepository {
         );
       }
     } on DioException catch (e) {
-      print('🌐 [ServiceRepository] DioException occurred:');
-      print('   💥 Error: ${e.message}');
-      print('   📍 Type: ${e.type}');
-      print('   🔧 Response: ${e.response?.data}');
-      print('   📊 Status: ${e.response?.statusCode}');
+      debugPrint('🌐 [ServiceRepository] DioException occurred:');
+      debugPrint('   💥 Error: ${e.message}');
+      debugPrint('   📍 Type: ${e.type}');
+      debugPrint('   🔧 Response: ${e.response?.data}');
+      debugPrint('   📊 Status: ${e.response?.statusCode}');
       throw ServiceException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
     } catch (e, stackTrace) {
-      print('💥 [ServiceRepository] Unexpected error:');
-      print('   💥 Error: $e');
-      print('   📋 Stack: $stackTrace');
-      print('   🎯 Error Type: ${e.runtimeType}');
+      debugPrint('💥 [ServiceRepository] Unexpected error:');
+      debugPrint('   💥 Error: $e');
+      debugPrint('   📋 Stack: $stackTrace');
+      debugPrint('   🎯 Error Type: ${e.runtimeType}');
       throw ServiceException(message: 'Unexpected error: $e');
     }
   }

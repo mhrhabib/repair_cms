@@ -90,7 +90,7 @@ class JobReceiptWidget extends StatelessWidget {
                       style: const TextStyle(fontSize: 8, color: Colors.grey),
                     ),
                     const SizedBox(height: 4),
-                    Text(jobData.customerName, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                    Text(jobData.assignerName, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
                     Text(customer.shippingAddress.city, style: const TextStyle(fontSize: 8)),
                     Text(
                       '${customer.shippingAddress.zip} ${customer.shippingAddress.street}',
@@ -134,10 +134,10 @@ class JobReceiptWidget extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _buildInfoRow('Date:', jobData.formattedDate),
+                  _buildInfoRow('Date:', jobData.dueDate != null ? jobData.dueDate.toString() : 'N/A'),
                   _buildInfoRow('Job No:', jobData.jobNo.toString()),
                   _buildInfoRow('Customer No:', customer.customerNo),
-                  _buildInfoRow('Agent:', jobData.customerName),
+                  _buildInfoRow('Agent:', jobData.assignerName ?? 'N/A'),
                 ],
               ),
             ],
@@ -460,7 +460,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
                         const SizedBox(height: 4),
                         Expanded(
                           child: Text(
-                            'Job No: ${widget.jobData.jobNo}\nCustomer: ${widget.jobData.customerName}',
+                            'Job No: ${widget.jobData.jobNo}\nCustomer: ${widget.jobData.assignUser}\nDevice: ${widget.jobData.device.isNotEmpty ? widget.jobData.device[0].model ?? 'N/A' : 'N/A'}\nServices: ${widget.jobData.services.map((s) => s.name).join(', ')}\n\nThis is a preview of the job receipt. The actual printout may vary based on printer settings and configurations.',
                             style: TextStyle(fontSize: 6, color: Colors.grey[700]),
                             maxLines: 10,
                             overflow: TextOverflow.ellipsis,

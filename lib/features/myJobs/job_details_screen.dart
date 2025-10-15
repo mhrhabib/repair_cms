@@ -50,7 +50,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   Widget _buildCurrentScreen(Job job) {
     switch (_selectedBottomIndex) {
       case 0:
-        return JobDeataisl(job: job);
+        return JobDetails(job: job);
       case 1:
         return ReceiptScreen(job: job);
       case 2:
@@ -60,19 +60,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       case 4:
         return FilesScreen();
       default:
-        return JobDeataisl(job: job);
+        return JobDetails(job: job);
     }
   }
-
-  // Keep all your other existing methods (_buildMoreScreen, _buildMoreOption,
-  // _buildInfoCard, _buildInfoRow, _buildInfoSection, _buildDropdownField,
-  // _buildBottomNavBar, _buildNavItem) as they are...
-
-  // [Include all the remaining methods from your original code exactly as they are]
-  // _buildMoreScreen(), _buildMoreOption(), _buildInfoCard(), _buildInfoRow(),
-  // _buildInfoSection(), _buildDropdownField(), _buildBottomNavBar(), _buildNavItem()
-
-  // New single card that contains tabs and the content styled like the provided image
 
   Widget _buildBottomNavBar() {
     return Container(
@@ -93,44 +83,65 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
   Widget _buildNavItem(IconData icon, String label, int index) {
     bool isSelected = _selectedBottomIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedBottomIndex = index;
-        });
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 8.h),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade400, size: 24),
-            SizedBox(height: 4.h),
-            Text(
-              label,
-              style: GoogleFonts.roboto(
-                fontSize: 10.sp,
-                color: isSelected ? Colors.white : Colors.grey.shade400,
-                fontWeight: FontWeight.w500,
+
+    // Determine border radius based on position
+    BorderRadius borderRadius;
+    if (index == 0) {
+      // First item: rounded on top-left and bottom-left
+      borderRadius = BorderRadius.only(bottomRight: Radius.circular(12.r));
+    } else if (index == 4) {
+      // Last item: rounded on top-right and bottom-right
+      borderRadius = BorderRadius.only(bottomLeft: Radius.circular(12.r), bottomRight: Radius.circular(12.r));
+    } else {
+      // Middle items: no rounding
+      borderRadius = BorderRadius.only(bottomLeft: Radius.circular(12.r), bottomRight: Radius.circular(12.r));
+    }
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedBottomIndex = index;
+          });
+        },
+        child: Container(
+          height: 80.h,
+          margin: EdgeInsets.only(bottom: 12.h),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF4A9EFF) : Colors.transparent,
+            borderRadius: borderRadius,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade400, size: 24),
+              SizedBox(height: 4.h),
+              Text(
+                label,
+                style: GoogleFonts.roboto(
+                  fontSize: 10.sp,
+                  color: isSelected ? Colors.white : Colors.grey.shade400,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class JobDeataisl extends StatefulWidget {
-  const JobDeataisl({super.key, required this.job});
+class JobDetails extends StatefulWidget {
+  const JobDetails({super.key, required this.job});
 
   final Job job;
 
   @override
-  State<JobDeataisl> createState() => _JobDeataislState();
+  State<JobDetails> createState() => _JobDetailsState();
 }
 
-class _JobDeataislState extends State<JobDeataisl> {
+class _JobDetailsState extends State<JobDetails> {
   final List<String> _tabTitles = ['Job Details', 'Device Details'];
   int _selectedTabIndex = 0;
 
@@ -162,7 +173,7 @@ class _JobDeataislState extends State<JobDeataisl> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              widget.job.customerName,
+              widget.job.assignerName,
               style: GoogleFonts.roboto(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
             ),
             Text(
@@ -285,8 +296,8 @@ class _JobDeataislState extends State<JobDeataisl> {
 
                     _buildDropdownField(
                       icon: Icons.flag_outlined,
-                      value: _getCurrentPriority(),
-                      items: ['High', 'Medium', 'Neutral'],
+                      value: 'high',
+                      items: [],
                       onChanged: (value) {
                         setState(() {
                           selectedPriority = value!;
@@ -328,53 +339,23 @@ class _JobDeataislState extends State<JobDeataisl> {
                       ),
                     ),
                     SizedBox(height: 8.h),
-                    // _buildDropdownField(
-                    //   icon: Icons.person_outline,
-                    //   value: '',
-                    //   items: ['Susan Lemmes', 'John Doe', 'Jane Smith'],
-                    //   onChanged: (value) {
-                    //     setState(() {
-                    //       selectedAssignee = value!;
-                    //     });
-                    //   },
-                    //   hasAvatar: true,
-                    // ),
+                    _buildDropdownField(
+                      icon: Icons.person_outline,
+                      value: '',
+                      items: [],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedAssignee = value!;
+                        });
+                      },
+                      hasAvatar: true,
+                    ),
                   ],
                 ),
-
-                SizedBox(height: 24.h),
 
                 // Customer Information
-                _buildInfoCard(
-                  title: 'Customer Information',
-                  children: [
-                    _buildInfoRow('Name', widget.job.customerName),
-                    SizedBox(height: 12.h),
-                    _buildInfoRow('Email', widget.job.customerDetails.email),
-                    SizedBox(height: 12.h),
-                    _buildInfoRow('Phone', widget.job.customerDetails.telephone),
-                    SizedBox(height: 12.h),
-                    _buildInfoSection('Address', widget.job.customerDetails.shippingAddress.formattedAddress),
-                  ],
-                ),
-
-                SizedBox(height: 24.h),
 
                 // Financial Information
-                if (widget.job.total != '0')
-                  _buildInfoCard(
-                    title: 'Financial Information',
-                    children: [
-                      _buildInfoRow('Subtotal', '€${widget.job.subTotal}'),
-                      SizedBox(height: 8.h),
-                      _buildInfoRow('VAT', '€${widget.job.vat}'),
-                      SizedBox(height: 8.h),
-                      _buildInfoRow('Discount', '€${widget.job.discount}'),
-                      SizedBox(height: 8.h),
-                      _buildInfoRow('Total', '€${widget.job.total}'),
-                    ],
-                  ),
-
                 SizedBox(height: 24.h),
               ],
             ),
@@ -416,12 +397,12 @@ class _JobDeataislState extends State<JobDeataisl> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCardInfoRow('Device:', widget.job.deviceInfo),
+        _buildCardInfoRow('Device:', widget.job.deviceId),
         SizedBox(height: 12.h),
         _buildCardInfoRow('IMEI/SN:', widget.job.deviceData.imei ?? 'N/A'),
         SizedBox(height: 12.h),
-        if (widget.job.deviceData.color != null) _buildCardInfoRow('Color:', widget.job.deviceData.color!),
-        if (widget.job.deviceData.color != null) SizedBox(height: 12.h),
+        if (widget.job.deviceData.model != null) _buildCardInfoRow('Model:', widget.job.deviceData.model!),
+        if (widget.job.deviceData.brand != null) _buildCardInfoRow('Color:', widget.job.deviceData.brand!),
         Align(
           alignment: Alignment.center,
           child: Text(

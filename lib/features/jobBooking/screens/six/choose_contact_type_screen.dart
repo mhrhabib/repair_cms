@@ -1,6 +1,11 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/jobBooking/cubits/contactType/contact_type_cubit.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/seven/job_booking_address_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:repair_cms/features/jobBooking/models/business_model.dart';
 
 class ChooseContactTypeScreen extends StatefulWidget {
   const ChooseContactTypeScreen({super.key});
@@ -17,21 +22,14 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
 
-  List<String> companySearchResults = [];
+  List<Customersorsuppliers> companySearchResults = [];
   bool showCompanyResults = false;
   bool showContactForm = false;
   bool showNewCompanyOption = false;
   String currentSearchQuery = '';
-  bool isExistingCompanySelected = false; // NEW: Track if existing company was selected
-
-  // Sample company data for search
-  final List<String> allCompanies = [
-    'Bi Mobile Limited',
-    'Big Mobile Limited',
-    'Big Narrow Limited',
-    'Business Corp',
-    'Best Solutions Ltd',
-  ];
+  bool isExistingCompanySelected = false;
+  Timer? _searchDebounceTimer;
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -43,39 +41,56 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
     final query = companyController.text.trim();
     currentSearchQuery = query;
 
+    // Cancel previous timer
+    _searchDebounceTimer?.cancel();
+
     if (query.isEmpty) {
       setState(() {
         companySearchResults = [];
         showCompanyResults = false;
         showNewCompanyOption = false;
-        isExistingCompanySelected = false; // Reset when query is empty
+        isExistingCompanySelected = false;
+        _isSearching = false;
       });
       return;
     }
 
-    final exactMatch = allCompanies.any((company) => company.toLowerCase() == query.toLowerCase());
-
+    // Show results container immediately
     setState(() {
-      // Show search results from existing companies
-      companySearchResults = allCompanies
-          .where((company) => company.toLowerCase().contains(query.toLowerCase()))
-          .take(3)
-          .toList();
+      showCompanyResults = true;
+      _isSearching = true;
+    });
 
-      // Show "NEW" option if the query doesn't exactly match any existing company
-      showNewCompanyOption = query.isNotEmpty && !exactMatch;
-      showCompanyResults = companySearchResults.isNotEmpty || showNewCompanyOption;
+    // Debounce search to avoid too many API calls
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _performSearch(query);
     });
   }
 
-  void _selectCompany(String company) {
+  void _performSearch(String query) {
+    final context = this.context;
+    if (context.mounted) {
+      // Call the API search
+      context.read<ContactTypeCubit>().searchBusinessesApi(userId: _getUserId(), query: query, limit: 5);
+    }
+  }
+
+  String _getUserId() {
+    return storage.read('userId') ?? '';
+  }
+
+  void _selectCompany(Customersorsuppliers business) {
     setState(() {
-      companyController.text = company;
+      companyController.text = business.organization ?? '${business.firstName} ${business.lastName}';
       showCompanyResults = false;
       showNewCompanyOption = false;
-      showContactForm = false; // CHANGED: Don't show contact form for existing companies
-      isExistingCompanySelected = true; // NEW: Mark as existing company selected
+      showContactForm = false;
+      isExistingCompanySelected = true;
+      _isSearching = false;
     });
+
+    // Save selected business to JobBookingCubit
+    _saveBusinessToJobBooking(business);
   }
 
   void _selectNewCompany() {
@@ -83,14 +98,117 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
       companyController.text = currentSearchQuery;
       showCompanyResults = false;
       showNewCompanyOption = false;
-      showContactForm = true; // Keep showing contact form for new companies
-      isExistingCompanySelected = false; // NEW: Mark as not an existing company
+      showContactForm = true;
+      isExistingCompanySelected = false;
+      _isSearching = false;
     });
   }
 
+  void _saveBusinessToJobBooking(Customersorsuppliers business) {
+    final jobBookingCubit = context.read<JobBookingCubit>();
+
+    // Get primary contact details
+    final primaryPhone = context.read<ContactTypeCubit>().getPrimaryPhoneNumber(business);
+    final primaryEmail = context.read<ContactTypeCubit>().getPrimaryEmail(business);
+
+    // Update job booking with business information
+    jobBookingCubit.updateContactType(
+      type: "Business",
+      type2: "business",
+      organization: business.organization,
+      customerNo: business.customerNumber,
+      position: business.position,
+    );
+
+    jobBookingCubit.updateCustomerInfo(
+      salutation: business.supplierName,
+      firstName: business.firstName,
+      lastName: business.lastName,
+      telephone: primaryPhone?.replaceAll(RegExp(r'[^\d+]'), '') ?? '', // Clean phone number
+      telephonePrefix: _extractPhonePrefix(primaryPhone),
+      customerId: business.sId,
+    );
+  }
+
+  String? _extractPhonePrefix(String? phone) {
+    if (phone == null) return "+1";
+    final match = RegExp(r'^(\+\d+)').firstMatch(phone);
+    return match?.group(1) ?? "+1";
+  }
+
+  void _createNewBusiness() {
+    if (firstNameController.text.isEmpty ||
+        lastNameController.text.isEmpty ||
+        emailController.text.isEmpty ||
+        phoneController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields')));
+      return;
+    }
+
+    final contactTypeCubit = context.read<ContactTypeCubit>();
+    final jobBookingCubit = context.read<JobBookingCubit>();
+
+    // Create payload for new business
+    final payload = contactTypeCubit.createBusinessPayload(
+      type: "Business",
+      type2: "business",
+      firstName: firstNameController.text,
+      lastName: lastNameController.text,
+      organization: companyController.text,
+      position: "Customer", // Default position
+      userId: _getUserId(),
+      location: "default_location_id", // You might want to get this from user data
+      telephones: [
+        {
+          "number": phoneController.text.replaceAll(RegExp(r'[^\d]'), ''),
+          "phone_prefix": "+1", // You might want to make this dynamic
+          "type": "Private",
+        },
+      ],
+      emails: [
+        {"email": emailController.text, "type": "Private"},
+      ],
+    );
+
+    // Create the business
+    contactTypeCubit.createBusiness(payload: payload).then((_) {
+      // After creation, the business will be added to the list automatically
+      // We can navigate to next screen
+      _navigateToNextScreen();
+    });
+  }
+
+  void _handlePersonalContact() {
+    final jobBookingCubit = context.read<JobBookingCubit>();
+
+    // Update job booking for personal contact
+    jobBookingCubit.updateContactType(
+      type: "Personal",
+      type2: "personal",
+      organization: "",
+      customerNo: "",
+      position: "",
+    );
+
+    _navigateToNextScreen();
+  }
+
+  void _navigateToNextScreen() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const JobBookingAddressScreen()));
+  }
+
   bool get _shouldShowButton {
-    // CHANGED: Show button for personal, existing company selection, or contact form
     return selectedContactType == 'personal' || isExistingCompanySelected || showContactForm;
+  }
+
+  bool get _isFormValid {
+    if (showContactForm) {
+      return firstNameController.text.isNotEmpty &&
+          lastNameController.text.isNotEmpty &&
+          emailController.text.isNotEmpty &&
+          phoneController.text.isNotEmpty;
+    }
+    return true;
   }
 
   @override
@@ -104,12 +222,19 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
             // Progress bar
             SliverToBoxAdapter(
               child: Container(
-                height: 4,
                 width: double.infinity,
                 color: Colors.grey[300],
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Container(height: 4, width: MediaQuery.of(context).size.width * 0.6, color: Colors.blue),
+                  child: Container(
+                    height: 12.h,
+                    width: MediaQuery.of(context).size.width * .071 * 6,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
+                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -154,7 +279,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
 
             // Title
             if (!showContactForm && !isExistingCompanySelected) ...[
-              // CHANGED: Condition
               SliverToBoxAdapter(
                 child: const Center(
                   child: Text(
@@ -174,7 +298,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (!showContactForm && !isExistingCompanySelected) ...[
-                      // CHANGED: Condition
                       // Contact type options
                       _buildContactTypeOption(
                         icon: Icons.person_outline,
@@ -222,8 +345,8 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                           ),
                         ),
 
-                        // Company search results
-                        if (showCompanyResults) ...[
+                        // Company search results from API
+                        if (showCompanyResults && currentSearchQuery.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           Container(
                             decoration: BoxDecoration(
@@ -237,76 +360,144 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                                 ),
                               ],
                             ),
-                            child: Column(
-                              children: [
-                                // NEW company option (shown first)
-                                if (showNewCompanyOption) ...[
-                                  GestureDetector(
-                                    onTap: _selectNewCompany,
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              currentSearchQuery,
-                                              style: const TextStyle(fontSize: 16, color: Colors.black87),
+                            child: BlocBuilder<ContactTypeCubit, ContactTypeState>(
+                              builder: (context, state) {
+                                // Show loading while searching
+                                if (_isSearching && state is! ContactTypeSearchResult) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  );
+                                }
+
+                                // Show search results
+                                if (state is ContactTypeSearchResult) {
+                                  companySearchResults = state.businesses;
+
+                                  // Check if we should show "NEW" option
+                                  final hasExactMatch = companySearchResults.any(
+                                    (business) =>
+                                        business.organization?.toLowerCase() == currentSearchQuery.toLowerCase() ||
+                                        '${business.firstName ?? ''} ${business.lastName ?? ''}'.trim().toLowerCase() ==
+                                            currentSearchQuery.toLowerCase(),
+                                  );
+
+                                  final shouldShowNewOption = currentSearchQuery.isNotEmpty && !hasExactMatch;
+
+                                  return Column(
+                                    children: [
+                                      // NEW company option (shown first)
+                                      if (shouldShowNewOption) ...[
+                                        GestureDetector(
+                                          onTap: _selectNewCompany,
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    currentSearchQuery,
+                                                    style: const TextStyle(fontSize: 16, color: Colors.black87),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.green,
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: const Text(
+                                                    'NEW',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green,
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: const Text(
-                                              'NEW',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
+                                        ),
+                                      ],
+
+                                      // Existing company results from API
+                                      if (companySearchResults.isNotEmpty) ...[
+                                        ...companySearchResults.map((business) {
+                                          final companyName =
+                                              business.organization ??
+                                              '${business.firstName ?? ''} ${business.lastName ?? ''}'.trim();
+                                          final phone = context.read<ContactTypeCubit>().getPrimaryPhoneNumber(
+                                            business,
+                                          );
+
+                                          return GestureDetector(
+                                            onTap: () => _selectCompany(business),
+                                            child: Container(
+                                              width: double.infinity,
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                              decoration: BoxDecoration(
+                                                border:
+                                                    companySearchResults.indexOf(business) !=
+                                                        companySearchResults.length - 1
+                                                    ? Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1))
+                                                    : null,
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    companyName,
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                      color: Colors.black87,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  if (phone != null) ...[
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      phone,
+                                                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                                                    ),
+                                                  ],
+                                                ],
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                          );
+                                        }).toList(),
+                                      ],
 
-                                // Existing company results
-                                ...companySearchResults.map((company) {
-                                  return GestureDetector(
-                                    onTap: () => _selectCompany(company),
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        border: companySearchResults.indexOf(company) != companySearchResults.length - 1
-                                            ? Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1))
-                                            : null,
-                                      ),
-                                      child: Text(
-                                        company,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: company.toLowerCase().contains('narrow')
-                                              ? Colors.orange[700]
-                                              : Colors.black87,
-                                          fontWeight: company.toLowerCase().contains('narrow')
-                                              ? FontWeight.w500
-                                              : FontWeight.normal,
+                                      // Show message if no results and no new option
+                                      if (companySearchResults.isEmpty && !shouldShowNewOption) ...[
+                                        const Padding(
+                                          padding: EdgeInsets.all(16),
+                                          child: Text('No businesses found', style: TextStyle(color: Colors.grey)),
                                         ),
-                                      ),
+                                      ],
+                                    ],
+                                  );
+                                }
+
+                                // Show error state
+                                if (state is ContactTypeError) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Text(
+                                      'Search failed: ${state.message}',
+                                      style: const TextStyle(color: Colors.red),
                                     ),
                                   );
-                                }),
-                              ],
+                                }
+
+                                // Default empty state
+                                return const SizedBox.shrink();
+                              },
                             ),
                           ),
                         ],
@@ -315,7 +506,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
 
                     // Contact form (shown only for new companies)
                     if (showContactForm) ...[
-                      // Company name (readonly)
+                      // ... (rest of the contact form remains the same)
                       const Text(
                         'Company name',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
@@ -478,7 +669,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                         ],
                       ),
 
-                      // Add extra space at the bottom for the button
                       const SizedBox(height: 80),
                     ],
 
@@ -521,27 +711,17 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
             ? SizedBox(
                 height: 48,
                 child: BottomButtonsGroup(
-                  onPressed: () {
-                    // Handle form submission
-                    if (selectedContactType == 'personal') {
-                      // Navigate to next screen for personal contact
-                      Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute(builder: (context) => const JobBookingAddressScreen()));
-                    } else if (isExistingCompanySelected) {
-                      // Navigate to next screen for existing company
-                      print('Existing company selected: ${companyController.text}');
-                      Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute(builder: (context) => const JobBookingAddressScreen()));
-                    } else if (showContactForm) {
-                      // Validate and submit business contact form for new company
-                      print('New company contact form submitted: ${companyController.text}');
-                      Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute(builder: (context) => const JobBookingAddressScreen()));
-                    }
-                  },
+                  onPressed: _isFormValid
+                      ? () {
+                          if (selectedContactType == 'personal') {
+                            _handlePersonalContact();
+                          } else if (isExistingCompanySelected) {
+                            _navigateToNextScreen();
+                          } else if (showContactForm) {
+                            _createNewBusiness();
+                          }
+                        }
+                      : null,
                 ),
               )
             : const SizedBox(height: 0),
@@ -597,6 +777,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     companyController.dispose();
     firstNameController.dispose();
     lastNameController.dispose();

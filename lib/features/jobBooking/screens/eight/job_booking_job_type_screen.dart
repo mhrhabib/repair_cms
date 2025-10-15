@@ -1,7 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/cubits/jobType/job_type_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/nine/job_booking_problem_description_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/jobBooking/models/job_type_model.dart';
 
 class JobBookingJobTypeScreen extends StatefulWidget {
   const JobBookingJobTypeScreen({super.key});
@@ -14,8 +19,56 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
   final TextEditingController _jobTypeController = TextEditingController();
   final TextEditingController _referenceController = TextEditingController();
   String? selectedJobType;
+  String? selectedJobTypeId;
+  bool _isLoading = true;
 
-  final List<String> jobTypes = ['Warranty', 'ReRepair', 'Quote request', 'Installation', 'Maintenance', 'Inspection'];
+  @override
+  void initState() {
+    super.initState();
+    _loadJobTypes();
+  }
+
+  void _loadJobTypes() {
+    final userId = storage.read('userId') ?? '';
+    if (userId.isNotEmpty) {
+      context.read<JobTypeCubit>().getJobTypes(userId: userId).then((_) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _saveJobTypeToCubit() {
+    if (selectedJobType != null) {
+      final jobBookingCubit = context.read<JobBookingCubit>();
+      // jobBookingCubit.updateJobType(
+      //   jobType: selectedJobType,
+      //   jobTypeId: selectedJobTypeId,
+      // );
+
+      debugPrint('✅ Job type saved to JobBookingCubit: $selectedJobType');
+    }
+  }
+
+  void _handleContinue() {
+    if (selectedJobType != null) {
+      _saveJobTypeToCubit();
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingProblemDescriptionScreen()));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a job type'), backgroundColor: Colors.red));
+    }
+  }
+
+  List<String> _getJobTypeNames(List<JobType> jobTypes) {
+    return jobTypes.map((jobType) => jobType.name ?? '').where((name) => name.isNotEmpty).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +80,20 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
             // Progress bar
             SliverToBoxAdapter(
               child: Container(
-                height: 4,
+                height: 12.h,
                 width: double.infinity,
                 color: Colors.grey[300],
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Container(height: 4, width: MediaQuery.of(context).size.width * 0.8, color: Colors.blue),
+                  child: Container(
+                    height: 12.h,
+                    width: MediaQuery.of(context).size.width * .071 * 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
+                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -99,34 +160,82 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Job Type Dropdown (Custom Search)
-                    CustomDropdownSearch<String>(
-                      controller: _jobTypeController,
-                      items: jobTypes,
-                      hintText: 'Answer here',
-                      noItemsText: 'No job types found',
-                      onSuggestionSelected: (String jobType) {
-                        setState(() {
-                          selectedJobType = jobType;
-                          _jobTypeController.text = jobType;
-                        });
-                      },
-                      itemBuilder: (BuildContext context, String jobType) {
-                        return Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                          child: Text(
-                            jobType,
-                            style: TextStyle(fontSize: 16.sp, color: Colors.black87),
-                          ),
+                    BlocBuilder<JobTypeCubit, JobTypeState>(
+                      builder: (context, state) {
+                        if (_isLoading) {
+                          return Container(
+                            height: 60,
+                            alignment: Alignment.center,
+                            child: const CircularProgressIndicator(),
+                          );
+                        }
+
+                        if (state is JobTypeError) {
+                          return Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)),
+                            child: Text(
+                              'Failed to load job types: ${state.message}',
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          );
+                        }
+
+                        List<String> jobTypeNames = [];
+                        List<JobType> jobTypes = [];
+
+                        if (state is JobTypeLoaded) {
+                          jobTypes = state.jobTypes;
+                          jobTypeNames = _getJobTypeNames(jobTypes);
+
+                          if (jobTypeNames.isEmpty) {
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('No job types available', style: TextStyle(color: Colors.grey)),
+                            );
+                          }
+                        }
+
+                        return CustomDropdownSearch<String>(
+                          controller: _jobTypeController,
+                          items: jobTypeNames,
+                          hintText: 'Select job type',
+                          noItemsText: 'No job types found',
+                          onSuggestionSelected: (String jobTypeName) {
+                            final selectedJob = jobTypes.firstWhere(
+                              (job) => job.name == jobTypeName,
+                              orElse: () => JobType(),
+                            );
+
+                            setState(() {
+                              selectedJobType = jobTypeName;
+                              selectedJobTypeId = selectedJob.sId;
+                              _jobTypeController.text = jobTypeName;
+                            });
+                          },
+                          itemBuilder: (BuildContext context, String jobType) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                              child: Text(
+                                jobType,
+                                style: TextStyle(fontSize: 16.sp, color: Colors.black87),
+                              ),
+                            );
+                          },
+                          suggestionsCallback: (String pattern) {
+                            return jobTypeNames
+                                .where((jobType) => jobType.toLowerCase().contains(pattern.toLowerCase()))
+                                .toList();
+                          },
+                          displayAllSuggestionWhenTap: true,
+                          isMultiSelectDropdown: false,
+                          maxHeight: 200.h,
                         );
                       },
-                      suggestionsCallback: (String pattern) {
-                        return jobTypes
-                            .where((jobType) => jobType.toLowerCase().contains(pattern.toLowerCase()))
-                            .toList();
-                      },
-                      displayAllSuggestionWhenTap: true,
-                      isMultiSelectDropdown: false,
-                      maxHeight: 200.h,
                     ),
 
                     const SizedBox(height: 32),
@@ -154,6 +263,31 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
 
                     const SizedBox(height: 32),
 
+                    // Selected job type info (optional)
+                    if (selectedJobType != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green[600], size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Selected: $selectedJobType',
+                                style: TextStyle(fontSize: 14, color: Colors.green[800], fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
                     const SizedBox(height: 100), // Extra space for bottom button
                   ],
                 ),
@@ -164,22 +298,7 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
       ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
-        child: BottomButtonsGroup(
-          onPressed: () {
-            // Handle form submission
-            if (selectedJobType != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const JobBookingProblemDescriptionScreen()),
-              );
-            } else {
-              // Show error or validation message
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Please select a job type'), backgroundColor: Colors.red));
-            }
-          },
-        ),
+        child: BottomButtonsGroup(onPressed: _handleContinue),
       ),
     );
   }

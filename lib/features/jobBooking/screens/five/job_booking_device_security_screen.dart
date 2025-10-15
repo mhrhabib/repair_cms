@@ -1,37 +1,111 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/screens/five/widgets/pattern_input_widget.dart';
 import 'package:repair_cms/features/jobBooking/screens/six/choose_contact_type_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 
+// Main Screen Widget
 class JobBookingDeviceSecurityScreen extends StatefulWidget {
   const JobBookingDeviceSecurityScreen({super.key});
 
   @override
-  State<JobBookingDeviceSecurityScreen> createState() => JobBookingDeviceSecurityScreenState();
+  State<JobBookingDeviceSecurityScreen> createState() => _JobBookingDeviceSecurityScreenState();
 }
 
-class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurityScreen> {
+class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurityScreen> {
   final TextEditingController _passwordController = TextEditingController();
-  String selectedOption = '';
-  List<Offset> patternPoints = [];
-  List<int> connectedDots = [];
-  bool isDrawing = false;
-
-  // Pattern grid positions (3x3)
-  final List<Offset> dotPositions = [
-    const Offset(0, 0),
-    const Offset(1, 0),
-    const Offset(2, 0),
-    const Offset(0, 1),
-    const Offset(1, 1),
-    const Offset(2, 1),
-    const Offset(0, 2),
-    const Offset(1, 2),
-    const Offset(2, 2),
-  ];
+  String selectedOption = 'none'; // Default to "No Security"
+  List<int> connectedDots = []; // Stores the confirmed pattern
 
   @override
   void initState() {
     super.initState();
+    // Load existing device security from cubit after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bookingState = context.read<JobBookingCubit>().state;
+      if (bookingState is JobBookingData) {
+        final device = bookingState.device;
+        final securityType = device.deviceSecurity;
+        // final securityValue = device.deviceSecurityValue;
+
+        setState(() {
+          selectedOption = securityType ?? 'none';
+          if (selectedOption == 'password') {
+            // _passwordController.text = securityValue ?? '';
+          } else if (selectedOption == 'pattern') {
+            // Assuming securityValue for pattern is stored as a string like "1,2,3"
+            //connectedDots = securityValue?.split(',').map(int.parse).toList() ?? [];
+          }
+        });
+      }
+    });
+  }
+
+  // Updates the JobBookingCubit with the selected security information
+  void _updateDeviceSecurityInCubit() {
+    String securityType = selectedOption;
+    String securityValue = '';
+
+    switch (selectedOption) {
+      case 'password':
+        securityValue = _passwordController.text;
+        if (securityValue.isEmpty) securityType = 'none';
+        break;
+      case 'pattern':
+        securityValue = connectedDots.join(','); // Store pattern as a comma-separated string
+        if (securityValue.isEmpty) securityType = 'none';
+        break;
+      case 'none':
+      default:
+        securityType = 'none';
+        securityValue = '';
+        break;
+    }
+
+    context.read<JobBookingCubit>().updateDeviceInfo(
+      deviceSecurity: securityType,
+      // deviceSecurityValue: securityValue,
+    );
+  }
+
+  // Validates the selection and navigates to the next screen
+  void _navigateToNextScreen() {
+    // Save the final state before navigating
+    _updateDeviceSecurityInCubit();
+
+    // Validation check
+    if ((selectedOption == 'password' && _passwordController.text.isEmpty) ||
+        (selectedOption == 'pattern' && connectedDots.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter the ${selectedOption} or select "No Security".'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ChooseContactTypeScreen()));
+  }
+
+  // Shows the pattern drawing bottom sheet and awaits the result
+  void _showPatternBottomSheet() async {
+    final List<int>? result = await showModalBottomSheet<List<int>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _PatternBottomSheet(initialPattern: connectedDots),
+    );
+
+    // If the user confirmed a pattern (result is not null)
+    if (result != null) {
+      setState(() {
+        selectedOption = result.isNotEmpty ? 'pattern' : 'none';
+        connectedDots = result;
+      });
+      _updateDeviceSecurityInCubit();
+    }
   }
 
   @override
@@ -42,28 +116,25 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
+            // Top Progress Bar
             SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 12.h,
-                    width: MediaQuery.of(context).size.width * .071 * 5,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
-                    ),
-                  ),
-                ],
+              child: Container(
+                height: 12.h,
+                width: MediaQuery.of(context).size.width * .071 * 5,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(6)),
+                  boxShadow: [
+                    BoxShadow(color: const Color.fromARGB(255, 75, 41, 41), blurRadius: 1, blurStyle: BlurStyle.outer),
+                  ],
+                ),
               ),
             ),
-
+            // Header
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(height: 8.h),
                     Align(
@@ -80,33 +151,21 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
                         ),
                       ),
                     ),
-
-                    // Step indicator
-                    Align(
+                    Container(
+                      width: 42.w,
+                      height: 42.h,
                       alignment: Alignment.center,
-                      child: Container(
-                        width: 42.w,
-                        height: 42.h,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                        child: Center(
-                          child: Text('5', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
-                        ),
-                      ),
+                      decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                      child: Text('5', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
                     ),
-
                     SizedBox(height: 12.h),
-
-                    // Question text
                     Text('Device Security', style: AppTypography.fontSize22, textAlign: TextAlign.center),
-
-                    SizedBox(height: 12.h),
+                    SizedBox(height: 24.h),
                   ],
                 ),
               ),
             ),
-
-            // Security options
+            // Security Options
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -115,80 +174,116 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
                     _buildSecurityOption(
                       icon: Icons.security,
                       title: 'No Security',
+                      subtitle: 'Device has no security lock',
                       isSelected: selectedOption == 'none',
-                      onTap: () => setState(() => selectedOption = 'none'),
+                      onTap: () {
+                        setState(() => selectedOption = 'none');
+                        _passwordController.clear();
+                        connectedDots.clear();
+                        _updateDeviceSecurityInCubit();
+                      },
                     ),
-
                     SizedBox(height: 12.h),
-
                     _buildSecurityOption(
-                      icon: Icons.lock,
-                      title: 'Password',
+                      icon: Icons.lock_outline,
+                      title: 'Password / PIN',
+                      subtitle: 'Device protected with a password or PIN',
                       isSelected: selectedOption == 'password',
-                      onTap: () => setState(() => selectedOption = 'password'),
+                      onTap: () {
+                        setState(() => selectedOption = 'password');
+                        connectedDots.clear();
+                        _updateDeviceSecurityInCubit();
+                      },
                     ),
-
                     SizedBox(height: 12.h),
-
                     _buildSecurityOption(
                       icon: Icons.pattern,
                       title: 'Security Pattern',
+                      subtitle: 'Device protected with a pattern',
                       isSelected: selectedOption == 'pattern',
-                      onTap: () => setState(() => selectedOption = 'pattern'),
+                      onTap: () {
+                        setState(() => selectedOption = 'pattern');
+                        _passwordController.clear();
+                        _showPatternBottomSheet(); // Await result from bottom sheet
+                      },
                     ),
-
-                    SizedBox(height: 12.h),
                   ],
                 ),
               ),
             ),
-
-            // Dynamic content based on selection
-            if (selectedOption == 'password') ...[
+            // Dynamic Input Field for Password
+            if (selectedOption == 'password')
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
                   child: _buildPasswordInput(),
                 ),
               ),
-            ] else if (selectedOption == 'pattern') ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: _buildPatternInput(),
+            // Status Display
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                child: BlocBuilder<JobBookingCubit, JobBookingState>(
+                  builder: (context, state) {
+                    final deviceSecurity = state is JobBookingData ? state.device.deviceSecurity ?? 'none' : 'none';
+                    String securityText;
+                    switch (deviceSecurity) {
+                      case 'password':
+                        securityText = 'Password/PIN Protected';
+                        break;
+                      case 'pattern':
+                        securityText = 'Pattern Protected';
+                        break;
+                      default:
+                        securityText = 'No Security';
+                        break;
+                    }
+                    return Container(
+                      padding: EdgeInsets.all(12.w),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue.shade600, size: 16.sp),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Security Status: $securityText',
+                            style: AppTypography.fontSize12.copyWith(
+                              color: Colors.blue.shade800,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
-            ],
-
-            // Spacer to push buttons to bottom
-            const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
+            ),
+            SliverFillRemaining(hasScrollBody: false, child: Container()), // Pushes content up
           ],
         ),
       ),
-      // Sticky bottom navigation bar with keyboard handling
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 8.h : 8.h,
+          bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 8.h : 24.h,
           left: 24.w,
           right: 24.w,
         ),
-        child: BottomButtonsGroup(
-          onPressed: () {
-            // Use a post-frame callback to avoid the deactivated widget error
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => ChooseContactTypeScreen()));
-              }
-            });
-          },
-        ),
+        child: BottomButtonsGroup(onPressed: _navigateToNextScreen),
       ),
     );
   }
 
+  // Reusable widget for security option buttons
   Widget _buildSecurityOption({
     required IconData icon,
     required String title,
+    required String subtitle,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -209,31 +304,43 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
               width: 40.w,
               height: 40.h,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.shade100,
+                color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade600, size: 24.sp),
             ),
             SizedBox(width: 12.w),
             Expanded(
-              child: Text(
-                title,
-                style: AppTypography.fontSize16.copyWith(
-                  color: isSelected ? AppColors.primary : Colors.grey.shade800,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.fontSize16.copyWith(
+                      color: isSelected ? AppColors.primary : Colors.grey.shade800,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    subtitle,
+                    style: AppTypography.fontSize12.copyWith(
+                      color: isSelected ? AppColors.primary.withOpacity(0.8) : Colors.grey.shade600,
+                    ),
+                  ),
+                ],
               ),
             ),
-            if (isSelected) Icon(Icons.check, color: AppColors.primary, size: 24.sp),
+            if (isSelected) Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
           ],
         ),
       ),
     );
   }
 
+  // Input widget for the password
   Widget _buildPasswordInput() {
     return Container(
-      width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -244,11 +351,13 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text('Enter Device Password / PIN', style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade800)),
+          SizedBox(height: 8.h),
           TextField(
             controller: _passwordController,
-            obscureText: true,
+            onChanged: (value) => _updateDeviceSecurityInCubit(),
             decoration: InputDecoration(
-              hintText: 'Enter device password',
+              hintText: 'Enter password or PIN...',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.r),
                 borderSide: BorderSide(color: Colors.grey.shade300),
@@ -261,127 +370,9 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
             ),
             style: AppTypography.fontSize16,
           ),
-          SizedBox(height: 8.h),
-          Row(
-            children: List.generate(
-              _passwordController.text.length.clamp(0, 12),
-              (index) => Container(
-                margin: EdgeInsets.only(right: 4.w),
-                child: Icon(Icons.star, size: 16.sp, color: AppColors.primary),
-              ),
-            ),
-          ),
         ],
       ),
     );
-  }
-
-  Widget _buildPatternInput() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Responsive pattern container centered horizontally
-          Center(
-            child: Container(
-              width: 260.w,
-              height: 260.h,
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: CustomPaint(
-                painter: PatternPainter(
-                  dotPositions: dotPositions,
-                  connectedDots: connectedDots,
-                  patternPoints: patternPoints,
-                  containerSize: 260.w - 24.w, // Subtract padding
-                ),
-                child: GestureDetector(
-                  onPanStart: (details) {
-                    setState(() {
-                      isDrawing = true;
-                      _handlePatternTouch(details.localPosition, 260.w - 24.w);
-                    });
-                  },
-                  onPanUpdate: (details) {
-                    if (isDrawing) {
-                      setState(() {
-                        _handlePatternTouch(details.localPosition, 260.w - 24.w);
-                      });
-                    }
-                  },
-                  onPanEnd: (details) {
-                    setState(() {
-                      isDrawing = false;
-                    });
-                  },
-                  child: Container(width: double.infinity, height: double.infinity, color: Colors.transparent),
-                ),
-              ),
-            ),
-          ),
-
-          SizedBox(height: 16.h),
-
-          if (connectedDots.isNotEmpty)
-            Text(
-              'Pattern: ${connectedDots.map((dot) => dot + 1).join(' → ')}',
-              style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600),
-              textAlign: TextAlign.center,
-            ),
-
-          if (connectedDots.isNotEmpty) SizedBox(height: 12.h),
-
-          if (connectedDots.isNotEmpty)
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    connectedDots.clear();
-                    patternPoints.clear();
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade100,
-                  foregroundColor: Colors.red,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                ),
-                child: Text('Clear Pattern', style: AppTypography.fontSize12),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  void _handlePatternTouch(Offset position, double containerSize) {
-    final double dotRadius = containerSize * 0.06; // adjust size as needed
-    final double spacing = containerSize / 3;
-
-    // Centering: each dot is at (col + 0.5) * spacing
-    for (int i = 0; i < dotPositions.length; i++) {
-      final pos = Offset((dotPositions[i].dx + 0.5) * spacing, (dotPositions[i].dy + 0.5) * spacing);
-
-      // In _handlePatternTouch → check touch distance
-      if ((position - pos).distance < dotRadius * 2) {
-        if (!connectedDots.contains(i)) {
-          connectedDots.add(i);
-          patternPoints.add(position);
-        }
-        break;
-      }
-    }
   }
 
   @override
@@ -391,59 +382,86 @@ class JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurity
   }
 }
 
-class PatternPainter extends CustomPainter {
-  final List<Offset> dotPositions;
-  final List<int> connectedDots;
-  final List<Offset> patternPoints;
-  final double containerSize;
-
-  PatternPainter({
-    required this.dotPositions,
-    required this.connectedDots,
-    required this.patternPoints,
-    required this.containerSize,
-  });
+// Bottom sheet content widget with its own state
+class _PatternBottomSheet extends StatefulWidget {
+  final List<int> initialPattern;
+  const _PatternBottomSheet({required this.initialPattern});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF4A5568)
-      ..style = PaintingStyle.fill;
+  _PatternBottomSheetState createState() => _PatternBottomSheetState();
+}
 
-    final linePaint = Paint()
-      ..color = Colors.blue
-      ..strokeWidth = 3.0
-      ..style = PaintingStyle.stroke;
+class _PatternBottomSheetState extends State<_PatternBottomSheet> {
+  List<int> connectedDots = [];
 
-    final connectedPaint = Paint()
-      ..color = Colors.blue
-      ..style = PaintingStyle.fill;
-
-    // Correct spacing for 3x3 grid
-    final double dotRadius = containerSize * 0.06;
-    final double spacing = containerSize / 3;
-
-    // Draw grid dots (centered)
-    for (int i = 0; i < dotPositions.length; i++) {
-      final pos = Offset((dotPositions[i].dx + 0.5) * spacing, (dotPositions[i].dy + 0.5) * spacing);
-
-      canvas.drawCircle(pos, dotRadius, connectedDots.contains(i) ? connectedPaint : paint);
-    }
-
-    // Draw connecting lines
-    if (connectedDots.length > 1) {
-      for (int i = 0; i < connectedDots.length - 1; i++) {
-        final startDot = dotPositions[connectedDots[i]];
-        final endDot = dotPositions[connectedDots[i + 1]];
-
-        final startPos = Offset((startDot.dx + 0.5) * spacing, (startDot.dy + 0.5) * spacing);
-        final endPos = Offset((endDot.dx + 0.5) * spacing, (endDot.dy + 0.5) * spacing);
-
-        canvas.drawLine(startPos, endPos, linePaint);
-      }
-    }
+  @override
+  void initState() {
+    super.initState();
+    connectedDots = List.from(widget.initialPattern);
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r), topRight: Radius.circular(20.r)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Draw Security Pattern', style: AppTypography.fontSize16Bold.copyWith(fontWeight: FontWeight.w600)),
+          SizedBox(height: 16.h),
+          PatternInputWidget(
+            initialPattern: connectedDots,
+            onPatternChanged: (pattern) {
+              setState(() => connectedDots = pattern);
+            },
+          ),
+          SizedBox(height: 16.h),
+          if (connectedDots.isNotEmpty)
+            Text(
+              'Pattern: ${connectedDots.map((dot) => dot + 1).join(' → ')}',
+              style: AppTypography.fontSize14.copyWith(color: Colors.green.shade700),
+              textAlign: TextAlign.center,
+            ),
+          SizedBox(height: 24.h),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.clear),
+                  label: const Text('Clear'),
+                  onPressed: () {
+                    setState(() => connectedDots.clear());
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.check),
+                  label: const Text('Confirm'),
+                  onPressed: connectedDots.isNotEmpty ? () => Navigator.of(context).pop(connectedDots) : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+// Reusable pattern input widget

@@ -1,5 +1,8 @@
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
+import 'package:repair_cms/core/utils/widgets/enhanced_dropdown_search_field.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/cubits/model/models_cubit.dart';
+import 'package:repair_cms/features/jobBooking/models/models_model.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import '../three/job_booking_accessories_screen.dart';
 
@@ -11,31 +14,119 @@ class JobBookingDeviceModelScreen extends StatefulWidget {
 }
 
 class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScreen> {
-  String _selectedModel = '';
+  String selectedModel = '';
+  String selectedModelId = '';
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  late String _brandId;
+  late String _userId;
+  bool _isCreatingModel = false;
 
-  final List<DeviceModel> _models = [
-    DeviceModel(name: 'iPhone 16 Pro', isNew: true),
-    DeviceModel(name: 'iPhone 16', isNew: false),
-    DeviceModel(name: 'iPhone 15 Pro', isNew: false),
-    DeviceModel(name: 'iPhone 15', isNew: false),
-    DeviceModel(name: 'iPhone 14 Pro', isNew: false),
-    DeviceModel(name: 'iPhone 14', isNew: false),
-    DeviceModel(name: 'iPhone 13 Pro', isNew: false),
-    DeviceModel(name: 'iPhone 13', isNew: false),
-    DeviceModel(name: 'iPhone 12 Pro', isNew: false),
-    DeviceModel(name: 'iPhone 12', isNew: false),
-    DeviceModel(name: 'Galaxy S24 Ultra', isNew: true),
-    DeviceModel(name: 'Galaxy S24', isNew: false),
-    DeviceModel(name: 'Galaxy S23 Ultra', isNew: false),
-    DeviceModel(name: 'Galaxy S23', isNew: false),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(_onFocusChange);
 
-  void _selectModel(String modelName) {
+    // Get user ID and brand ID
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _userId = _getUserId();
+      final bookingState = context.read<JobBookingCubit>().state;
+      if (bookingState is JobBookingData) {
+        setState(() {
+          _brandId = _getBrandIdFromName(bookingState.device.brand);
+        });
+
+        // Load models when screen initializes
+        if (_brandId.isNotEmpty) {
+          context.read<ModelsCubit>().getModels(brandId: _brandId);
+        }
+      }
+    });
+  }
+
+  String _getUserId() {
+    return '64106cddcfcedd360d7096cc'; // Example user ID
+  }
+
+  String _getBrandIdFromName(String brandName) {
+    // TODO: Implement logic to get brand ID from brand name
+    // For now, return a placeholder - you should store the brand ID when brand is selected
+    return '65f2573f56a1a8458f38b85b'; // Replace with actual implementation
+  }
+
+  void _onFocusChange() {
+    if (!_searchFocusNode.hasFocus) {
+      // Handle focus loss if needed
+    }
+  }
+
+  void _selectModel(String modelName, String modelId) {
     setState(() {
-      _selectedModel = modelName;
+      selectedModel = modelName;
+      selectedModelId = modelId;
       _searchController.text = modelName;
     });
+
+    // Close the dropdown by removing focus
+    _searchFocusNode.unfocus();
+
+    // Update JobBookingCubit with selected model
+    context.read<JobBookingCubit>().updateDeviceInfo(model: modelName);
+  }
+
+  Future<void> _createNewModel(String modelName) async {
+    if (_brandId.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Please select a brand first'), backgroundColor: Colors.red));
+      return;
+    }
+
+    if (modelName.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Please enter a model name'), backgroundColor: Colors.red));
+      return;
+    }
+
+    setState(() {
+      _isCreatingModel = true;
+    });
+
+    try {
+      // Use ModelsCubit to create the model
+      await context.read<ModelsCubit>().createModel(name: modelName.trim(), userId: _userId, brandId: _brandId);
+
+      // Wait a bit for the state to update
+      await Future.delayed(Duration(milliseconds: 300));
+
+      // Get the newly created model from the updated state
+      final modelsState = context.read<ModelsCubit>().state;
+      String newModelId = '';
+
+      if (modelsState is ModelsLoaded) {
+        final newModel = modelsState.models.firstWhere(
+          (model) => model.name?.toLowerCase() == modelName.trim().toLowerCase(),
+          orElse: () => ModelsModel(),
+        );
+        newModelId = newModel.sId ?? '';
+      }
+
+      // Select the newly created model
+      _selectModel(modelName.trim(), newModelId);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Model "$modelName" created successfully'), backgroundColor: Colors.green));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to create model: $e'), backgroundColor: Colors.red));
+    } finally {
+      setState(() {
+        _isCreatingModel = false;
+      });
+    }
   }
 
   @override
@@ -116,103 +207,283 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
               ),
             ),
 
-            // Dropdown section using reusable widget
+            // Dropdown section with ModelsCubit integration
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Column(
-                  children: [
-                    CustomDropdownSearch<DeviceModel>(
-                      controller: _searchController,
-                      items: _models,
-                      hintText: 'Answer here',
-                      noItemsText: 'No models found',
-                      displayAllSuggestionWhenTap: true,
-                      isMultiSelectDropdown: false,
-                      onSuggestionSelected: (model) {
-                        _selectModel(model.name);
-                      },
-                      itemBuilder: (context, model) => ListTile(
-                        title: Row(
+                child: BlocBuilder<ModelsCubit, ModelsState>(
+                  builder: (context, state) {
+                    if (state is ModelsLoading) {
+                      return Container(
+                        height: 60.h,
+                        child: const Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    if (state is ModelsError) {
+                      return Container(
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Column(
                           children: [
-                            Text(model.name, style: AppTypography.fontSize14.copyWith(color: Colors.black)),
-                            if (model.isNew) ...[
-                              SizedBox(width: 8.w),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(4.r),
-                                ),
-                                child: Text(
-                                  'NEW',
-                                  style: AppTypography.fontSize10.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            Text('Failed to load models', style: AppTypography.fontSize14.copyWith(color: Colors.red)),
+                            SizedBox(height: 8.h),
+                            ElevatedButton(
+                              onPressed: () {
+                                if (_brandId.isNotEmpty) {
+                                  context.read<ModelsCubit>().getModels(brandId: _brandId);
+                                }
+                              },
+                              child: const Text('Retry'),
+                            ),
                           ],
                         ),
+                      );
+                    }
+
+                    final List<ModelsModel> models = state is ModelsLoaded
+                        ? state.models
+                        : state is ModelsSearchResult
+                        ? state.models
+                        : [];
+
+                    return EnhancedDropdownSearch<ModelsModel>(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      items: models,
+                      hintText: models.isEmpty ? 'Type to create a new model...' : 'Search and select model...',
+                      noItemsText: 'No models found',
+                      onSuggestionSelected: (model) {
+                        _selectModel(model.name ?? 'Unknown Model', model.sId ?? '');
+                      },
+                      itemBuilder: (context, model) => ListTile(
+                        title: Text(
+                          model.name ?? 'Unknown Model',
+                          style: AppTypography.fontSize14.copyWith(color: Colors.black),
+                        ),
+                        subtitle: model.sId != null
+                            ? Text('ID: ${model.sId}', style: AppTypography.fontSize12.copyWith(color: Colors.grey))
+                            : null,
                       ),
                       suggestionsCallback: (pattern) {
-                        return _models
-                            .where((model) => model.name.toLowerCase().contains(pattern.toLowerCase()))
+                        if (pattern.isEmpty) {
+                          return models;
+                        }
+                        return models
+                            .where((model) => (model.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
                             .toList();
                       },
-                    ),
-                  ],
+                      noItemsFoundBuilder: (context, pattern) {
+                        if (pattern.isNotEmpty) {
+                          // Show "Create new" option when searching and no results
+                          return InkWell(
+                            onTap: _isCreatingModel ? null : () => _createNewModel(pattern),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: ListTile(
+                                      leading: Icon(Icons.add_circle_outline, color: AppColors.primary, size: 20.sp),
+                                      title: Text(
+                                        'Create "$pattern"',
+                                        style: AppTypography.fontSize14.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        'Add as new model for this brand',
+                                        style: AppTypography.fontSize12.copyWith(color: Colors.grey),
+                                      ),
+                                    ),
+                                  ),
+
+                                  _isCreatingModel
+                                      ? SizedBox(
+                                          width: 20.w,
+                                          height: 20.h,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary,
+                                            borderRadius: BorderRadius.circular(6.r),
+                                          ),
+                                          child: Text(
+                                            'Add',
+                                            style: AppTypography.fontSize14.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        // When pattern is empty and no models exist
+                        if (pattern.isEmpty && models.isEmpty) {
+                          return Padding(
+                            padding: EdgeInsets.all(16.w),
+                            child: Column(
+                              children: [
+                                Icon(Icons.info_outline, color: Colors.grey.shade600, size: 32.sp),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  'No models found for this brand',
+                                  style: AppTypography.fontSize14.copyWith(
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 4.h),
+                                Text(
+                                  'Start typing to create a new model',
+                                  style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade500),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return const SizedBox();
+                      },
+                    );
+                  },
                 ),
               ),
             ),
 
-            // Spacer to push buttons to bottom
-            const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
+            // Show creating state
+            if (_isCreatingModel)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                  child: Container(
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(width: 20.w, height: 20.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Text(
+                            'Creating new model...',
+                            style: AppTypography.fontSize14.copyWith(color: Colors.blue.shade800),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // Show selected model info
+            BlocBuilder<JobBookingCubit, JobBookingState>(
+              builder: (context, bookingState) {
+                final deviceModel = bookingState is JobBookingData ? bookingState.device.model : '';
+
+                if (deviceModel.isNotEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                      child: Container(
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: AppColors.primary),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.primary, size: 20.sp),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Selected Model',
+                                    style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+                                  ),
+                                  Text(
+                                    deviceModel,
+                                    style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedModel = '';
+                                  selectedModelId = '';
+                                  _searchController.clear();
+                                });
+                                context.read<JobBookingCubit>().updateDeviceInfo(model: '');
+                              },
+                              child: Icon(Icons.close, color: Colors.grey, size: 20.sp),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return const SliverToBoxAdapter(child: SizedBox.shrink());
+              },
+            ),
           ],
         ),
       ),
-      // Sticky bottom navigation bar with keyboard handling
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 8.h : 8.h,
-          left: 24.w,
-          right: 24.w,
-        ),
-        child: BottomButtonsGroup(
-          onPressed: _selectedModel.isNotEmpty
-              ? () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingAccessoriesScreen()));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Selected model: $_selectedModel'), backgroundColor: AppColors.primary),
-                  );
-                }
-              : null,
-        ),
+
+      // Fixed bottom navigation bar with keyboard handling
+      bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
+        builder: (context, bookingState) {
+          final hasSelectedModel = bookingState is JobBookingData && bookingState.device.model.isNotEmpty;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8.h, left: 24.w, right: 24.w),
+            child: BottomButtonsGroup(
+              onPressed: hasSelectedModel && !_isCreatingModel
+                  ? () {
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute(builder: (context) => JobBookingAccessoriesScreen()));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Selected model: ${bookingState.device.model}'),
+                          backgroundColor: AppColors.primary,
+                        ),
+                      );
+                    }
+                  : null,
+            ),
+          );
+        },
       ),
     );
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    // _searchController.dispose();
+    // _searchFocusNode.dispose();
     super.dispose();
   }
-}
-
-class DeviceModel {
-  final String name;
-  final bool isNew;
-
-  DeviceModel({required this.name, required this.isNew});
-
-  @override
-  String toString() => name;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is DeviceModel && runtimeType == other.runtimeType && name == other.name;
-
-  @override
-  int get hashCode => name.hashCode;
 }

@@ -12,11 +12,17 @@ class MyJobsScreen extends StatefulWidget {
 
 class _MyJobsScreenState extends State<MyJobsScreen> {
   int _selectedTabIndex = 0;
-  final List<String> _tabTitles = ['My\nJobs', 'All\nJobs', 'Rejected\nQuotes', 'Completed\nJobs'];
-  final List<Color> _tabColors = [Colors.grey, Colors.blue, Colors.red, Colors.green];
 
-  // Status filters for each tab
-  final List<String> _tabStatusFilters = ['', '', 'rejected', 'complete'];
+  // Updated tab configuration with all status filters
+  final List<TabConfig> _tabs = [
+    TabConfig(title: 'All\nJobs', color: Colors.blue, status: ''),
+    TabConfig(title: 'Repair in\nProgress', color: Colors.orange, status: 'in_progress'),
+    TabConfig(title: 'Rejected\nQuotes', color: Colors.red, status: 'rejected'),
+    TabConfig(title: 'Quotation\nAccepted', color: Colors.green, status: 'accepted_quotes'),
+    TabConfig(title: 'Parts Not\nAvailable', color: Colors.purple, status: 'parts_not_available'),
+    TabConfig(title: 'Ready To\nReturn', color: Colors.teal, status: 'ready_to_return'),
+    TabConfig(title: 'Archive', color: Colors.grey, status: 'archive'),
+  ];
 
   @override
   void initState() {
@@ -33,12 +39,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     });
 
     // Filter jobs based on selected tab
-    final statusFilter = _tabStatusFilters[index];
-    if (statusFilter.isNotEmpty) {
-      context.read<JobCubit>().filterJobsByStatus(statusFilter);
-    } else {
-      context.read<JobCubit>().clearFilters();
-    }
+    final statusFilter = _tabs[index].status;
+    context.read<JobCubit>().filterJobsByStatus(statusFilter);
   }
 
   @override
@@ -78,40 +80,27 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
           SliverToBoxAdapter(
             child: Container(
               color: const Color(0xFFD9E1EA),
-              height: 60.h,
+              height: 70.h,
               padding: EdgeInsets.only(left: 12.w),
               child: BlocBuilder<JobCubit, JobStates>(
                 builder: (context, state) {
-                  int totalJobs = 0;
-                  int completedJobs = 0;
-                  int rejectedJobs = 0;
-                  int allJobs = 0;
-
-                  if (state is JobSuccess) {
-                    totalJobs = state.totalJobs;
-                    completedJobs = state.jobs.where((job) => job.status.toLowerCase() == 'complete').length;
-                    rejectedJobs = state.jobs.where((job) => job.status.toLowerCase() == 'rejected').length;
-                    allJobs = state.jobs.length;
-                  }
-
-                  final List<int> itemCounts = [
-                    allJobs, // My Jobs (all visible jobs)
-                    totalJobs, // All Jobs (total from API)
-                    rejectedJobs, // Rejected Quotes
-                    completedJobs, // Completed Jobs
-                  ];
+                  // Calculate counts for each tab
+                  final counts = _calculateTabCounts(state);
 
                   return ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _tabTitles.length,
+                    itemCount: _tabs.length,
                     separatorBuilder: (context, index) => Container(
                       width: 2.w,
                       height: 40.h,
-                      color: Colors.grey.withValues(alpha: 0.3),
+                      color: Colors.grey.withOpacity(0.3),
                       margin: EdgeInsets.symmetric(vertical: 12.h),
                     ),
                     itemBuilder: (context, index) {
                       final isSelected = _selectedTabIndex == index;
+                      final tab = _tabs[index];
+                      final count = counts[index];
+
                       return GestureDetector(
                         onTap: () => _onTabChanged(index),
                         child: Container(
@@ -123,12 +112,12 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color: Colors.black.withOpacity(0.1),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color: Colors.black.withOpacity(0.1),
                                       blurRadius: 8,
                                       offset: const Offset(2, 2),
                                     ),
@@ -144,9 +133,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                 height: 40.h,
                                 width: 40.w,
                                 alignment: Alignment.center,
-                                decoration: BoxDecoration(shape: BoxShape.circle, color: _tabColors[index]),
+                                decoration: BoxDecoration(shape: BoxShape.circle, color: tab.color),
                                 child: Text(
-                                  itemCounts[index].toString(),
+                                  count.toString(),
                                   style: GoogleFonts.roboto(
                                     color: Colors.white,
                                     fontSize: 13.sp,
@@ -156,13 +145,16 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                               ),
                               SizedBox(width: 4.w),
                               SizedBox(
+                                width: 60.w,
                                 child: Text(
-                                  _tabTitles[index],
+                                  tab.title,
                                   style: GoogleFonts.roboto(
-                                    fontSize: 16.sp,
+                                    fontSize: 14.sp,
                                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                                     color: Colors.black87,
                                   ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -182,6 +174,24 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         ],
       ),
     );
+  }
+
+  List<int> _calculateTabCounts(JobStates state) {
+    if (state is JobSuccess) {
+      final jobs = state.response;
+      return [
+        state.totalJobs, // All Jobs (total from API)
+        jobs.inProgressJobs,
+        jobs.rejectQuoetsJobs,
+        jobs.acceptedQuoetsJobs,
+        jobs.partsNotAvailableJobs,
+        jobs.readyToReturnJobs,
+        jobs.totalServiceRequestArchive,
+      ];
+    }
+
+    // Return zeros if no data
+    return List.filled(_tabs.length, 0);
   }
 
   Widget _buildJobListSliver() {
@@ -287,4 +297,13 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       },
     );
   }
+}
+
+// Helper class for tab configuration
+class TabConfig {
+  final String title;
+  final Color color;
+  final String status;
+
+  TabConfig({required this.title, required this.color, required this.status});
 }

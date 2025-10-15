@@ -55,7 +55,7 @@ Widget _buildNotesScreen(Job job, {BuildContext? context}) {
               ),
 
             if (internalNotes.isEmpty)
-              _buildNoteItem('No notes yet', 'Add the first note for this job', 'System', job.formattedDate),
+              _buildNoteItem('No notes yet', 'Add the first note for this job', 'System', job.dueDate.toString()),
           ],
         ),
       ),
