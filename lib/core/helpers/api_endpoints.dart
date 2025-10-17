@@ -12,7 +12,8 @@ class ApiEndpoints {
   static const String updateProfileById = '$baseUrl/user/<id>';
   static const String updateProfileEmail = '$baseUrl/user/email/<id>';
   static const String updateProfilePassword = '$baseUrl/user/password/<id>';
-  static const String updateProfileAvatar = '$baseUrl/user/avatar/<id>';
+  static const String uploadProfileAvatar = '$baseUrl/file-upload/<userId>/profile';
+  static const String getAnImage = '$baseUrl/file-upload/images';
 
   //job
   static const String getAllJobs = '$baseUrl/job';
@@ -40,6 +41,7 @@ class ApiEndpoints {
   //business list
   static const String businessListUrl = '$baseUrl/customer-or-supplier/user/<id>';
   static const String createBusiness = '$baseUrl/customer-or-supplier';
+  static const String updateBusiness = '$baseUrl/customer-or-supplier/<id>';
   //job types
   static const String jobTypeListUrl = '$baseUrl/job-type/user/<id>';
   //items

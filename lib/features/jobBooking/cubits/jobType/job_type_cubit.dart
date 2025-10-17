@@ -1,4 +1,3 @@
-// features/jobBooking/cubit/job_type_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/repository/job_type_repository.dart';
@@ -54,4 +53,16 @@ class JobTypeCubit extends Cubit<JobTypeState> {
     }
     return null;
   }
+
+  // Get default job type
+  // JobType? getDefaultJobType() {
+  //   final state = this.state;
+  //   if (state is JobTypeLoaded) {
+  //     return state.jobTypes.firstWhere(
+  //       (jobType) => jobType.isDefault == true,
+  //       orElse: () => state.jobTypes.isNotEmpty ? state.jobTypes.first : JobType(),
+  //     );
+  //   }
+  //   return null;
+  // }
 }

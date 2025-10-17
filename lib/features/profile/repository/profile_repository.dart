@@ -1,6 +1,9 @@
 // repositories/profile_repository.dart
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart' as dio;
+import 'package:mime/mime.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -65,38 +68,157 @@ class ProfileRepository {
     }
   }
 
-  Future<bool> updateUserAvatar(String userId, String imagePath) async {
+  Future<String> updateUserAvatar(String userId, String imagePath) async {
     try {
-      final url = ApiEndpoints.updateProfileAvatar.replaceFirst('<id>', userId);
+      final url = ApiEndpoints.uploadProfileAvatar.replaceFirst('<userId>', userId);
 
-      debugPrint('🎯 Updating avatar for user: $userId');
+      debugPrint('🚀 [ProfileRepository] Starting avatar upload...');
+      debugPrint('   👤 User ID: $userId');
+      debugPrint('   📁 Image path: $imagePath');
+      debugPrint('   🌐 URL: $url');
 
-      var formData = dio.FormData.fromMap({
-        'avatar': await dio.MultipartFile.fromFile(
-          imagePath,
-          filename: 'avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
-      });
+      // Validate file
+      final file = File(imagePath);
+      if (!await file.exists()) {
+        throw Exception('Image file does not exist: $imagePath');
+      }
 
-      dio.Response response = await BaseClient.post(url: url, payload: formData);
+      final fileSize = await file.length();
+      debugPrint('   📏 File size: ${fileSize ~/ 1024}KB');
 
-      if (response.statusCode == 200) {
-        debugPrint('✅ Avatar updated successfully');
-        return true;
+      // Read and encode file
+      final bytes = await file.readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final mimeType = lookupMimeType(imagePath) ?? 'image/jpeg';
+
+      debugPrint('   🖼️ MIME type: $mimeType');
+      debugPrint(
+        '   🔤 Base64 starts with: ${base64Image.substring(0, 20)}...',
+      ); // This should show /9j/ which is CORRECT
+      debugPrint('   📊 Base64 length: ${base64Image.length}');
+
+      final base64String = 'data:$mimeType;base64,$base64Image';
+
+      // Create payload
+      final Map<String, dynamic> payload = {"file": base64String};
+
+      debugPrint('📤 [ProfileRepository] Sending request...');
+
+      // Debug the full request
+      debugPrint('   📦 Payload keys: ${payload.keys}');
+      debugPrint('   📦 Payload file length: ${base64String.length}');
+      debugPrint('   ⏱️ Timeout: 30 seconds');
+
+      final response = await BaseClient.post(url: url, payload: payload);
+
+      debugPrint('✅ [ProfileRepository] Response received');
+      debugPrint('   📊 Status Code: ${response.statusCode}');
+      debugPrint('   📄 Response Type: ${response.data.runtimeType}');
+      debugPrint('   📄 Response Data: ${response.data}');
+
+      if (response.statusCode == 201) {
+        final imagePath = response.data;
+        debugPrint('   🎉 Avatar uploaded successfully!');
+        debugPrint('   📁 Server returned path: $imagePath');
+        return imagePath;
       } else {
-        debugPrint('❌ Avatar update failed with status: ${response.statusCode}');
-        throw Exception('Failed to update avatar: ${response.statusCode}');
+        throw Exception('Server returned ${response.statusCode}: ${response.data}');
       }
     } on dio.DioException catch (e) {
-      debugPrint('❌ DioException in updateUserAvatar: ${e.message}');
+      debugPrint('❌ [ProfileRepository] DIO ERROR DETAILS:');
+      debugPrint('   🚨 Error Type: ${e.type}');
+      debugPrint('   📝 Error Message: ${e.message}');
+      debugPrint('   🔗 Request URL: ${e.requestOptions.uri}');
+      debugPrint('   📦 Request Method: ${e.requestOptions.method}');
+      debugPrint('   ⏱️ Request Timeout: ${e.requestOptions.sendTimeout}');
+
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
-      } else {
-        throw Exception('Network error: ${e.message}');
+        debugPrint('   📊 Response Status: ${e.response?.statusCode}');
+        debugPrint('   📄 Response Data: ${e.response?.data}');
+        debugPrint('   📋 Response Headers: ${e.response?.headers}');
       }
-    } catch (e) {
-      debugPrint('❌ Unexpected error in updateUserAvatar: $e');
-      throw Exception('Unexpected error: $e');
+
+      if (e.error != null) {
+        debugPrint('   💥 Underlying Error: ${e.error}');
+        debugPrint('   📜 Error Stack: ${e.stackTrace}');
+      }
+
+      // More specific error handling
+      String errorMessage;
+      switch (e.type) {
+        case dio.DioExceptionType.connectionTimeout:
+          errorMessage = 'Connection timeout. Please check your internet connection.';
+          break;
+        case dio.DioExceptionType.sendTimeout:
+          errorMessage = 'Upload timeout. The server is taking too long to respond.';
+          break;
+        case dio.DioExceptionType.receiveTimeout:
+          errorMessage = 'Server response timeout.';
+          break;
+        case dio.DioExceptionType.badCertificate:
+          errorMessage = 'SSL certificate error. Please try again.';
+          break;
+        case dio.DioExceptionType.badResponse:
+          errorMessage = 'Server error: ${e.response?.statusCode}';
+          break;
+        case dio.DioExceptionType.cancel:
+          errorMessage = 'Request was cancelled.';
+          break;
+        case dio.DioExceptionType.connectionError:
+          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+          break;
+        case dio.DioExceptionType.unknown:
+          errorMessage = 'Network error: ${e.message ?? "Unknown error"}';
+          if (e.error is SocketException) {
+            errorMessage = 'No internet connection. Please check your network.';
+          }
+          break;
+      }
+
+      throw Exception(errorMessage);
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ProfileRepository] UNEXPECTED ERROR:');
+      debugPrint('   📝 Error: $e');
+      debugPrint('   📜 Stack Trace: $stackTrace');
+      throw Exception('Upload failed: ${e.toString()}');
+    }
+  }
+
+  Future<String> getImageUrl(String imagePath) async {
+    try {
+      debugPrint('🚀 [ProfileRepository] Getting image URL for path: $imagePath');
+
+      dio.Response response = await BaseClient.get(
+        url: "${ApiEndpoints.getAnImage}?imagePath=$imagePath",
+        payload: {'imagePath': imagePath},
+      );
+
+      debugPrint('✅ [ProfileRepository] Image URL response received');
+      debugPrint('   📊 Status Code: ${response.statusCode}');
+      debugPrint('   🧾 Raw Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        debugPrint('   🧾 Raw Data: $data');
+        // Handle different possible structures
+        if (data is String && data.isNotEmpty) {
+          return data;
+        } else if (data is Map && data['data'] is String) {
+          return data['data'];
+        } else if (data is Map && data['url'] is String) {
+          return data['url'];
+        } else {
+          throw Exception('Invalid or empty image URL in response: $data');
+        }
+      } else {
+        throw Exception('Failed to get image URL: ${response.statusCode}');
+      }
+    } on dio.DioException catch (e) {
+      debugPrint('🌐 [ProfileRepository] DioException: ${e.message}');
+      throw Exception('Network error while getting image URL: ${e.message}');
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ProfileRepository] Unexpected error: $e\n$stackTrace');
+      throw Exception('Unexpected error while getting image URL: $e');
     }
   }
 

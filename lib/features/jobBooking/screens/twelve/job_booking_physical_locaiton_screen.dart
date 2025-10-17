@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/screens/thirteen/job_booking_customer_signature_screen.dart';
 
 class JobBookingPhysicalLocationScreen extends StatefulWidget {
   const JobBookingPhysicalLocationScreen({super.key});
@@ -17,6 +19,20 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
     _locationController.text = 'Shelf 12D';
   }
 
+  void _saveAndNavigate() {
+    if (_locationController.text.isNotEmpty) {
+      // Save to cubit
+      context.read<JobBookingCubit>().updatePhysicalLocation(_locationController.text.trim());
+
+      // Navigate to next screen
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingCustomerSignatureScreen()));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please specify a storage location'), backgroundColor: Colors.red));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,12 +42,14 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
           children: [
             // Progress bar
             Container(
-              height: 4,
-              width: double.infinity,
-              color: Colors.grey[300],
-              child: Container(height: 4, width: double.infinity, color: Colors.blue),
+              height: 12.h,
+              width: MediaQuery.of(context).size.width * .071 * 13,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
+                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+              ),
             ),
-
             // Header
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -126,28 +144,14 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
                           width: MediaQuery.of(context).size.width * 0.6,
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Handle form submission
-                              if (_locationController.text.isNotEmpty) {
-                                // Process the physical location
-                                Navigator.pop(context);
-                              } else {
-                                // Show error or validation message
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Please specify a storage location'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
+                            onPressed: _saveAndNavigate,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                               elevation: 0,
                             ),
                             child: const Text(
-                              'OK',
+                              'Continue',
                               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),

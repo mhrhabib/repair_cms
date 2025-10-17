@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/error_screen.dart';
@@ -6,7 +5,6 @@ import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/models/profile_response_model.dart';
-import 'package:solar_icons/solar_icons.dart';
 import 'package:image_picker/image_picker.dart';
 
 class PersonalDetailsScreen extends StatefulWidget {
@@ -41,6 +39,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   XFile? _selectedImage;
   bool _isUploadingAvatar = false;
 
+  // Store the actual avatar URL after fetching from API
+  String? _avatarUrl;
+  bool _isLoadingAvatarUrl = false;
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +72,38 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     originalRole = user.userType ?? '';
 
     _controllersInitialized = true;
+
+    // Fetch the actual avatar URL if user has an avatar path
+    if (user.avatar != null && user.avatar!.isNotEmpty) {
+      _fetchAvatarUrl(user.avatar!);
+    }
+  }
+
+  Future<void> _fetchAvatarUrl(String avatarPath) async {
+    if (_avatarUrl != null) return; // Already fetched
+
+    setState(() {
+      _isLoadingAvatarUrl = true;
+    });
+
+    try {
+      final profileCubit = context.read<ProfileCubit>();
+      final imageUrl = await profileCubit.getImageUrl(avatarPath);
+
+      if (mounted) {
+        setState(() {
+          _avatarUrl = imageUrl;
+          _isLoadingAvatarUrl = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to fetch avatar URL: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingAvatarUrl = false;
+        });
+      }
+    }
   }
 
   void _checkForChanges() {
@@ -80,8 +114,17 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     }
   }
 
-  bool get _hasChanges {
+  // Separate change detection for profile data and avatar
+  bool get _hasProfileDataChanges {
     return _nameController.text != _originalName || _positionController.text != _originalPosition;
+  }
+
+  bool get _hasAvatarChanges {
+    return _selectedImage != null;
+  }
+
+  bool get hasChanges {
+    return _hasProfileDataChanges || _hasAvatarChanges;
   }
 
   void _saveChanges() {
@@ -90,16 +133,67 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
     final userId = signInCubit.userId == '' ? storage.read('userId') : signInCubit.userId;
 
-    // First upload avatar if selected
-    if (_selectedImage != null) {
+    if (userId == null || userId.isEmpty) {
+      _showErrorSnackBar('User ID not found');
+      return;
+    }
+
+    // Handle avatar upload and profile data update separately
+    if (_hasAvatarChanges && _hasProfileDataChanges) {
+      // Both avatar and profile data changed - upload avatar first, then update profile
+      _uploadAvatar(userId, profileCubit).then((_) {
+        _updateProfileData(userId, profileCubit);
+      });
+    } else if (_hasAvatarChanges) {
+      // Only avatar changed - upload avatar only
       _uploadAvatar(userId, profileCubit);
-    } else {
-      // Only update profile data if no new avatar
+    } else if (_hasProfileDataChanges) {
+      // Only profile data changed - update profile only
       _updateProfileData(userId, profileCubit);
+    } else {
+      // No changes
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No changes to save'), duration: Duration(seconds: 2)));
     }
 
     // Unfocus all text fields to hide keyboard
     FocusScope.of(context).unfocus();
+  }
+
+  Future<void> _uploadAvatar(String userId, ProfileCubit profileCubit) async {
+    setState(() {
+      _isUploadingAvatar = true;
+    });
+
+    try {
+      // Validate image before upload
+      final isValid = await profileCubit.validateImage(_selectedImage!.path);
+      if (!isValid) {
+        setState(() {
+          _isUploadingAvatar = false;
+        });
+        _showErrorSnackBar('Invalid image file');
+        return;
+      }
+
+      // Upload avatar only using the separate method
+      await profileCubit.updateUserAvatar(userId, _selectedImage!.path);
+
+      // Clear selected image after successful upload
+      if (mounted) {
+        setState(() {
+          _selectedImage = null;
+          // Clear cached avatar URL to force refresh
+          _avatarUrl = null;
+        });
+      }
+    } catch (error) {
+      setState(() {
+        _isUploadingAvatar = false;
+      });
+      _showErrorSnackBar('Failed to upload avatar: $error');
+    }
   }
 
   void _updateProfileData(String userId, ProfileCubit profileCubit) {
@@ -117,65 +211,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     // Only call update if there are actual changes
     if (updateData.isNotEmpty) {
       profileCubit.updateUserProfile(userId, updateData);
-    } else {
-      // Show message if no changes to save
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No changes to save'), duration: Duration(seconds: 2)));
     }
   }
 
-  void _uploadAvatar(String userId, ProfileCubit profileCubit) {
-    setState(() {
-      _isUploadingAvatar = true;
-    });
-
-    profileCubit
-        .updateUserAvatar(userId, _selectedImage!.path)
-        .then((_) {
-          setState(() {
-            _isUploadingAvatar = false;
-          });
-
-          // After avatar upload, update profile data if needed
-          final updateData = <String, dynamic>{};
-          if (_nameController.text != _originalName) {
-            updateData['fullName'] = _nameController.text;
-          }
-          if (_positionController.text != _originalPosition) {
-            updateData['position'] = _positionController.text;
-          }
-
-          if (updateData.isNotEmpty) {
-            _updateProfileData(userId, profileCubit);
-          }
-
-          // Clear selected image after upload
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            setState(() {
-              _selectedImage = null;
-            });
-          });
-        })
-        .catchError((error) {
-          setState(() {
-            _isUploadingAvatar = false;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to upload avatar: $error'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        });
-  }
-
-  // Rest of your existing methods remain the same...
-  // _showImageSourceBottomSheet, _buildBottomSheetOption, _pickImageFromGallery,
-  // _pickImageFromCamera, _removeProfilePicture, _showErrorSnackBar, etc.
-
-  // Image Picker Methods (keep your existing methods)
+  // IMAGE PICKER METHODS - Upload immediately when image is picked
   Future<void> _showImageSourceBottomSheet() {
     return showModalBottomSheet(
       context: context,
@@ -234,7 +273,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 },
               ),
 
-              // Remove photo option (only show if user has an existing avatar)
+              // Remove photo option
               BlocBuilder<ProfileCubit, ProfileStates>(
                 builder: (context, state) {
                   if (state is ProfileLoaded && state.user.avatar != null && state.user.avatar!.isNotEmpty) {
@@ -261,6 +300,97 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     );
   }
 
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        // Upload immediately when image is picked
+        _uploadImageImmediately(image);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to pick image from gallery: $e');
+    }
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        // Upload immediately when image is picked
+        _uploadImageImmediately(image);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to take photo: $e');
+    }
+  }
+
+  void _uploadImageImmediately(XFile image) {
+    final profileCubit = context.read<ProfileCubit>();
+    final signInCubit = context.read<SignInCubit>();
+
+    final userId = signInCubit.userId == '' ? storage.read('userId') : signInCubit.userId;
+
+    if (userId == null || userId.isEmpty) {
+      _showErrorSnackBar('User ID not found');
+      return;
+    }
+
+    setState(() {
+      _selectedImage = image;
+      _isUploadingAvatar = true;
+    });
+
+    // Upload avatar immediately
+    profileCubit
+        .updateUserAvatar(userId, image.path)
+        .then((_) {
+          setState(() {
+            _isUploadingAvatar = false;
+            _selectedImage = null;
+            _avatarUrl = null; // Force refresh
+          });
+        })
+        .catchError((error) {
+          setState(() {
+            _isUploadingAvatar = false;
+            _selectedImage = null;
+          });
+          _showErrorSnackBar('Failed to upload avatar: $error');
+        });
+  }
+
+  void _removeProfilePicture(String userId) {
+    final profileCubit = context.read<ProfileCubit>();
+
+    // Set avatar to empty string to remove it
+    profileCubit
+        .updateProfileField(userId, 'avatar', '')
+        .then((_) {
+          // Clear cached avatar URL
+          setState(() {
+            _avatarUrl = null;
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Profile picture removed'), backgroundColor: Colors.green));
+        })
+        .catchError((error) {
+          _showErrorSnackBar('Failed to remove profile picture: $error');
+        });
+  }
+
   Widget _buildBottomSheetOption({
     required IconData icon,
     required String title,
@@ -283,61 +413,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap,
     );
-  }
-
-  Future<void> _pickImageFromGallery() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 80,
-      );
-
-      if (image != null) {
-        setState(() {
-          _selectedImage = image;
-        });
-      }
-    } catch (e) {
-      _showErrorSnackBar('Failed to pick image from gallery: $e');
-    }
-  }
-
-  Future<void> _pickImageFromCamera() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 80,
-      );
-
-      if (image != null) {
-        setState(() {
-          _selectedImage = image;
-        });
-      }
-    } catch (e) {
-      _showErrorSnackBar('Failed to take photo: $e');
-    }
-  }
-
-  void _removeProfilePicture(String userId) {
-    final profileCubit = context.read<ProfileCubit>();
-
-    // You might need to implement a remove avatar endpoint in your repository
-    // For now, we'll set a flag to clear the avatar
-    profileCubit
-        .updateProfileField(userId, 'avatar', '')
-        .then((_) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Profile picture removed'), backgroundColor: Colors.green));
-        })
-        .catchError((error) {
-          _showErrorSnackBar('Failed to remove profile picture: $error');
-        });
   }
 
   void _showErrorSnackBar(String message) {
@@ -401,7 +476,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
         // Initialize controllers when user data is loaded
         if (state is ProfileLoaded) {
-          debugPrint('User data loaded: ${state.user.toJson()}');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _initializeControllers(state.user);
           });
@@ -482,8 +556,25 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       ),
                       child: Stack(
                         children: [
-                          // Profile Image
-                          CircleAvatar(radius: 80, backgroundImage: _getProfileImage(user.avatar)),
+                          // Profile Image with loading state
+                          if (_isLoadingAvatarUrl && user.avatar != null && user.avatar!.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                ),
+                              ),
+                            )
+                          else
+                            CircleAvatar(
+                              radius: 80,
+                              backgroundImage: _getProfileImage(user.avatar),
+                              backgroundColor: Colors.transparent,
+                            ),
 
                           // Uploading overlay
                           if (_isUploadingAvatar)
@@ -509,12 +600,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       bottom: 0,
                       right: 0,
                       child: GestureDetector(
-                        onTap: _showImageSourceBottomSheet,
+                        onTap: (_isUploadingAvatar || _isLoadingAvatarUrl) ? null : _showImageSourceBottomSheet,
                         child: Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: Colors.blue,
+                            color: (_isUploadingAvatar || _isLoadingAvatarUrl) ? Colors.grey : Colors.blue,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 3),
                             boxShadow: [
@@ -525,117 +616,45 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                          child: Icon(
+                            _isUploadingAvatar ? Icons.hourglass_empty : Icons.camera_alt,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),
-
-                    // Selected Image Indicator
-                    if (_selectedImage != null)
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                          child: const Icon(Icons.check, color: Colors.white, size: 16),
-                        ),
-                      ),
                   ],
                 ),
 
-                // Selected Image Preview Text
-                if (_selectedImage != null) ...[
+                // Loading Avatar URL Text
+                if (_isLoadingAvatarUrl && user.avatar != null && user.avatar!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
-                    'New photo selected',
-                    style: GoogleFonts.roboto(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w500),
+                    'Loading avatar...',
+                    style: GoogleFonts.roboto(color: Colors.blue, fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ],
+
+                // Uploading Text
+                if (_isUploadingAvatar) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Uploading avatar...',
+                    style: GoogleFonts.roboto(color: Colors.blue, fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ],
 
                 const SizedBox(height: 32),
 
-                // Full Name Field
+                // Rest of your form fields...
                 _buildInputField(label: 'Full Name', controller: _nameController, focusNode: _nameFocusNode),
-
                 SizedBox(height: 12.h),
-
-                // Email Field (read-only with navigation hint)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildReadOnlyField(label: 'Email', value: user.email ?? ''),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Icon(SolarIconsBold.infoCircle, color: AppColors.warningColor, size: 20.w),
-                          const SizedBox(width: 4),
-                          GestureDetector(
-                            onTap: () {
-                              // Navigate to email update screen
-                              // Navigator.push(context, MaterialPageRoute(builder: (context) => UpdateEmailScreen()));
-                            },
-                            child: Text(
-                              'confirm email address',
-                              style: GoogleFonts.roboto(
-                                color: AppColors.warningColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
+                _buildReadOnlyField(label: 'Email', value: user.email ?? ''),
                 SizedBox(height: 12.h),
-
-                // Position Field
                 _buildInputField(label: 'Position', controller: _positionController, focusNode: _positionFocusNode),
-
                 const SizedBox(height: 20),
-
-                // Role Dropdown (read-only)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Role',
-                      style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      initialValue: user.userType ?? '',
-                      enabled: false,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.blue),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.blue, width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      style: AppTypography.fontSize16Normal,
-                    ),
-                  ],
-                ),
-
+                _buildRoleField(value: user.userType ?? ''),
                 SizedBox(height: 30.h),
               ],
             ),
@@ -644,35 +663,32 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       );
     }
 
-    // Return a loading indicator as fallback for any unexpected states
     return const Center(child: CircularProgressIndicator());
   }
 
-  ImageProvider _getProfileImage(String? avatarUrl) {
-    // Show selected image first
-    if (_selectedImage != null) {
-      return FileImage(File(_selectedImage!.path));
+  // Rest of your UI methods remain the same...
+  ImageProvider _getProfileImage(String? avatarPath) {
+    // Use the fetched avatar URL if available
+    if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
+      return NetworkImage(_avatarUrl!);
     }
 
-    // Fallback to user's avatar or default
-    if (avatarUrl == null || avatarUrl.isEmpty) {
+    // Fallback to user's avatar path or default image
+    if (avatarPath == null || avatarPath.isEmpty) {
       return const NetworkImage(
         'https://images.unsplash.com/photo-1626808642875-0aa545482dfb?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       );
     }
 
-    // Check if the avatar URL is a complete URL or just a path
-    if (avatarUrl.startsWith('http')) {
-      return NetworkImage(avatarUrl);
-    } else {
-      // If it's just a path, construct the full URL
-      final fullUrl = 'https://my.repaircms.com/$avatarUrl';
-      return NetworkImage(fullUrl);
-    }
+    // If we have avatar path but URL is not fetched yet, show default
+    return const NetworkImage(
+      'https://images.unsplash.com/photo-1626808642875-0aa545482dfb?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    );
   }
 
   Widget _buildBottomButton(BuildContext context, ProfileStates state) {
-    if ((state is ProfileLoading && !_isUploadingAvatar) || !_hasChanges) {
+    // Only show save button for profile data changes, not for avatar changes
+    if ((state is ProfileLoading && !_isUploadingAvatar) || !_hasProfileDataChanges) {
       return const SizedBox.shrink();
     }
 
@@ -687,9 +703,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             top: 2,
           ),
           child: CustomButton(
-            text: _isUploadingAvatar ? 'Uploading...' : 'Save',
-            onPressed: (state is ProfileLoading || _isUploadingAvatar) ? null : _saveChanges,
-            isLoading: state is ProfileLoading || _isUploadingAvatar,
+            text: 'Save Profile Data',
+            onPressed: (state is ProfileLoading || _isUploadingAvatar || _isLoadingAvatarUrl) ? null : _saveChanges,
+            isLoading: state is ProfileLoading,
           ),
         ),
       ),
@@ -758,6 +774,42 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          style: AppTypography.fontSize16Normal,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleField({required String value}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Role',
+          style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          initialValue: value,
+          enabled: false,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),

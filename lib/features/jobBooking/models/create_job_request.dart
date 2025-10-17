@@ -1,4 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:repair_cms/core/helpers/storage.dart';
+
 class CreateJobRequest {
   final Job job;
   final Defect defect;
@@ -29,7 +31,8 @@ class Job {
   final String jobNo;
   final String customerId;
   final CustomerDetails customerDetails;
-  final String location;
+  String? location;
+  String? physicalLocation;
   final String salutationHTMLmarkup;
   final String termsAndConditionsHTMLmarkup;
   final ReceiptFooter receiptFooter;
@@ -52,7 +55,8 @@ class Job {
     required this.jobNo,
     required this.customerId,
     required this.customerDetails,
-    required this.location,
+    this.location,
+    this.physicalLocation,
     required this.salutationHTMLmarkup,
     required this.termsAndConditionsHTMLmarkup,
     required this.receiptFooter,
@@ -77,7 +81,7 @@ class Job {
       'jobNo': jobNo,
       'customerId': customerId,
       'customerDetails': customerDetails.toJson(),
-      'location': location,
+      'location': location ?? storage.read('locationId'),
       'salutationHTMLmarkup': salutationHTMLmarkup,
       'termsAndConditionsHTMLmarkup': termsAndConditionsHTMLmarkup,
       'receiptFooter': receiptFooter.toJson(),
@@ -85,7 +89,6 @@ class Job {
     };
   }
 
-  // ADD copyWith METHOD HERE - Inside the Job class
   Job copyWith({
     String? jobType,
     String? jobTypes,
@@ -104,6 +107,7 @@ class Job {
     String? customerId,
     CustomerDetails? customerDetails,
     String? location,
+    String? physicalLocation,
     String? salutationHTMLmarkup,
     String? termsAndConditionsHTMLmarkup,
     ReceiptFooter? receiptFooter,
@@ -127,6 +131,7 @@ class Job {
       customerId: customerId ?? this.customerId,
       customerDetails: customerDetails ?? this.customerDetails,
       location: location ?? this.location,
+      physicalLocation: physicalLocation ?? this.physicalLocation,
       salutationHTMLmarkup: salutationHTMLmarkup ?? this.salutationHTMLmarkup,
       termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup ?? this.termsAndConditionsHTMLmarkup,
       receiptFooter: receiptFooter ?? this.receiptFooter,
@@ -173,14 +178,17 @@ class CustomerDetails {
   final String type2;
   final String organization;
   final String customerNo;
+  final String email;
   final String telephone;
   final String telephonePrefix;
-  final Address shippingAddress;
-  final Address billingAddress;
+  final CustomerAddress shippingAddress;
+  final CustomerAddress billingAddress;
   final String salutation;
   final String firstName;
   final String lastName;
   final String position;
+  final String vatNo;
+  final bool reverseCharge;
 
   CustomerDetails({
     required this.customerId,
@@ -188,6 +196,7 @@ class CustomerDetails {
     required this.type2,
     required this.organization,
     required this.customerNo,
+    required this.email,
     required this.telephone,
     required this.telephonePrefix,
     required this.shippingAddress,
@@ -196,6 +205,8 @@ class CustomerDetails {
     required this.firstName,
     required this.lastName,
     required this.position,
+    required this.vatNo,
+    required this.reverseCharge,
   });
 
   Map<String, dynamic> toJson() {
@@ -205,6 +216,7 @@ class CustomerDetails {
       'type2': type2,
       'organization': organization,
       'customerNo': customerNo,
+      'email': email,
       'telephone': telephone,
       'telephone_prefix': telephonePrefix,
       'shipping_address': shippingAddress.toJson(),
@@ -213,24 +225,28 @@ class CustomerDetails {
       'firstName': firstName,
       'lastName': lastName,
       'position': position,
+      'vatNo': vatNo,
+      'reverseCharge': reverseCharge,
     };
   }
 
-  // ADD copyWith METHOD
   CustomerDetails copyWith({
     String? customerId,
     String? type,
     String? type2,
     String? organization,
     String? customerNo,
+    String? email,
     String? telephone,
     String? telephonePrefix,
-    Address? shippingAddress,
-    Address? billingAddress,
+    CustomerAddress? shippingAddress,
+    CustomerAddress? billingAddress,
     String? salutation,
     String? firstName,
     String? lastName,
     String? position,
+    String? vatNo,
+    bool? reverseCharge,
   }) {
     return CustomerDetails(
       customerId: customerId ?? this.customerId,
@@ -238,6 +254,7 @@ class CustomerDetails {
       type2: type2 ?? this.type2,
       organization: organization ?? this.organization,
       customerNo: customerNo ?? this.customerNo,
+      email: email ?? this.email,
       telephone: telephone ?? this.telephone,
       telephonePrefix: telephonePrefix ?? this.telephonePrefix,
       shippingAddress: shippingAddress ?? this.shippingAddress,
@@ -246,79 +263,52 @@ class CustomerDetails {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       position: position ?? this.position,
+      vatNo: vatNo ?? this.vatNo,
+      reverseCharge: reverseCharge ?? this.reverseCharge,
     );
   }
 }
 
-class Address {
-  final String id;
-  final String country;
-  final bool primary;
-  final String customerId;
+class CustomerAddress {
+  final String? id;
   final String? street;
-  final String? state;
-  final String? num;
+  final String? no;
   final String? zip;
   final String? city;
-  final String? createdAt;
-  final String? updatedAt;
+  final String? state;
+  final String? country;
 
-  Address({
-    required this.id,
-    required this.country,
-    required this.primary,
-    required this.customerId,
-    this.street,
-    this.state,
-    this.num,
-    this.zip,
-    this.city,
-    this.createdAt,
-    this.updatedAt,
-  });
+  CustomerAddress({this.id, this.street, this.no, this.zip, this.city, this.state, this.country});
 
   Map<String, dynamic> toJson() {
     return {
-      '_id': id,
+      if (id != null) '_id': id,
+      'street': street,
+      'no': no,
+      'zip': zip,
+      'city': city,
+      'state': state,
       'country': country,
-      'primary': primary,
-      'customerId': customerId,
-      if (street != null) 'street': street,
-      if (state != null) 'state': state,
-      if (num != null) 'num': num,
-      if (zip != null) 'zip': zip,
-      if (city != null) 'city': city,
-      if (createdAt != null) 'createdAt': createdAt,
-      if (updatedAt != null) 'updatedAt': updatedAt,
     };
   }
 
-  // ADD copyWith METHOD
-  Address copyWith({
+  CustomerAddress copyWith({
     String? id,
-    String? country,
-    bool? primary,
-    String? customerId,
     String? street,
-    String? state,
-    String? num,
+    String? no,
     String? zip,
     String? city,
-    String? createdAt,
-    String? updatedAt,
+    String? state,
+    String? country,
   }) {
-    return Address(
+    return CustomerAddress(
       id: id ?? this.id,
-      country: country ?? this.country,
-      primary: primary ?? this.primary,
-      customerId: customerId ?? this.customerId,
       street: street ?? this.street,
-      state: state ?? this.state,
-      num: num ?? this.num,
+      no: no ?? this.no,
       zip: zip ?? this.zip,
       city: city ?? this.city,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      state: state ?? this.state,
+      country: country ?? this.country,
     );
   }
 }
@@ -454,7 +444,6 @@ class Defect {
     return {'jobType': jobType, 'defect': defect.map((item) => item.toJson()).toList(), 'internalNote': internalNote};
   }
 
-  // ADD copyWith METHOD
   Defect copyWith({String? jobType, List<DefectItem>? defect, List<dynamic>? internalNote}) {
     return Defect(
       jobType: jobType ?? this.jobType,
@@ -507,7 +496,6 @@ class Device {
     };
   }
 
-  // ADD copyWith METHOD
   Device copyWith({
     String? category,
     String? brand,
@@ -548,14 +536,17 @@ class Contact {
   final String type2;
   final String organization;
   final String customerNo;
+  final String email;
   final String telephone;
   final String telephonePrefix;
-  final Address shippingAddress;
-  final Address billingAddress;
+  final CustomerAddress shippingAddress;
+  final CustomerAddress billingAddress;
   final String salutation;
   final String firstName;
   final String lastName;
   final String position;
+  final String vatNo;
+  final bool reverseCharge;
 
   Contact({
     required this.type,
@@ -563,6 +554,7 @@ class Contact {
     required this.type2,
     required this.organization,
     required this.customerNo,
+    required this.email,
     required this.telephone,
     required this.telephonePrefix,
     required this.shippingAddress,
@@ -571,6 +563,8 @@ class Contact {
     required this.firstName,
     required this.lastName,
     required this.position,
+    required this.vatNo,
+    required this.reverseCharge,
   });
 
   Map<String, dynamic> toJson() {
@@ -580,6 +574,7 @@ class Contact {
       'type2': type2,
       'organization': organization,
       'customerNo': customerNo,
+      'email': email,
       'telephone': telephone,
       'telephone_prefix': telephonePrefix,
       'shipping_address': shippingAddress.toJson(),
@@ -588,24 +583,28 @@ class Contact {
       'firstName': firstName,
       'lastName': lastName,
       'position': position,
+      'vatNo': vatNo,
+      'reverseCharge': reverseCharge,
     };
   }
 
-  // ADD copyWith METHOD HERE - Inside the Contact class
   Contact copyWith({
     String? type,
     String? customerId,
     String? type2,
     String? organization,
     String? customerNo,
+    String? email,
     String? telephone,
     String? telephonePrefix,
-    Address? shippingAddress,
-    Address? billingAddress,
+    CustomerAddress? shippingAddress,
+    CustomerAddress? billingAddress,
     String? salutation,
     String? firstName,
     String? lastName,
     String? position,
+    String? vatNo,
+    bool? reverseCharge,
   }) {
     return Contact(
       type: type ?? this.type,
@@ -613,6 +612,7 @@ class Contact {
       type2: type2 ?? this.type2,
       organization: organization ?? this.organization,
       customerNo: customerNo ?? this.customerNo,
+      email: email ?? this.email,
       telephone: telephone ?? this.telephone,
       telephonePrefix: telephonePrefix ?? this.telephonePrefix,
       shippingAddress: shippingAddress ?? this.shippingAddress,
@@ -621,6 +621,8 @@ class Contact {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       position: position ?? this.position,
+      vatNo: vatNo ?? this.vatNo,
+      reverseCharge: reverseCharge ?? this.reverseCharge,
     );
   }
 }

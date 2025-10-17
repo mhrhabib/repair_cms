@@ -1,30 +1,40 @@
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/jobBooking/models/business_model.dart';
 
 abstract class ContactTypeRepository {
-  Future<List<Customersorsuppliers>> getBusinessList({required String userId, String? keyword, int? limit, int? page});
+  Future<List<Customersorsuppliers>> getProfileList({
+    required String userId,
+    required String type2, // Added to specify "business" or "personal"
+    String? keyword,
+    int? limit,
+    int? page,
+  });
+
   Future<Customersorsuppliers> createBusiness({required Map<String, dynamic> payload});
+
+  Future<Customersorsuppliers> updateBusiness({required String profileId, required Map<String, dynamic> payload});
 }
 
 class ContactTypeRepositoryImpl implements ContactTypeRepository {
   @override
-  Future<List<Customersorsuppliers>> getBusinessList({
+  Future<List<Customersorsuppliers>> getProfileList({
     required String userId,
+    required String type2, // Added
     String? keyword,
     int? limit = 20,
     int? page = 1,
   }) async {
     try {
-      debugPrint('🚀 [ContactTypeRepository] Fetching business list');
+      debugPrint('🚀 [ContactTypeRepository] Fetching profile list for type: $type2');
 
       // Build query parameters
       final Map<String, dynamic> queryParams = {
         'limit': limit?.toString(),
         'page': page?.toString(),
-        'type2': '["business"]', // Filter for business type
+        'type2': '["$type2"]', // Use the type2 parameter to filter
       };
 
       if (keyword != null && keyword.isNotEmpty) {
@@ -36,79 +46,146 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
       debugPrint('   👤 User ID: $userId');
       debugPrint('   🔍 Query Params: $queryParams');
 
-      Response response = await BaseClient.get(url: url, payload: queryParams);
+      dio.Response response = await BaseClient.get(url: url, payload: queryParams);
 
-      debugPrint('✅ [ContactTypeRepository] Business response received:');
+      debugPrint('✅ [ContactTypeRepository] Profile response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
-      debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
         final businessModel = BusinessModel.fromJson(response.data);
 
         if (businessModel.customersorsuppliers != null) {
-          debugPrint('   📦 Parsed ${businessModel.customersorsuppliers!.length} businesses');
+          debugPrint('   📦 Parsed ${businessModel.customersorsuppliers!.length} profiles');
           return businessModel.customersorsuppliers!;
         } else {
-          debugPrint('   ⚠️ No businesses found');
+          debugPrint('   ⚠️ No profiles found');
           return [];
         }
       } else {
         throw ContactTypeException(
-          message: 'Failed to load businesses: ${response.statusCode}',
+          message: 'Failed to load profiles: ${response.statusCode}',
           statusCode: response.statusCode,
         );
       }
-    } on DioException catch (e) {
-      debugPrint('🌐 [ContactTypeRepository] DioException:');
-      debugPrint('   💥 Error: ${e.message}');
-      debugPrint('   📍 Type: ${e.type}');
-      debugPrint('   🔧 Response: ${e.response?.data}');
+    } on dio.DioException catch (e) {
+      debugPrint('🌐 [ContactTypeRepository] DioException: ${e.message}');
       throw ContactTypeException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
     } catch (e, stackTrace) {
-      debugPrint('💥 [ContactTypeRepository] Unexpected error:');
-      debugPrint('   💥 Error: $e');
-      debugPrint('   📋 Stack: $stackTrace');
+      debugPrint('💥 [ContactTypeRepository] Unexpected error: $e\n$stackTrace');
       throw ContactTypeException(message: 'Unexpected error: $e');
     }
   }
 
-  // In your contact_type_repository.dart, update the createBusiness method
   @override
   Future<Customersorsuppliers> createBusiness({required Map<String, dynamic> payload}) async {
     try {
-      debugPrint('🚀 [ContactTypeRepository] Creating new business');
+      debugPrint('🚀 [ContactTypeRepository] Creating new profile');
       debugPrint('   📦 Payload: $payload');
 
-      Response response = await BaseClient.post(url: ApiEndpoints.createBusiness, payload: payload);
+      dio.Response response = await BaseClient.post(url: ApiEndpoints.createBusiness, payload: payload);
 
-      debugPrint('✅ [ContactTypeRepository] Create business response received:');
+      debugPrint('✅ [ContactTypeRepository] Create profile response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
-      debugPrint('   📊 Response Data: ${response.data}');
+      debugPrint('   📄 Response Data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final createdBusiness = Customersorsuppliers.fromJson(response.data);
-        debugPrint('   🎉 Business created successfully with ID: ${createdBusiness.sId}');
-        return createdBusiness;
+        // Handle different response structures
+        Map<String, dynamic> responseData = response.data;
+
+        // Check if response has 'customer' or 'customerorsupplier' array
+        if (responseData.containsKey('customer')) {
+          final createdBusiness = Customersorsuppliers.fromJson(responseData['customer']);
+          debugPrint('   🎉 Profile created successfully with ID: ${createdBusiness.sId}');
+          return createdBusiness;
+        } else if (responseData.containsKey('customerorsupplier') &&
+            responseData['customerorsupplier'] is List &&
+            responseData['customerorsupplier'].isNotEmpty) {
+          // Handle array response structure
+          final createdBusiness = Customersorsuppliers.fromJson(responseData['customerorsupplier'][0]);
+          debugPrint('   🎉 Profile created successfully with ID: ${createdBusiness.sId}');
+          return createdBusiness;
+        } else {
+          debugPrint('   ⚠️ Unexpected response structure: $responseData');
+          throw ContactTypeException(
+            message: 'Unexpected response structure from server',
+            statusCode: response.statusCode,
+          );
+        }
       } else {
         throw ContactTypeException(
-          message: 'Failed to create business: ${response.statusCode}',
+          message: 'Failed to create profile: ${response.statusCode}',
           statusCode: response.statusCode,
         );
       }
-    } on DioException catch (e) {
-      debugPrint('🌐 [ContactTypeRepository] DioException during business creation:');
-      debugPrint('   💥 Error: ${e.message}');
-      debugPrint('   📍 Type: ${e.type}');
-      debugPrint('   🔧 Response: ${e.response?.data}');
+    } on dio.DioException catch (e) {
+      debugPrint('🌐 [ContactTypeRepository] DioException during profile creation: ${e.message}');
       throw ContactTypeException(
-        message: 'Network error while creating business: ${e.message}',
+        message: 'Network error while creating profile: ${e.message}',
         statusCode: e.response?.statusCode,
       );
     } catch (e, stackTrace) {
-      debugPrint('💥 [ContactTypeRepository] Unexpected error during business creation:');
-      debugPrint('   💥 Error: $e');
-      debugPrint('   📋 Stack: $stackTrace');
-      throw ContactTypeException(message: 'Unexpected error while creating business: $e');
+      debugPrint('💥 [ContactTypeRepository] Unexpected error during profile creation: $e\n$stackTrace');
+      throw ContactTypeException(message: 'Unexpected error while creating profile: $e');
+    }
+  }
+
+  @override
+  Future<Customersorsuppliers> updateBusiness({
+    required String profileId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      debugPrint('🚀 [ContactTypeRepository] Updating profile with ID: $profileId');
+      debugPrint('   📦 Payload: $payload');
+
+      // Construct the update URL
+      final String url = ApiEndpoints.updateBusiness.replaceAll('<id>', profileId);
+      debugPrint('   📍 URL: $url');
+
+      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+
+      debugPrint('✅ [ContactTypeRepository] Update profile response received:');
+      debugPrint('   📊 Status Code: ${response.statusCode}');
+      debugPrint('   📄 Response Data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Handle different response structures
+        Map<String, dynamic> responseData = response.data;
+
+        // Check if response has 'customer' or 'customerorsupplier' array
+        if (responseData['success'] == true) {
+          final updatedBusiness = Customersorsuppliers.fromJson(responseData);
+          debugPrint('   🎉 Profile updated successfully with ID: ${updatedBusiness.sId}');
+          return updatedBusiness;
+        } else if (responseData.containsKey('customerorsupplier') &&
+            responseData['customerorsupplier'] is List &&
+            responseData['customerorsupplier'].isNotEmpty) {
+          // Handle array response structure
+          final updatedBusiness = Customersorsuppliers.fromJson(responseData['customerorsupplier'][0]);
+          debugPrint('   🎉 Profile updated successfully with ID: ${updatedBusiness.sId}');
+          return updatedBusiness;
+        } else {
+          debugPrint('   ⚠️ Unexpected response structure: $responseData');
+          throw ContactTypeException(
+            message: 'Unexpected response structure from server',
+            statusCode: response.statusCode,
+          );
+        }
+      } else {
+        throw ContactTypeException(
+          message: 'Failed to update profile: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      }
+    } on dio.DioException catch (e) {
+      debugPrint('🌐 [ContactTypeRepository] DioException during profile update: ${e.message}');
+      throw ContactTypeException(
+        message: 'Network error while updating profile: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ContactTypeRepository] Unexpected error during profile update: $e\n$stackTrace');
+      throw ContactTypeException(message: 'Unexpected error while updating profile: $e');
     }
   }
 }

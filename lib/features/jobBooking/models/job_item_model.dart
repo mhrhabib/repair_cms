@@ -1,11 +1,11 @@
-class ItemsModel {
+class JobItemsModel {
   List<Item>? items;
   int? totalItems;
   int? pages;
 
-  ItemsModel({this.items, this.totalItems, this.pages});
+  JobItemsModel({this.items, this.totalItems, this.pages});
 
-  ItemsModel.fromJson(Map<String, dynamic> json) {
+  JobItemsModel.fromJson(Map<String, dynamic> json) {
     if (json['items'] != null) {
       items = <Item>[];
       json['items'].forEach((v) {
@@ -38,14 +38,14 @@ class Item {
   String? manufacturerNumber;
   String? color;
   String? condition;
-  int? vatPercent;
-  int? profitMarkup;
+  dynamic vatPercent;
+  dynamic profitMarkup;
   String? profitMarkupSymbol;
   String? description;
-  int? purchasePriceExlVat;
-  double? purchasePriceIncVat;
-  int? salePriceExlVat;
-  double? salePriceIncVat;
+  dynamic purchasePriceExlVat;
+  dynamic purchasePriceIncVat;
+  dynamic salePriceExlVat;
+  dynamic salePriceIncVat;
   List<Barcode>? barcode;
   List<SupplierList>? supplierList;
   bool? serialNoManagement;

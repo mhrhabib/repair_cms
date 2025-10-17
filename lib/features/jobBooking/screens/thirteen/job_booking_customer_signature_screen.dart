@@ -1,4 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/screens/fourteen/job_booking_select_printer_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 
 class JobBookingCustomerSignatureScreen extends StatefulWidget {
@@ -42,6 +44,23 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
         _currentPath.clear();
       }
     });
+  }
+
+  void _saveSignatureAndNavigate() {
+    if (_hasSignature) {
+      // Convert signature to data (you might want to encode it as base64 or similar)
+      final signatureData = _encodeSignatureData();
+      context.read<JobBookingCubit>().updateCustomerSignature(signatureData);
+
+      // Navigate to next screen
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingSelectPrinterScreen()));
+    }
+  }
+
+  String _encodeSignatureData() {
+    // Convert signature paths to a string representation
+    // In a real app, you might want to convert this to base64 or save as image
+    return _signaturePaths.toString();
   }
 
   @override
@@ -189,20 +208,7 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                     const Spacer(),
 
                     // Navigation buttons
-                    BottomButtonsGroup(
-                      onPressed: _hasSignature
-                          ? () {
-                              // Process the signature
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Signature saved successfully'),
-                                  backgroundColor: AppColors.primary,
-                                ),
-                              );
-                            }
-                          : null,
-                    ),
+                    BottomButtonsGroup(onPressed: _hasSignature ? _saveSignatureAndNavigate : null),
 
                     SizedBox(height: 32.h),
                   ],

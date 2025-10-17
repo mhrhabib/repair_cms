@@ -1,9 +1,10 @@
 import 'package:repair_cms/core/app_exports.dart';
 
 class BottomButtonsGroup extends StatelessWidget {
-  const BottomButtonsGroup({super.key, required this.onPressed});
+  const BottomButtonsGroup({super.key, required this.onPressed, this.okButtonText = 'OK'});
 
   final VoidCallback? onPressed;
+  final String okButtonText;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class BottomButtonsGroup extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
                 elevation: 0,
               ),
-              child: Text('OK', style: AppTypography.fontSize16Bold.copyWith(color: Colors.white)),
+              child: Text(okButtonText, style: AppTypography.fontSize16Bold.copyWith(color: Colors.white)),
             ),
           ),
         ),

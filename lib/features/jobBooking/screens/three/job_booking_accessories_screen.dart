@@ -73,9 +73,9 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
       // Select the newly created accessory
       _selectAccessory(accessoryName, ''); // The ID will be available after refresh
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Accessory "$accessoryName" created successfully'), backgroundColor: Colors.green),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Accessory "$accessoryName" created successfully'), backgroundColor: Colors.green),
+      // );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -433,12 +433,12 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
           onPressed: _selectedAccessory.isNotEmpty && !_isCreatingAccessory
               ? () {
                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingImeiScreen()));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Selected accessory: $_selectedAccessory'),
-                      backgroundColor: AppColors.primary,
-                    ),
-                  );
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   SnackBar(
+                  //     content: Text('Selected accessory: $_selectedAccessory'),
+                  //     backgroundColor: AppColors.primary,
+                  //   ),
+                  // );
                 }
               : null,
         ),

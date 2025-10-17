@@ -465,12 +465,12 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                       Navigator.of(
                         context,
                       ).push(MaterialPageRoute(builder: (context) => JobBookingAccessoriesScreen()));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Selected model: ${bookingState.device.model}'),
-                          backgroundColor: AppColors.primary,
-                        ),
-                      );
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   SnackBar(
+                      //     content: Text('Selected model: ${bookingState.device.model}'),
+                      //     backgroundColor: AppColors.primary,
+                      //   ),
+                      // );
                     }
                   : null,
             ),

@@ -1,4 +1,5 @@
 // cubits/sign_in_cubit.dart
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
@@ -49,6 +50,8 @@ class SignInCubit extends Cubit<SignInStates> {
           await storage.write('isLoggedIn', true);
           await storage.write('userType', response.data!.user.userType);
           await storage.write('userId', response.data!.user.id);
+          await storage.write('locationId', response.data!.user.location!.id);
+          debugPrint('🔐 User locationId in: ${response.data!.user.location!.id}');
           saveUserTypeandId(response.data!.user.userType, response.data!.user.id);
         }
 

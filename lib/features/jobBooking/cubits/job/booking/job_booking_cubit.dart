@@ -1,4 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/contact_data_helper.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 part 'job_booking_state.dart';
@@ -32,14 +34,17 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             type2: "personal",
             organization: "",
             customerNo: "",
+            email: "",
             telephone: "",
             telephonePrefix: "+1", // Default prefix
-            shippingAddress: Address(id: "", country: "", primary: false, customerId: ""),
-            billingAddress: Address(id: "", country: "", primary: false, customerId: ""),
+            shippingAddress: CustomerAddress(street: "", no: "", zip: "", city: "", state: "", country: ""),
+            billingAddress: CustomerAddress(street: "", no: "", zip: "", city: "", state: "", country: ""),
             salutation: "",
             firstName: "",
             lastName: "",
             position: "",
+            vatNo: "",
+            reverseCharge: false,
           ),
           location: "", // Will be set from user data
           salutationHTMLmarkup: "",
@@ -61,14 +66,17 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           type2: "personal",
           organization: "",
           customerNo: "",
+          email: "",
           telephone: "",
           telephonePrefix: "+1",
-          shippingAddress: Address(id: "", country: "", primary: false, customerId: ""),
-          billingAddress: Address(id: "", country: "", primary: false, customerId: ""),
+          shippingAddress: CustomerAddress(street: "", no: "", zip: "", city: "", state: "", country: ""),
+          billingAddress: CustomerAddress(street: "", no: "", zip: "", city: "", state: "", country: ""),
           salutation: "",
           firstName: "",
           lastName: "",
           position: "",
+          vatNo: "",
+          reverseCharge: false,
         ),
         currentStep: 0,
       ),
@@ -95,6 +103,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             lastName: lastName ?? state.contact.lastName,
             telephone: telephone ?? state.contact.telephone,
             telephonePrefix: telephonePrefix ?? state.contact.telephonePrefix,
+            email: email ?? state.contact.email,
             customerId: customerId ?? state.contact.customerId,
           ),
           job: state.job.copyWith(
@@ -104,6 +113,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
               lastName: lastName ?? state.job.customerDetails.lastName,
               telephone: telephone ?? state.job.customerDetails.telephone,
               telephonePrefix: telephonePrefix ?? state.job.customerDetails.telephonePrefix,
+              email: email ?? state.job.customerDetails.email,
               customerId: customerId ?? state.job.customerDetails.customerId,
             ),
           ),
@@ -112,8 +122,16 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     }
   }
 
-  // Add this method to your JobBookingCubit
-  void updateContactType({String? type, String? type2, String? organization, String? customerNo, String? position}) {
+  // Update contact type and business information
+  void updateContactType({
+    String? type,
+    String? type2,
+    String? organization,
+    String? customerNo,
+    String? position,
+    String? vatNo,
+    bool? reverseCharge,
+  }) {
     final state = this.state;
     if (state is JobBookingData) {
       emit(
@@ -124,6 +142,8 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             organization: organization ?? state.contact.organization,
             customerNo: customerNo ?? state.contact.customerNo,
             position: position ?? state.contact.position,
+            vatNo: vatNo ?? state.contact.vatNo,
+            reverseCharge: reverseCharge ?? state.contact.reverseCharge,
           ),
           job: state.job.copyWith(
             customerDetails: state.job.customerDetails.copyWith(
@@ -132,6 +152,8 @@ class JobBookingCubit extends Cubit<JobBookingState> {
               organization: organization ?? state.job.customerDetails.organization,
               customerNo: customerNo ?? state.job.customerDetails.customerNo,
               position: position ?? state.job.customerDetails.position,
+              vatNo: vatNo ?? state.job.customerDetails.vatNo,
+              reverseCharge: reverseCharge ?? state.job.customerDetails.reverseCharge,
             ),
           ),
         ),
@@ -235,7 +257,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   }
 
   // Update addresses
-  void updateShippingAddress(Address address) {
+  void updateShippingAddress(CustomerAddress address) {
     final state = this.state;
     if (state is JobBookingData) {
       emit(
@@ -247,7 +269,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     }
   }
 
-  void updateBillingAddress(Address address) {
+  void updateBillingAddress(CustomerAddress address) {
     final state = this.state;
     if (state is JobBookingData) {
       emit(
@@ -344,5 +366,157 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       return completedFields / totalFields;
     }
     return 0.0;
+  }
+
+  // Method to update from contact data (using your helper functions)
+  void updateFromContactData(Map<String, dynamic> contactData, {String option = 'select'}) {
+    final businessData = ContactDataHelper.getContactDataForJobContact(contactData, option: option);
+
+    updateContactType(
+      type: businessData['type'],
+      type2: businessData['type2'],
+      organization: businessData['organization'],
+      customerNo: businessData['customerNo'],
+      position: businessData['position'],
+      vatNo: businessData['vatNo'],
+      reverseCharge: businessData['reverseCharge'],
+    );
+
+    updateCustomerInfo(
+      salutation: businessData['salutation'],
+      firstName: businessData['firstName'],
+      lastName: businessData['lastName'],
+      telephone: businessData['telephone'],
+      telephonePrefix: businessData['telephone_prefix'],
+      email: businessData['email'],
+      customerId: businessData['customerId'],
+    );
+
+    // Update addresses if available
+    if (businessData['shipping_address'] != null) {
+      final shippingAddressData = businessData['shipping_address'] as Map<String, dynamic>;
+      final shippingAddress = CustomerAddress(
+        street: shippingAddressData['street'] ?? '',
+        no: shippingAddressData['no'] ?? '',
+        zip: shippingAddressData['zip'] ?? '',
+        city: shippingAddressData['city'] ?? '',
+        state: shippingAddressData['state'] ?? '',
+        country: shippingAddressData['country'] ?? '',
+      );
+      updateShippingAddress(shippingAddress);
+    }
+
+    if (businessData['billing_address'] != null) {
+      final billingAddressData = businessData['billing_address'] as Map<String, dynamic>;
+      final billingAddress = CustomerAddress(
+        street: billingAddressData['street'] ?? '',
+        no: billingAddressData['no'] ?? '',
+        zip: billingAddressData['zip'] ?? '',
+        city: billingAddressData['city'] ?? '',
+        state: billingAddressData['state'] ?? '',
+        country: billingAddressData['country'] ?? '',
+      );
+      updateBillingAddress(billingAddress);
+    }
+  }
+
+  // Add to your existing JobBookingCubit
+
+  // Add an item to assigned items
+  void addItem(String itemId) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      final updatedItems = List<String>.from(state.job.assignedItemsIds)..add(itemId);
+      emit(state.copyWith(job: state.job.copyWith(assignedItemsIds: updatedItems)));
+    }
+  }
+
+  // Remove an item from assigned items
+  void removeItem(String itemId) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      final updatedItems = List<String>.from(state.job.assignedItemsIds)..remove(itemId);
+      emit(state.copyWith(job: state.job.copyWith(assignedItemsIds: updatedItems)));
+    }
+  }
+
+  // Clear all assigned items
+  void clearAssignedItems() {
+    final state = this.state;
+    if (state is JobBookingData) {
+      emit(state.copyWith(job: state.job.copyWith(assignedItemsIds: [])));
+    }
+  }
+
+  // Get assigned items count
+  int getAssignedItemsCount() {
+    final state = this.state;
+    if (state is JobBookingData) {
+      return state.job.assignedItemsIds.length;
+    }
+    return 0;
+  }
+
+  // Check if item is already assigned
+  bool isItemAssigned(String itemId) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      return state.job.assignedItemsIds.contains(itemId);
+    }
+    return false;
+  }
+
+  // Add these methods to your existing JobBookingCubit
+
+  // Update file uploads
+  void updateFileUploads(List<String> filePaths) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      // Store file paths in the job or create a separate field
+      emit(
+        state.copyWith(
+          // You might want to add a files field to JobBookingData
+        ),
+      );
+    }
+  }
+
+  // Update physical location
+  void updatePhysicalLocation(String location) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      // Store location in the job
+      emit(
+        state.copyWith(
+          job: state.job.copyWith(
+            physicalLocation: location,
+            location: storage.read("locationId"),
+            loggedUserId: storage.read("userId"),
+            userId: storage.read("userId"),
+          ),
+        ),
+      );
+    }
+  }
+
+  // Update customer signature
+  void updateCustomerSignature(String signatureData) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      // Store signature data
+      emit(
+        state.copyWith(
+          // Add signature field to JobBookingData
+        ),
+      );
+    }
+  }
+
+  // Update print option
+  void updatePrintOption(String printOption) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      emit(state.copyWith(job: state.job.copyWith(printOption: printOption)));
+    }
   }
 }

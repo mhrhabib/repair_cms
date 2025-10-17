@@ -35,11 +35,12 @@ class ContactTypeSearchResult extends ContactTypeState {
 // NEW: Success state for create business
 class ContactTypeSuccess extends ContactTypeState {
   final String message;
+  final Customersorsuppliers? createdBusiness;
 
-  const ContactTypeSuccess({required this.message});
+  const ContactTypeSuccess({required this.message, this.createdBusiness});
 
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [message, createdBusiness ?? ''];
 }
 
 class ContactTypeError extends ContactTypeState {

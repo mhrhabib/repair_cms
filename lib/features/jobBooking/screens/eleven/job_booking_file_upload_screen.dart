@@ -1,8 +1,8 @@
-// ignore_for_file: use_build_context_synchronously
-
-import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'dart:io';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/screens/twelve/job_booking_physical_locaiton_screen.dart';
 
 class JobBookingFileUploadScreen extends StatefulWidget {
   const JobBookingFileUploadScreen({super.key});
@@ -15,6 +15,15 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
   List<XFile> uploadedImages = [];
   final ImagePicker _picker = ImagePicker();
 
+  void _saveAndNavigate() {
+    // Convert XFile to file paths and save to cubit
+    final filePaths = uploadedImages.map((file) => file.path).toList();
+    context.read<JobBookingCubit>().updateFileUploads(filePaths);
+
+    // Navigate to next screen
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,13 +32,18 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
         child: Column(
           children: [
             // Progress bar
-            Container(
-              height: 4,
-              width: double.infinity,
-              color: Colors.grey[300],
-              child: Container(height: 4, width: double.infinity, color: Colors.blue),
+            Align(
+              alignment: Alignment.topLeft,
+              child: Container(
+                height: 12.h,
+                width: MediaQuery.of(context).size.width * .071 * 11,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
+                  boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                ),
+              ),
             ),
-
             // Header
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -161,17 +175,14 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
                           width: MediaQuery.of(context).size.width * 0.6,
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Handle form submission with uploaded files
-                              Navigator.pop(context);
-                            },
+                            onPressed: uploadedImages.isNotEmpty ? _saveAndNavigate : null,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
+                              backgroundColor: uploadedImages.isNotEmpty ? Colors.blue : Colors.grey,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                               elevation: 0,
                             ),
                             child: const Text(
-                              'OK',
+                              'Continue',
                               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),

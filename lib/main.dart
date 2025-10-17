@@ -12,12 +12,16 @@ import 'package:repair_cms/features/jobBooking/cubits/brands/brand_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/contactType/contact_type_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
+import 'package:repair_cms/features/jobBooking/cubits/jobItem/job_item_cubit.dart';
+import 'package:repair_cms/features/jobBooking/cubits/jobType/job_type_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/model/models_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/service/service_cubit.dart';
 import 'package:repair_cms/features/jobBooking/repository/accessories_repository.dart';
 import 'package:repair_cms/features/jobBooking/repository/brand_repository.dart';
 import 'package:repair_cms/features/jobBooking/repository/contact_type_repository.dart';
 import 'package:repair_cms/features/jobBooking/repository/job_booking_repository.dart';
+import 'package:repair_cms/features/jobBooking/repository/job_item_repository.dart';
+import 'package:repair_cms/features/jobBooking/repository/job_type_repository.dart';
 import 'package:repair_cms/features/jobBooking/repository/models_repository.dart';
 import 'package:repair_cms/features/jobBooking/repository/service_repository.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
@@ -59,6 +63,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => ContactTypeCubit(contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>()),
         ),
+        BlocProvider(create: (context) => JobTypeCubit(jobTypeRepository: SetUpDI.getIt<JobTypeRepository>())),
+        BlocProvider(create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>())),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),

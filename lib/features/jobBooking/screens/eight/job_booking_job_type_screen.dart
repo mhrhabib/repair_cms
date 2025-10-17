@@ -46,10 +46,7 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
   void _saveJobTypeToCubit() {
     if (selectedJobType != null) {
       final jobBookingCubit = context.read<JobBookingCubit>();
-      // jobBookingCubit.updateJobType(
-      //   jobType: selectedJobType,
-      //   jobTypeId: selectedJobTypeId,
-      // );
+      jobBookingCubit.updateDefectInfo(jobType: selectedJobType);
 
       debugPrint('✅ Job type saved to JobBookingCubit: $selectedJobType');
     }
