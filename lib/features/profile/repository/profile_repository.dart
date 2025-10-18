@@ -68,7 +68,7 @@ class ProfileRepository {
     }
   }
 
-  Future<String> updateUserAvatar(String userId, String imagePath) async {
+  Future<dynamic> updateUserAvatar(String userId, String imagePath) async {
     try {
       final url = ApiEndpoints.uploadProfileAvatar.replaceFirst('<userId>', userId);
 
@@ -109,7 +109,7 @@ class ProfileRepository {
       debugPrint('   📦 Payload file length: ${base64String.length}');
       debugPrint('   ⏱️ Timeout: 30 seconds');
 
-      final response = await BaseClient.post(url: url, payload: payload);
+      dio.Response response = await BaseClient.post(url: url, payload: payload);
 
       debugPrint('✅ [ProfileRepository] Response received');
       debugPrint('   📊 Status Code: ${response.statusCode}');
@@ -188,14 +188,11 @@ class ProfileRepository {
     try {
       debugPrint('🚀 [ProfileRepository] Getting image URL for path: $imagePath');
 
-      dio.Response response = await BaseClient.get(
-        url: "${ApiEndpoints.getAnImage}?imagePath=$imagePath",
-        payload: {'imagePath': imagePath},
-      );
+      dio.Response response = await BaseClient.get(url: ApiEndpoints.getAnImage, payload: {'imagePath': imagePath});
 
       debugPrint('✅ [ProfileRepository] Image URL response received');
       debugPrint('   📊 Status Code: ${response.statusCode}');
-      debugPrint('   🧾 Raw Data: ${response.data}');
+      debugPrint('   🧾 Raw Data 1: ${response.data}');
 
       if (response.statusCode == 200) {
         final data = response.data;

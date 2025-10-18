@@ -31,8 +31,10 @@ class Job {
   final String jobNo;
   final String customerId;
   final CustomerDetails customerDetails;
+  final List<File>? files;
   String? location;
   String? physicalLocation;
+  String? signatureFilePath;
   final String salutationHTMLmarkup;
   final String termsAndConditionsHTMLmarkup;
   final ReceiptFooter receiptFooter;
@@ -55,8 +57,10 @@ class Job {
     required this.jobNo,
     required this.customerId,
     required this.customerDetails,
+    this.files,
     this.location,
     this.physicalLocation,
+    this.signatureFilePath,
     required this.salutationHTMLmarkup,
     required this.termsAndConditionsHTMLmarkup,
     required this.receiptFooter,
@@ -81,7 +85,10 @@ class Job {
       'jobNo': jobNo,
       'customerId': customerId,
       'customerDetails': customerDetails.toJson(),
+      'files': files?.map((file) => file.toJson()).toList(),
       'location': location ?? storage.read('locationId'),
+      'physicalLocation': physicalLocation,
+      'signatureFilePath': signatureFilePath,
       'salutationHTMLmarkup': salutationHTMLmarkup,
       'termsAndConditionsHTMLmarkup': termsAndConditionsHTMLmarkup,
       'receiptFooter': receiptFooter.toJson(),
@@ -106,8 +113,10 @@ class Job {
     String? jobNo,
     String? customerId,
     CustomerDetails? customerDetails,
+    List<File>? files,
     String? location,
     String? physicalLocation,
+    String? signatureFilePath,
     String? salutationHTMLmarkup,
     String? termsAndConditionsHTMLmarkup,
     ReceiptFooter? receiptFooter,
@@ -130,13 +139,57 @@ class Job {
       jobNo: jobNo ?? this.jobNo,
       customerId: customerId ?? this.customerId,
       customerDetails: customerDetails ?? this.customerDetails,
+      files: files ?? this.files,
       location: location ?? this.location,
       physicalLocation: physicalLocation ?? this.physicalLocation,
+      signatureFilePath: signatureFilePath ?? this.signatureFilePath,
       salutationHTMLmarkup: salutationHTMLmarkup ?? this.salutationHTMLmarkup,
       termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup ?? this.termsAndConditionsHTMLmarkup,
       receiptFooter: receiptFooter ?? this.receiptFooter,
       printOption: printOption ?? this.printOption,
     );
+  }
+}
+
+class Files {
+  List<File>? files;
+
+  Files({this.files});
+
+  Files.fromJson(Map<String, dynamic> json) {
+    if (json['files'] != null) {
+      files = <File>[];
+      json['files'].forEach((v) {
+        files!.add(File.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (files != null) {
+      data['files'] = files!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class File {
+  String? id;
+  String? file;
+
+  File({this.id, this.file});
+
+  File.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    file = json['file'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['file'] = file;
+    return data;
   }
 }
 

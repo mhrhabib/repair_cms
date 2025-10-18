@@ -74,7 +74,11 @@ class ProfileCubit extends Cubit<ProfileStates> {
     }
   }
 
-  Future<void> updateUserAvatar(String userId, String avatarPath) async {
+  String uploadedImageUrl(String imagePath) {
+    return imagePath;
+  }
+
+  Future<String> updateUserAvatar(String userId, String avatarPath) async {
     emit(ProfileLoading());
     try {
       debugPrint('🔄 ProfileCubit: Updating user avatar...');
@@ -86,7 +90,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
       debugPrint('   ✅ Avatar uploaded, image path: $imagePath');
 
       // Step 2: Get the actual image URL using the image path
-      final imageUrl = await repository.getImageUrl(imagePath);
+      final imageUrl = await repository.getImageUrl(imagePath['file']);
       debugPrint('   🌐 Image URL retrieved: $imageUrl');
 
       // Step 3: Update user profile with the new avatar URL
@@ -95,14 +99,20 @@ class ProfileCubit extends Cubit<ProfileStates> {
       // Update storage with new user data
       await storage.write('user', updatedUser.toJson());
 
+      // Emit ProfileUpdated first to trigger UI refresh
       emit(ProfileUpdated(user: updatedUser));
+
+      // Then emit ProfileLoaded with the updated user data
       emit(ProfileLoaded(user: updatedUser));
 
       debugPrint('✅ ProfileCubit: Avatar update completed successfully');
+
+      return imageUrl;
     } catch (e, stackTrace) {
       debugPrint('❌ ProfileCubit Error in updateUserAvatar: $e');
       debugPrint('📜 Stack Trace: $stackTrace');
       emit(ProfileError(message: e.toString()));
+      rethrow;
     }
   }
 

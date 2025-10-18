@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/notifications/notifications_screen.dart';
+import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/profile_options_screen.dart';
 
 class EnhancedSearchWidget extends StatefulWidget {
@@ -47,6 +48,13 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    // Load profile data when widget initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profileCubit = context.read<ProfileCubit>();
+      profileCubit.loadUserFromStorage().then((_) {
+        profileCubit.getUserProfile();
+      });
+    });
   }
 
   @override
@@ -159,10 +167,52 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProfileOptionsScreen()));
                 },
-                child: CircleAvatar(
-                  radius: 16.r,
-                  backgroundImage: const AssetImage('assets/images/logo.png'),
-                  backgroundColor: Colors.grey.shade300,
+                child: BlocBuilder<ProfileCubit, ProfileStates>(
+                  builder: (context, state) {
+                    String? avatarUrl;
+                    bool isLoading = false;
+
+                    // Extract avatar URL from state
+                    if (state is ProfileLoaded) {
+                      avatarUrl = state.user.avatar;
+                    } else if (state is ProfileLoading) {
+                      isLoading = true;
+                    }
+
+                    return Stack(
+                      children: [
+                        // Profile Avatar
+                        CircleAvatar(
+                          radius: 16.r,
+                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(avatarUrl)
+                              : const AssetImage('assets/images/logo.png') as ImageProvider,
+                          backgroundColor: Colors.grey.shade300,
+                          onBackgroundImageError: (exception, stackTrace) {
+                            debugPrint('Profile image load error: $exception');
+                          },
+                        ),
+
+                        // Loading indicator overlay
+                        if (isLoading)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 12.r,
+                                  height: 12.r,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],

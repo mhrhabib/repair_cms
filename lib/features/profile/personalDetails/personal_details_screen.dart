@@ -75,7 +75,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
     // Fetch the actual avatar URL if user has an avatar path
     if (user.avatar != null && user.avatar!.isNotEmpty) {
-      _fetchAvatarUrl(user.avatar!);
+      debugPrint('🔍 Fetching avatar URL for path: ${user.avatar}');
+      //_fetchAvatarUrl(user.avatar!);
     }
   }
 
@@ -355,12 +356,22 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     // Upload avatar immediately
     profileCubit
         .updateUserAvatar(userId, image.path)
-        .then((_) {
+        .then((imageUrl) {
+          // Use the returned imageUrl to immediately update the UI
           setState(() {
             _isUploadingAvatar = false;
             _selectedImage = null;
-            _avatarUrl = null; // Force refresh
+            _avatarUrl = imageUrl; // Set the avatar URL immediately
           });
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
         })
         .catchError((error) {
           setState(() {
@@ -378,13 +389,19 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     profileCubit
         .updateProfileField(userId, 'avatar', '')
         .then((_) {
-          // Clear cached avatar URL
+          // Clear cached avatar URL immediately
           setState(() {
             _avatarUrl = null;
           });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Profile picture removed'), backgroundColor: Colors.green));
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture removed'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
         })
         .catchError((error) {
           _showErrorSnackBar('Failed to remove profile picture: $error');
@@ -443,13 +460,15 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         }
 
         if (state is ProfileUpdated) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile updated successfully'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
+          if (!_isUploadingAvatar) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
 
           // Update original values after successful save
           _originalName = _nameController.text;
@@ -668,19 +687,17 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   // Rest of your UI methods remain the same...
   ImageProvider _getProfileImage(String? avatarPath) {
-    // Use the fetched avatar URL if available
+    // First priority: Use the newly uploaded avatar URL
     if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
       return NetworkImage(_avatarUrl!);
     }
 
-    // Fallback to user's avatar path or default image
-    if (avatarPath == null || avatarPath.isEmpty) {
-      return const NetworkImage(
-        'https://images.unsplash.com/photo-1626808642875-0aa545482dfb?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-      );
+    // Second priority: Use the fetched avatar URL from user data
+    if (avatarPath != null && avatarPath.isNotEmpty) {
+      return NetworkImage(avatarPath);
     }
 
-    // If we have avatar path but URL is not fetched yet, show default
+    // Fallback: Default image
     return const NetworkImage(
       'https://images.unsplash.com/photo-1626808642875-0aa545482dfb?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     );

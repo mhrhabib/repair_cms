@@ -12,14 +12,15 @@ class ApiEndpoints {
   static const String updateProfileById = '$baseUrl/user/<id>';
   static const String updateProfileEmail = '$baseUrl/user/email/<id>';
   static const String updateProfilePassword = '$baseUrl/user/password/<id>';
-  static const String uploadProfileAvatar = '$baseUrl/file-upload/<userId>/profile';
-  static const String getAnImage = '$baseUrl/file-upload/images';
+  static const String uploadProfileAvatar = '$baseUrl/file-upload/json/<userId>/profile';
+  static const String getAnImage = '$baseUrl/file-upload/json/images';
 
   //job
   static const String getAllJobs = '$baseUrl/job';
   static const String createJob = '$baseUrl/job';
 
   static const String completeUserJob = '$baseUrl/job/user/complete/<id>';
+  static const String jobFileUpload = '$baseUrl/job/file-upload/<userId>/<jobId>';
 
   //quick task
   static const String getAllQuickTasks = '$baseUrl/quick-task/user/<id>';
