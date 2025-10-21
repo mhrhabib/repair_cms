@@ -529,7 +529,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
   void dispose() {
     _itemController.dispose();
     _itemFocusNode.dispose();
-    context.read<JobItemCubit>().close();
+    // context.read<JobItemCubit>().close();
     super.dispose();
   }
 }

@@ -31,7 +31,7 @@ class Job {
   final String jobNo;
   final String customerId;
   final CustomerDetails customerDetails;
-  final List<File>? files;
+  final List<AvatarFile>? files;
   String? location;
   String? physicalLocation;
   String? signatureFilePath;
@@ -113,7 +113,7 @@ class Job {
     String? jobNo,
     String? customerId,
     CustomerDetails? customerDetails,
-    List<File>? files,
+    List<AvatarFile>? files,
     String? location,
     String? physicalLocation,
     String? signatureFilePath,
@@ -152,15 +152,15 @@ class Job {
 }
 
 class Files {
-  List<File>? files;
+  List<AvatarFile>? files;
 
   Files({this.files});
 
   Files.fromJson(Map<String, dynamic> json) {
     if (json['files'] != null) {
-      files = <File>[];
+      files = <AvatarFile>[];
       json['files'].forEach((v) {
-        files!.add(File.fromJson(v));
+        files!.add(AvatarFile.fromJson(v));
       });
     }
   }
@@ -174,13 +174,13 @@ class Files {
   }
 }
 
-class File {
+class AvatarFile {
   String? id;
   String? file;
 
-  File({this.id, this.file});
+  AvatarFile({this.id, this.file});
 
-  File.fromJson(Map<String, dynamic> json) {
+  AvatarFile.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     file = json['file'];
   }

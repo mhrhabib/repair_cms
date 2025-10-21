@@ -1,3 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:image/image.dart' as img;
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/fourteen/job_booking_select_printer_screen.dart';
@@ -12,8 +18,10 @@ class JobBookingCustomerSignatureScreen extends StatefulWidget {
 
 class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSignatureScreen> {
   bool _hasSignature = false;
+  bool _isSaving = false;
   final List<List<Offset>> _signaturePaths = [];
   final List<Offset> _currentPath = [];
+  final GlobalKey _signatureKey = GlobalKey();
 
   void _resetSignature() {
     setState(() {
@@ -24,17 +32,35 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
   }
 
   void _onPanStart(DragStartDetails details) {
-    setState(() {
-      _currentPath.clear();
-      _currentPath.add(details.localPosition);
-      _hasSignature = true;
-    });
+    final RenderBox box = _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final localPosition = box.globalToLocal(details.globalPosition);
+
+    // Check if the touch is within the signature area bounds
+    if (localPosition.dx >= 0 &&
+        localPosition.dx <= box.size.width &&
+        localPosition.dy >= 0 &&
+        localPosition.dy <= box.size.height) {
+      setState(() {
+        _currentPath.clear();
+        _currentPath.add(localPosition);
+        _hasSignature = true;
+      });
+    }
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
-    setState(() {
-      _currentPath.add(details.localPosition);
-    });
+    final RenderBox box = _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final localPosition = box.globalToLocal(details.globalPosition);
+
+    // Only add points that are within the signature area bounds
+    if (localPosition.dx >= 0 &&
+        localPosition.dx <= box.size.width &&
+        localPosition.dy >= 0 &&
+        localPosition.dy <= box.size.height) {
+      setState(() {
+        _currentPath.add(localPosition);
+      });
+    }
   }
 
   void _onPanEnd(DragEndDetails details) {
@@ -46,21 +72,57 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
     });
   }
 
-  void _saveSignatureAndNavigate() {
-    if (_hasSignature) {
-      // Convert signature to data (you might want to encode it as base64 or similar)
-      final signatureData = _encodeSignatureData();
-      context.read<JobBookingCubit>().updateCustomerSignature(signatureData);
+  Future<void> _saveSignatureAndNavigate() async {
+    if (_hasSignature && !_isSaving) {
+      setState(() {
+        _isSaving = true;
+      });
 
-      // Navigate to next screen
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingSelectPrinterScreen()));
+      try {
+        // Convert signature to base64 image
+        final signatureBase64 = await _captureSignatureAsBase64();
+
+        if (signatureBase64.isNotEmpty) {
+          // Save to cubit
+          context.read<JobBookingCubit>().updateCustomerSignature(signatureBase64);
+
+          // Navigate to next screen
+          if (mounted) {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingSelectPrinterScreen()));
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error saving signature: $e'), backgroundColor: Colors.red));
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
+      }
     }
   }
 
-  String _encodeSignatureData() {
-    // Convert signature paths to a string representation
-    // In a real app, you might want to convert this to base64 or save as image
-    return _signaturePaths.toString();
+  Future<String> _captureSignatureAsBase64() async {
+    try {
+      final RenderRepaintBoundary boundary = _signatureKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0); // High resolution
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      // Convert to base64
+      final String base64Image = base64Encode(pngBytes);
+      final String mimeType = 'image/png';
+      final String base64String = 'data:$mimeType;base64,$base64Image';
+
+      return base64String;
+    } catch (e) {
+      throw Exception('Failed to capture signature: $e');
+    }
   }
 
   @override
@@ -135,26 +197,30 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                       ),
                       child: Stack(
                         children: [
-                          // Signature pad area
-                          GestureDetector(
-                            onPanStart: _onPanStart,
-                            onPanUpdate: _onPanUpdate,
-                            onPanEnd: _onPanEnd,
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: double.infinity,
-                              child: CustomPaint(
-                                painter: SignaturePainter(signaturePaths: _signaturePaths, currentPath: _currentPath),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  child: Center(
-                                    child: Text(
-                                      'SIGN HERE',
-                                      style: AppTypography.fontSize16.copyWith(
-                                        color: _hasSignature ? Colors.transparent : Colors.grey.shade300,
-                                        fontWeight: FontWeight.w300,
-                                        letterSpacing: 2,
+                          // Signature pad area with RepaintBoundary for capturing
+                          RepaintBoundary(
+                            key: _signatureKey,
+                            child: GestureDetector(
+                              onPanStart: _onPanStart,
+                              onPanUpdate: _onPanUpdate,
+                              onPanEnd: _onPanEnd,
+                              child: Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                color: Colors.transparent,
+                                child: CustomPaint(
+                                  painter: SignaturePainter(signaturePaths: _signaturePaths, currentPath: _currentPath),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    child: Center(
+                                      child: Text(
+                                        'SIGN HERE',
+                                        style: AppTypography.fontSize16.copyWith(
+                                          color: _hasSignature ? Colors.transparent : Colors.grey.shade300,
+                                          fontWeight: FontWeight.w300,
+                                          letterSpacing: 2,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -208,7 +274,11 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                     const Spacer(),
 
                     // Navigation buttons
-                    BottomButtonsGroup(onPressed: _hasSignature ? _saveSignatureAndNavigate : null),
+                    BottomButtonsGroup(
+                      onPressed: (_hasSignature && !_isSaving) ? _saveSignatureAndNavigate : null,
+
+                      okButtonText: _isSaving ? 'Saving...' : 'Continue',
+                    ),
 
                     SizedBox(height: 32.h),
                   ],

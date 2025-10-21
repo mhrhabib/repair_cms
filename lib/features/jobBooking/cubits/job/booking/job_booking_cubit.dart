@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:mime/mime.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/contact_data_helper.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -7,6 +11,14 @@ part 'job_booking_state.dart';
 
 class JobBookingCubit extends Cubit<JobBookingState> {
   JobBookingCubit() : super(JobBookingInitial());
+
+  // Add this method to your JobBookingCubit
+  void updateCustomerSignature(String signatureBase64) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      emit(state.copyWith(job: state.job.copyWith(signatureFilePath: signatureBase64)));
+    }
+  }
 
   // Initialize with empty data
   void initializeJob() {
@@ -46,7 +58,10 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             vatNo: "",
             reverseCharge: false,
           ),
+          files: [],
           location: "", // Will be set from user data
+          physicalLocation: "",
+          signatureFilePath: "",
           salutationHTMLmarkup: "",
           termsAndConditionsHTMLmarkup: "",
           receiptFooter: ReceiptFooter(
@@ -79,6 +94,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           reverseCharge: false,
         ),
         currentStep: 0,
+        localFiles: [],
       ),
     );
   }
@@ -468,19 +484,6 @@ class JobBookingCubit extends Cubit<JobBookingState> {
 
   // Add these methods to your existing JobBookingCubit
 
-  // Update file uploads
-  void updateFileUploads(List<String> filePaths) {
-    final state = this.state;
-    if (state is JobBookingData) {
-      // Store file paths in the job or create a separate field
-      emit(
-        state.copyWith(
-          // You might want to add a files field to JobBookingData
-        ),
-      );
-    }
-  }
-
   // Update physical location
   void updatePhysicalLocation(String location) {
     final state = this.state;
@@ -499,24 +502,98 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     }
   }
 
-  // Update customer signature
-  void updateCustomerSignature(String signatureData) {
-    final state = this.state;
-    if (state is JobBookingData) {
-      // Store signature data
-      emit(
-        state.copyWith(
-          // Add signature field to JobBookingData
-        ),
-      );
-    }
-  }
-
   // Update print option
   void updatePrintOption(String printOption) {
     final state = this.state;
     if (state is JobBookingData) {
       emit(state.copyWith(job: state.job.copyWith(printOption: printOption)));
+    }
+  }
+
+  //update files
+  // Add single file with both representations
+  void addFileWithPreview(File localFile, AvatarFile avatarFile) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      final updatedLocalFiles = List<File>.from(state.localFiles!)..add(localFile);
+      final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])..add(avatarFile);
+      final updatedJob = state.job.copyWith(files: updatedAvatarFiles);
+
+      emit(state.copyWith(job: updatedJob, localFiles: updatedLocalFiles));
+    }
+  }
+
+  // Add multiple files
+  void addFilesWithPreviews(List<File> localFiles, List<AvatarFile> avatarFiles) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      final updatedLocalFiles = List<File>.from(state.localFiles!)..addAll(localFiles);
+      final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])..addAll(avatarFiles);
+      final updatedJob = state.job.copyWith(files: updatedAvatarFiles);
+
+      emit(state.copyWith(job: updatedJob, localFiles: updatedLocalFiles));
+    }
+  }
+
+  // Remove file by index
+  void removeFile(int index) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      if (index >= 0 && index < state.localFiles!.length && index < (state.job.files?.length ?? 0)) {
+        final updatedLocalFiles = List<File>.from(state.localFiles!)..removeAt(index);
+        final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])..removeAt(index);
+        final updatedJob = state.job.copyWith(files: updatedAvatarFiles);
+
+        emit(state.copyWith(job: updatedJob, localFiles: updatedLocalFiles));
+      }
+    }
+  }
+
+  // Clear all files
+  void clearFiles() {
+    final state = this.state;
+    if (state is JobBookingData) {
+      final updatedJob = state.job.copyWith(files: []);
+      emit(state.copyWith(job: updatedJob, localFiles: []));
+    }
+  }
+
+  // Set uploading status
+  void setUploadingStatus(bool isUploading) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      emit(state.copyWith(isUploading: isUploading));
+    }
+  }
+
+  // Update file processing method
+  Future<void> processAndAddFile(String filePath) async {
+    final state = this.state;
+    if (state is! JobBookingData) return;
+
+    setUploadingStatus(true);
+
+    try {
+      // Read file and convert to base64
+      final localFile = File(filePath);
+      if (!await localFile.exists()) {
+        throw Exception('File does not exist: $filePath');
+      }
+
+      final bytes = await localFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final mimeType = lookupMimeType(filePath) ?? 'application/octet-stream';
+      final base64String = 'data:$mimeType;base64,$base64Image';
+
+      // Create AvatarFile with base64 data
+      final avatarFile = AvatarFile(file: base64String);
+
+      // Add both representations
+      addFileWithPreview(localFile, avatarFile);
+    } catch (e) {
+      rethrow;
+    } finally {
+      setUploadingStatus(false);
     }
   }
 }
