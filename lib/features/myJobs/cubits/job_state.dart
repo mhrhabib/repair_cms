@@ -43,7 +43,7 @@ class JobPrioritySuccess extends JobStates {
 }
 
 class JobStatusUpdated extends JobStates {
-  final Job job;
+  final SingleJobModel job;
 
   JobStatusUpdated({required this.job});
 }

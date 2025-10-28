@@ -171,14 +171,46 @@ class JobRepository {
     return false;
   }
 
-  Future<Job> updateJobStatus(String jobId, String status, String notes) async {
+  Future<SingleJobModel> updateJobCompleteStatus(String jobId, String status, String notes, bool isJobCompleted) async {
     try {
-      final url = '${ApiEndpoints.getAllJobs}/$jobId/status';
-      final response = await BaseClient.put(url: url, payload: {'status': status, 'notes': notes});
-      final responseData = response.data;
+      final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: {'status': status, 'notes': notes, 'is_job_completed': isJobCompleted},
+      );
 
       if (response.statusCode == 200) {
-        return Job.fromJson(responseData);
+        debugPrint('🔄 JobRepository: Updated job status for Job ID: $jobId');
+        debugPrint('🔄 JobRepository: Updated job status for Job ID: ${response.data}');
+        final responseData = SingleJobModel.fromJson(response.data);
+        debugPrint('🔄 job update: Updated job status response data: ${responseData.data!.isJobCompleted}');
+        return SingleJobModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to update job status: ${response.statusCode}');
+      }
+    } on dio.DioException catch (e) {
+      if (e.response != null) {
+        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error in updateJobStatus: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Future<SingleJobModel> updateJobReturnStatus(String jobId, String status, String notes, bool isReturnDevice) async {
+    try {
+      final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: {'status': status, 'notes': notes, 'is_device_returned': isReturnDevice},
+      );
+
+      if (response.statusCode == 200) {
+        return SingleJobModel.fromJson(response.data);
       } else {
         throw Exception('Failed to update job status: ${response.statusCode}');
       }

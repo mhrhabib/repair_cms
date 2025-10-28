@@ -60,6 +60,7 @@ dependencies:
   mime: ^2.0.0
   path_provider: ^2.1.5
   http_parser: ^4.1.2
+  pretty_dio_logger: ^1.4.0
 
 dev_dependencies:
   flutter_test:

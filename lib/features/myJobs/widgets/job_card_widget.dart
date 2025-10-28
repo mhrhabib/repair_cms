@@ -1,5 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/features/myJobs/job_details_screen.dart';
+import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 
@@ -107,9 +107,9 @@ class JobCardWidget extends StatelessWidget {
                 ),
                 GestureDetector(
                   onTap: () {
-                    // Navigator.of(
-                    //   context,
-                    // ).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
+                    Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
                   },
                   child: const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
                 ),

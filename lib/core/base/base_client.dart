@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:repair_cms/core/app_exports.dart';
 
 class BaseClient {
@@ -26,28 +27,52 @@ class BaseClient {
     return options;
   }
 
+  static Dio _getDioWithLogger() {
+    return Dio()
+      ..interceptors.add(
+        PrettyDioLogger(
+          requestHeader: true,
+          requestBody: true,
+          responseBody: true,
+          responseHeader: false,
+          error: true,
+          compact: true,
+          maxWidth: 90,
+        ),
+      );
+  }
+
   static Future<dynamic> get({required String url, dynamic payload}) async {
     final storage = GetStorage();
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio(await getBaseOptions());
+    var dio = _getDioWithLogger();
+
+    // Apply base options
+    final baseOptions = await getBaseOptions();
+    dio.options = baseOptions;
 
     // Print the URL before making the request
     debugPrint('\n🌐 GET Request:');
     debugPrint('📝 URL: $url');
     if (payload != null) {
-      debugPrint('📦 Payload: $payload');
+      debugPrint('📦 Query Parameters: $payload');
     }
 
-    var response = await dio.get(url, queryParameters: payload);
+    try {
+      var response = await dio.get(url, queryParameters: payload);
 
-    // Print response details
-    debugPrint('✅ Response Status: ${response.statusCode}');
-    debugPrint('📄 Response Data: ${response.data}');
-    debugPrint('--- End of Request ---\n');
+      // Print response summary
+      debugPrint('✅ Response Status: ${response.statusCode}');
+      debugPrint('📄 Response Data Type: ${response.data.runtimeType}');
+      debugPrint('--- End of Request ---\n');
 
-    return response;
+      return response;
+    } catch (e) {
+      debugPrint('❌ GET Request Error: $e');
+      rethrow;
+    }
   }
 
   static Future<dynamic> post({required String url, dynamic payload}) async {
@@ -55,19 +80,26 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio(await getBaseOptions());
+    var dio = _getDioWithLogger();
+    final baseOptions = await getBaseOptions();
+    dio.options = baseOptions;
 
     debugPrint('\n🌐 POST Request:');
     debugPrint('📝 URL: $url');
-    debugPrint('📦 Payload: $payload');
+    debugPrint('📦 Payload Type: ${payload.runtimeType}');
 
-    var response = await dio.post(url, data: payload);
+    try {
+      var response = await dio.post(url, data: payload);
 
-    debugPrint('✅ Response Status: ${response.statusCode}');
-    debugPrint('📄 Response Data: ${response.data}');
-    debugPrint('--- End of Request ---\n');
+      debugPrint('✅ Response Status: ${response.statusCode}');
+      debugPrint('📄 Response Data Type: ${response.data.runtimeType}');
+      debugPrint('--- End of Request ---\n');
 
-    return response;
+      return response;
+    } catch (e) {
+      debugPrint('❌ POST Request Error: $e');
+      rethrow;
+    }
   }
 
   static Future<dynamic> put({required String url, dynamic payload}) async {
@@ -75,19 +107,26 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio(await getBaseOptions());
+    var dio = _getDioWithLogger();
+    final baseOptions = await getBaseOptions();
+    dio.options = baseOptions;
 
     debugPrint('\n🌐 PUT Request:');
     debugPrint('📝 URL: $url');
-    debugPrint('📦 Payload: $payload');
+    debugPrint('📦 Payload Type: ${payload.runtimeType}');
 
-    var response = await dio.put(url, data: payload);
+    try {
+      var response = await dio.put(url, data: payload);
 
-    debugPrint('✅ Response Status: ${response.statusCode}');
-    debugPrint('📄 Response Data: ${response.data}');
-    debugPrint('--- End of Request ---\n');
+      debugPrint('✅ Response Status: ${response.statusCode}');
+      debugPrint('📄 Response Data Type: ${response.data.runtimeType}');
+      debugPrint('--- End of Request ---\n');
 
-    return response;
+      return response;
+    } catch (e) {
+      debugPrint('❌ PUT Request Error: $e');
+      rethrow;
+    }
   }
 
   static Future<dynamic> patch({required String url, dynamic payload}) async {
@@ -95,19 +134,26 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio(await getBaseOptions());
+    var dio = _getDioWithLogger();
+    final baseOptions = await getBaseOptions();
+    dio.options = baseOptions;
 
     debugPrint('\n🌐 PATCH Request:');
     debugPrint('📝 URL: $url');
-    debugPrint('📦 Payload: $payload');
+    debugPrint('📦 Payload Type: ${payload.runtimeType}');
 
-    var response = await dio.patch(url, data: payload);
+    try {
+      var response = await dio.patch(url, data: payload);
 
-    debugPrint('✅ Response Status: ${response.statusCode}');
-    debugPrint('📄 Response Data: ${response.data}');
-    debugPrint('--- End of Request ---\n');
+      debugPrint('✅ Response Status: ${response.statusCode}');
+      debugPrint('📄 Response Data Type: ${response.data.runtimeType}');
+      debugPrint('--- End of Request ---\n');
 
-    return response;
+      return response;
+    } catch (e) {
+      debugPrint('❌ PATCH Request Error: $e');
+      rethrow;
+    }
   }
 
   static Future<dynamic> delete({required String url}) async {
@@ -115,17 +161,24 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio(await getBaseOptions());
+    var dio = _getDioWithLogger();
+    final baseOptions = await getBaseOptions();
+    dio.options = baseOptions;
 
     debugPrint('\n🌐 DELETE Request:');
     debugPrint('📝 URL: $url');
 
-    var response = await dio.delete(url);
+    try {
+      var response = await dio.delete(url);
 
-    debugPrint('✅ Response Status: ${response.statusCode}');
-    debugPrint('📄 Response Data: ${response.data}');
-    debugPrint('--- End of Request ---\n');
+      debugPrint('✅ Response Status: ${response.statusCode}');
+      debugPrint('📄 Response Data Type: ${response.data.runtimeType}');
+      debugPrint('--- End of Request ---\n');
 
-    return response;
+      return response;
+    } catch (e) {
+      debugPrint('❌ DELETE Request Error: $e');
+      rethrow;
+    }
   }
 }

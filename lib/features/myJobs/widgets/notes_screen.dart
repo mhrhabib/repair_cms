@@ -1,11 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
+import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key, required this.job});
-  final Job job;
+  final SingleJobModel job;
 
   @override
   State<NotesScreen> createState() => _NotesScreenState();
@@ -14,13 +13,17 @@ class NotesScreen extends StatefulWidget {
 class _NotesScreenState extends State<NotesScreen> {
   @override
   Widget build(BuildContext context) {
-    return _buildNotesScreen(widget.job, context: context);
+    return SafeArea(
+      child: Scaffold(body: _buildNotesScreen(widget.job, context: context)),
+    );
   }
 }
 
 // Updated notes screen with real internal notes
-Widget _buildNotesScreen(Job job, {BuildContext? context}) {
-  final internalNotes = job.defect.isNotEmpty ? job.defect.first.internalNote : [];
+Widget _buildNotesScreen(SingleJobModel job, {BuildContext? context}) {
+  final List<InternalNote> internalNotes = job.data!.defect!.isNotEmpty
+      ? job.data!.defect!.first.internalNote ?? <InternalNote>[]
+      : <InternalNote>[];
 
   return Column(
     children: [
@@ -51,11 +54,16 @@ Widget _buildNotesScreen(Job job, {BuildContext? context}) {
           children: [
             if (internalNotes.isNotEmpty)
               ...internalNotes.map(
-                (note) => _buildNoteItem('Internal Note', note.text, note.userName, _formatTimestamp(note.createdAt)),
+                (note) => _buildNoteItem(
+                  'Internal Note',
+                  note.text!,
+                  note.userName!,
+                  _formatTimestamp(note.createdAt.toString()),
+                ),
               ),
 
             if (internalNotes.isEmpty)
-              _buildNoteItem('No notes yet', 'Add the first note for this job', 'System', job.dueDate.toString()),
+              _buildNoteItem('No notes yet', 'Add the first note for this job', 'System', job.data!.dueDate.toString()),
           ],
         ),
       ),
@@ -133,9 +141,31 @@ Widget _buildNoteItem(String title, String content, String author, String time) 
   );
 }
 
-String _formatTimestamp(int timestamp) {
-  final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-  return '${date.day}. ${_getMonthName(date.month)} ${date.year} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+String _formatTimestamp(String timestamp) {
+  try {
+    // Handle different timestamp formats
+    int timestampValue;
+
+    // Check if it's a numeric string (milliseconds since epoch)
+    if (RegExp(r'^\d+$').hasMatch(timestamp)) {
+      timestampValue = int.parse(timestamp);
+    }
+    // Check if it's an ISO string format
+    else if (timestamp.contains('T')) {
+      final date = DateTime.parse(timestamp);
+      return '${date.day}. ${_getMonthName(date.month)} ${date.year} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    }
+    // If it's already in a readable format, return as is
+    else {
+      return timestamp;
+    }
+
+    final date = DateTime.fromMillisecondsSinceEpoch(timestampValue);
+    return '${date.day}. ${_getMonthName(date.month)} ${date.year} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  } catch (e) {
+    debugPrint('Error formatting timestamp: $e');
+    return 'Invalid date';
+  }
 }
 
 String _getMonthName(int month) {

@@ -29,7 +29,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     super.initState();
     // Load initial jobs when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<JobCubit>().getJobs();
+      setState(() {
+        context.read<JobCubit>().getJobs();
+      });
     });
   }
 

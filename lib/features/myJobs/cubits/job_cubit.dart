@@ -121,13 +121,25 @@ class JobCubit extends Cubit<JobStates> {
     }
   }
 
-  Future<void> updateJobStatus(String jobId, String status, String notes) async {
+  Future<void> updateCompleteJobStatus(String jobId, String status, String notes, bool isJobCompleted) async {
     emit(JobLoading());
     try {
-      final Job updatedJob = await repository.updateJobStatus(jobId, status, notes);
+      final SingleJobModel updatedJob = await repository.updateJobCompleteStatus(jobId, status, notes, isJobCompleted);
       emit(JobStatusUpdated(job: updatedJob));
       // Reload jobs list after status update
-      await getJobs();
+      await getJobById(jobId);
+    } catch (e) {
+      emit(JobError(message: e.toString()));
+    }
+  }
+
+  Future<void> updateReturnJobStatus(String jobId, String status, String notes, bool isdeviceReturn) async {
+    emit(JobLoading());
+    try {
+      final SingleJobModel updatedJob = await repository.updateJobReturnStatus(jobId, status, notes, isdeviceReturn);
+      emit(JobStatusUpdated(job: updatedJob));
+      // Reload jobs list after status update
+      await getJobById(jobId);
     } catch (e) {
       emit(JobError(message: e.toString()));
     }
