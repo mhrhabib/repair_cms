@@ -198,7 +198,12 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     return BlocBuilder<JobCubit, JobStates>(
       builder: (context, state) {
         if (state is JobLoading) {
-          return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
+          return SliverToBoxAdapter(
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
         }
 
         if (state is JobError) {

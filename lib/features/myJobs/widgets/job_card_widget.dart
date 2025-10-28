@@ -107,7 +107,9 @@ class JobCardWidget extends StatelessWidget {
                 ),
                 GestureDetector(
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(job: job)));
+                    // Navigator.of(
+                    //   context,
+                    // ).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
                   },
                   child: const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
                 ),

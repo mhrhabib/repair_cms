@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/constants/app_typography.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
 
@@ -65,6 +66,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                 children: [
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                    // padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 4.w),
                     decoration: BoxDecoration(
                       color: AppColors.lightFontColor,
                       borderRadius: BorderRadius.circular(8.r),
@@ -74,8 +76,16 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                       labelColor: AppColors.whiteColor,
                       unselectedLabelColor: AppColors.borderColor,
                       tabs: [
-                        Tab(text: 'Incomplete (${incompleteTodos.length})'),
-                        Tab(text: 'Completed (${completedTodos.length})'),
+                        Container(
+                          margin: EdgeInsets.only(top: 4.h, bottom: 4.h),
+                          padding: const EdgeInsets.all(8.0),
+                          child: Tab(text: 'Incomplete (${incompleteTodos.length})'),
+                        ),
+                        Container(
+                          margin: EdgeInsets.only(top: 4.h, bottom: 4.h),
+                          padding: const EdgeInsets.all(8.0),
+                          child: Tab(text: 'Completed (${completedTodos.length})'),
+                        ),
                       ],
                     ),
                   ),
@@ -129,7 +139,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
       decoration: BoxDecoration(
         color: AppColors.whiteColor,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -137,7 +147,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
           GestureDetector(
             onTap: () {
               if (!isCompleted) {
-                context.read<QuickTaskCubit>().completeTodo(task.sId!);
+                context.read<QuickTaskCubit>().completeTodo(task.sId!, {'complete': true, 'title': task.title});
               }
             },
             child: Container(
@@ -219,14 +229,27 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
           title: Text('Add New To-Do'),
           content: TextField(
             controller: textController,
-            decoration: InputDecoration(hintText: 'Enter your to-do...', border: OutlineInputBorder()),
+            decoration: InputDecoration(
+              hintText: 'Enter your to-do...',
+              hintStyle: TextStyle(color: AppColors.lightFontColor),
+              border: OutlineInputBorder(),
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
             ElevatedButton(
               onPressed: () {
                 if (textController.text.trim().isNotEmpty) {
-                  //context.read<QuickTaskCubit>().createTodo(textController.text.trim());
+                  context.read<QuickTaskCubit>().createTodo({
+                    'title': textController.text.trim(),
+                    'complete': false,
+                    'dateTime': DateTime.now().toIso8601String(),
+                    'createdBy': storage.read('fullName'),
+                    'createdAt': DateTime.now().toIso8601String(),
+                    'userId': storage.read('userId'),
+                    'send': false,
+                    'email': storage.read('email'),
+                  });
                   Navigator.pop(context);
                 }
               },

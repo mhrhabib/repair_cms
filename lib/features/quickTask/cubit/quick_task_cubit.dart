@@ -31,9 +31,9 @@ class QuickTaskCubit extends Cubit<QuickTaskState> {
   }
 
   // Mark todo as complete
-  Future<void> completeTodo(String taskId) async {
+  Future<void> completeTodo(String taskId, Map<String, dynamic> updates) async {
     try {
-      await _repository.completeTodo(taskId);
+      await _repository.completeTodo(taskId, updates);
       // Refresh the list
       await getTodos();
     } catch (e) {
@@ -53,7 +53,7 @@ class QuickTaskCubit extends Cubit<QuickTaskState> {
   }
 
   // Create new todo
-  Future<void> createTodo(QuickTask todo) async {
+  Future<void> createTodo(Map<String, dynamic> todo) async {
     try {
       await _repository.createTodo(todo);
       // Refresh the list

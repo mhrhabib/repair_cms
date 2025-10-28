@@ -31,9 +31,15 @@ class JobSuccess extends JobStates {
 }
 
 class JobDetailSuccess extends JobStates {
-  final Job job;
+  final SingleJobModel job;
 
   JobDetailSuccess({required this.job});
+}
+
+class JobPrioritySuccess extends JobStates {
+  final SingleJobModel job;
+
+  JobPrioritySuccess({required this.job});
 }
 
 class JobStatusUpdated extends JobStates {

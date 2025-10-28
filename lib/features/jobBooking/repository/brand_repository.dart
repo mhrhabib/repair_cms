@@ -6,6 +6,7 @@ import 'package:repair_cms/features/jobBooking/models/brand_model.dart';
 
 abstract class BrandRepository {
   Future<List<BrandModel>> getBrandsList({required String userId});
+  Future<BrandModel> addBrand({required String userId, required String name});
 }
 
 class BrandRepositoryImpl implements BrandRepository {
@@ -28,7 +29,6 @@ class BrandRepositoryImpl implements BrandRepository {
           print('   📦 Parsed ${brands.length} brands');
           return brands;
         } else if (response.data is Map) {
-          // Handle case where API returns wrapped in a map
           final data = response.data as Map;
           if (data.containsKey('brands') && data['brands'] is List) {
             final brands = (data['brands'] as List).map((brandJson) => BrandModel.fromJson(brandJson)).toList();
@@ -45,6 +45,56 @@ class BrandRepositoryImpl implements BrandRepository {
         throw BrandException(message: 'Unexpected response format from server');
       } else {
         throw BrandException(message: 'Failed to load brands: ${response.statusCode}', statusCode: response.statusCode);
+      }
+    } on DioException catch (e) {
+      print('🌐 [BrandRepository] DioException:');
+      print('   💥 Error: ${e.message}');
+      print('   📍 Type: ${e.type}');
+      print('   🔧 Response: ${e.response?.data}');
+      throw BrandException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+    } catch (e, stackTrace) {
+      print('💥 [BrandRepository] Unexpected error:');
+      print('   💥 Error: $e');
+      print('   📋 Stack: $stackTrace');
+      throw BrandException(message: 'Unexpected error: $e');
+    }
+  }
+
+  @override
+  Future<BrandModel> addBrand({required String userId, required String name}) async {
+    try {
+      print('🚀 [BrandRepository] Adding new brand');
+      print('   📍 URL: ${ApiEndpoints.addbrandsListUrl}');
+      print('   👤 User ID: $userId');
+      print('   📝 Brand Name: $name');
+
+      final payload = {"userId": userId, "name": name};
+
+      dio.Response response = await BaseClient.post(url: ApiEndpoints.addbrandsListUrl, payload: payload);
+
+      print('✅ [BrandRepository] Add brand response received:');
+      print('   📊 Status Code: ${response.statusCode}');
+      print('   📊 Response: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Handle different response formats
+        if (response.data is Map) {
+          final data = response.data as Map;
+
+          // Check for nested brand data
+          if (data.containsKey('brand')) {
+            return BrandModel.fromJson(data['brand']);
+          } else if (data.containsKey('data')) {
+            return BrandModel.fromJson(data['data']);
+          } else {
+            // Assume the response itself is the brand
+            //return BrandModel.fromJson(data);
+          }
+        }
+
+        throw BrandException(message: 'Unexpected response format from server');
+      } else {
+        throw BrandException(message: 'Failed to add brand: ${response.statusCode}', statusCode: response.statusCode);
       }
     } on DioException catch (e) {
       print('🌐 [BrandRepository] DioException:');

@@ -18,6 +18,7 @@ class ApiEndpoints {
   //job
   static const String getAllJobs = '$baseUrl/job';
   static const String createJob = '$baseUrl/job';
+  static const String getJobById = '$baseUrl/job/<id>';
 
   static const String completeUserJob = '$baseUrl/job/user/complete/<id>';
   static const String jobFileUpload = '$baseUrl/job/file-upload/<userId>/<jobId>';
@@ -32,6 +33,7 @@ class ApiEndpoints {
   static const String servicesListUrl = '$baseUrl/auth/service';
   //brands
   static const String brandsListUrl = '$baseUrl/manufacturer/user/<id>';
+  static const String addbrandsListUrl = '$baseUrl/manufacturer';
   //models
   static const String modelsListUrl = '$baseUrl/model/brand/<brandId>';
   static const String createModel = '$baseUrl/model';

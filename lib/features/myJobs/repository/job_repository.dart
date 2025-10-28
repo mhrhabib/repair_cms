@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
+import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 
 class JobRepository {
   Future<JobListResponse> getJobs({
@@ -103,17 +104,17 @@ class JobRepository {
     }
   }
 
-  Future<Job> getJobById(String jobId) async {
+  Future<SingleJobModel> getJobById(String jobId) async {
     try {
-      final url = '${ApiEndpoints.getAllJobs}/$jobId';
-      final response = await BaseClient.get(url: url);
+      final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
+      dio.Response response = await BaseClient.get(url: url);
       final responseData = response.data;
 
       if (response.statusCode == 200) {
         debugPrint('🔍 DEBUG - Single Job Response:');
         _debugSingleJobFields(responseData);
 
-        return Job.fromJson(responseData);
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to fetch job: ${response.statusCode}');
       }
@@ -210,6 +211,33 @@ class JobRepository {
       }
     } catch (e) {
       debugPrint('   ❌ Error parsing $fieldName: $e');
+    }
+  }
+
+  ///. ------------------------------------------------------------------------------.
+  ///| Additional job-related repository methods can be added here.               |
+  ///' ------------------------------------------------------------------------------'
+  Future<SingleJobModel> updateJobPriority(String jobId, String priority) async {
+    debugPrint('🔄 JobRepository: Updating job priority for Job ID: $jobId to $priority');
+    try {
+      final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
+      dio.Response response = await BaseClient.patch(url: url, payload: {'job_priority': priority});
+      debugPrint('🔄 repo: Updated job priority for Job ID: ${response.data['id']} to $priority');
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update job priority: ${response.statusCode}');
+      }
+      return SingleJobModel.fromJson(response.data);
+    } on dio.DioException catch (e) {
+      if (e.response != null) {
+        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error in updateJobPriority: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      throw Exception('Unexpected error: $e');
     }
   }
 }

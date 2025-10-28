@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 part 'job_state.dart';
@@ -112,7 +114,7 @@ class JobCubit extends Cubit<JobStates> {
   Future<void> getJobById(String jobId) async {
     emit(JobLoading());
     try {
-      final Job job = await repository.getJobById(jobId);
+      final job = await repository.getJobById(jobId);
       emit(JobDetailSuccess(job: job));
     } catch (e) {
       emit(JobError(message: e.toString()));
@@ -125,6 +127,20 @@ class JobCubit extends Cubit<JobStates> {
       final Job updatedJob = await repository.updateJobStatus(jobId, status, notes);
       emit(JobStatusUpdated(job: updatedJob));
       // Reload jobs list after status update
+      await getJobs();
+    } catch (e) {
+      emit(JobError(message: e.toString()));
+    }
+  }
+
+  // job priority update
+  Future<void> updateJobPriority(String jobId, String priority) async {
+    emit(JobLoading());
+    debugPrint('🔄 Updating job priority for Job ID: $jobId to $priority');
+    try {
+      final updatedJob = await repository.updateJobPriority(jobId, priority);
+      emit(JobPrioritySuccess(job: updatedJob));
+      // Reload jobs list after priority update
       await getJobs();
     } catch (e) {
       emit(JobError(message: e.toString()));

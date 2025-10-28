@@ -16,26 +16,22 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
   String _selectedBrand = '';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  late String _userId; // You'll need to get this from your auth system
+  late String _userId;
+  bool _isAddingBrand = false;
 
   @override
   void initState() {
     super.initState();
     _searchFocusNode.addListener(_onFocusChange);
+    _userId = _getUserId();
 
-    // Get user ID from your authentication system
-    _userId = _getUserId(); // You need to implement this
-
-    // Load brands when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BrandCubit>().getBrands(userId: _userId);
     });
   }
 
   String _getUserId() {
-    // Replace this with your actual user ID retrieval logic
-    // This could be from GetStorage, SharedPreferences, or your auth cubit
-    return '64106cddcfcedd360d7096cc'; // Example user ID
+    return '64106cddcfcedd360d7096cc';
   }
 
   void _onFocusChange() {
@@ -49,9 +45,27 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
       _selectedBrand = brandName;
       _searchController.text = brandName;
     });
-
-    // Update JobBookingCubit with selected brand
     context.read<JobBookingCubit>().updateDeviceInfo(brand: brandName);
+  }
+
+  Future<void> _addNewBrand(String brandName) async {
+    setState(() => _isAddingBrand = true);
+
+    await context.read<BrandCubit>().addBrand(userId: _userId, name: brandName);
+
+    final state = context.read<BrandCubit>().state;
+    if (state is BrandAdded) {
+      _selectBrand(brandName);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Brand "$brandName" added successfully!'), backgroundColor: Colors.green));
+    } else if (state is BrandAddError) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to add brand: ${state.message}'), backgroundColor: Colors.red));
+    }
+
+    setState(() => _isAddingBrand = false);
   }
 
   @override
@@ -100,7 +114,6 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                       ),
                     ),
 
-                    // Step indicator
                     Align(
                       alignment: Alignment.center,
                       child: Container(
@@ -116,8 +129,7 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
 
                     SizedBox(height: 24.h),
 
-                    // Question text
-                    Text('Enter the device Brand', style: AppTypography.fontSize22, textAlign: TextAlign.center),
+                    Text('What is the device brand', style: AppTypography.fontSize22, textAlign: TextAlign.center),
 
                     SizedBox(height: 4.h),
 
@@ -132,14 +144,14 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
               ),
             ),
 
-            // Dropdown section with BrandCubit integration
+            // Dropdown section
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: BlocBuilder<BrandCubit, BrandState>(
                   builder: (context, state) {
                     if (state is BrandLoading) {
-                      return Container(
+                      return SizedBox(
                         height: 60.h,
                         child: Center(child: CircularProgressIndicator()),
                       );
@@ -168,6 +180,7 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
 
                     if (state is BrandLoaded || state is BrandSearchResult) {
                       final brands = state is BrandLoaded ? state.brands : (state as BrandSearchResult).brands;
+                      final allBrands = state is BrandLoaded ? state.brands : (state as BrandSearchResult).allBrands;
 
                       return CustomDropdownSearch<BrandModel>(
                         controller: _searchController,
@@ -176,43 +189,102 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                         noItemsText: 'No brands found',
                         displayAllSuggestionWhenTap: true,
                         isMultiSelectDropdown: false,
-                        onSuggestionSelected: (brand) {
-                          _selectBrand(brand.name ?? 'Unknown Brand');
-                        },
-                        itemBuilder: (context, brand) => ListTile(
-                          title: Text(
-                            brand.name ?? 'Unknown Brand',
-                            style: AppTypography.fontSize14.copyWith(color: Colors.black),
-                          ),
-                          subtitle: brand.id != null
-                              ? Text('ID: ${brand.id}', style: AppTypography.fontSize12.copyWith(color: Colors.grey))
-                              : null,
-                        ),
-                        suggestionsCallback: (pattern) {
-                          // Use cubit search functionality
-                          if (pattern.isNotEmpty) {
-                            context.read<BrandCubit>().searchBrands(pattern);
+                        onSuggestionSelected: (brand) async {
+                          // Check if this is the "Add new" option
+                          if (brand.id == null && brand.name?.startsWith('Add "') == true) {
+                            // Extract the brand name from 'Add "BrandName" as new brand'
+                            final brandName = brand.name?.split('"')[1] ?? '';
+                            if (brandName.isNotEmpty) {
+                              await _addNewBrand(brandName);
+                            }
                           } else {
-                            context.read<BrandCubit>().clearSearch();
+                            _selectBrand(brand.name ?? 'Unknown Brand');
+                          }
+                        },
+                        itemBuilder: (context, brand) {
+                          // Check if this is a "new" brand (add new option)
+                          final isNewOption = brand.id == null && brand.name?.startsWith('Add "') == true;
+
+                          if (isNewOption) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE3F2FD), // Light blue background
+                                border: Border.all(color: AppColors.primary, width: 1.5),
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: ListTile(
+                                title: Row(
+                                  children: [
+                                    Text(
+                                      brand.name?.split('"')[1] ?? '',
+                                      style: AppTypography.fontSize16.copyWith(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary,
+                                        borderRadius: BorderRadius.circular(4.r),
+                                      ),
+                                      child: Text(
+                                        'NEW',
+                                        style: AppTypography.fontSize12.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
                           }
 
-                          // Return filtered brands for the dropdown
-                          final currentState = context.read<BrandCubit>().state;
-                          if (currentState is BrandLoaded || currentState is BrandSearchResult) {
-                            final availableBrands = currentState is BrandLoaded
-                                ? currentState.brands
-                                : (currentState as BrandSearchResult).brands;
-
-                            return availableBrands
-                                .where((brand) => (brand.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
-                                .toList();
+                          // Regular brand item with yellow highlight for selected
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: _selectedBrand == brand.name
+                                  ? const Color(0xFFFFF59D) // Yellow highlight
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                brand.name ?? 'Unknown Brand',
+                                style: AppTypography.fontSize16.copyWith(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        suggestionsCallback: (pattern) {
+                          if (pattern.isEmpty) {
+                            return allBrands;
                           }
-                          return [];
+
+                          final filteredBrands = allBrands
+                              .where((brand) => (brand.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
+                              .toList();
+
+                          // Add "Add new" option if no exact match
+                          final exactMatch = filteredBrands.any(
+                            (brand) => brand.name?.toLowerCase() == pattern.toLowerCase(),
+                          );
+
+                          if (!exactMatch && pattern.isNotEmpty) {
+                            filteredBrands.insert(0, BrandModel(id: null, name: 'Add "$pattern" as new brand'));
+                          }
+
+                          return filteredBrands;
                         },
                       );
                     }
 
-                    // Initial state - show empty dropdown
                     return CustomDropdownSearch<BrandModel>(
                       controller: _searchController,
                       items: [],
@@ -241,7 +313,7 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                       child: Container(
                         padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(color: AppColors.primary),
                         ),
@@ -285,7 +357,23 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
               },
             ),
 
-            // Show brands count when loaded
+            // Show adding indicator
+            if (_isAddingBrand)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(width: 16.w, height: 16.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(width: 8.w),
+                      Text('Adding brand...', style: AppTypography.fontSize14.copyWith(color: Colors.grey)),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Show brands count
             BlocBuilder<BrandCubit, BrandState>(
               builder: (context, state) {
                 if (state is BrandLoaded && state.brands.isNotEmpty) {
@@ -304,13 +392,11 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
               },
             ),
 
-            // Spacer to push buttons to bottom
             const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
           ],
         ),
       ),
 
-      // Fixed bottom navigation bar with keyboard handling
       bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
         builder: (context, bookingState) {
           final hasSelectedBrand = bookingState is JobBookingData && bookingState.device.brand.isNotEmpty;
@@ -323,13 +409,6 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                       Navigator.of(
                         context,
                       ).push(MaterialPageRoute(builder: (context) => JobBookingDeviceModelScreen()));
-
-                      // ScaffoldMessenger.of(context).showSnackBar(
-                      //   SnackBar(
-                      //     content: Text('Selected brand: ${bookingState.device.brand}'),
-                      //     backgroundColor: AppColors.primary,
-                      //   ),
-                      // );
                     }
                   : null,
             ),
@@ -346,5 +425,3 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
     super.dispose();
   }
 }
-
-// You can remove the DeviceBrand class since we're using BrandModel now

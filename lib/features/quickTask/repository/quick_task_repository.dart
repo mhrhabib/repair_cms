@@ -15,8 +15,11 @@ class QuickTaskRepository {
     }
   }
 
-  Future<void> completeTodo(String taskId) async {
-    dio.Response response = await BaseClient.put(url: ApiEndpoints.completeTodo.replaceAll('<id>', taskId));
+  Future<void> completeTodo(String taskId, Map<String, dynamic> updates) async {
+    dio.Response response = await BaseClient.patch(
+      url: ApiEndpoints.completeTodo.replaceAll('<id>', taskId),
+      payload: updates,
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to complete todo');
@@ -31,10 +34,22 @@ class QuickTaskRepository {
     }
   }
 
-  Future<void> createTodo(QuickTask todo) async {
-    dio.Response response = await BaseClient.post(url: ApiEndpoints.createTodo, payload: todo.toJson());
+  Future<void> createTodo(Map<String, dynamic> todo) async {
+    try {
+      dio.Response response = await BaseClient.post(url: ApiEndpoints.createTodo, payload: todo);
 
-    if (response.statusCode != 201) {
+      print(response.data);
+
+      if (response.statusCode == 201) {
+        return response.data;
+      }
+
+      if (response.statusCode != 201) {
+        throw Exception('Failed to create todo');
+      }
+    } catch (e, trace) {
+      print('Error creating todo: $e');
+      print('Stack trace: $trace');
       throw Exception('Failed to create todo');
     }
   }

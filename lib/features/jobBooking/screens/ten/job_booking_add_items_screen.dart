@@ -462,7 +462,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
         ),
         bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
           builder: (context, state) {
-            final hasItems = state is JobBookingData && state.job.assignedItemsIds.isNotEmpty;
+            // final hasItems = state is JobBookingData && state.job.assignedItemsIds.isNotEmpty;
 
             return Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
