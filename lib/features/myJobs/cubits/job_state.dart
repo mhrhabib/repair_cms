@@ -53,3 +53,19 @@ class JobError extends JobStates {
 
   JobError({required this.message});
 }
+
+// Add this to your job_state.dart file
+
+class AssignUserListLoading extends JobStates {}
+
+class AssignUserListSuccess extends JobStates {
+  final List<User> users;
+
+  AssignUserListSuccess({required this.users});
+}
+
+class AssignUserListError extends JobStates {
+  final String message;
+
+  AssignUserListError({required this.message});
+}

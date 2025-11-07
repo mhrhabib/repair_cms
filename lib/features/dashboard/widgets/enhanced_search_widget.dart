@@ -186,7 +186,7 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                           radius: 16.r,
                           backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
                               ? NetworkImage(avatarUrl)
-                              : const AssetImage('assets/images/logo.png') as ImageProvider,
+                              : const AssetImage('assets/icon/icon.png') as ImageProvider,
                           backgroundColor: Colors.grey.shade300,
                           onBackgroundImageError: (exception, stackTrace) {
                             debugPrint('Profile image load error: $exception');
@@ -197,7 +197,10 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                         if (isLoading)
                           Positioned.fill(
                             child: Container(
-                              decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                shape: BoxShape.circle,
+                              ),
                               child: Center(
                                 child: SizedBox(
                                   width: 12.r,

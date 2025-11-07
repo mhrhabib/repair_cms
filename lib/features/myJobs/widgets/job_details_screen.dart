@@ -1,11 +1,16 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/job_details_navbar_screen.dart';
+import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/myJobs/widgets/files_screen.dart';
+import 'package:repair_cms/features/myJobs/widgets/job_complete_bottomsheet.dart';
 import 'package:repair_cms/features/myJobs/widgets/notes_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/receipt_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/status_screen.dart';
@@ -20,6 +25,7 @@ class JobDetailsScreen extends StatefulWidget {
 
 class _JobDetailsScreenState extends State<JobDetailsScreen> {
   int _selectedBottomIndex = 0;
+  SingleJobModel? _currentJob;
 
   @override
   void initState() {
@@ -27,6 +33,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       debugPrint('Initialized Job Details Screen for Job ID: ${widget.jobId}');
       context.read<JobCubit>().getJobById(widget.jobId);
     });
+
     super.initState();
   }
 
@@ -52,9 +59,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             const SnackBar(content: Text('Job status updated successfully'), backgroundColor: Colors.green),
           );
         }
+
         if (state is JobDetailSuccess) {
           debugPrint('✅ Job Loaded: ${state.job.data!.sId}');
-          setState(() {});
+          setState(() {
+            _currentJob = state.job; // Cache the job
+          });
         }
       },
       child: PopScope(
@@ -66,6 +76,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           backgroundColor: AppColors.scaffoldBackgroundColor,
           body: BlocBuilder<JobCubit, JobStates>(
             builder: (context, state) {
+              // If we have a cached job, show it regardless of loading states
+              if (_currentJob != null &&
+                  (state is AssignUserListLoading || state is AssignUserListSuccess || state is AssignUserListError)) {
+                return _buildCurrentScreen(_currentJob!);
+              }
+
               if (state is JobLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is JobDetailSuccess) {
@@ -73,10 +89,26 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               } else if (state is JobError) {
                 return Center(child: Text('Error: ${state.message}'));
               }
-              // Fallback to the current job (either initial or updated)
-              return Center(child: Text('Job error: Unable to load job details. Please try again later.'));
+
+              // Fallback
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Unable to load job details'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<JobCubit>().getJobById(widget.jobId);
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
+
           bottomNavigationBar: JobDetailsNavbar(
             selectedIndex: _selectedBottomIndex,
             onItemSelected: _onNavItemSelected,
@@ -98,7 +130,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       case 3:
         return NotesScreen(job: job);
       case 4:
-        return FilesScreen();
+        return FilesScreen(jobId: job);
       default:
         return JobDetailsContent(job: job);
     }
@@ -124,16 +156,192 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   String selectedPriority = 'Neutral';
   String selectedDueDate = '14. March 2025';
   String selectedAssignee = 'Susan Lemmes';
+  // Add these variables for user management
+  List<User> _availableUsers = [];
+  bool _isLoadingUsers = false;
+  String? _selectedUserId;
 
   @override
   void initState() {
     super.initState();
-    // Initialize job complete status based on actual job status
-    isJobComplete = widget.job.data!.isJobCompleted != null && widget.job.data!.isJobCompleted! == true;
-    print('Job ID in JobDetails: ${widget.job.data!.sId}');
+    // Initialize both job complete and return device status from actual job data
+    _initializeJobStatus();
+    _loadAvailableUsers();
+  }
+
+  // Add this method to load users
+
+  void _loadAvailableUsers() {
+    setState(() {
+      _isLoadingUsers = true;
+    });
+
+    // Listen to the user list state
+    context.read<JobCubit>().getAssignUserList();
+  }
+
+  void _setCurrentAssignee() {
+    final jobData = widget.job.data!;
+
+    if (jobData.assignUser != null && jobData.assignUser!.isNotEmpty) {
+      final assignUser = jobData.assignUser!.first;
+
+      String assignUserId;
+      String assigneeName = 'Select assignee';
+
+      // Check if assignUser is a Map (object) or a String
+      if (assignUser is Map) {
+        // Extract the ID from the user object
+        assignUserId = assignUser['_id']?.toString() ?? '';
+        assigneeName = assignUser['fullName'] ?? assignUser['email'] ?? 'Unknown User';
+        debugPrint('🔄 AssignUser is a Map, extracted ID: $assignUserId, Name: $assigneeName');
+      } else if (assignUser is String) {
+        // It's already a string ID - find the name from available users
+        assignUserId = assignUser;
+        final user = _findUserById(assignUserId);
+        assigneeName = user?.fullName ?? user?.email ?? 'Unknown User';
+        debugPrint('🔄 AssignUser is a String ID: $assignUserId, Found Name: $assigneeName');
+      } else {
+        assignUserId = assignUser.toString();
+        assigneeName = 'Unknown User';
+        debugPrint('⚠️ AssignUser is unknown type: ${assignUser.runtimeType}');
+      }
+
+      if (assignUserId.isNotEmpty) {
+        setState(() {
+          selectedAssignee = assigneeName; // Display name
+          _selectedUserId = assignUserId; // Store ID for dropdown value
+        });
+
+        debugPrint('✅ Current assignee set - Display: $selectedAssignee, ID: $_selectedUserId');
+      } else {
+        debugPrint('❌ Empty assignee ID found');
+        setState(() {
+          _selectedUserId = null;
+          selectedAssignee = 'Select assignee';
+        });
+      }
+    } else {
+      debugPrint('ℹ️ No assignee set for this job');
+      setState(() {
+        _selectedUserId = null;
+        selectedAssignee = 'Select assignee';
+      });
+    }
+  }
+
+  User? _findUserById(String userId) {
+    try {
+      return _availableUsers.firstWhere((user) => user.id == userId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  void _onAssigneeSelected(String? newUserId) {
+    if (newUserId != null && newUserId.isNotEmpty) {
+      debugPrint('🔄 Selecting user with ID: $newUserId');
+
+      // Find the selected user by ID to get their name for display
+      final selectedUser = _findUserById(newUserId);
+
+      if (selectedUser != null) {
+        final userName = selectedUser.fullName ?? selectedUser.email ?? 'Unknown User';
+
+        setState(() {
+          selectedAssignee = userName; // Update display name
+          _selectedUserId = newUserId; // Store the ID for dropdown value
+        });
+
+        debugPrint('✅ User selected - Display: $userName, ID: $newUserId');
+
+        // Pass the ID to the API
+        context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, userName);
+        SnackbarDemo().showCustomSnackbar(context);
+      } else {
+        debugPrint('❌ User not found with ID: $newUserId');
+        debugPrint('Available user IDs: ${_availableUsers.map((u) => u.id).join(", ")}');
+
+        // Fallback: still update with the ID
+        setState(() {
+          _selectedUserId = newUserId;
+          selectedAssignee = 'User ($newUserId)'; // Show ID in name if user not found
+        });
+
+        // Pass the ID to the API even if user not found locally
+        context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, 'Unknown User');
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Assigned to user ID: $newUserId'), backgroundColor: Colors.orange));
+      }
+    } else {
+      debugPrint('ℹ️ No user selected or empty user ID');
+      setState(() {
+        _selectedUserId = null;
+        selectedAssignee = 'Select assignee';
+      });
+    }
+  }
+
+  void _initializeJobStatus() {
+    final jobData = widget.job.data!;
+
+    // Initialize job complete status
+    isJobComplete = jobData.isJobCompleted != null && jobData.isJobCompleted! == true;
+
+    // Initialize return device status
+    returnDevice = jobData.isDeviceReturned != null && jobData.isDeviceReturned! == true;
+
+    // Initialize due date from job data
+    if (jobData.dueDate != null && jobData.dueDate!.isNotEmpty) {
+      try {
+        final parsedDate = DateTime.parse(jobData.dueDate!);
+        selectedDueDate = "${parsedDate.day}. ${_getMonthName(parsedDate.month)} ${parsedDate.year}";
+      } catch (e) {
+        selectedDueDate = 'Select due date';
+      }
+    } else {
+      selectedDueDate = 'Select due date';
+    }
+
+    // Initialize priority from job data
+    if (jobData.jobPriority != null && jobData.jobPriority!.isNotEmpty) {
+      selectedPriority = _capitalizeFirstLetter(jobData.jobPriority!);
+    } else {
+      selectedPriority = 'Neutral';
+    }
+
+    // Initialize assignee from job data
+    if (jobData.assignUser != null && jobData.assignUser!.isNotEmpty) {
+      // If assignUser is a list, get the first item
+      if (jobData.assignUser is List) {
+        final assignList = jobData.assignUser as List;
+        if (assignList.isNotEmpty && assignList.first is String) {
+          selectedAssignee = assignList.first;
+        } else {
+          selectedAssignee = 'Susan Lemmes';
+        }
+      } else if (jobData.assignUser is String) {
+        selectedAssignee = jobData.assignUser as String;
+      } else {
+        selectedAssignee = 'Susan Lemmes';
+      }
+    } else {
+      selectedAssignee = 'Susan Lemmes';
+    }
+
+    print('Job ID in JobDetails: ${jobData.sId}');
     print('Job Complete Status: $isJobComplete');
-    print('Job Status: ${widget.job.data!.status}');
-    print('Job complete Status: ${widget.job.data!.isJobCompleted}');
+    print('Return Device Status: $returnDevice');
+    print('Job Priority: ${jobData.jobPriority}');
+    print('Due Date: ${jobData.dueDate}');
+    print('Assign User: ${jobData.assignUser}');
+  }
+
+  String _capitalizeFirstLetter(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
   }
 
   @override
@@ -141,9 +349,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     super.didUpdateWidget(oldWidget);
     // Update when job prop changes
     if (oldWidget.job.data!.sId != widget.job.data!.sId) {
-      setState(() {
-        isJobComplete = widget.job.data!.isJobCompleted! == true;
-      });
+      _initializeJobStatus();
     }
   }
 
@@ -151,51 +357,79 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   Widget build(BuildContext context) {
     print('Building JobDetails with Job ID: ${widget.job.data!.sId}');
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              widget.job.data!.contact!.isEmpty
-                  ? 'Job Details'
-                  : widget.job.data!.contact![0].firstName ?? 'Job Details',
-              style: GoogleFonts.roboto(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
-            ),
-            Text(
-              'Auftrag-Nr: ${widget.job.data!.jobNo}',
-              style: GoogleFonts.roboto(color: Colors.grey.shade600, fontSize: 12.sp, fontWeight: FontWeight.w400),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        actions: [
-          Stack(
+    return BlocListener<JobCubit, JobStates>(
+      listener: (context, state) {
+        if (state is JobDetailSuccess) {
+          setState(() {
+            _initializeJobStatus();
+          });
+        }
+        if (state is JobStatusUpdated) {
+          SnackbarDemo().showCustomSnackbar(context);
+        }
+        if (state is AssignUserListSuccess) {
+          setState(() {
+            _availableUsers = state.users;
+            _isLoadingUsers = false;
+          });
+          _setCurrentAssignee();
+        }
+        if (state is AssignUserListError) {
+          setState(() {
+            _isLoadingUsers = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to load users: ${state.message}'), backgroundColor: Colors.red),
+          );
+        }
+      },
+
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+              Text(
+                widget.job.data!.contact!.isEmpty
+                    ? 'Job Details'
+                    : widget.job.data!.contact![0].firstName ?? 'Job Details',
+                style: GoogleFonts.roboto(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
               ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 8.w,
-                  height: 8.h,
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                ),
+              Text(
+                'Auftrag-Nr: ${widget.job.data!.jobNo}',
+                style: GoogleFonts.roboto(color: Colors.grey.shade600, fontSize: 12.sp, fontWeight: FontWeight.w400),
               ),
             ],
           ),
-        ],
+          centerTitle: true,
+          actions: [
+            Stack(
+              children: [
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                ),
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 8.w,
+                    height: 8.h,
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        body: _buildJobDetailsScreen(widget.job),
       ),
-      body: _buildJobDetailsScreen(widget.job),
     );
   }
 
@@ -219,19 +453,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                   CupertinoSwitch(
                     value: isJobComplete,
                     onChanged: (value) {
-                      setState(() {
-                        isJobComplete = value;
-                        SnackbarDemo().showCustomSnackbar(context);
-                      });
-
-                      // Update job status in backend
-
-                      context.read<JobCubit>().updateCompleteJobStatus(
-                        job.data!.sId!,
-                        'complete',
-                        'Job marked as complete',
-                        value,
-                      );
+                      if (value) {
+                        // Setting job to complete - show bottom sheet for confirmation
+                        _showCompleteConfirmationBottomSheet();
+                      } else {
+                        // Setting job to incomplete - update immediately with confirmation dialog
+                        _showIncompleteConfirmationDialog();
+                      }
                     },
                     activeTrackColor: Colors.blue,
                   ),
@@ -247,16 +475,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                   CupertinoSwitch(
                     value: returnDevice,
                     onChanged: (value) {
-                      setState(() {
-                        returnDevice = value;
-                      });
-
-                      context.read<JobCubit>().updateReturnJobStatus(
-                        job.data!.sId!,
-                        'complete',
-                        'Job marked as return',
-                        value,
-                      );
+                      if (value) {
+                        // Setting device as returned - show confirmation
+                        _showReturnDeviceConfirmationDialog();
+                      } else {
+                        // Setting device as not returned - update immediately
+                        _setDeviceAsNotReturned();
+                      }
                     },
                     activeTrackColor: Colors.blue,
                   ),
@@ -302,13 +527,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       icon: Icons.flag_outlined,
                       value: selectedPriority,
                       items: ['Neutral', 'High', 'Urgent'],
-                      onChanged: (value) {
-                        debugPrint('Selected Priority for Job ${job.data!.sId}: $value');
-                        setState(() {
-                          selectedPriority = value!;
-                          // context.read<JobCubit>().updateJobPriority(job.id, selectedPriority);
-                        });
-                      },
+                      onChanged: _onPrioritySelected,
                     ),
                     SizedBox(height: 20.h),
 
@@ -323,19 +542,38 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                     ),
                     SizedBox(height: 8.h),
 
-                    _buildDropdownField(
-                      icon: Icons.calendar_today_outlined,
-                      value: selectedDueDate,
-                      items: ['14. March 2025', '15. March 2025', '16. March 2025'],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedDueDate = value!;
-                        });
-                      },
+                    GestureDetector(
+                      onTap: _showDatePicker,
+                      child: Container(
+                        height: 40.h,
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.blue, width: 1.5),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_today_outlined, color: Colors.blue, size: 20),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: Text(
+                                selectedDueDate,
+                                style: GoogleFonts.roboto(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.arrow_drop_down, color: Colors.blue),
+                          ],
+                        ),
+                      ),
                     ),
                     SizedBox(height: 20.h),
 
                     // Assignee
+                    // Replace the assignee section with this:
                     Text(
                       'Assignee',
                       style: GoogleFonts.roboto(
@@ -345,17 +583,34 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       ),
                     ),
                     SizedBox(height: 8.h),
-                    _buildDropdownField(
-                      icon: Icons.person_outline,
-                      value: selectedAssignee,
-                      items: ['Susan Lemmes', 'John Doe', 'Mike Johnson'],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedAssignee = value!;
-                        });
-                      },
-                      hasAvatar: true,
-                    ),
+
+                    _isLoadingUsers
+                        ? Container(
+                            height: 40.h,
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.person_outline, color: Colors.grey, size: 20),
+                                SizedBox(width: 8.w),
+                                Expanded(
+                                  child: Text(
+                                    'Loading users...',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 20.w, height: 20.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                              ],
+                            ),
+                          )
+                        : _buildUserDropdownField(),
                   ],
                 ),
 
@@ -422,6 +677,182 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showCompleteConfirmationBottomSheet() {
+    showJobCompleteBottomSheet(
+      context,
+      onConfirm: (String notes, bool sendNotification) {
+        // Forward notes and the sendNotification flag from the bottom sheet
+        context.read<JobCubit>().setJobAsComplete(
+          jobId: widget.job.data!.sId!,
+          userId: storage.read('userId'),
+          userName: storage.read('fullName'),
+          email: storage.read('email'),
+          notes: notes,
+          sendNotification: sendNotification,
+          currentJob: widget.job,
+        );
+
+        // Update local state
+        setState(() {
+          isJobComplete = true;
+        });
+
+        SnackbarDemo().showCustomSnackbar(context);
+      },
+    );
+  }
+
+  void _setDeviceAsReturned() {
+    context.read<JobCubit>().setDeviceAsReturned(
+      jobId: widget.job.data!.sId!,
+      userId: storage.read('userId'),
+      userName: storage.read('fullName'),
+      email: storage.read('email'),
+      notes: 'move to trash',
+      sendNotification: true,
+    );
+
+    // Update local state
+    setState(() {
+      returnDevice = true;
+    });
+
+    SnackbarDemo().showCustomSnackbar(context);
+  }
+
+  void _setDeviceAsNotReturned() {
+    context.read<JobCubit>().setDeviceAsNotReturned(
+      jobId: widget.job.data!.sId!,
+      userId: storage.read('userId'),
+      userName: storage.read('fullName'),
+      email: storage.read('email'),
+      notes: 'Device is in progress',
+      sendNotification: true,
+    );
+
+    // Update local state
+    setState(() {
+      returnDevice = false;
+    });
+
+    SnackbarDemo().showCustomSnackbar(context);
+  }
+
+  void _showReturnDeviceConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Mark Device as Returned?',
+            style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This will:',
+                style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                '• Mark device as returned',
+                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+              ),
+              Text(
+                '• Archive the job',
+                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+              ),
+              Text(
+                '• Move job to trash',
+                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _setDeviceAsReturned();
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              child: Text(
+                'Mark Returned',
+                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showIncompleteConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Set Job as Incomplete?',
+            style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            'This will change the job status to "In Progress" and mark it as incomplete.',
+            style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context.read<JobCubit>().setJobAsIncomplete(
+                  jobId: widget.job.data!.sId!,
+                  userId: storage.read('userId'),
+                  userName: storage.read('fullName'),
+                  email: storage.read('email'),
+                  notes: 'Device is in progress',
+                  sendNotification: true,
+                  currentJob: widget.job,
+                );
+
+                // Update local state
+                setState(() {
+                  isJobComplete = false;
+                });
+
+                SnackbarDemo().showCustomSnackbar(context);
+
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              child: Text(
+                'Mark Incomplete',
+                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -698,5 +1129,140 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         ],
       ),
     );
+  }
+
+  void _showDatePicker() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      // Update the due date
+      context.read<JobCubit>().updateJobDueDate(widget.job.data!.sId!, picked);
+
+      // Update local state
+      setState(() {
+        selectedDueDate = "${picked.day}. ${_getMonthName(picked.month)} ${picked.year}";
+      });
+
+      SnackbarDemo().showCustomSnackbar(context);
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[month - 1];
+  }
+
+  // Add this method:
+  void _onPrioritySelected(String? newValue) {
+    if (newValue != null) {
+      setState(() {
+        selectedPriority = newValue;
+      });
+
+      // Convert to lowercase for API
+      final priorityValue = newValue.toLowerCase();
+
+      context.read<JobCubit>().updateJobPriority(widget.job.data!.sId!, priorityValue);
+
+      SnackbarDemo().showCustomSnackbar(context);
+    }
+  }
+
+  Widget _buildUserDropdownField() {
+    return Container(
+      height: 40.h,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.blue, width: 1.5),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedUserId, // Store the ID, but display will show name
+          onChanged: _onAssigneeSelected,
+          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+          isExpanded: true,
+          hint: Text(
+            'Select assignee',
+            style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+          ),
+          items: _availableUsers.map((User user) {
+            final userName = user.fullName ?? user.email ?? 'Unknown User';
+            final userEmail = user.email ?? '';
+            final userInitials = _getUserInitials(userName);
+
+            return DropdownMenuItem<String>(
+              value: user.id, // This is the ID that gets passed to onChanged
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 12.r,
+                    backgroundColor: Colors.blue,
+                    child: Text(
+                      userInitials,
+                      style: GoogleFonts.roboto(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          userName, // Display the name
+                          style: GoogleFonts.roboto(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        // if (userEmail.isNotEmpty)
+                        //   Text(
+                        //     userEmail,
+                        //     style: GoogleFonts.roboto(
+                        //       fontSize: 12.sp,
+                        //       fontWeight: FontWeight.w400,
+                        //       color: Colors.grey.shade600,
+                        //     ),
+                        //   ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  String _getUserInitials(String name) {
+    final names = name.split(' ');
+    if (names.length >= 2) {
+      return '${names[0][0]}${names[1][0]}'.toUpperCase();
+    } else if (name.isNotEmpty) {
+      return name.substring(0, 1).toUpperCase();
+    }
+    return 'U';
   }
 }

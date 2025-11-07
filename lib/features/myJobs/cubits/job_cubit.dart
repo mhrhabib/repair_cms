@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
@@ -121,41 +122,254 @@ class JobCubit extends Cubit<JobStates> {
     }
   }
 
-  Future<void> updateCompleteJobStatus(String jobId, String status, String notes, bool isJobCompleted) async {
+  // Add these methods to your JobCubit
+
+  // Add these methods to your JobCubit
+
+  Future<void> setJobAsComplete({
+    required String jobId,
+    required String userId,
+    required String userName,
+    required String email,
+    String? notes,
+    bool sendNotification = true,
+    required SingleJobModel currentJob, // Add current job parameter
+  }) async {
     emit(JobLoading());
     try {
-      final SingleJobModel updatedJob = await repository.updateJobCompleteStatus(jobId, status, notes, isJobCompleted);
+      final SingleJobModel updatedJob = await repository.updateJobCompletionStatus(
+        jobId,
+        true, // isJobCompleted
+        userId,
+        userName,
+        email,
+        customNotes: notes,
+        sendNotification: sendNotification,
+        currentJob: currentJob, // Pass current job for email data
+      );
+
       emit(JobStatusUpdated(job: updatedJob));
-      // Reload jobs list after status update
+
+      // Reload the job to get the latest data
       await getJobById(jobId);
     } catch (e) {
       emit(JobError(message: e.toString()));
     }
   }
 
-  Future<void> updateReturnJobStatus(String jobId, String status, String notes, bool isdeviceReturn) async {
+  Future<void> setJobAsIncomplete({
+    required String jobId,
+    required String userId,
+    required String userName,
+    required String email,
+    String? notes,
+    bool sendNotification = true,
+    required SingleJobModel currentJob,
+  }) async {
     emit(JobLoading());
     try {
-      final SingleJobModel updatedJob = await repository.updateJobReturnStatus(jobId, status, notes, isdeviceReturn);
+      final SingleJobModel updatedJob = await repository.updateJobCompletionStatus(
+        jobId,
+        false, // isJobCompleted
+        userId,
+        userName,
+        email,
+        customNotes: notes,
+        sendNotification: sendNotification,
+        currentJob: currentJob,
+      );
+
       emit(JobStatusUpdated(job: updatedJob));
-      // Reload jobs list after status update
+
+      // Reload the job to get the latest data
       await getJobById(jobId);
     } catch (e) {
       emit(JobError(message: e.toString()));
+    }
+  }
+
+  // Backward compatibility method
+  Future<void> updateCompleteJobStatus({
+    required String jobId,
+    required bool isJobCompleted,
+    required String userId,
+    required String userName,
+    required String email,
+    String? notes,
+    bool sendNotification = true,
+    required SingleJobModel currentJob,
+  }) async {
+    if (isJobCompleted) {
+      await setJobAsComplete(
+        jobId: jobId,
+        userId: userId,
+        userName: userName,
+        email: email,
+        notes: notes,
+        sendNotification: sendNotification,
+        currentJob: currentJob,
+      );
+    } else {
+      await setJobAsIncomplete(
+        jobId: jobId,
+        userId: userId,
+        userName: userName,
+        email: email,
+        notes: notes,
+        sendNotification: sendNotification,
+        currentJob: currentJob,
+      );
+    }
+  }
+
+  // Add these methods to your JobCubit
+
+  Future<void> setDeviceAsReturned({
+    required String jobId,
+    required String userId,
+    required String userName,
+    required String email,
+    String? notes,
+    bool sendNotification = true,
+  }) async {
+    emit(JobLoading());
+    try {
+      final SingleJobModel updatedJob = await repository.updateJobReturnStatus(
+        jobId,
+        true, // isReturnDevice
+        userId,
+        userName,
+        email,
+        customNotes: notes,
+        sendNotification: sendNotification,
+      );
+
+      emit(JobStatusUpdated(job: updatedJob));
+
+      // Reload the job to get the latest data
+      await getJobById(jobId);
+    } catch (e) {
+      emit(JobError(message: e.toString()));
+    }
+  }
+
+  Future<void> setDeviceAsNotReturned({
+    required String jobId,
+    required String userId,
+    required String userName,
+    required String email,
+    String? notes,
+    bool sendNotification = true,
+  }) async {
+    emit(JobLoading());
+    try {
+      final SingleJobModel updatedJob = await repository.updateJobReturnStatus(
+        jobId,
+        false, // isReturnDevice
+        userId,
+        userName,
+        email,
+        customNotes: notes,
+        sendNotification: sendNotification,
+      );
+
+      emit(JobStatusUpdated(job: updatedJob));
+
+      // Reload the job to get the latest data
+      await getJobById(jobId);
+    } catch (e) {
+      emit(JobError(message: e.toString()));
+    }
+  }
+
+  // Backward compatibility method
+  Future<void> updateReturnJobStatus(
+    String jobId,
+    bool isReturnDevice,
+    String userId,
+    String userName,
+    String email, {
+    String? notes,
+    bool sendNotification = true,
+  }) async {
+    if (isReturnDevice) {
+      await setDeviceAsReturned(
+        jobId: jobId,
+        userId: userId,
+        userName: userName,
+        email: email,
+        notes: notes,
+        sendNotification: sendNotification,
+      );
+    } else {
+      await setDeviceAsNotReturned(
+        jobId: jobId,
+        userId: userId,
+        userName: userName,
+        email: email,
+        notes: notes,
+        sendNotification: sendNotification,
+      );
     }
   }
 
   // job priority update
+  // Add to JobCubit
+
+  Future<void> updateJobDueDate(String jobId, DateTime dueDate) async {
+    emit(JobLoading());
+    try {
+      final updatedJob = await repository.updateJobDueDate(jobId, dueDate);
+      emit(JobStatusUpdated(job: updatedJob));
+      // Reload the job to get the latest data
+      await getJobById(jobId);
+    } catch (e) {
+      emit(JobError(message: e.toString()));
+    }
+  }
+
+  Future<void> updateJobAssignee(String jobId, String assignUserId, String assignerName) async {
+    emit(JobLoading());
+    try {
+      final updatedJob = await repository.updateJobAssignee(jobId, assignUserId, assignerName);
+      emit(JobStatusUpdated(job: updatedJob));
+      // Reload the job to get the latest data
+      await getJobById(jobId);
+    } catch (e) {
+      emit(JobError(message: e.toString()));
+    }
+  }
+
+  // Update the existing priority method to use new repository method
   Future<void> updateJobPriority(String jobId, String priority) async {
     emit(JobLoading());
     debugPrint('🔄 Updating job priority for Job ID: $jobId to $priority');
     try {
       final updatedJob = await repository.updateJobPriority(jobId, priority);
       emit(JobPrioritySuccess(job: updatedJob));
-      // Reload jobs list after priority update
-      await getJobs();
+      // Reload the job to get the latest data
+      await getJobById(jobId);
     } catch (e) {
       emit(JobError(message: e.toString()));
+    }
+  }
+
+  // Add this to your JobCubit
+
+  Future<void> getAssignUserList() async {
+    // Don't emit loading state here to preserve current job state
+    try {
+      final ownerId = storage.read('userId');
+      if (ownerId == null) {
+        throw Exception('User ID not found in storage');
+      }
+
+      final AssignUserListModel response = await repository.getAssignUserList(ownerId);
+
+      emit(AssignUserListSuccess(users: response.data));
+    } catch (e) {
+      debugPrint('❌ JobCubit Error in getAssignUserList: $e');
+      emit(AssignUserListError(message: e.toString()));
     }
   }
 

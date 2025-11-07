@@ -4,6 +4,8 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
+import 'package:repair_cms/core/services/email_service.dart';
+import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 
@@ -171,57 +173,161 @@ class JobRepository {
     return false;
   }
 
-  Future<SingleJobModel> updateJobCompleteStatus(String jobId, String status, String notes, bool isJobCompleted) async {
+  Future<SingleJobModel> updateJobCompletionStatus(
+    String jobId,
+    bool isJobCompleted,
+    String userId,
+    String userName,
+    String email, {
+    String? customNotes,
+    bool sendNotification = true,
+    required SingleJobModel currentJob, // Add current job for email data
+  }) async {
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
-      dio.Response response = await BaseClient.patch(
-        url: url,
-        payload: {'status': status, 'notes': notes, 'is_job_completed': isJobCompleted},
-      );
+
+      // Define status configuration based on completion
+      final Map<String, dynamic> statusConfig = isJobCompleted
+          ? {
+              'title': 'ready_to_return',
+              'colorCode': '#008444',
+              'defaultNotes': 'Device is ready to return',
+              'priority': 2,
+            }
+          : {'title': 'in_progress', 'colorCode': '#FEC636', 'defaultNotes': 'Device is in progress', 'priority': 2};
+
+      // Create the job status entry
+      final jobStatusEntry = {
+        'title': statusConfig['title'],
+        'userId': userId,
+        'colorCode': statusConfig['colorCode'],
+        'userName': userName,
+        'createAtStatus': DateTime.now().millisecondsSinceEpoch,
+        'notifications': sendNotification,
+        'email': email,
+        'notes': customNotes ?? statusConfig['defaultNotes'],
+        'priority': statusConfig['priority'],
+      };
+
+      // Prepare the payload
+      final payload = {
+        'job': {
+          'is_job_completed': isJobCompleted,
+          'status': statusConfig['title'],
+          'jobStatus': [jobStatusEntry],
+        },
+      };
+
+      debugPrint('🔄 Updating job completion status:');
+      debugPrint('🔄 Job ID: $jobId');
+      debugPrint('🔄 is_job_completed: $isJobCompleted');
+      debugPrint('🔄 New status: ${statusConfig['title']}');
+
+      dio.Response response = await BaseClient.patch(url: url, payload: payload);
 
       if (response.statusCode == 200) {
-        debugPrint('🔄 JobRepository: Updated job status for Job ID: $jobId');
-        debugPrint('🔄 JobRepository: Updated job status for Job ID: ${response.data}');
-        final responseData = SingleJobModel.fromJson(response.data);
-        debugPrint('🔄 job update: Updated job status response data: ${responseData.data!.isJobCompleted}');
+        debugPrint('✅ Job completion status updated successfully');
+
+        // Send email notification if job is completed and notification is enabled
+        if (isJobCompleted && sendNotification) {
+          await _sendJobCompleteEmail(currentJob, statusConfig['title']);
+        }
+
         return SingleJobModel.fromJson(response.data);
       } else {
         throw Exception('Failed to update job status: ${response.statusCode}');
       }
-    } on dio.DioException catch (e) {
-      if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
-      } else {
-        throw Exception('Network error: ${e.message}');
-      }
     } catch (e, stackTrace) {
-      debugPrint('❌ Error in updateJobStatus: $e');
+      debugPrint('❌ Error in updateJobCompletionStatus: $e');
       debugPrint('📋 Stack trace: $stackTrace');
       throw Exception('Unexpected error: $e');
     }
   }
 
-  Future<SingleJobModel> updateJobReturnStatus(String jobId, String status, String notes, bool isReturnDevice) async {
+  // Helper method to send completion email
+  Future<void> _sendJobCompleteEmail(SingleJobModel job, String jobStatus) async {
+    try {
+      // Extract required data from the job
+      final jobData = job.data!;
+      final customerDetails = jobData.customerDetails!;
+      final contact = jobData.contact!.isNotEmpty ? jobData.contact!.first : null;
+
+      await EmailService.sendJobCompleteEmail(
+        jobNo: jobData.jobNo!,
+        email: customerDetails.email ?? contact?.email ?? '',
+        userId: jobData.userId!,
+        jobId: jobData.sId!,
+        salutation: customerDetails.salutation ?? '',
+        contactFirstname: contact?.firstName! ?? customerDetails.firstName!,
+        contactLastname: contact?.lastName! ?? customerDetails.lastName!,
+        locationId: jobData.location!,
+        jobStatus: jobStatus,
+        loggedUserId: jobData.userId!,
+      );
+    } catch (e) {
+      debugPrint('❌ Error preparing email data: $e');
+      // Don't throw - email failure shouldn't block job completion
+    }
+  }
+
+  Future<SingleJobModel> updateJobReturnStatus(
+    String jobId,
+    bool isReturnDevice,
+    String userId,
+    String userName,
+    String email, {
+    String? customNotes,
+    bool sendNotification = true,
+  }) async {
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
-      dio.Response response = await BaseClient.patch(
-        url: url,
-        payload: {'status': status, 'notes': notes, 'is_device_returned': isReturnDevice},
-      );
+
+      // Define status configuration based on return device status
+      final Map<String, dynamic> statusConfig = isReturnDevice
+          ? {'title': 'archive', 'colorCode': '#EDEEF1', 'defaultNotes': 'move to trash', 'priority': 'archive'}
+          : {'title': 'in_progress', 'colorCode': '#008444', 'defaultNotes': 'Device is in progress', 'priority': 2};
+
+      // Create the job status entry
+      final jobStatusEntry = {
+        'title': statusConfig['title'],
+        'userId': userId,
+        'colorCode': statusConfig['colorCode'],
+        'userName': userName,
+        'createAtStatus': DateTime.now().millisecondsSinceEpoch,
+        'notifications': sendNotification,
+        'email': email,
+        'notes': customNotes ?? statusConfig['defaultNotes'],
+        'priority': statusConfig['priority'],
+      };
+
+      // Prepare the payload with nested structure
+      final payload = {
+        'job': {
+          'is_device_returned': isReturnDevice,
+          'status': statusConfig['title'],
+          'jobStatus': [jobStatusEntry],
+        },
+      };
+
+      debugPrint('🔄 Updating job return status:');
+      debugPrint('🔄 Job ID: $jobId');
+      debugPrint('🔄 is_device_returned: $isReturnDevice');
+      debugPrint('🔄 New status: ${statusConfig['title']}');
+      debugPrint('🔄 Notes: ${customNotes ?? statusConfig['defaultNotes']}');
+
+      dio.Response response = await BaseClient.patch(url: url, payload: payload);
 
       if (response.statusCode == 200) {
+        debugPrint('✅ Job return status updated successfully');
+        debugPrint('✅ Response - is_device_returned: ${response.data['data']?['is_device_returned']}');
+        debugPrint('✅ Response - status: ${response.data['data']?['status']}');
+
         return SingleJobModel.fromJson(response.data);
       } else {
-        throw Exception('Failed to update job status: ${response.statusCode}');
-      }
-    } on dio.DioException catch (e) {
-      if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
-      } else {
-        throw Exception('Network error: ${e.message}');
+        throw Exception('Failed to update job return status: ${response.statusCode}');
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ Error in updateJobStatus: $e');
+      debugPrint('❌ Error in updateJobReturnStatus: $e');
       debugPrint('📋 Stack trace: $stackTrace');
       throw Exception('Unexpected error: $e');
     }
@@ -249,12 +355,76 @@ class JobRepository {
   ///. ------------------------------------------------------------------------------.
   ///| Additional job-related repository methods can be added here.               |
   ///' ------------------------------------------------------------------------------'
+
+  // Add to JobRepository
+
+  Future<SingleJobModel> updateJobDueDate(String jobId, DateTime dueDate) async {
+    try {
+      final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
+
+      final payload = {
+        'job': {'due_date': dueDate.toIso8601String()},
+      };
+
+      debugPrint('🔄 Updating job due date:');
+      debugPrint('🔄 Job ID: $jobId');
+      debugPrint('🔄 Due Date: ${dueDate.toIso8601String()}');
+
+      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Job due date updated successfully');
+        return SingleJobModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to update job due date: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error in updateJobDueDate: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Future<SingleJobModel> updateJobAssignee(String jobId, String assignUserId, String assignerName) async {
+    try {
+      final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
+
+      final payload = {
+        'job': {'assign_user': assignUserId, 'assigner_name': assignerName},
+      };
+
+      debugPrint('🔄 Updating job assignee:');
+      debugPrint('🔄 Job ID: $jobId');
+      debugPrint('🔄 Assign User ID: $assignUserId');
+      debugPrint('🔄 Assigner Name: $assignerName');
+
+      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Job assignee updated successfully');
+        return SingleJobModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to update job assignee: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error in updateJobAssignee: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  // Update the existing updateJobPriority method to use nested structure
   Future<SingleJobModel> updateJobPriority(String jobId, String priority) async {
     debugPrint('🔄 JobRepository: Updating job priority for Job ID: $jobId to $priority');
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
-      dio.Response response = await BaseClient.patch(url: url, payload: {'job_priority': priority});
-      debugPrint('🔄 repo: Updated job priority for Job ID: ${response.data['id']} to $priority');
+
+      final payload = {
+        'job': {'job_priority': priority},
+      };
+
+      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      debugPrint('🔄 repo: Updated job priority for Job ID: ${response.data['data']?['_id']} to $priority');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to update job priority: ${response.statusCode}');
@@ -270,6 +440,32 @@ class JobRepository {
       debugPrint('❌ Error in updateJobPriority: $e');
       debugPrint('📋 Stack trace: $stackTrace');
       throw Exception('Unexpected error: $e');
+    }
+  }
+
+  // Add this to your JobRepository
+
+  Future<AssignUserListModel> getAssignUserList(String ownerId) async {
+    try {
+      final url = '${ApiEndpoints.findByOwner}$ownerId';
+
+      debugPrint('🔄 Fetching assign user list for owner: $ownerId');
+      debugPrint('🔄 URL: $url');
+
+      dio.Response response = await BaseClient.get(url: url);
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Assign user list fetched successfully');
+        debugPrint('✅ Total users: ${response.data['data']?.length ?? 0}');
+
+        return AssignUserListModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to fetch assign user list: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error in getAssignUserList: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      throw Exception('Failed to fetch users: $e');
     }
   }
 }
