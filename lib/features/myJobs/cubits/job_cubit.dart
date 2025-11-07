@@ -373,6 +373,52 @@ class JobCubit extends Cubit<JobStates> {
     }
   }
 
+  // add job status
+  // Add to JobCubit class
+  // Update the addJobStatus method in JobCubit
+  Future<void> addJobStatus({
+    required String jobId,
+    required String status,
+    required String userId,
+    required String userName,
+    required String email,
+    String? notes,
+    bool sendNotification = true,
+    String? colorCode,
+    int priority = 2,
+  }) async {
+    // Use a temporary loading state that doesn't interfere with the main state
+    emit(JobActionLoading());
+
+    try {
+      final SingleJobModel updatedJob = await repository.addJobStatus(
+        jobId: jobId,
+        status: status,
+        userId: userId,
+        userName: userName,
+        email: email,
+        notes: notes,
+        sendNotification: sendNotification,
+        colorCode: colorCode,
+        priority: priority,
+      );
+
+      // Emit success state for the action
+      emit(JobStatusUpdateSuccess(job: updatedJob));
+
+      // Reload the job to get the latest data
+      await getJobById(jobId);
+    } catch (e) {
+      emit(JobActionError(message: e.toString()));
+      // Re-emit the previous successful state after a delay
+      Future.delayed(Duration(seconds: 2), () {
+        if (state is JobDetailSuccess) {
+          emit(state); // Re-emit the current detail state
+        }
+      });
+    }
+  }
+
   void filterJobsByStatus(String status) {
     _currentStatusFilter = status;
     _currentPage = 1;
@@ -406,4 +452,143 @@ class JobCubit extends Cubit<JobStates> {
   String get currentKeyword => _currentKeyword;
   String get currentStartDate => _currentStartDate;
   String get currentEndDate => _currentEndDate;
+
+  ///.=========================================================================.
+  ///! add job notes                                                        !
+  ///.=========================================================================.
+  // Add to JobCubit class
+  Future<void> addJobNote({
+    required String jobId,
+    required String noteText,
+    required String userId,
+    required String userName,
+  }) async {
+    if (isClosed) return;
+
+    emit(JobActionLoading());
+
+    try {
+      final SingleJobModel updatedJob = await repository.addJobNote(
+        jobId: jobId,
+        noteText: noteText,
+        userId: userId,
+        userName: userName,
+      );
+
+      if (!isClosed) {
+        emit(JobNoteUpdateSuccess(job: updatedJob));
+      }
+      await getJobById(jobId);
+    } catch (e) {
+      if (!isClosed) {
+        emit(JobActionError(message: e.toString()));
+      }
+    }
+  }
+
+  Future<void> updateJobNote({
+    required String jobId,
+    required String noteId,
+    required String noteText,
+    required String userId,
+    required String userName,
+  }) async {
+    emit(JobActionLoading());
+
+    try {
+      final SingleJobModel updatedJob = await repository.updateJobNote(
+        jobId: jobId,
+        noteId: noteId,
+        noteText: noteText,
+        userId: userId,
+        userName: userName,
+      );
+
+      emit(JobNoteUpdateSuccess(job: updatedJob));
+
+      // Reload the job to get the latest data
+      await getJobById(jobId);
+    } catch (e) {
+      emit(JobActionError(message: e.toString()));
+      Future.delayed(Duration(seconds: 2), () {
+        if (state is JobDetailSuccess) {
+          emit(state);
+        }
+      });
+    }
+  }
+
+  Future<void> deleteJobNote({required String jobId, required String noteId}) async {
+    if (isClosed) return;
+
+    emit(JobActionLoading());
+
+    try {
+      final SingleJobModel updatedJob = await repository.deleteJobNote(jobId: jobId, noteId: noteId);
+
+      if (!isClosed) {
+        emit(JobNoteUpdateSuccess(job: updatedJob));
+        // Don't call getJobById here - let the BlocListener handle it
+      }
+      emit(JobNoteUpdateSuccess(job: updatedJob));
+      await getJobById(jobId);
+    } catch (e) {
+      if (!isClosed) {
+        emit(JobActionError(message: e.toString()));
+      }
+    }
+  }
+
+  ///.=========================================================================.
+  ///! file upload                                                     !
+  ///.=========================================================================.
+  ///
+  // Add to JobCubit class
+  Future<void> uploadJobFile({
+    required String jobId,
+    required String jobNo,
+    required String filePath,
+    required String fileName,
+    required int fileSize,
+  }) async {
+    if (isClosed) return;
+
+    emit(JobFileUploading());
+
+    try {
+      final SingleJobModel updatedJob = await repository.uploadJobFile(
+        jobId: jobId,
+        jobNo: jobNo,
+        filePath: filePath,
+        fileName: fileName,
+        fileSize: fileSize,
+      );
+
+      if (!isClosed) {
+        emit(JobFileUploadSuccess(job: updatedJob));
+      }
+    } catch (e) {
+      if (!isClosed) {
+        emit(JobActionError(message: e.toString()));
+      }
+    }
+  }
+
+  Future<void> deleteJobFile({required String jobId, required String fileId}) async {
+    if (isClosed) return;
+
+    emit(JobActionLoading());
+
+    try {
+      final SingleJobModel updatedJob = await repository.deleteJobFile(jobId: jobId, fileId: fileId);
+
+      if (!isClosed) {
+        emit(JobFileDeleteSuccess(job: updatedJob));
+      }
+    } catch (e) {
+      if (!isClosed) {
+        emit(JobActionError(message: e.toString()));
+      }
+    }
+  }
 }

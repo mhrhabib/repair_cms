@@ -90,22 +90,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 return Center(child: Text('Error: ${state.message}'));
               }
 
+              return const Center(child: CircularProgressIndicator());
+
               // Fallback
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Unable to load job details'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<JobCubit>().getJobById(widget.jobId);
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
             },
           ),
 
@@ -126,7 +113,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       case 1:
         return ReceiptScreen(job: job);
       case 2:
-        return StatusScreen();
+        return StatusScreen(jobId: job);
       case 3:
         return NotesScreen(job: job);
       case 4:
@@ -246,7 +233,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       final selectedUser = _findUserById(newUserId);
 
       if (selectedUser != null) {
-        final userName = selectedUser.fullName ?? selectedUser.email ?? 'Unknown User';
+        final userName = selectedUser.fullName ?? selectedUser.email;
 
         setState(() {
           selectedAssignee = userName; // Update display name
@@ -257,7 +244,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
 
         // Pass the ID to the API
         context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, userName);
-        SnackbarDemo().showCustomSnackbar(context);
+        SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
       } else {
         debugPrint('❌ User not found with ID: $newUserId');
         debugPrint('Available user IDs: ${_availableUsers.map((u) => u.id).join(", ")}');
@@ -365,7 +352,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           });
         }
         if (state is JobStatusUpdated) {
-          SnackbarDemo().showCustomSnackbar(context);
+          SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
         }
         if (state is AssignUserListSuccess) {
           setState(() {
@@ -700,7 +687,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           isJobComplete = true;
         });
 
-        SnackbarDemo().showCustomSnackbar(context);
+        SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
       },
     );
   }
@@ -720,7 +707,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       returnDevice = true;
     });
 
-    SnackbarDemo().showCustomSnackbar(context);
+    SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
   }
 
   void _setDeviceAsNotReturned() {
@@ -738,7 +725,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       returnDevice = false;
     });
 
-    SnackbarDemo().showCustomSnackbar(context);
+    SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
   }
 
   void _showReturnDeviceConfirmationDialog() {
@@ -840,7 +827,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                   isJobComplete = false;
                 });
 
-                SnackbarDemo().showCustomSnackbar(context);
+                SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
 
                 Navigator.of(context).pop();
               },
@@ -1148,7 +1135,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         selectedDueDate = "${picked.day}. ${_getMonthName(picked.month)} ${picked.year}";
       });
 
-      SnackbarDemo().showCustomSnackbar(context);
+      SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
     }
   }
 
@@ -1182,7 +1169,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
 
       context.read<JobCubit>().updateJobPriority(widget.job.data!.sId!, priorityValue);
 
-      SnackbarDemo().showCustomSnackbar(context);
+      SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
     }
   }
 
@@ -1205,8 +1192,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
             style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
           ),
           items: _availableUsers.map((User user) {
-            final userName = user.fullName ?? user.email ?? 'Unknown User';
-            final userEmail = user.email ?? '';
+            final userName = user.fullName ?? user.email;
             final userInitials = _getUserInitials(userName);
 
             return DropdownMenuItem<String>(

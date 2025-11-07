@@ -69,3 +69,51 @@ class AssignUserListError extends JobStates {
 
   AssignUserListError({required this.message});
 }
+
+// Add these states to your job_state.dart file
+class JobActionLoading extends JobStates {
+  JobActionLoading();
+}
+
+class JobStatusUpdateSuccess extends JobStates {
+  final SingleJobModel job;
+
+  JobStatusUpdateSuccess({required this.job});
+
+  List<Object> get props => [job];
+}
+
+class JobActionError extends JobStates {
+  final String message;
+
+  JobActionError({required this.message});
+
+  List<Object> get props => [message];
+}
+
+// Add to job_state.dart
+class JobNoteUpdateSuccess extends JobStates {
+  final SingleJobModel job;
+  JobNoteUpdateSuccess({required this.job});
+  List<Object> get props => [job];
+}
+
+// Add to job_state.dart
+class JobFileUploading extends JobStates {
+  JobFileUploading();
+}
+
+class JobFileUploadSuccess extends JobStates {
+  final SingleJobModel job;
+
+  JobFileUploadSuccess({required this.job});
+  List<Object> get props => [job];
+}
+
+class JobFileDeleteSuccess extends JobStates {
+  final SingleJobModel job;
+
+  JobFileDeleteSuccess({required this.job});
+
+  List<Object> get props => [job];
+}

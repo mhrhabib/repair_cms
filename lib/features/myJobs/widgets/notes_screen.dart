@@ -1,16 +1,17 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
-import 'package:solar_icons/solar_icons.dart';
-import 'package:flutter/material.dart';
-
-// --- MODAL BOTTOM SHEET PACKAGE ---
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 // --- FIGMA STYLES ---
 final Color figmaYellow = const Color(0xFFF0D48C);
-final Color figmaBlue = const Color(0xFF007AFF); // Standard blue
+final Color figmaBlue = const Color(0xFF007AFF);
 // ---------------------
 
 class NotesScreen extends StatefulWidget {
@@ -22,17 +23,25 @@ class NotesScreen extends StatefulWidget {
 }
 
 class _NotesScreenState extends State<NotesScreen> {
-  // List to hold notes locally for state management
   List<InternalNote> _internalNotes = [];
+  bool _isMounted = false;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     _loadNotes();
   }
 
+  @override
+  void dispose() {
+    _isMounted = false;
+    super.dispose();
+  }
+
   void _loadNotes() {
-    // Load notes from the job data
+    if (!_isMounted) return;
+
     setState(() {
       _internalNotes = widget.job.data!.defect!.isNotEmpty
           ? widget.job.data!.defect!.first.internalNote ?? <InternalNote>[]
@@ -40,46 +49,43 @@ class _NotesScreenState extends State<NotesScreen> {
     });
   }
 
-  // --- UPDATED: Use showCupertinoModalBottomSheet with proper configuration ---
   Future<dynamic> _showNoteBottomSheet(BuildContext context, SingleJobModel job, InternalNote? note) {
     return showCupertinoModalBottomSheet(
       context: context,
       backgroundColor: figmaYellow,
-      expand: true, // This makes it stack-like and full screen
+      expand: true,
       enableDrag: true,
       bounce: true,
       useRootNavigator: true,
-      builder: (context) => _AddEditNoteSheetContent(
-        job: job,
-        note: note,
-        onNoteSaved: () {
-          _loadNotes();
-        },
+      builder: (context) => BlocProvider.value(
+        value: BlocProvider.of<JobCubit>(context),
+        child: _AddEditNoteSheetContent(
+          job: job,
+          note: note,
+          onNoteSaved: () {
+            if (_isMounted) {
+              _loadNotes();
+            }
+          },
+        ),
       ),
     );
   }
 
-  // --- Uses the new bottom sheet helper ---
   void _navigateToAddNote(BuildContext context, SingleJobModel job) async {
     final result = await _showNoteBottomSheet(context, job, null);
-
-    if (result == true) {
+    if (result == true && _isMounted) {
       _showSuccessDialog(context);
-      _loadNotes(); // Refresh the list
     }
   }
 
-  // --- Uses the new bottom sheet helper ---
   void _navigateToEditNote(BuildContext context, SingleJobModel job, InternalNote note) async {
     final result = await _showNoteBottomSheet(context, job, note);
-
-    if (result == true) {
+    if (result == true && _isMounted) {
       _showSuccessDialog(context, message: 'Note updated successfully');
-      _loadNotes(); // Refresh the list
     }
   }
 
-  // Delete note function
   void _deleteNote(InternalNote note) {
     showDialog(
       context: context,
@@ -90,16 +96,7 @@ class _NotesScreenState extends State<NotesScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
-              // TODO: Implement actual API call to delete note
-              print('Deleting note: ${note.id}');
-
-              // Remove from local list
-              setState(() {
-                _internalNotes.removeWhere((n) => n.id == note.id);
-              });
-
-              Navigator.pop(context);
-              _showSuccessDialog(context, message: 'Note deleted successfully');
+              _performDeleteNote(note);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
@@ -109,19 +106,45 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  // Show the custom success dialog from Figma (Unchanged)
+  void _performDeleteNote(InternalNote note) {
+    final jobCubit = context.read<JobCubit>();
+    final storage = GetStorage();
+    final userId = storage.read('userId');
+    final userName = storage.read('fullName');
+
+    if (userId == null || userName == null) {
+      _showSnackBar('User information not found', isError: true);
+      return;
+    }
+
+    jobCubit.deleteJobNote(jobId: widget.job.data?.sId ?? '', noteId: note.id ?? '');
+    Navigator.pop(context);
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!_isMounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   void _showSuccessDialog(BuildContext context, {String message = 'New note successfully added'}) {
+    if (!_isMounted) return;
+
     Dialog? dialog;
     dialog = Dialog(
       alignment: Alignment.topCenter,
-      // Position at the top
       insetPadding: EdgeInsets.only(top: 50.h, left: 16.w, right: 16.w),
-      // Padding from screen edges
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
       child: Padding(
         padding: EdgeInsets.all(16.r),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Crucial to keep dialog small
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -138,7 +161,11 @@ class _NotesScreenState extends State<NotesScreen> {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  if (_isMounted && Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+                },
                 child: Text('Dismiss', style: TextStyle(color: figmaBlue)),
               ),
             ),
@@ -149,10 +176,10 @@ class _NotesScreenState extends State<NotesScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) {
-        // Auto-dismiss after 3 seconds
         Future.delayed(const Duration(seconds: 3), () {
-          if (Navigator.of(context).canPop()) {
+          if (_isMounted && Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
         });
@@ -163,52 +190,62 @@ class _NotesScreenState extends State<NotesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
+    return BlocListener<JobCubit, JobStates>(
+      listener: (context, state) {
+        if (!_isMounted) return;
+
+        if (state is JobNoteUpdateSuccess) {
+          _loadNotes();
+          _showSnackBar('Operation completed successfully');
+        } else if (state is JobActionError) {
+          _showSnackBar(state.message, isError: true);
+        }
+      },
+      child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        // Back button
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20.r),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        // Title
-        title: Text(
-          'Notes',
-          style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
-        ),
-        centerTitle: true,
-        // Add button
-        actions: [
-          GestureDetector(
-            onTap: () => _navigateToAddNote(context, widget.job),
-            child: CircleAvatar(
-              radius: 16.r,
-              foregroundColor: Colors.white,
-              backgroundColor: figmaBlue,
-              child: Icon(Icons.add, color: Colors.white, size: 30.r),
-            ),
+        appBar: AppBar(
+          backgroundColor: AppColors.scaffoldBackgroundColor,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20.r),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-          SizedBox(width: 8.w),
-        ],
-      ),
-      body: Container(
-        margin: EdgeInsets.all(8.h),
-        decoration: BoxDecoration(
-          color: figmaYellow,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16.r), bottom: Radius.circular(16.r)),
+          title: Text(
+            'Notes',
+            style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+          ),
+          centerTitle: true,
+          actions: [
+            GestureDetector(
+              onTap: () => _navigateToAddNote(context, widget.job),
+              child: CircleAvatar(
+                radius: 16.r,
+                foregroundColor: Colors.white,
+                backgroundColor: figmaBlue,
+                child: Icon(Icons.add, color: Colors.white, size: 30.r),
+              ),
+            ),
+            SizedBox(width: 8.w),
+          ],
         ),
-        child: _buildNotesList(),
+        body: Container(
+          margin: EdgeInsets.all(8.h),
+          decoration: BoxDecoration(
+            color: figmaYellow,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16.r), bottom: Radius.circular(16.r)),
+          ),
+          child: _buildNotesList(),
+        ),
       ),
     );
   }
 
-  // Updated notes list widget
   Widget _buildNotesList() {
     return RefreshIndicator(
       onRefresh: () async {
-        _loadNotes();
+        if (_isMounted) {
+          _loadNotes();
+        }
       },
       backgroundColor: figmaYellow,
       color: figmaBlue,
@@ -218,7 +255,6 @@ class _NotesScreenState extends State<NotesScreen> {
           if (_internalNotes.isNotEmpty) ..._internalNotes.map((note) => _buildNoteItem(note)),
           if (_internalNotes.isEmpty)
             _buildNoteItem(
-              // Pass dummy data for the empty state
               InternalNote(
                 text: 'Add the first note for this job',
                 userName: 'System',
@@ -233,41 +269,35 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  // Updated note item widget to match Figma
   Widget _buildNoteItem(InternalNote note, {bool isEmptyState = false}) {
     final String content = note.text!;
     final String author = note.userName!;
     final String time = _formatTimestamp(note.createdAt.toString());
 
     return Padding(
-      padding: EdgeInsets.only(bottom: 24.h), // Spacing between notes
+      padding: EdgeInsets.only(bottom: 24.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // The note text
           Text(
             isEmptyState ? 'No notes yet' : content,
             style: GoogleFonts.roboto(
               fontSize: 14.sp,
               color: Colors.black87,
               height: 1.4,
-              // Make title bold if it's the empty state
               fontWeight: isEmptyState ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
           SizedBox(height: 8.h),
-          // Date and Author
           Text(
             isEmptyState ? content : "$time, $author",
             style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade600),
           ),
           SizedBox(height: 8.h),
-          // Show Edit/Delete only if it's NOT the empty state
           if (!isEmptyState)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Edit Button
                 InkWell(
                   onTap: () => _navigateToEditNote(context, widget.job, note),
                   child: Row(
@@ -282,7 +312,6 @@ class _NotesScreenState extends State<NotesScreen> {
                   ),
                 ),
                 SizedBox(width: 16.w),
-                // Delete Button
                 InkWell(
                   onTap: () => _deleteNote(note),
                   child: Row(
@@ -305,13 +334,10 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 }
 
-// -----------------------------------------------------------------
-// --- Sheet content widget (Updated with proper keyboard handling) ---
-// -----------------------------------------------------------------
 class _AddEditNoteSheetContent extends StatefulWidget {
   const _AddEditNoteSheetContent({required this.job, this.note, required this.onNoteSaved});
   final SingleJobModel job;
-  final InternalNote? note; // If note is null, it's a new note
+  final InternalNote? note;
   final VoidCallback onNoteSaved;
 
   @override
@@ -322,20 +348,24 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
   late TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   bool get isEditing => widget.note != null;
+  bool _isLoading = false;
+  bool _isMounted = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize controller with existing text if editing
+    _isMounted = true;
     _controller = TextEditingController(text: widget.note?.text ?? '');
-    // Auto-focus and show keyboard
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
+      if (_isMounted) {
+        _focusNode.requestFocus();
+      }
     });
   }
 
   @override
   void dispose() {
+    _isMounted = false;
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -344,21 +374,80 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
   void _saveNote() {
     final noteText = _controller.text.trim();
     if (noteText.isEmpty) {
-      // Don't save empty notes
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Note cannot be empty'), backgroundColor: Colors.red));
+      _showSnackBar('Note cannot be empty', isError: true);
       return;
     }
 
-    // --- TODO: API CALL ---
-    print('Saving note for job ${widget.job.data!.sId}: $noteText');
+    if (!_isMounted) return;
 
-    // Call the callback to notify parent
-    widget.onNoteSaved();
+    setState(() {
+      _isLoading = true;
+    });
 
-    // Pop the screen and return 'true' to signal success
-    Navigator.pop(context, true);
+    final jobCubit = context.read<JobCubit>();
+    final storage = GetStorage();
+    final userId = storage.read('userId');
+    final userName = storage.read('fullName');
+
+    if (userId == null || userName == null) {
+      _showSnackBar('User information not found', isError: true);
+      if (_isMounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    Future<void> saveAction;
+
+    if (isEditing) {
+      saveAction = jobCubit.updateJobNote(
+        jobId: widget.job.data?.sId ?? '',
+        noteId: widget.note?.id ?? '',
+        noteText: noteText,
+        userId: userId,
+        userName: userName,
+      );
+    } else {
+      saveAction = jobCubit.addJobNote(
+        jobId: widget.job.data?.sId ?? '',
+        noteText: noteText,
+        userId: userId,
+        userName: userName,
+      );
+    }
+
+    saveAction
+        .then((_) {
+          if (_isMounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            widget.onNoteSaved();
+            Navigator.pop(context, true);
+          }
+        })
+        .catchError((error) {
+          if (_isMounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            _showSnackBar('Failed to save note: $error', isError: true);
+          }
+        });
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!_isMounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -372,7 +461,6 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Column(
             children: [
-              // --- Sheet Handle ---
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.h),
                 child: Container(
@@ -381,19 +469,15 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                   decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2.5.r)),
                 ),
               ),
-
-              // --- Custom "App Bar" using Stack for centering ---
               Padding(
                 padding: EdgeInsets.fromLTRB(16.r, 8.r, 16.r, 16.r),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Centered Title
                     Text(
                       isEditing ? 'Edit note' : 'Add a note',
                       style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
                     ),
-                    // Close Button
                     Align(
                       alignment: Alignment.centerLeft,
                       child: IconButton(
@@ -403,48 +487,60 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
                           padding: EdgeInsets.all(8.r),
                         ),
-                        onPressed: () => Navigator.pop(context), // Just pop, no success
+                        onPressed: _isLoading ? null : () => Navigator.pop(context),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // --- Text Field Area ---
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.r),
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    maxLines: null, // Allows multiline
-                    expands: true, // Expands to fill space
-                    style: GoogleFonts.roboto(fontSize: 16.sp, height: 1.5),
-                    decoration: InputDecoration(
-                      hintText: 'write a note...',
-                      border: InputBorder.none, // No line
-                      hintStyle: GoogleFonts.roboto(fontSize: 16.sp, color: Colors.grey.shade600),
+                child: AbsorbPointer(
+                  absorbing: _isLoading,
+                  child: Opacity(
+                    opacity: _isLoading ? 0.6 : 1.0,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.r),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        maxLines: null,
+                        expands: true,
+                        style: GoogleFonts.roboto(fontSize: 16.sp, height: 1.5),
+                        decoration: InputDecoration(
+                          hintText: 'write a note...',
+                          border: InputBorder.none,
+                          hintStyle: GoogleFonts.roboto(fontSize: 16.sp, color: Colors.grey.shade600),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-
-              // --- Save Button (stuck to keyboard) ---
               Padding(
                 padding: EdgeInsets.only(bottom: 16.h, left: 16.w, right: 16.w, top: 16.h),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: figmaBlue,
+                      backgroundColor: _isLoading ? Colors.grey : figmaBlue,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                     ),
-                    onPressed: _saveNote,
-                    child: Text(
-                      'Save',
-                      style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.white),
-                    ),
+                    onPressed: _isLoading ? null : _saveNote,
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 20.w,
+                            height: 20.h,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text(
+                            'Save',
+                            style: GoogleFonts.roboto(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -456,24 +552,17 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
   }
 }
 
-// --- HELPER FUNCTIONS (Unchanged) ---
-
+// Helper functions
 String _formatTimestamp(String timestamp) {
   try {
-    // Handle different timestamp formats
     int timestampValue;
 
-    // Check if it's a numeric string (milliseconds since epoch)
     if (RegExp(r'^\d+$').hasMatch(timestamp)) {
       timestampValue = int.parse(timestamp);
-    }
-    // Check if it's an ISO string format
-    else if (timestamp.contains('T')) {
+    } else if (timestamp.contains('T')) {
       final date = DateTime.parse(timestamp);
       return '${date.day}. ${_getMonthName(date.month)} ${date.year} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    }
-    // If it's already in a readable format, return as is
-    else {
+    } else {
       return timestamp;
     }
 

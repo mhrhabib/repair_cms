@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
+import 'dart:io' as io;
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 
@@ -18,10 +18,12 @@ class FilesScreen extends StatefulWidget {
 class _FilesScreenState extends State<FilesScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   bool _isInitialized = false;
+  bool _isMounted = false;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     // Load job data only once when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isInitialized) {
@@ -31,7 +33,15 @@ class _FilesScreenState extends State<FilesScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _isMounted = false;
+    super.dispose();
+  }
+
   void _loadJobDataIfNeeded() {
+    if (!_isMounted) return;
+
     final jobCubit = context.read<JobCubit>();
     final state = jobCubit.state;
 
@@ -118,11 +128,13 @@ class _FilesScreenState extends State<FilesScreen> {
     try {
       final XFile? photo = await _imagePicker.pickImage(source: ImageSource.camera, imageQuality: 85);
 
-      if (photo != null) {
-        _addFile(photo.path, photo.name);
+      if (photo != null && _isMounted) {
+        await _uploadFileToServer(photo.path, photo.name);
       }
     } catch (e) {
-      _showError('Failed to capture image: $e');
+      if (_isMounted) {
+        _showError('Failed to capture image: $e');
+      }
     }
   }
 
@@ -130,11 +142,13 @@ class _FilesScreenState extends State<FilesScreen> {
     try {
       final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 85);
 
-      if (image != null) {
-        _addFile(image.path, image.name);
+      if (image != null && _isMounted) {
+        await _uploadFileToServer(image.path, image.name);
       }
     } catch (e) {
-      _showError('Failed to pick image: $e');
+      if (_isMounted) {
+        _showError('Failed to pick image: $e');
+      }
     }
   }
 
@@ -145,27 +159,31 @@ class _FilesScreenState extends State<FilesScreen> {
         allowedExtensions: ['doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'mp4', 'pdf'],
       );
 
-      if (result != null && result.files.single.path != null) {
-        _addFile(result.files.single.path!, result.files.single.name);
+      if (result != null && result.files.single.path != null && _isMounted) {
+        await _uploadFileToServer(result.files.single.path!, result.files.single.name);
       }
     } catch (e) {
-      _showError('Failed to pick document: $e');
+      if (_isMounted) {
+        _showError('Failed to pick document: $e');
+      }
     }
   }
 
-  void _addFile(String path, String name) {
-    // TODO: Upload file to server via repository
-    _uploadFileToServer(path, name);
-  }
-
   Future<void> _uploadFileToServer(String path, String name) async {
-    // Implement your file upload logic here
-    // Example:
-    // await context.read<JobCubit>().uploadJobFile(widget.jobId, path, name);
-    print('Uploading file: $name from $path to job: ${widget.jobId}');
+    if (!_isMounted) return;
 
-    // Show upload in progress
-    _showSuccess('Uploading $name...');
+    final file = io.File(path);
+    final fileSize = await file.length();
+
+    final jobCubit = context.read<JobCubit>();
+
+    await jobCubit.uploadJobFile(
+      jobId: widget.jobId.data?.sId ?? '',
+      jobNo: widget.jobId.data!.jobNo!,
+      filePath: path,
+      fileName: name,
+      fileSize: fileSize,
+    );
   }
 
   void _deleteFile(String fileId) {
@@ -178,10 +196,8 @@ class _FilesScreenState extends State<FilesScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
-              // TODO: Implement delete file via repository
-              // context.read<JobCubit>().deleteJobFile(widget.jobId, fileId);
               Navigator.pop(context);
-              _showSuccess('File deleted successfully');
+              _performDeleteFile(fileId);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
@@ -191,12 +207,28 @@ class _FilesScreenState extends State<FilesScreen> {
     );
   }
 
+  void _performDeleteFile(String fileId) {
+    if (!_isMounted) return;
+
+    final jobCubit = context.read<JobCubit>();
+
+    jobCubit.deleteJobFile(jobId: widget.jobId.data?.sId ?? '', fileId: fileId);
+  }
+
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
+    if (!_isMounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 3)));
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.green));
+    if (!_isMounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
+    );
   }
 
   String _formatFileSize(int bytes) {
@@ -233,84 +265,130 @@ class _FilesScreenState extends State<FilesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    return BlocListener<JobCubit, JobStates>(
+      listener: (context, state) {
+        if (!_isMounted) return;
+
+        if (state is JobFileUploadSuccess) {
+          _showSuccess('File uploaded successfully');
+        } else if (state is JobFileDeleteSuccess) {
+          _showSuccess('File deleted successfully');
+        } else if (state is JobActionError) {
+          _showError(state.message);
+        }
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Files',
-          style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        actions: [
-          IconButton(
-            icon: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(color: const Color(0xFF007AFF), borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.add, color: Colors.white, size: 20),
-            ),
-            onPressed: _showUploadMethodSheet,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
+            onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: BlocBuilder<JobCubit, JobStates>(
-        buildWhen: (previous, current) {
-          // Only rebuild when necessary states change
-          return current is JobLoading || current is JobError || current is JobDetailSuccess;
-        },
-        builder: (context, state) {
-          // Show loading only if we're specifically loading AND we don't have data yet
-          if (state is JobLoading && !_isInitialized) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF007AFF)));
-          }
-
-          if (state is JobError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Color(0xFFFF3B30)),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Error loading files',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<JobCubit>().getJobById(widget.jobId.data?.sId ?? '');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF007AFF),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text('Retry'),
-                  ),
-                ],
+          title: const Text(
+            'Files',
+            style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          actions: [
+            IconButton(
+              icon: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(color: const Color(0xFF007AFF), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.add, color: Colors.white, size: 20),
               ),
-            );
-          }
+              onPressed: _showUploadMethodSheet,
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: BlocBuilder<JobCubit, JobStates>(
+          buildWhen: (previous, current) {
+            // Rebuild for file-related states and job details
+            return current is JobLoading ||
+                current is JobError ||
+                current is JobDetailSuccess ||
+                current is JobFileUploading ||
+                current is JobFileUploadSuccess ||
+                current is JobFileDeleteSuccess;
+          },
+          builder: (context, state) {
+            // Show loading for file upload
+            if (state is JobFileUploading) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFF007AFF)),
+                    SizedBox(height: 16),
+                    Text('Uploading file...', style: TextStyle(fontSize: 16, color: Color(0xFF8E8E93))),
+                  ],
+                ),
+              );
+            }
 
-          if (state is JobDetailSuccess) {
-            final jobData = state.job.data;
-            final files = jobData?.files;
+            // Show loading only if we're specifically loading AND we don't have data yet
+            if (state is JobLoading && !_isInitialized) {
+              return const Center(child: CircularProgressIndicator(color: Color(0xFF007AFF)));
+            }
+
+            if (state is JobError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: Color(0xFFFF3B30)),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Error loading files',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        state.message,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<JobCubit>().getJobById(widget.jobId.data?.sId ?? '');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF007AFF),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            // Get files from current state
+            List<File>? files;
+            if (state is JobDetailSuccess) {
+              files = state.job.data?.files;
+            } else if (state is JobFileUploadSuccess) {
+              files = state.job.data?.files;
+            } else if (state is JobFileDeleteSuccess) {
+              files = state.job.data?.files;
+            } else {
+              // Try to get files from existing job data
+              final jobCubit = context.read<JobCubit>();
+              if (jobCubit.state is JobDetailSuccess) {
+                final successState = jobCubit.state as JobDetailSuccess;
+                if (successState.job.data?.sId == widget.jobId.data?.sId) {
+                  files = successState.job.data?.files;
+                }
+              }
+            }
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,44 +416,8 @@ class _FilesScreenState extends State<FilesScreen> {
                 Expanded(child: files == null || files.isEmpty ? _buildEmptyState() : _buildFilesList(files)),
               ],
             );
-          }
-
-          // If we have other states or initial state but already initialized, show empty or existing data
-          // Check if we have any job data in the cubit that matches our jobId
-          final jobCubit = context.read<JobCubit>();
-          if (jobCubit.state is JobDetailSuccess) {
-            final successState = jobCubit.state as JobDetailSuccess;
-            if (successState.job.data?.sId == widget.jobId.data?.sId) {
-              final files = successState.job.data?.files;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'File Upload',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Supported files: .doc, xls, jpg, png, mp4',
-                          style: TextStyle(fontSize: 12, color: Color(0xFF8E8E93)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(child: files == null || files.isEmpty ? _buildEmptyState() : _buildFilesList(files)),
-                ],
-              );
-            }
-          }
-
-          // Fallback: show loading only if we truly need to load data
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF007AFF)));
-        },
+          },
+        ),
       ),
     );
   }

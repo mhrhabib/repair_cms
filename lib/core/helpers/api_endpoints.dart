@@ -50,4 +50,6 @@ class ApiEndpoints {
   static const String jobTypeListUrl = '$baseUrl/job-type/user/<id>';
   //items
   static const String itemsListUrl = '$baseUrl/auth/item/user/<id>';
+
+  static const String fileUplaodUrl = '$baseUrl/file-upload/';
 }

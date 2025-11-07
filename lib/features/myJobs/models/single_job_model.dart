@@ -1034,7 +1034,11 @@ class InternalNote {
   InternalNote({this.text, this.userId, this.createdAt, this.userName, this.id});
 
   InternalNote.fromJson(Map<String, dynamic> json) {
-    text = json['text'];
+    text = json['text'] is List
+        ? json['text'].isEmpty
+              ? ''
+              : json['text'][0] ?? ''
+        : json['text'] ?? '';
     userId = json['userId'];
     createdAt = json['createdAt'];
     userName = json['userName'];
