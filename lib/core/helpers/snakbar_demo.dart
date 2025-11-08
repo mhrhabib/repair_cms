@@ -2,7 +2,8 @@ import 'dart:ui';
 import 'package:repair_cms/core/app_exports.dart';
 
 class SnackbarDemo extends StatelessWidget {
-  const SnackbarDemo({super.key});
+  final String message;
+  const SnackbarDemo({super.key, required this.message});
 
   void showCustomSnackbar(BuildContext context) {
     final overlay = Overlay.of(context);
@@ -10,6 +11,7 @@ class SnackbarDemo extends StatelessWidget {
 
     overlayEntry = OverlayEntry(
       builder: (context) => CustomSnackbar(
+        title: message,
         onDismiss: () {
           overlayEntry.remove();
         },
@@ -41,9 +43,10 @@ class SnackbarDemo extends StatelessWidget {
 }
 
 class CustomSnackbar extends StatefulWidget {
+  final String title;
   final VoidCallback onDismiss;
 
-  const CustomSnackbar({super.key, required this.onDismiss});
+  const CustomSnackbar({super.key, required this.onDismiss, required this.title});
 
   @override
   State<CustomSnackbar> createState() => _CustomSnackbarState();
@@ -114,9 +117,9 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                           child: Icon(Icons.today_outlined, color: Colors.white, size: 24),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Job Status successfully Updated',
+                            widget.title,
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
                           ),
                         ),

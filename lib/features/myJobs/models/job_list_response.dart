@@ -1543,7 +1543,11 @@ class InternalNote {
 
   factory InternalNote.fromJson(Map<String, dynamic> json) {
     return InternalNote(
-      text: json['text'] ?? '',
+      text: json['text'] is List
+          ? json['text'].isEmpty
+                ? ''
+                : json['text'][0] ?? ''
+          : json['text'] ?? '',
       userId: json['userId'] ?? '',
       createdAt: _parseDateTime(json['createdAt']),
       userName: json['userName'] ?? '',

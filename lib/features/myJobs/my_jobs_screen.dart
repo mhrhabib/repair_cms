@@ -95,7 +95,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     separatorBuilder: (context, index) => Container(
                       width: 2.w,
                       height: 40.h,
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.grey.withValues(alpha: 0.3),
                       margin: EdgeInsets.symmetric(vertical: 12.h),
                     ),
                     itemBuilder: (context, index) {
@@ -114,12 +114,12 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: Colors.black.withValues(alpha: 0.1),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: Colors.black.withValues(alpha: 0.1),
                                       blurRadius: 8,
                                       offset: const Offset(2, 2),
                                     ),

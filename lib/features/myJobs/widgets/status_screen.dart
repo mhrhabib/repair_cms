@@ -1,250 +1,523 @@
-import 'package:flutter/cupertino.dart';
+// ignore_for_file: use_build_context_synchronously
+
+import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
-import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 
 class StatusScreen extends StatefulWidget {
-  const StatusScreen({super.key});
+  final SingleJobModel jobId;
+  const StatusScreen({super.key, required this.jobId});
 
   @override
   State<StatusScreen> createState() => _StatusScreenState();
 }
 
 class _StatusScreenState extends State<StatusScreen> {
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isInitialized) {
+        _loadJobDataIfNeeded();
+        _isInitialized = true;
+      }
+    });
+  }
+
+  void _loadJobDataIfNeeded() {
+    final jobCubit = context.read<JobCubit>();
+    final state = jobCubit.state;
+
+    if (state is! JobDetailSuccess || state.job.data?.sId != widget.jobId.data?.sId) {
+      jobCubit.getJobById(widget.jobId.data?.sId ?? '');
+    }
+  }
+
+  void _showAddStatusBottomSheet() {
+    showCupertinoModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddStatusBottomSheet(jobId: widget.jobId),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
+    return CupertinoScaffold(
+      transitionBackgroundColor: AppColors.scaffoldBackgroundColor,
       body: SafeArea(
-        child: BlocBuilder<JobCubit, JobStates>(
-          builder: (context, state) {
-            if (state is JobDetailSuccess) {
-              return _buildStatusScreen(state.job);
-            } else if (state is JobLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is JobError) {
-              return Center(child: Text('Error: ${state.message}'));
+        child: BlocListener<JobCubit, JobStates>(
+          listener: (context, state) {
+            // Handle side effects like showing snackbars
+            if (state is JobStatusUpdateSuccess) {
+              SnackbarDemo(message: 'Status updated successfully').showCustomSnackbar(context);
+            } else if (state is JobActionError) {
+              SnackbarDemo(message: 'Failed to update status: ${state.message}').showCustomSnackbar(context);
             }
-            return const Center(child: Text('No job data available'));
           },
+          child: BlocBuilder<JobCubit, JobStates>(
+            builder: (context, state) {
+              if (state is JobDetailSuccess) {
+                return _buildStatusScreen(context, state.job);
+              } else if (state is JobLoading || state is JobActionLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is JobError) {
+                return Center(child: Text('Error: ${state.message}'));
+              }
+              return const Center(child: Text('No job data available'));
+            },
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatusScreen(BuildContext context, SingleJobModel job) {
+    final statusHistory = job.data?.jobStatus ?? [];
+    statusHistory.sort((a, b) => (b.createAtStatus ?? 0).compareTo(a.createAtStatus ?? 0));
+
+    return Column(
+      children: [
+        // Header with back button and add button
+        Container(
+          color: Colors.white,
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+                onPressed: () => Navigator.pop(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Text(
+                  'Status',
+                  style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              ),
+              InkWell(
+                onTap: _showAddStatusBottomSheet,
+                child: Container(
+                  width: 32.w,
+                  height: 32.h,
+                  decoration: BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                  child: Icon(Icons.add, color: Colors.white, size: 20.sp),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Divider(height: 1, color: Colors.grey.shade300),
+
+        SizedBox(height: 16.h),
+
+        // Job Status Header
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Job Status',
+              style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+            ),
+          ),
+        ),
+
+        SizedBox(height: 12.h),
+
+        // Status History List
+        Expanded(
+          child: statusHistory.isNotEmpty
+              ? ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  itemCount: statusHistory.length,
+                  itemBuilder: (context, index) {
+                    final status = statusHistory[index];
+                    return _buildStatusListItem(
+                      title: _formatStatusTitle(status.title ?? ''),
+                      time: status.createAtStatus != null ? _formatTimestamp(status.createAtStatus!) : 'Unknown time',
+                      userName: status.userName ?? 'System',
+                      color: _getStatusColorForStatus(status.title ?? ''),
+                    );
+                  },
+                )
+              : Center(
+                  child: Text(
+                    'No status history available',
+                    style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusListItem({
+    required String title,
+    required String time,
+    required String userName,
+    required Color color,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          // Color indicator circle
+          Container(
+            width: 12.w,
+            height: 12.h,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          SizedBox(width: 12.w),
+          // Status info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  time,
+                  style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade600),
+                ),
+                Text(
+                  userName,
+                  style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// Updated status screen with real job status history
-Widget _buildStatusScreen(SingleJobModel job) {
-  // Get status history from job data
-  final statusHistory = job.data?.jobStatus ?? [];
+// Add Status Bottom Sheet - FIXED VERSION
+class AddStatusBottomSheet extends StatefulWidget {
+  final SingleJobModel jobId;
+  const AddStatusBottomSheet({super.key, required this.jobId});
 
-  // Sort status history by timestamp in descending order (newest first)
-  statusHistory.sort((a, b) => (b.createAtStatus ?? 0).compareTo(a.createAtStatus ?? 0));
+  @override
+  State<AddStatusBottomSheet> createState() => _AddStatusBottomSheetState();
+}
 
-  return Column(
-    children: [
-      // Header
-      Container(
-        color: Colors.white,
-        padding: EdgeInsets.all(16.r),
-        width: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Job Status Timeline',
-              style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'Job No: ${job.data?.jobNo ?? 'N/A'}',
-              style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
-            ),
-          ],
-        ),
-      ),
+class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
+  String? selectedStatus;
+  String? selectedNotification = 'Yes';
+  final TextEditingController notesController = TextEditingController();
 
-      SizedBox(height: 8.h),
+  // Available statuses with colors
+  final List<Map<String, dynamic>> availableStatuses = [
+    {'value': 'repair_in_progress', 'label': 'Repair in Progress', 'color': Colors.blue},
+    {'value': 'quotation_sent', 'label': 'Quotation Sent', 'color': Colors.orange},
+    {'value': 'invoice_sent', 'label': 'Invoice Sent', 'color': Colors.purple},
+    {'value': 'ready_to_return', 'label': 'Ready to Return', 'color': Colors.green},
+    {'value': 'complete', 'label': 'Complete', 'color': Colors.green},
+    {'value': 'cancelled', 'label': 'Cancelled', 'color': Colors.red},
+  ];
 
-      // Current Status Card
-      if (job.data?.status != null)
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
+  @override
+  void dispose() {
+    notesController.dispose();
+    super.dispose();
+  }
+
+  // Update the _saveStatus method in AddStatusBottomSheet class
+  void _saveStatus() {
+    if (selectedStatus == null) {
+      SnackbarDemo(message: 'Please select status').showCustomSnackbar(context);
+      return;
+    }
+
+    final jobCubit = context.read<JobCubit>();
+    final storage = GetStorage();
+
+    // Get current user info from storage
+    final userId = storage.read('userId');
+    final userName = storage.read('fullName');
+    final email = storage.read('email');
+
+    if (userId == null || userName == null || email == null) {
+      SnackbarDemo(message: 'User information not found').showCustomSnackbar(context);
+      return;
+    }
+
+    // Call the cubit method - the BlocListener will handle the response
+    jobCubit
+        .addJobStatus(
+          jobId: widget.jobId.data?.sId ?? '',
+          status: selectedStatus!,
+          userId: userId,
+          userName: userName,
+          email: email,
+          notes: notesController.text.isNotEmpty ? notesController.text : null,
+          sendNotification: selectedNotification == 'Yes',
+        )
+        .then((_) {
+          // Close the bottom sheet on successful API call initiation
+          Navigator.pop(context);
+          // Note: The success/error messages are now handled by BlocListener
+        });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<JobCubit, JobStates>(
+      builder: (context, state) {
+        final isLoading = state is JobActionLoading;
+        return Material(
           child: Container(
-            padding: EdgeInsets.all(16.r),
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12.r),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 12.w,
-                  height: 12.h,
-                  decoration: BoxDecoration(
-                    color: _getStatusColorForCurrentStatus(job.data!.status!),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Current Status',
-                        style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade600),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        _formatStatusTitle(job.data!.status!),
-                        style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black87),
-                      ),
-                    ],
-                  ),
-                ),
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r), topRight: Radius.circular(20.r)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, -2)),
               ],
             ),
-          ),
-        ),
-
-      SizedBox(height: 16.h),
-
-      // Status History
-      Expanded(
-        child: statusHistory.isNotEmpty
-            ? ListView(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            child: SafeArea(
+              top: true,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Status History',
-                    style: GoogleFonts.roboto(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                  // Header
+                  Container(
+                    padding: EdgeInsets.all(16.r),
+                    decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.close, color: Colors.black87, size: 24.sp),
+                          onPressed: isLoading ? null : () => Navigator.pop(context),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        SizedBox(width: 12.w),
+                        Text(
+                          'Add Status',
+                          style: GoogleFonts.roboto(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 16.h),
-                  ...statusHistory.asMap().entries.map((entry) {
-                    final status = entry.value;
-                    final isLast = entry.key == statusHistory.length - 1;
 
-                    return _buildStatusItem(
-                      title: _formatStatusTitle(status.title ?? ''),
-                      time: status.createAtStatus != null ? _formatTimestamp(status.createAtStatus!) : 'Unknown time',
-                      description: status.notes?.isNotEmpty == true
-                          ? status.notes!
-                          : 'Status updated to ${_formatStatusTitle(status.title ?? '')}',
-                      userName: status.userName ?? 'System',
-                      color: _getStatusColor(status.colorCode ?? '#008444'),
-                      isLast: isLast,
-                    );
-                  }).toList(),
-                ],
-              )
-            : Center(
-                child: Text(
-                  'No status history available',
-                  style: GoogleFonts.roboto(fontSize: 16.sp, color: Colors.grey.shade600),
-                ),
-              ),
-      ),
-    ],
-  );
-}
+                  // Form Content - Made scrollable
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(16.r),
+                      child: AbsorbPointer(
+                        absorbing: isLoading,
+                        child: Opacity(
+                          opacity: isLoading ? 0.6 : 1.0,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Select Status
+                              Text(
+                                'Select Status',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey.shade300),
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedStatus,
+                                  decoration: InputDecoration(
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                    border: InputBorder.none,
+                                  ),
+                                  hint: Text('Select status...'),
+                                  icon: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+                                  items: availableStatuses.map((status) {
+                                    return DropdownMenuItem<String>(
+                                      value: status['value'],
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 12.w,
+                                            height: 12.h,
+                                            margin: EdgeInsets.only(right: 12.w),
+                                            decoration: BoxDecoration(color: status['color'], shape: BoxShape.circle),
+                                          ),
+                                          Text(
+                                            status['label'],
+                                            style: GoogleFonts.roboto(
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: isLoading
+                                      ? null
+                                      : (value) {
+                                          setState(() {
+                                            selectedStatus = value;
+                                          });
+                                        },
+                                ),
+                              ),
 
-Widget _buildStatusItem({
-  required String title,
-  required String time,
-  required String description,
-  required String userName,
-  required Color color,
-  bool isLast = false,
-}) {
-  return Container(
-    margin: EdgeInsets.only(bottom: 16.h),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Timeline indicator
-        Column(
-          children: [
-            Container(
-              width: 16.w,
-              height: 16.h,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2.w),
-              ),
-            ),
-            if (!isLast) ...[SizedBox(height: 4.h), Container(width: 2.w, height: 40.h, color: Colors.grey.shade300)],
-          ],
-        ),
+                              SizedBox(height: 20.h),
 
-        SizedBox(width: 16.w),
+                              // Notification
+                              Text(
+                                'Notification',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey.shade300),
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedNotification,
+                                  decoration: InputDecoration(
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                    border: InputBorder.none,
+                                  ),
+                                  icon: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+                                  items: ['Yes', 'No'].map((value) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(
+                                        value,
+                                        style: GoogleFonts.roboto(
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedNotification = value;
+                                    });
+                                  },
+                                ),
+                              ),
 
-        // Status content
-        Expanded(
-          child: Container(
-            padding: EdgeInsets.all(16.r),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12.r),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2))],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+                              SizedBox(height: 20.h),
+
+                              // Notes
+                              Text(
+                                'Notes',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              TextField(
+                                controller: notesController,
+                                maxLines: 4,
+                                decoration: InputDecoration(
+                                  hintText: 'Add your notes...',
+                                  hintStyle: GoogleFonts.roboto(color: Colors.grey.shade400),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    borderSide: BorderSide(color: Colors.blue),
+                                  ),
+                                  contentPadding: EdgeInsets.all(12.r),
+                                ),
+                              ),
+
+                              // Add extra space at the bottom for the button
+                              SizedBox(height: 80.h),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Text(
-                        time,
-                        style: GoogleFonts.roboto(fontSize: 10.sp, color: color, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 8.h),
-
-                if (description.isNotEmpty) ...[
-                  Text(
-                    description,
-                    style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700, height: 1.4),
                   ),
-                  SizedBox(height: 8.h),
-                ],
 
-                Text(
-                  'By: $userName',
-                  style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade500, fontStyle: FontStyle.italic),
-                ),
-              ],
+                  // Fixed Save Button at bottom
+                  Padding(
+                    padding: EdgeInsets.all(16.r),
+                    child: SizedBox(
+                      height: 48.h,
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _saveStatus,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isLoading ? Colors.grey : Colors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                        ),
+                        child: isLoading
+                            ? SizedBox(
+                                width: 20.w,
+                                height: 20.h,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : Text(
+                                'Save',
+                                style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        );
+      },
+    );
+  }
 }
 
+// Helper functions
 String _formatTimestamp(int timestamp) {
   final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
   final now = DateTime.now();
@@ -258,19 +531,15 @@ String _formatTimestamp(int timestamp) {
   } else if (dateDay == yesterday) {
     dayPrefix = 'Yesterday';
   } else {
-    dayPrefix = '${date.day}. ${_getMonthName(date.month)} ${date.year}';
+    dayPrefix = '${date.day}.${date.month}.${date.year}';
   }
 
-  return '$dayPrefix - ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-}
-
-String _getMonthName(int month) {
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return monthNames[month - 1];
+  String hour = date.hour.toString().padLeft(2, '0');
+  String minute = date.minute.toString().padLeft(2, '0');
+  return '$dayPrefix | $hour:$minute';
 }
 
 String _formatStatusTitle(String title) {
-  // Convert snake_case or kebab-case to Title Case
   return title
       .split('_')
       .map((word) {
@@ -281,25 +550,29 @@ String _formatStatusTitle(String title) {
       .replaceAll('_', ' ');
 }
 
-Color _getStatusColor(String colorCode) {
-  try {
-    return Color(int.parse(colorCode.replaceFirst('#', '0xFF')));
-  } catch (e) {
+Color _getStatusColorForStatus(String status) {
+  // Map status values to colors
+  final statusLower = status.toLowerCase();
+
+  if (statusLower.contains('repair') || statusLower.contains('progress')) {
     return Colors.blue;
+  } else if (statusLower.contains('quotation')) {
+    return Colors.orange;
+  } else if (statusLower.contains('invoice')) {
+    return Colors.purple;
+  } else if (statusLower.contains('ready') || statusLower.contains('return')) {
+    return Colors.green;
+  } else if (statusLower.contains('complete') || statusLower.contains('finished')) {
+    return Colors.green;
+  } else if (statusLower.contains('cancel')) {
+    return Colors.red;
+  } else if (statusLower.contains('archive')) {
+    return Colors.grey;
+  } else if (statusLower.contains('pending') || statusLower.contains('waiting')) {
+    return Colors.amber;
+  } else if (statusLower.contains('new') || statusLower.contains('created')) {
+    return Colors.blue.shade300;
   }
-}
 
-Color _getStatusColorForCurrentStatus(String status) {
-  // Map status to colors
-  final statusColors = {
-    'quotation_sent': Colors.orange,
-    'invoice_sent': Colors.purple,
-    'in_progress': Colors.blue,
-    'ready_to_return': Colors.green,
-    'complete': Colors.green,
-    'archive': Colors.grey,
-    'cancelled': Colors.red,
-  };
-
-  return statusColors[status.toLowerCase()] ?? Colors.blue;
+  return Colors.blue; // Default color
 }
