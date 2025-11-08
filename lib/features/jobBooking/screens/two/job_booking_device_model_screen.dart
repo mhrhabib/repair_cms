@@ -7,7 +7,8 @@ import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart
 import '../three/job_booking_accessories_screen.dart';
 
 class JobBookingDeviceModelScreen extends StatefulWidget {
-  const JobBookingDeviceModelScreen({super.key});
+  final String brandId;
+  const JobBookingDeviceModelScreen({super.key, required this.brandId});
 
   @override
   State<JobBookingDeviceModelScreen> createState() => _JobBookingDeviceModelScreenState();
@@ -38,7 +39,7 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
 
         // Load models when screen initializes
         if (_brandId.isNotEmpty) {
-          context.read<ModelsCubit>().getModels(brandId: _brandId);
+          context.read<ModelsCubit>().getModels(brandId: widget.brandId);
         }
       }
     });

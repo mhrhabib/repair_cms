@@ -77,22 +77,8 @@ class BrandRepositoryImpl implements BrandRepository {
       print('   📊 Response: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Handle different response formats
-        if (response.data is Map) {
-          final data = response.data as Map;
-
-          // Check for nested brand data
-          if (data.containsKey('brand')) {
-            return BrandModel.fromJson(data['brand']);
-          } else if (data.containsKey('data')) {
-            return BrandModel.fromJson(data['data']);
-          } else {
-            // Assume the response itself is the brand
-            //return BrandModel.fromJson(data);
-          }
-        }
-
-        throw BrandException(message: 'Unexpected response format from server');
+        await getBrandsList(userId: userId);
+        return BrandModel.fromJson(response.data);
       } else {
         throw BrandException(message: 'Failed to add brand: ${response.statusCode}', statusCode: response.statusCode);
       }

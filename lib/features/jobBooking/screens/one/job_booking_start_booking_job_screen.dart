@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
 import 'package:repair_cms/features/jobBooking/cubits/brands/brand_cubit.dart';
@@ -18,6 +20,7 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
   final FocusNode _searchFocusNode = FocusNode();
   late String _userId;
   bool _isAddingBrand = false;
+  String? _selectedBrandId;
 
   @override
   void initState() {
@@ -193,11 +196,15 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                           // Check if this is the "Add new" option
                           if (brand.id == null && brand.name?.startsWith('Add "') == true) {
                             // Extract the brand name from 'Add "BrandName" as new brand'
+
                             final brandName = brand.name?.split('"')[1] ?? '';
                             if (brandName.isNotEmpty) {
                               await _addNewBrand(brandName);
                             }
                           } else {
+                            setState(() {
+                              _selectedBrandId = brand.id;
+                            });
                             _selectBrand(brand.name ?? 'Unknown Brand');
                           }
                         },
@@ -406,9 +413,11 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
             child: BottomButtonsGroup(
               onPressed: hasSelectedBrand
                   ? () {
-                      Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute(builder: (context) => JobBookingDeviceModelScreen()));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => JobBookingDeviceModelScreen(brandId: _selectedBrandId!),
+                        ),
+                      );
                     }
                   : null,
             ),
