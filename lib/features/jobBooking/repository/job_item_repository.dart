@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/jobBooking/models/job_item_model.dart';
-import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 
 abstract class JobItemRepository {
   Future<JobItemsModel> getItems({required String userId, String? keyword, int page = 1, int limit = 20});

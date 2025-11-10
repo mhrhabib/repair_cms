@@ -242,7 +242,7 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                   child: Container(
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Icon(Icons.qr_code_scanner, color: Colors.white, size: 24.sp),

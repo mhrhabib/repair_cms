@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -153,7 +152,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
       return imageUrl;
     } catch (e) {
       debugPrint('❌ ProfileCubit Error getting image URL: $e');
-      throw e;
+      rethrow;
     }
   }
 

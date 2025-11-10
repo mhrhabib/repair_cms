@@ -1,4 +1,3 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/repository/brand_repository.dart';
 import 'package:repair_cms/features/jobBooking/models/brand_model.dart';

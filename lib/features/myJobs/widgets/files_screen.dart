@@ -434,7 +434,10 @@ class _FilesScreenState extends State<FilesScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [const Color(0xFF007AFF).withOpacity(0.2), const Color(0xFF007AFF).withOpacity(0.1)],
+                colors: [
+                  const Color(0xFF007AFF).withValues(alpha: 0.2),
+                  const Color(0xFF007AFF).withValues(alpha: 0.1),
+                ],
               ),
               borderRadius: BorderRadius.circular(60),
             ),
@@ -543,7 +546,11 @@ class _FilesScreenState extends State<FilesScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(6),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
                       child: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFFF3B30)),

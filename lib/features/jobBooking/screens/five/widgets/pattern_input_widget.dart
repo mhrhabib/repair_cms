@@ -4,8 +4,7 @@ class PatternInputWidget extends StatefulWidget {
   final List<int> initialPattern;
   final Function(List<int>) onPatternChanged;
 
-  const PatternInputWidget({Key? key, required this.onPatternChanged, this.initialPattern = const []})
-    : super(key: key);
+  const PatternInputWidget({super.key, required this.onPatternChanged, this.initialPattern = const []});
 
   @override
   _PatternInputWidgetState createState() => _PatternInputWidgetState();

@@ -1,10 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/ten/job_booking_add_items_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
-import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 
 class JobBookingProblemDescriptionScreen extends StatefulWidget {
   const JobBookingProblemDescriptionScreen({super.key});

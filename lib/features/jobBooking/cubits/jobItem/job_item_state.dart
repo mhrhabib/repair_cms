@@ -12,21 +12,21 @@ class JobItemInitial extends JobItemState {
 }
 
 class JobItemLoading extends JobItemState {
-  const JobItemLoading({required String searchQuery}) : super(searchQuery: searchQuery);
+  const JobItemLoading({required super.searchQuery});
 }
 
 class JobItemLoaded extends JobItemState {
   final JobItemsModel itemsResponse;
 
-  const JobItemLoaded({required this.itemsResponse, required String searchQuery}) : super(searchQuery: searchQuery);
+  const JobItemLoaded({required this.itemsResponse, required super.searchQuery});
 }
 
 class JobItemNoResults extends JobItemState {
-  const JobItemNoResults({required String searchQuery}) : super(searchQuery: searchQuery);
+  const JobItemNoResults({required super.searchQuery});
 }
 
 class JobItemError extends JobItemState {
   final String message;
 
-  const JobItemError({required this.message, required String searchQuery}) : super(searchQuery: searchQuery);
+  const JobItemError({required this.message, required super.searchQuery});
 }

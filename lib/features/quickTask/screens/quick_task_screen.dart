@@ -1,14 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
 
 class QuickTaskScreen extends StatefulWidget {
-  const QuickTaskScreen({Key? key}) : super(key: key);
+  const QuickTaskScreen({super.key});
 
   @override
   State<QuickTaskScreen> createState() => _QuickTaskScreenState();
@@ -60,7 +57,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
             child: IconButton(
               icon: Container(
                 padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
                 child: Icon(Icons.add, size: 20.sp, color: AppColors.primary),
               ),
               onPressed: _showAddTodoDialog,
@@ -115,9 +112,9 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
                   margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
                   padding: EdgeInsets.all(4.w),
                   decoration: BoxDecoration(
-                    color: AppColors.lightFontColor.withOpacity(0.1),
+                    color: AppColors.lightFontColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(color: AppColors.borderColor.withOpacity(0.3)),
+                    border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -171,7 +168,13 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
             color: isActive ? AppColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(12.r),
             boxShadow: isActive
-                ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))]
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
                 : null,
           ),
           child: Column(
@@ -188,7 +191,9 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.whiteColor.withOpacity(0.2) : AppColors.lightFontColor.withOpacity(0.1),
+                  color: isActive
+                      ? AppColors.whiteColor.withValues(alpha: .2)
+                      : AppColors.lightFontColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
@@ -218,7 +223,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
                 'assets/images/empty_todos.svg',
                 width: 150.w,
                 height: 150.h,
-                color: AppColors.lightFontColor.withOpacity(0.5),
+                color: AppColors.lightFontColor.withValues(alpha: 0.5),
               ),
               SizedBox(height: 24.h),
               Text(

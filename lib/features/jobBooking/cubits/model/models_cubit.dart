@@ -40,7 +40,7 @@ class ModelsCubit extends Cubit<ModelsState> {
     } on ModelsException catch (e) {
       debugPrint('❌ [ModelsCubit] ModelsException while creating: ${e.message}');
       rethrow;
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('💥 [ModelsCubit] Unexpected error while creating model: $e');
       rethrow;
     }

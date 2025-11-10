@@ -1,7 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
-import 'package:repair_cms/core/constants/app_colors.dart';
 
 class JobCardWidget extends StatelessWidget {
   final Job job;

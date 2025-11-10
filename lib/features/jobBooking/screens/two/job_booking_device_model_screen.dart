@@ -215,7 +215,7 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                 child: BlocBuilder<ModelsCubit, ModelsState>(
                   builder: (context, state) {
                     if (state is ModelsLoading) {
-                      return Container(
+                      return SizedBox(
                         height: 60.h,
                         child: const Center(child: CircularProgressIndicator()),
                       );

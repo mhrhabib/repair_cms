@@ -78,7 +78,7 @@ class AccessoriesCubit extends Cubit<AccessoriesState> {
     } on AccessoriesException catch (e) {
       debugPrint('❌ [AccessoriesCubit] AccessoriesException while creating: ${e.message}');
       rethrow;
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('💥 [AccessoriesCubit] Unexpected error while creating accessory: $e');
       rethrow;
     }

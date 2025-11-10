@@ -87,7 +87,7 @@ class ModelsRepositoryImpl implements ModelsRepository {
       print('🌐 [ModelsRepository] DioException while creating model:');
       print('   💥 Error: ${e.message}');
       throw ModelsException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
-    } catch (e, stackTrace) {
+    } catch (e) {
       print('💥 [ModelsRepository] Unexpected error while creating model:');
       print('   💥 Error: $e');
       throw ModelsException(message: 'Unexpected error: $e');

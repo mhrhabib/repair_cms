@@ -489,7 +489,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                               ),
                               SizedBox(width: 12.w),
                               GestureDetector(
-                                onTap: () => _removeService(serviceId!),
+                                onTap: () => _removeService(serviceId),
                                 child: Container(
                                   width: 24.w,
                                   height: 24.h,

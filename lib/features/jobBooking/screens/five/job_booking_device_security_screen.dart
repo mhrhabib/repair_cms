@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/five/widgets/pattern_input_widget.dart';
@@ -31,7 +29,7 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
         // final securityValue = device.deviceSecurityValue;
 
         setState(() {
-          selectedOption = securityType ?? 'none';
+          selectedOption = securityType;
           if (selectedOption == 'password') {
             // _passwordController.text = securityValue ?? '';
           } else if (selectedOption == 'pattern') {
@@ -80,7 +78,7 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
         (selectedOption == 'pattern' && connectedDots.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter the ${selectedOption} or select "No Security".'),
+          content: Text('Please enter the $selectedOption or select "No Security".'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -225,7 +223,7 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
                 child: BlocBuilder<JobBookingCubit, JobBookingState>(
                   builder: (context, state) {
-                    final deviceSecurity = state is JobBookingData ? state.device.deviceSecurity ?? 'none' : 'none';
+                    final deviceSecurity = state is JobBookingData ? state.device.deviceSecurity : 'none';
                     String securityText;
                     switch (deviceSecurity) {
                       case 'password':
@@ -304,7 +302,7 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
               width: 40.w,
               height: 40.h,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.grey.shade100,
+                color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade600, size: 24.sp),

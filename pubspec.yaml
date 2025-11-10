@@ -56,6 +56,12 @@ dependencies:
   modal_bottom_sheet: ^3.0.0
   uuid: ^4.5.2
   path: ^1.9.1
+  network_info_plus: ^4.1.0
+  pdf: ^3.10.4
+  printing: ^5.11.1
+  # For Dymo printers
+  escp_printer: ^1.0.2
+  # For Brother printers
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/services/biometric_service.dart';
 
@@ -96,9 +95,13 @@ class _BiometricLoginDialogState extends State<BiometricLoginDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return !_isAuthenticating;
+    return PopScope(
+      onPopInvokedWithResult: (didPop, obj) async {
+        // Prevent pop while authenticating by doing nothing; this function returns void.
+        if (_isAuthenticating) {
+          return;
+        }
+        // Otherwise allow the pop to proceed (no explicit return required).
       },
       child: AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

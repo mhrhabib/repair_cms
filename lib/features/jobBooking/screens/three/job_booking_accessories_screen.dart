@@ -1,7 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/enhanced_dropdown_search_field.dart';
 import 'package:repair_cms/features/jobBooking/cubits/accessories/accessories_cubit.dart';
-import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/accessories_model.dart';
 import 'package:repair_cms/features/jobBooking/screens/four/job_booking_imei_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
@@ -172,7 +171,7 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
                 child: BlocBuilder<AccessoriesCubit, AccessoriesState>(
                   builder: (context, state) {
                     if (state is AccessoriesLoading) {
-                      return Container(
+                      return SizedBox(
                         height: 60.h,
                         child: const Center(child: CircularProgressIndicator()),
                       );

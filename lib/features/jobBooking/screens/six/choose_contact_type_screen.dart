@@ -529,7 +529,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                                               ),
                                             ),
                                           );
-                                        }).toList(),
+                                        }),
                                       ],
 
                                       if (searchResults.isEmpty && !shouldShowNewOption) ...[
