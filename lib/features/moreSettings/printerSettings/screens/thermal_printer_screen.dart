@@ -1,9 +1,9 @@
 import 'dart:ui';
 
+import 'package:another_brother_vitorhp/label_info.dart';
+import 'package:another_brother_vitorhp/printer_info.dart';
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
-import 'package:another_brother/label_info.dart';
-import 'package:another_brother/printer_info.dart';
 
 class ThermalPrinterScreen extends StatefulWidget {
   const ThermalPrinterScreen({super.key});

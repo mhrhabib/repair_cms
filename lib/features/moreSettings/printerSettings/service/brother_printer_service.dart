@@ -1,7 +1,6 @@
 import 'dart:ui';
-
-import 'package:another_brother/label_info.dart';
-import 'package:another_brother/printer_info.dart';
+import 'package:another_brother_vitorhp/label_info.dart';
+import 'package:another_brother_vitorhp/printer_info.dart';
 import 'package:flutter/services.dart';
 
 /// Service class to handle Brother printer operations
