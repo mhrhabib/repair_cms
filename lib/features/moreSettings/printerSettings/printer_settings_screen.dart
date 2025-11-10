@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
-import 'package:repair_cms/features/moreSettings/labelContent/label_content_screen.dart';
-import 'package:repair_cms/features/moreSettings/notificationSetting/notification_settings_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
+// Import the new screens
+import './screens/a4_receipt_printer_screen.dart';
+import './screens/thermal_printer_screen.dart';
+import './screens/label_printer_screen.dart';
 
 class PrinterSettingsScreen extends StatelessWidget {
   const PrinterSettingsScreen({super.key});
@@ -25,13 +27,13 @@ class PrinterSettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(10.0),
         child: Column(
           children: [
-            // Printer Settings
+            // A4 Receipt Printer
             _buildSettingsItem(
               icon: SolarIconsOutline.document1,
               iconColor: Colors.blue,
               title: 'A4 Receipt Printer',
               onTap: () {
-                // Navigate to printer settings
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const A4ReceiptPrinterScreen()));
               },
             ),
 
@@ -44,13 +46,13 @@ class PrinterSettingsScreen extends StatelessWidget {
               ),
             ),
 
-            // Label Content
+            // Thermal Printer (80mm)
             _buildSettingsItem(
               icon: SolarIconsOutline.documentMedicine,
               iconColor: Colors.blue,
               title: 'Thermal Printer (80mm)',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => LabelContentScreen()));
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ThermalPrinterScreen()));
               },
             ),
 
@@ -63,13 +65,13 @@ class PrinterSettingsScreen extends StatelessWidget {
               ),
             ),
 
-            // Notification Settings
+            // Label Printer
             _buildSettingsItem(
               icon: SolarIconsOutline.document,
               iconColor: Colors.blue,
               title: 'Label Printer',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationSettingsScreen()));
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LabelPrinterScreen()));
               },
             ),
             Container(
