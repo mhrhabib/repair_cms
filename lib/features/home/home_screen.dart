@@ -36,16 +36,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    _animationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
 
-    _rotationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+    _rotationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
 
-    _expandAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+    _expandAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
 
-    _rotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.125, // 45 degrees (0.125 * 360° = 45°)
-    ).animate(CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut));
+    _rotationAnimation =
+        Tween<double>(
+          begin: 0.0,
+          end: 0.125, // 45 degrees (0.125 * 360° = 45°)
+        ).animate(
+          CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut),
+        );
   }
 
   @override
@@ -102,14 +114,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
             ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildBottomNavItem(0, SolarIconsOutline.pinCircle, 'Home'),
-              _buildBottomNavItem(1, SolarIconsOutline.caseRoundMinimalistic, 'My Jobs'),
+              _buildBottomNavItem(
+                1,
+                SolarIconsOutline.caseRoundMinimalistic,
+                'My Jobs',
+              ),
               // Empty container to balance the space for the center button
               SizedBox(width: 56.w, height: 56.h),
               _buildBottomNavItem(2, SolarIconsOutline.chatUnread, 'Messages'),
@@ -136,7 +156,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade400, size: 24.sp),
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : Colors.grey.shade400,
+              size: 24.sp,
+            ),
             SizedBox(height: 4.h),
             Text(
               label,
@@ -161,7 +185,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           color: AppColors.primary,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
           border: Border.all(color: AppColors.whiteColor, width: 4.w),
         ),
@@ -217,7 +245,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
                           // Handle New Job action
-                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingFirstScreen()));
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => JobBookingFirstScreen(),
+                            ),
+                          );
                           debugPrint('New Job tapped');
                           _toggleExpansion();
                         },
@@ -281,7 +313,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: AppTypography.fontSize20.copyWith(color: Colors.white)),
+            Text(
+              label,
+              style: AppTypography.fontSize20.copyWith(color: Colors.white),
+            ),
             SizedBox(width: 8.w),
             Container(
               height: 64.w,
@@ -291,7 +326,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(30.r),
                 boxShadow: [
-                  BoxShadow(color: backgroundColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: backgroundColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Icon(icon, color: Colors.white, size: 32.sp),

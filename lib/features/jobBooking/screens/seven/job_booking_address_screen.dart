@@ -11,10 +11,15 @@ class JobBookingAddressScreen extends StatefulWidget {
   final bool isNewProfile; // Indicates if we're creating a new profile
   final Customersorsuppliers? selectedProfile; // The selected existing profile
 
-  const JobBookingAddressScreen({super.key, this.isNewProfile = false, this.selectedProfile});
+  const JobBookingAddressScreen({
+    super.key,
+    this.isNewProfile = false,
+    this.selectedProfile,
+  });
 
   @override
-  State<JobBookingAddressScreen> createState() => _JobBookingAddressScreenState();
+  State<JobBookingAddressScreen> createState() =>
+      _JobBookingAddressScreenState();
 }
 
 class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
@@ -87,7 +92,9 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
   void _loadExistingProfileAddressData() {
     if (widget.selectedProfile != null) {
       final contactTypeCubit = context.read<ContactTypeCubit>();
-      final shippingAddress = contactTypeCubit.getPrimaryShippingAddress(widget.selectedProfile!);
+      final shippingAddress = contactTypeCubit.getPrimaryShippingAddress(
+        widget.selectedProfile!,
+      );
 
       if (shippingAddress != null) {
         _addressController.text = shippingAddress.street ?? '';
@@ -168,8 +175,12 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
         no: _houseNumberController.text,
         city: _cityController.text,
         zip: _postalCodeController.text,
-        state: _provinceController.text.isNotEmpty ? _provinceController.text : 'N/A',
-        country: _countryController.text.isNotEmpty ? _countryController.text : "",
+        state: _provinceController.text.isNotEmpty
+            ? _provinceController.text
+            : 'N/A',
+        country: _countryController.text.isNotEmpty
+            ? _countryController.text
+            : "",
       );
 
       // Update both shipping and billing addresses in cubit
@@ -177,7 +188,9 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
       jobBookingCubit.updateBillingAddress(address);
 
       debugPrint('✅ Address saved to JobBookingCubit:');
-      debugPrint('   📍 Street: ${_addressController.text} ${_houseNumberController.text}');
+      debugPrint(
+        '   📍 Street: ${_addressController.text} ${_houseNumberController.text}',
+      );
       debugPrint('   🏙️ City: ${_cityController.text}');
       debugPrint('   📮 Postal Code: ${_postalCodeController.text}');
       debugPrint('   🗺️ Province: ${_provinceController.text}');
@@ -197,7 +210,9 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
     } catch (e, stackTrace) {
       debugPrint('❌ Error saving address: $e');
       debugPrint('❌ Stack trace: $stackTrace');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving address: ${e.toString()}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving address: ${e.toString()}')),
+      );
       setState(() {
         _isLoading = false;
       });
@@ -227,7 +242,9 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
       "city": _cityController.text,
       "zip": _postalCodeController.text,
       "state": _provinceController.text,
-      "country": _countryController.text.isNotEmpty ? _countryController.text : "",
+      "country": _countryController.text.isNotEmpty
+          ? _countryController.text
+          : "",
       "primary": true,
     };
 
@@ -287,7 +304,9 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
       "city": _cityController.text,
       "zip": _postalCodeController.text,
       "state": _provinceController.text,
-      "country": _countryController.text.isNotEmpty ? _countryController.text : "",
+      "country": _countryController.text.isNotEmpty
+          ? _countryController.text
+          : "",
       "primary": true,
     };
 
@@ -324,7 +343,10 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
     debugPrint('   📝 Profile ID: ${widget.selectedProfile!.sId}');
     debugPrint('   📦 Has changes: $_hasChanges');
 
-    contactTypeCubit.updateBusiness(profileId: widget.selectedProfile!.sId!, payload: payload);
+    contactTypeCubit.updateBusiness(
+      profileId: widget.selectedProfile!.sId!,
+      payload: payload,
+    );
   }
 
   String _getUserId() {
@@ -338,15 +360,22 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
   void _handleNextButton() {
     if (currentPage == 0) {
       if (_isFirstPageValid) {
-        _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill all required fields')),
+        );
       }
     } else {
       if (_isSecondPageValid) {
         _saveAddressToCubit();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill postal code')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill postal code')),
+        );
       }
     }
   }
@@ -355,7 +384,10 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
     setState(() {
       _isLoading = false;
     });
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingJobTypeScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const JobBookingJobTypeScreen()),
+    );
   }
 
   @override
@@ -363,7 +395,9 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
     return BlocListener<ContactTypeCubit, ContactTypeState>(
       listener: (context, state) {
         if (state is ContactTypeSuccess) {
-          debugPrint('✅ ${widget.isNewProfile ? 'Profile created' : 'Profile updated'} successfully with address');
+          debugPrint(
+            '✅ ${widget.isNewProfile ? 'Profile created' : 'Profile updated'} successfully with address',
+          );
 
           // Update the customer ID in JobBookingCubit with the created/updated profile
           if (state.createdBusiness?.sId != null) {
@@ -385,9 +419,15 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
 
           _navigateToNextScreen();
         } else if (state is ContactTypeError) {
-          debugPrint('❌ Error ${widget.isNewProfile ? 'creating' : 'updating'} profile: ${state.message}');
+          debugPrint(
+            '❌ Error ${widget.isNewProfile ? 'creating' : 'updating'} profile: ${state.message}',
+          );
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error ${widget.isNewProfile ? 'creating' : 'updating'} profile: ${state.message}')),
+            SnackBar(
+              content: Text(
+                'Error ${widget.isNewProfile ? 'creating' : 'updating'} profile: ${state.message}',
+              ),
+            ),
           );
           setState(() {
             _isLoading = false;
@@ -416,7 +456,13 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                           topLeft: Radius.circular(6),
                           topRight: Radius.circular(0),
                         ),
-                        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade300,
+                            blurRadius: 1,
+                            blurStyle: BlurStyle.outer,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -433,8 +479,15 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                         onTap: () => Navigator.pop(context),
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                       const Spacer(),
@@ -442,18 +495,31 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                       if (widget.isNewProfile)
                         Text(
                           'New ${widget.selectedProfile?.type2 ?? 'profile'}',
-                          style: TextStyle(color: Colors.green[600], fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            color: Colors.green[600],
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      if (!widget.isNewProfile && widget.selectedProfile != null)
+                      if (!widget.isNewProfile &&
+                          widget.selectedProfile != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
                               'Existing profile',
-                              style: TextStyle(color: Colors.blue[600], fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                color: Colors.blue[600],
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             if (_hasChanges)
-                              Text('Changes detected', style: TextStyle(color: Colors.orange[600], fontSize: 12)),
+                              Text(
+                                'Changes detected',
+                                style: TextStyle(
+                                  color: Colors.orange[600],
+                                  fontSize: 12,
+                                ),
+                              ),
                           ],
                         ),
                     ],
@@ -467,11 +533,18 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                   child: Container(
                     width: 40,
                     height: 40,
-                    decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
                     child: Center(
                       child: Text(
                         '${7}',
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -484,8 +557,14 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
               SliverToBoxAdapter(
                 child: Center(
                   child: Text(
-                    currentPage == 0 ? 'Address details' : 'Additional address details',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                    currentPage == 0
+                        ? 'Address details'
+                        : 'Additional address details',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
               ),
@@ -504,7 +583,10 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                         currentPage = index;
                       });
                     },
-                    children: [_buildFirstAddressForm(), _buildSecondAddressForm()],
+                    children: [
+                      _buildFirstAddressForm(),
+                      _buildSecondAddressForm(),
+                    ],
                   ),
                 ),
               ),
@@ -514,7 +596,11 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                 child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [_buildPageIndicator(0), const SizedBox(width: 8), _buildPageIndicator(1)],
+                    children: [
+                      _buildPageIndicator(0),
+                      const SizedBox(width: 8),
+                      _buildPageIndicator(1),
+                    ],
                   ),
                 ),
               ),
@@ -524,13 +610,19 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
           ),
         ),
         bottomNavigationBar: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+            left: 24,
+            right: 24,
+          ),
           child: SizedBox(
             height: 48,
             child: BottomButtonsGroup(
               onPressed: _isLoading ? null : _handleNextButton,
               okButtonText: currentPage == 1
-                  ? (_hasChanges && !widget.isNewProfile ? 'Update & Continue' : 'Save & Continue')
+                  ? (_hasChanges && !widget.isNewProfile
+                        ? 'Update & Continue'
+                        : 'Save & Continue')
                   : 'Next',
             ),
           ),
@@ -565,18 +657,33 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                   children: [
                     const Text(
                       'Address*',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _addressController,
                       decoration: InputDecoration(
                         hintText: 'Street',
-                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-                        border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 16,
+                        ),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                       style: const TextStyle(fontSize: 16),
                       onChanged: (_) => setState(() {}),
@@ -592,7 +699,11 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                   children: [
                     const Text(
                       'No*',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -600,11 +711,22 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         hintText: '123',
-                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-                        border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 16,
+                        ),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                       style: const TextStyle(fontSize: 16),
                       onChanged: (_) => setState(() {}),
@@ -617,7 +739,11 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
           const SizedBox(height: 32),
           const Text(
             'City*',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -625,9 +751,15 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
             decoration: InputDecoration(
               hintText: 'City name',
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-              border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
+              border: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue, width: 2),
+              ),
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
             ),
             style: const TextStyle(fontSize: 16),
@@ -636,7 +768,11 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
           const SizedBox(height: 32),
           Text(
             '* Required fields',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),
@@ -652,7 +788,11 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
           children: [
             const Text(
               'Postal Code*',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -661,9 +801,15 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
               decoration: InputDecoration(
                 hintText: 'Post code',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-                border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               style: const TextStyle(fontSize: 16),
@@ -672,7 +818,11 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
             const SizedBox(height: 32),
             const Text(
               'Province',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -680,9 +830,15 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
               decoration: InputDecoration(
                 hintText: 'Province name',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-                border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               style: const TextStyle(fontSize: 16),
@@ -690,7 +846,11 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
             const SizedBox(height: 32),
             const Text(
               'Country',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -698,9 +858,15 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
               decoration: InputDecoration(
                 hintText: 'Country name',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-                border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               style: const TextStyle(fontSize: 16),

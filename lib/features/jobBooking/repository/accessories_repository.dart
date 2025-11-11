@@ -6,7 +6,11 @@ import 'package:repair_cms/features/jobBooking/models/accessories_model.dart';
 
 abstract class AccessoriesRepository {
   Future<List<Data>> getAccessoriesList({required String userId});
-  Future<Data> createAccessory({required String value, required String label, required String userId});
+  Future<Data> createAccessory({
+    required String value,
+    required String label,
+    required String userId,
+  });
 }
 
 class AccessoriesRepositoryImpl implements AccessoriesRepository {
@@ -14,10 +18,14 @@ class AccessoriesRepositoryImpl implements AccessoriesRepository {
   Future<List<Data>> getAccessoriesList({required String userId}) async {
     try {
       debugPrint('🚀 [AccessoriesRepository] Fetching accessories list');
-      debugPrint('   📍 URL: ${ApiEndpoints.accessoriesListUrl.replaceAll('<id>', userId)}');
+      debugPrint(
+        '   📍 URL: ${ApiEndpoints.accessoriesListUrl.replaceAll('<id>', userId)}',
+      );
       debugPrint('   👤 User ID: $userId');
 
-      Response response = await BaseClient.get(url: ApiEndpoints.accessoriesListUrl.replaceAll('<id>', userId));
+      Response response = await BaseClient.get(
+        url: ApiEndpoints.accessoriesListUrl.replaceAll('<id>', userId),
+      );
 
       debugPrint('✅ [AccessoriesRepository] Accessories response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
@@ -27,7 +35,9 @@ class AccessoriesRepositoryImpl implements AccessoriesRepository {
         final accessoriesModel = AccessoriesModel.fromJson(response.data);
 
         if (accessoriesModel.success == true && accessoriesModel.data != null) {
-          debugPrint('   📦 Parsed ${accessoriesModel.data!.length} accessories');
+          debugPrint(
+            '   📦 Parsed ${accessoriesModel.data!.length} accessories',
+          );
           return accessoriesModel.data!;
         } else {
           debugPrint('   ⚠️ No accessories found or success false');
@@ -44,7 +54,10 @@ class AccessoriesRepositoryImpl implements AccessoriesRepository {
       debugPrint('   💥 Error: ${e.message}');
       debugPrint('   📍 Type: ${e.type}');
       debugPrint('   🔧 Response: ${e.response?.data}');
-      throw AccessoriesException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw AccessoriesException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e, stackTrace) {
       debugPrint('💥 [AccessoriesRepository] Unexpected error:');
       debugPrint('   💥 Error: $e');
@@ -54,17 +67,26 @@ class AccessoriesRepositoryImpl implements AccessoriesRepository {
   }
 
   @override
-  Future<Data> createAccessory({required String value, required String label, required String userId}) async {
+  Future<Data> createAccessory({
+    required String value,
+    required String label,
+    required String userId,
+  }) async {
     try {
       debugPrint('🚀 [AccessoriesRepository] Creating new accessory: $label');
 
       final payload = {"value": value, "label": label, "userId": userId};
 
-      Response response = await BaseClient.post(url: ApiEndpoints.createAccessories, payload: payload);
+      Response response = await BaseClient.post(
+        url: ApiEndpoints.createAccessories,
+        payload: payload,
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final newAccessory = Data.fromJson(response.data);
-        debugPrint('✅ [AccessoriesRepository] Accessory created successfully: ${newAccessory.label}');
+        debugPrint(
+          '✅ [AccessoriesRepository] Accessory created successfully: ${newAccessory.label}',
+        );
         return newAccessory;
       } else {
         throw AccessoriesException(
@@ -73,11 +95,18 @@ class AccessoriesRepositoryImpl implements AccessoriesRepository {
         );
       }
     } on DioException catch (e) {
-      debugPrint('🌐 [AccessoriesRepository] DioException while creating accessory:');
+      debugPrint(
+        '🌐 [AccessoriesRepository] DioException while creating accessory:',
+      );
       debugPrint('   💥 Error: ${e.message}');
-      throw AccessoriesException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw AccessoriesException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e, stackTrace) {
-      debugPrint('💥 [AccessoriesRepository] Unexpected error while creating accessory:');
+      debugPrint(
+        '💥 [AccessoriesRepository] Unexpected error while creating accessory:',
+      );
       debugPrint('   💥 Error: $e');
       debugPrint('   📋 Stack: $stackTrace');
       throw AccessoriesException(message: 'Unexpected error: $e');
@@ -92,5 +121,6 @@ class AccessoriesException implements Exception {
   AccessoriesException({required this.message, this.statusCode});
 
   @override
-  String toString() => 'AccessoriesException: $message${statusCode != null ? ' ($statusCode)' : ''}';
+  String toString() =>
+      'AccessoriesException: $message${statusCode != null ? ' ($statusCode)' : ''}';
 }

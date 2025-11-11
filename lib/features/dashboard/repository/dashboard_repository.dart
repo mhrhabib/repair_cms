@@ -6,7 +6,11 @@ import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/dashboard/models/completed_jobs_response_model.dart';
 
 class DashboardRepository {
-  Future<CompletedJobsResponseModel> getCompletedJobs({String? userId, String? startDate, String? endDate}) async {
+  Future<CompletedJobsResponseModel> getCompletedJobs({
+    String? userId,
+    String? startDate,
+    String? endDate,
+  }) async {
     try {
       final Map<String, dynamic> queryParams = {};
 
@@ -35,12 +39,16 @@ class DashboardRepository {
 
         return CompletedJobsResponseModel.fromJson(response.data);
       } else {
-        throw Exception('Failed to fetch completed jobs: ${response.statusCode} - ${response.data}');
+        throw Exception(
+          'Failed to fetch completed jobs: ${response.statusCode} - ${response.data}',
+        );
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ Dio Error in completed jobs: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.statusCode} - ${e.response?.data}');
+        throw Exception(
+          'Server error: ${e.response?.statusCode} - ${e.response?.data}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
@@ -62,7 +70,10 @@ class DashboardRepository {
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
 
-    return {'startDate': formatDateForApi(startOfDay), 'endDate': formatDateForApi(endOfDay)};
+    return {
+      'startDate': formatDateForApi(startOfDay),
+      'endDate': formatDateForApi(endOfDay),
+    };
   }
 
   // Utility method to get date range for this month
@@ -71,14 +82,19 @@ class DashboardRepository {
     final startOfMonth = DateTime(now.year, now.month, 1);
     final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59, 999);
 
-    return {'startDate': formatDateForApi(startOfMonth), 'endDate': formatDateForApi(endOfMonth)};
+    return {
+      'startDate': formatDateForApi(startOfMonth),
+      'endDate': formatDateForApi(endOfMonth),
+    };
   }
 
   Future<CompletedJobsResponseModel> getJobProgress({String? userId}) async {
     try {
       debugPrint('\n📈 Fetching job progress data');
 
-      dio.Response response = await BaseClient.get(url: ApiEndpoints.completeUserJob.replaceAll('<id>', userId ?? ''));
+      dio.Response response = await BaseClient.get(
+        url: ApiEndpoints.completeUserJob.replaceAll('<id>', userId ?? ''),
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job progress data fetched successfully');
@@ -88,12 +104,16 @@ class DashboardRepository {
         // If using the same dashboard endpoint, use the mapping method
         return CompletedJobsResponseModel.fromJson(response.data);
       } else {
-        throw Exception('Failed to fetch job progress: ${response.statusCode} - ${response.data}');
+        throw Exception(
+          'Failed to fetch job progress: ${response.statusCode} - ${response.data}',
+        );
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ Dio Error in job progress: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.statusCode} - ${e.response?.data}');
+        throw Exception(
+          'Server error: ${e.response?.statusCode} - ${e.response?.data}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }

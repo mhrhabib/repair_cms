@@ -67,7 +67,7 @@ class ModelsRepositoryImpl implements ModelsRepository {
   @override
   Future<ModelsModel> createModel({required String name, required String userId, required String brandId}) async {
     try {
-      print('🚀 [ModelsRepository] Creating new model: $name');
+      debugPrint('🚀 [ModelsRepository] Creating new model: $name');
 
       final payload = {"name": name, "userId": userId, "brandId": brandId};
 
@@ -75,7 +75,7 @@ class ModelsRepositoryImpl implements ModelsRepository {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final newModel = ModelsModel.fromJson(response.data);
-        print('✅ [ModelsRepository] Model created successfully: ${newModel.name}');
+        debugPrint('✅ [ModelsRepository] Model created successfully: ${newModel.name}');
         return newModel;
       } else {
         throw ModelsException(
@@ -84,12 +84,12 @@ class ModelsRepositoryImpl implements ModelsRepository {
         );
       }
     } on DioException catch (e) {
-      print('🌐 [ModelsRepository] DioException while creating model:');
-      print('   💥 Error: ${e.message}');
+      debugPrint('🌐 [ModelsRepository] DioException while creating model:');
+      debugPrint('   💥 Error: ${e.message}');
       throw ModelsException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
-    } catch (e, stackTrace) {
-      print('💥 [ModelsRepository] Unexpected error while creating model:');
-      print('   💥 Error: $e');
+    } catch (e) {
+      debugPrint('💥 [ModelsRepository] Unexpected error while creating model:');
+      debugPrint('   💥 Error: $e');
       throw ModelsException(message: 'Unexpected error: $e');
     }
   }

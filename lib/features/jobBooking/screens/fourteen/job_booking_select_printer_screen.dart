@@ -7,10 +7,12 @@ class JobBookingSelectPrinterScreen extends StatefulWidget {
   const JobBookingSelectPrinterScreen({super.key});
 
   @override
-  State<JobBookingSelectPrinterScreen> createState() => _JobBookingSelectPrinterScreenState();
+  State<JobBookingSelectPrinterScreen> createState() =>
+      _JobBookingSelectPrinterScreenState();
 }
 
-class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterScreen> {
+class _JobBookingSelectPrinterScreenState
+    extends State<JobBookingSelectPrinterScreen> {
   String _selectedPrinterType = 'A4 Receipt'; // Default value
 
   void _selectPrinterType(String printerTypeId) {
@@ -75,8 +77,17 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                 width: MediaQuery.of(context).size.width * .071 * 14,
                 decoration: BoxDecoration(
                   color: AppColors.primary,
-                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                  boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(6),
+                    topRight: Radius.circular(0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade300,
+                      blurRadius: 1,
+                      blurStyle: BlurStyle.outer,
+                    ),
+                  ],
                 ),
               ),
               Expanded(
@@ -96,7 +107,11 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                               color: const Color(0xFF71788F),
                               borderRadius: BorderRadius.circular(8.r),
                             ),
-                            child: Icon(Icons.close, color: Colors.white, size: 24.sp),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 24.sp,
+                            ),
                           ),
                         ),
                       ),
@@ -108,9 +123,17 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                           width: 42.w,
                           height: 42.h,
                           alignment: Alignment.center,
-                          decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
                           child: Center(
-                            child: Text('14', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
+                            child: Text(
+                              '14',
+                              style: AppTypography.fontSize24.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -118,7 +141,11 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                       SizedBox(height: 24.h),
 
                       // Title
-                      Text('Select Printer Type', style: AppTypography.fontSize22, textAlign: TextAlign.center),
+                      Text(
+                        'Select Printer Type',
+                        style: AppTypography.fontSize22,
+                        textAlign: TextAlign.center,
+                      ),
 
                       SizedBox(height: 48.h),
 
@@ -139,22 +166,30 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                                     color: _selectedPrinterType == 'A4 Receipt'
                                         ? AppColors.primary
                                         : Colors.grey.shade300,
-                                    width: _selectedPrinterType == 'A4 Receipt' ? 2 : 1,
+                                    width: _selectedPrinterType == 'A4 Receipt'
+                                        ? 2
+                                        : 1,
                                   ),
                                 ),
                                 child: Stack(
                                   children: [
                                     Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.print, size: 32.sp, color: Colors.grey.shade700),
+                                        Icon(
+                                          Icons.print,
+                                          size: 32.sp,
+                                          color: Colors.grey.shade700,
+                                        ),
                                         SizedBox(height: 8.h),
                                         Text(
                                           'A4\nReceipt',
-                                          style: AppTypography.fontSize14.copyWith(
-                                            color: Colors.grey.shade700,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: AppTypography.fontSize14
+                                              .copyWith(
+                                                color: Colors.grey.shade700,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                           textAlign: TextAlign.center,
                                         ),
                                       ],
@@ -166,8 +201,15 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                                         child: Container(
                                           width: 20.w,
                                           height: 20.h,
-                                          decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                                          child: Icon(Icons.check, color: Colors.white, size: 12.sp),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                            size: 12.sp,
+                                          ),
                                         ),
                                       ),
                                   ],
@@ -181,7 +223,8 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                           // Thermal Receipt option
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => _selectPrinterType('Thermal Receipt'),
+                              onTap: () =>
+                                  _selectPrinterType('Thermal Receipt'),
                               child: Container(
                                 height: 120.h,
                                 padding: EdgeInsets.all(16.w),
@@ -189,38 +232,58 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                                   color: AppColors.whiteColor,
                                   borderRadius: BorderRadius.circular(12.r),
                                   border: Border.all(
-                                    color: _selectedPrinterType == 'Thermal Receipt'
+                                    color:
+                                        _selectedPrinterType ==
+                                            'Thermal Receipt'
                                         ? AppColors.primary
                                         : Colors.grey.shade300,
-                                    width: _selectedPrinterType == 'Thermal Receipt' ? 2 : 1,
+                                    width:
+                                        _selectedPrinterType ==
+                                            'Thermal Receipt'
+                                        ? 2
+                                        : 1,
                                   ),
                                 ),
                                 child: Stack(
                                   children: [
                                     Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.receipt_long, size: 32.sp, color: Colors.grey.shade700),
+                                        Icon(
+                                          Icons.receipt_long,
+                                          size: 32.sp,
+                                          color: Colors.grey.shade700,
+                                        ),
                                         SizedBox(height: 8.h),
                                         Text(
                                           'Thermal\nReceipt',
-                                          style: AppTypography.fontSize14.copyWith(
-                                            color: Colors.grey.shade700,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: AppTypography.fontSize14
+                                              .copyWith(
+                                                color: Colors.grey.shade700,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                           textAlign: TextAlign.center,
                                         ),
                                       ],
                                     ),
-                                    if (_selectedPrinterType == 'Thermal Receipt')
+                                    if (_selectedPrinterType ==
+                                        'Thermal Receipt')
                                       Positioned(
                                         top: 0,
                                         right: 0,
                                         child: Container(
                                           width: 20.w,
                                           height: 20.h,
-                                          decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                                          child: Icon(Icons.check, color: Colors.white, size: 12.sp),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                            size: 12.sp,
+                                          ),
                                         ),
                                       ),
                                   ],
@@ -243,7 +306,9 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                                 SizedBox(height: 16.h),
                                 Text(
                                   'Creating job...',
-                                  style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600),
+                                  style: AppTypography.fontSize14.copyWith(
+                                    color: Colors.grey.shade600,
+                                  ),
                                 ),
                                 SizedBox(height: 16.h),
                               ],
@@ -256,7 +321,9 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                       // Create Job button
                       BottomButtonsGroup(
                         onPressed:
-                            _selectedPrinterType.isNotEmpty && context.read<JobCreateCubit>().state is! JobCreateLoading
+                            _selectedPrinterType.isNotEmpty &&
+                                context.read<JobCreateCubit>().state
+                                    is! JobCreateLoading
                             ? _createJobAndNavigate
                             : null,
                         okButtonText: 'Create Job',

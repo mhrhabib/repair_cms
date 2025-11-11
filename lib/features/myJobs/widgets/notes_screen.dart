@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
@@ -49,7 +48,11 @@ class _NotesScreenState extends State<NotesScreen> {
     });
   }
 
-  Future<dynamic> _showNoteBottomSheet(BuildContext context, SingleJobModel job, InternalNote? note) {
+  Future<dynamic> _showNoteBottomSheet(
+    BuildContext context,
+    SingleJobModel job,
+    InternalNote? note,
+  ) {
     return showCupertinoModalBottomSheet(
       context: context,
       backgroundColor: figmaYellow,
@@ -79,7 +82,11 @@ class _NotesScreenState extends State<NotesScreen> {
     }
   }
 
-  void _navigateToEditNote(BuildContext context, SingleJobModel job, InternalNote note) async {
+  void _navigateToEditNote(
+    BuildContext context,
+    SingleJobModel job,
+    InternalNote note,
+  ) async {
     final result = await _showNoteBottomSheet(context, job, note);
     if (result == true && _isMounted) {
       _showSuccessDialog(context, message: 'Note updated successfully');
@@ -93,7 +100,10 @@ class _NotesScreenState extends State<NotesScreen> {
         title: const Text('Delete Note'),
         content: const Text('Are you sure you want to delete this note?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () {
               _performDeleteNote(note);
@@ -117,7 +127,10 @@ class _NotesScreenState extends State<NotesScreen> {
       return;
     }
 
-    jobCubit.deleteJobNote(jobId: widget.job.data?.sId ?? '', noteId: note.id ?? '');
+    jobCubit.deleteJobNote(
+      jobId: widget.job.data?.sId ?? '',
+      noteId: note.id ?? '',
+    );
     Navigator.pop(context);
   }
 
@@ -133,7 +146,10 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  void _showSuccessDialog(BuildContext context, {String message = 'New note successfully added'}) {
+  void _showSuccessDialog(
+    BuildContext context, {
+    String message = 'New note successfully added',
+  }) {
     if (!_isMounted) return;
 
     Dialog? dialog;
@@ -153,7 +169,10 @@ class _NotesScreenState extends State<NotesScreen> {
                 SizedBox(width: 12.w),
                 Text(
                   message,
-                  style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.roboto(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -212,7 +231,11 @@ class _NotesScreenState extends State<NotesScreen> {
           ),
           title: Text(
             'Notes',
-            style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+            style: GoogleFonts.roboto(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
           ),
           centerTitle: true,
           actions: [
@@ -232,7 +255,10 @@ class _NotesScreenState extends State<NotesScreen> {
           margin: EdgeInsets.all(8.h),
           decoration: BoxDecoration(
             color: figmaYellow,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16.r), bottom: Radius.circular(16.r)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(16.r),
+              bottom: Radius.circular(16.r),
+            ),
           ),
           child: _buildNotesList(),
         ),
@@ -252,7 +278,8 @@ class _NotesScreenState extends State<NotesScreen> {
       child: ListView(
         padding: EdgeInsets.all(16.r),
         children: [
-          if (_internalNotes.isNotEmpty) ..._internalNotes.map((note) => _buildNoteItem(note)),
+          if (_internalNotes.isNotEmpty)
+            ..._internalNotes.map((note) => _buildNoteItem(note)),
           if (_internalNotes.isEmpty)
             _buildNoteItem(
               InternalNote(
@@ -291,7 +318,10 @@ class _NotesScreenState extends State<NotesScreen> {
           SizedBox(height: 8.h),
           Text(
             isEmptyState ? content : "$time, $author",
-            style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade600),
+            style: GoogleFonts.roboto(
+              fontSize: 12.sp,
+              color: Colors.grey.shade600,
+            ),
           ),
           SizedBox(height: 8.h),
           if (!isEmptyState)
@@ -302,11 +332,19 @@ class _NotesScreenState extends State<NotesScreen> {
                   onTap: () => _navigateToEditNote(context, widget.job, note),
                   child: Row(
                     children: [
-                      Icon(FontAwesomeIcons.solidPenToSquare, color: figmaBlue, size: 16.r),
+                      Icon(
+                        FontAwesomeIcons.solidPenToSquare,
+                        color: figmaBlue,
+                        size: 16.r,
+                      ),
                       SizedBox(width: 2.w),
                       Text(
                         'Edit',
-                        style: GoogleFonts.roboto(color: figmaBlue, fontSize: 14.sp, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.roboto(
+                          color: figmaBlue,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -320,14 +358,22 @@ class _NotesScreenState extends State<NotesScreen> {
                       SizedBox(width: 2.w),
                       Text(
                         'delete',
-                        style: GoogleFonts.roboto(color: Colors.red, fontSize: 14.sp, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.roboto(
+                          color: Colors.red,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-          Container(height: 2, width: double.infinity, color: Colors.grey.shade300),
+          Container(
+            height: 2,
+            width: double.infinity,
+            color: Colors.grey.shade300,
+          ),
         ],
       ),
     );
@@ -335,13 +381,18 @@ class _NotesScreenState extends State<NotesScreen> {
 }
 
 class _AddEditNoteSheetContent extends StatefulWidget {
-  const _AddEditNoteSheetContent({required this.job, this.note, required this.onNoteSaved});
+  const _AddEditNoteSheetContent({
+    required this.job,
+    this.note,
+    required this.onNoteSaved,
+  });
   final SingleJobModel job;
   final InternalNote? note;
   final VoidCallback onNoteSaved;
 
   @override
-  State<_AddEditNoteSheetContent> createState() => _AddEditNoteSheetContentState();
+  State<_AddEditNoteSheetContent> createState() =>
+      _AddEditNoteSheetContentState();
 }
 
 class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
@@ -458,7 +509,9 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
         top: false,
         child: Container(
           height: MediaQuery.of(context).size.height * 0.9,
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: Column(
             children: [
               Padding(
@@ -466,7 +519,10 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                 child: Container(
                   width: 40.w,
                   height: 5.h,
-                  decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2.5.r)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2.5.r),
+                  ),
                 ),
               ),
               Padding(
@@ -476,18 +532,30 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                   children: [
                     Text(
                       isEditing ? 'Edit note' : 'Add a note',
-                      style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+                      style: GoogleFonts.roboto(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: IconButton(
-                        icon: Icon(Icons.close, color: Colors.black87, size: 20.r),
+                        icon: Icon(
+                          Icons.close,
+                          color: Colors.black87,
+                          size: 20.r,
+                        ),
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.grey.shade300,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
                           padding: EdgeInsets.all(8.r),
                         ),
-                        onPressed: _isLoading ? null : () => Navigator.pop(context),
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.pop(context),
                       ),
                     ),
                   ],
@@ -509,7 +577,10 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                         decoration: InputDecoration(
                           hintText: 'write a note...',
                           border: InputBorder.none,
-                          hintStyle: GoogleFonts.roboto(fontSize: 16.sp, color: Colors.grey.shade600),
+                          hintStyle: GoogleFonts.roboto(
+                            fontSize: 16.sp,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ),
                     ),
@@ -517,21 +588,31 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.only(bottom: 16.h, left: 16.w, right: 16.w, top: 16.h),
+                padding: EdgeInsets.only(
+                  bottom: 16.h,
+                  left: 16.w,
+                  right: 16.w,
+                  top: 16.h,
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _isLoading ? Colors.grey : figmaBlue,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
                     ),
                     onPressed: _isLoading ? null : _saveNote,
                     child: _isLoading
                         ? SizedBox(
                             width: 20.w,
                             height: 20.h,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : Text(
                             'Save',

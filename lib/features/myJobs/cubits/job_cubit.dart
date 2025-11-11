@@ -1,4 +1,3 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
@@ -40,7 +39,9 @@ class JobCubit extends Cubit<JobStates> {
     }
 
     try {
-      print('🔄 JobCubit: Fetching jobs with params: page=$page, status=$status');
+      print(
+        '🔄 JobCubit: Fetching jobs with params: page=$page, status=$status',
+      );
 
       final JobListResponse response = await repository.getJobs(
         keyword: _currentKeyword,
@@ -53,14 +54,18 @@ class JobCubit extends Cubit<JobStates> {
       );
 
       print('✅ JobCubit: Successfully parsed ${response.jobs.length} jobs');
-      print('📊 JobCubit: Total jobs: ${response.totalJobs}, Pages: ${response.pages}');
+      print(
+        '📊 JobCubit: Total jobs: ${response.totalJobs}, Pages: ${response.pages}',
+      );
 
       // Check if jobs are properly parsed
       if (response.jobs.isNotEmpty) {
         final firstJob = response.jobs.first;
         print('🔍 First job details:');
         print('   - Job No: ${firstJob.jobNo}');
-        print('   - Customer: ${firstJob.customerDetails.firstName} ${firstJob.customerDetails.lastName}');
+        print(
+          '   - Customer: ${firstJob.customerDetails.firstName} ${firstJob.customerDetails.lastName}',
+        );
         print('   - Status: ${firstJob.status}');
       }
 
@@ -137,16 +142,17 @@ class JobCubit extends Cubit<JobStates> {
   }) async {
     emit(JobLoading());
     try {
-      final SingleJobModel updatedJob = await repository.updateJobCompletionStatus(
-        jobId,
-        true, // isJobCompleted
-        userId,
-        userName,
-        email,
-        customNotes: notes,
-        sendNotification: sendNotification,
-        currentJob: currentJob, // Pass current job for email data
-      );
+      final SingleJobModel updatedJob = await repository
+          .updateJobCompletionStatus(
+            jobId,
+            true, // isJobCompleted
+            userId,
+            userName,
+            email,
+            customNotes: notes,
+            sendNotification: sendNotification,
+            currentJob: currentJob, // Pass current job for email data
+          );
 
       emit(JobStatusUpdated(job: updatedJob));
 
@@ -168,16 +174,17 @@ class JobCubit extends Cubit<JobStates> {
   }) async {
     emit(JobLoading());
     try {
-      final SingleJobModel updatedJob = await repository.updateJobCompletionStatus(
-        jobId,
-        false, // isJobCompleted
-        userId,
-        userName,
-        email,
-        customNotes: notes,
-        sendNotification: sendNotification,
-        currentJob: currentJob,
-      );
+      final SingleJobModel updatedJob = await repository
+          .updateJobCompletionStatus(
+            jobId,
+            false, // isJobCompleted
+            userId,
+            userName,
+            email,
+            customNotes: notes,
+            sendNotification: sendNotification,
+            currentJob: currentJob,
+          );
 
       emit(JobStatusUpdated(job: updatedJob));
 
@@ -328,10 +335,18 @@ class JobCubit extends Cubit<JobStates> {
     }
   }
 
-  Future<void> updateJobAssignee(String jobId, String assignUserId, String assignerName) async {
+  Future<void> updateJobAssignee(
+    String jobId,
+    String assignUserId,
+    String assignerName,
+  ) async {
     emit(JobLoading());
     try {
-      final updatedJob = await repository.updateJobAssignee(jobId, assignUserId, assignerName);
+      final updatedJob = await repository.updateJobAssignee(
+        jobId,
+        assignUserId,
+        assignerName,
+      );
       emit(JobStatusUpdated(job: updatedJob));
       // Reload the job to get the latest data
       await getJobById(jobId);
@@ -364,7 +379,9 @@ class JobCubit extends Cubit<JobStates> {
         throw Exception('User ID not found in storage');
       }
 
-      final AssignUserListModel response = await repository.getAssignUserList(ownerId);
+      final AssignUserListModel response = await repository.getAssignUserList(
+        ownerId,
+      );
 
       emit(AssignUserListSuccess(users: response.data));
     } catch (e) {
@@ -518,13 +535,19 @@ class JobCubit extends Cubit<JobStates> {
     }
   }
 
-  Future<void> deleteJobNote({required String jobId, required String noteId}) async {
+  Future<void> deleteJobNote({
+    required String jobId,
+    required String noteId,
+  }) async {
     if (isClosed) return;
 
     emit(JobActionLoading());
 
     try {
-      final SingleJobModel updatedJob = await repository.deleteJobNote(jobId: jobId, noteId: noteId);
+      final SingleJobModel updatedJob = await repository.deleteJobNote(
+        jobId: jobId,
+        noteId: noteId,
+      );
 
       if (!isClosed) {
         emit(JobNoteUpdateSuccess(job: updatedJob));
@@ -574,13 +597,19 @@ class JobCubit extends Cubit<JobStates> {
     }
   }
 
-  Future<void> deleteJobFile({required String jobId, required String fileId}) async {
+  Future<void> deleteJobFile({
+    required String jobId,
+    required String fileId,
+  }) async {
     if (isClosed) return;
 
     emit(JobActionLoading());
 
     try {
-      final SingleJobModel updatedJob = await repository.deleteJobFile(jobId: jobId, fileId: fileId);
+      final SingleJobModel updatedJob = await repository.deleteJobFile(
+        jobId: jobId,
+        fileId: fileId,
+      );
 
       if (!isClosed) {
         emit(JobFileDeleteSuccess(job: updatedJob));

@@ -5,7 +5,12 @@ class LoginResponseModel {
   final String? error;
   final LoginData? data;
 
-  LoginResponseModel({required this.success, required this.message, this.error, this.data});
+  LoginResponseModel({
+    required this.success,
+    required this.message,
+    this.error,
+    this.data,
+  });
 
   factory LoginResponseModel.fromJson(Map<String, dynamic> json) {
     return LoginResponseModel(
@@ -24,7 +29,10 @@ class LoginData {
   LoginData({required this.accessToken, required this.user});
 
   factory LoginData.fromJson(Map<String, dynamic> json) {
-    return LoginData(accessToken: json['accessToken'] ?? '', user: User.fromJson(json['user']));
+    return LoginData(
+      accessToken: json['accessToken'] ?? '',
+      user: User.fromJson(json['user']),
+    );
   }
 }
 
@@ -71,8 +79,12 @@ class User {
       userType: json['userType'] ?? '',
       isSubUser: json['isSubUser'] ?? false,
       role: json['role'] ?? '',
-      location: json['location'] != null ? Location.fromJson(json['location']) : null,
-      subscription: json['subscription'] != null ? Subscription.fromJson(json['subscription']) : null,
+      location: json['location'] != null
+          ? Location.fromJson(json['location'])
+          : null,
+      subscription: json['subscription'] != null
+          ? Subscription.fromJson(json['subscription'])
+          : null,
       currency: json['currency'] ?? {},
       timeZone: json['timeZone'] ?? {},
       repaircmsAccess: json['repaircms_access'] ?? false,

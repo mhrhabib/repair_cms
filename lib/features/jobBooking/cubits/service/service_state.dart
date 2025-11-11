@@ -12,7 +12,10 @@ class ServiceLoaded extends ServiceState {
   final ServiceResponseModel servicesResponse;
   final String searchQuery;
 
-  const ServiceLoaded({required this.servicesResponse, required this.searchQuery});
+  const ServiceLoaded({
+    required this.servicesResponse,
+    required this.searchQuery,
+  });
 }
 
 class ServiceNoResults extends ServiceState {

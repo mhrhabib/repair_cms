@@ -12,7 +12,12 @@ class JobItemCubit extends Cubit<JobItemState> {
   String _currentSearchQuery = '';
   String get currentSearchQuery => _currentSearchQuery;
 
-  Future<void> searchItems({required String userId, required String keyword, int page = 1, int limit = 20}) async {
+  Future<void> searchItems({
+    required String userId,
+    required String keyword,
+    int page = 1,
+    int limit = 20,
+  }) async {
     if (keyword.isEmpty) {
       emit(JobItemNoResults(searchQuery: keyword));
       return;
@@ -22,7 +27,12 @@ class JobItemCubit extends Cubit<JobItemState> {
     _currentSearchQuery = keyword;
 
     try {
-      final itemsModel = await itemRepository.searchItems(userId: userId, keyword: keyword, page: page, limit: limit);
+      final itemsModel = await itemRepository.searchItems(
+        userId: userId,
+        keyword: keyword,
+        page: page,
+        limit: limit,
+      );
 
       if (itemsModel.items == null || itemsModel.items!.isEmpty) {
         emit(JobItemNoResults(searchQuery: keyword));

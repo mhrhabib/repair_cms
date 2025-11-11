@@ -69,7 +69,7 @@ class AccessoriesCubit extends Cubit<AccessoriesState> {
   Future<void> createAccessory({required String value, required String label, required String userId}) async {
     try {
       debugPrint('🚀 [AccessoriesCubit] Creating new accessory: $label');
-      final newAccessory = await accessoriesRepository.createAccessory(value: value, label: label, userId: userId);
+      await accessoriesRepository.createAccessory(value: value, label: label, userId: userId);
 
       debugPrint('✅ [AccessoriesCubit] Accessory created successfully');
 
@@ -78,7 +78,7 @@ class AccessoriesCubit extends Cubit<AccessoriesState> {
     } on AccessoriesException catch (e) {
       debugPrint('❌ [AccessoriesCubit] AccessoriesException while creating: ${e.message}');
       rethrow;
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('💥 [AccessoriesCubit] Unexpected error while creating accessory: $e');
       rethrow;
     }

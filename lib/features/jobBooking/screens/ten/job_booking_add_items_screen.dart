@@ -10,7 +10,8 @@ class JobBookingAddItemsScreen extends StatefulWidget {
   const JobBookingAddItemsScreen({super.key});
 
   @override
-  State<JobBookingAddItemsScreen> createState() => _JobBookingAddItemsScreenState();
+  State<JobBookingAddItemsScreen> createState() =>
+      _JobBookingAddItemsScreenState();
 }
 
 class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
@@ -29,7 +30,10 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
       // Get userId from JobBookingCubit or your authentication system
       final userId = storage.read('userId');
       if (userId != null) {
-        context.read<JobItemCubit>().searchItems(userId: userId, keyword: query);
+        context.read<JobItemCubit>().searchItems(
+          userId: userId,
+          keyword: query,
+        );
       }
     } else {
       context.read<JobItemCubit>().clearSearch();
@@ -58,7 +62,11 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
     if (query.isEmpty || text.isEmpty) {
       return Text(
         text,
-        style: TextStyle(fontSize: 16.sp, color: Colors.black87, fontWeight: FontWeight.w500),
+        style: TextStyle(
+          fontSize: 16.sp,
+          color: Colors.black87,
+          fontWeight: FontWeight.w500,
+        ),
       );
     }
 
@@ -74,7 +82,11 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
         spans.add(
           TextSpan(
             text: text.substring(start, index),
-            style: TextStyle(fontSize: 16.sp, color: Colors.black87, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         );
       }
@@ -99,7 +111,11 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
       spans.add(
         TextSpan(
           text: text.substring(start),
-          style: TextStyle(fontSize: 16.sp, color: Colors.black87, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 16.sp,
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       );
     }
@@ -128,8 +144,17 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                     width: MediaQuery.of(context).size.width * .071 * 10,
                     decoration: BoxDecoration(
                       color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(6),
+                        topRight: Radius.circular(0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 1,
+                          blurStyle: BlurStyle.outer,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -145,8 +170,15 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                         onTap: () => Navigator.pop(context),
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ],
@@ -160,11 +192,18 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                   child: Container(
                     width: 40,
                     height: 40,
-                    decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
                     child: const Center(
                       child: Text(
                         '10',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -179,10 +218,17 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                   children: [
                     Text(
                       'Add Items',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
                     SizedBox(height: 8),
-                    Text('(Protection case, Insurance...)', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    Text(
+                      '(Protection case, Insurance...)',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
                   ],
                 ),
               ),
@@ -198,7 +244,11 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                     children: [
                       const Text(
                         'Search Items',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Container(
@@ -211,7 +261,11 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                         child: Row(
                           children: [
                             SizedBox(width: 16.w),
-                            Icon(Icons.search, color: Colors.grey.shade400, size: 20.sp),
+                            Icon(
+                              Icons.search,
+                              color: Colors.grey.shade400,
+                              size: 20.sp,
+                            ),
                             SizedBox(width: 12.w),
                             Expanded(
                               child: TextField(
@@ -220,7 +274,10 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                                 onChanged: _onSearchChanged,
                                 decoration: InputDecoration(
                                   hintText: 'Search items by name...',
-                                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                    fontSize: 16,
+                                  ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
                                 ),
@@ -234,7 +291,11 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                                 },
                                 child: Padding(
                                   padding: EdgeInsets.only(right: 16.w),
-                                  child: Icon(Icons.close, color: Colors.grey.shade400, size: 20.sp),
+                                  child: Icon(
+                                    Icons.close,
+                                    color: Colors.grey.shade400,
+                                    size: 20.sp,
+                                  ),
                                 ),
                               )
                             else
@@ -267,18 +328,26 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
 
                         return BlocBuilder<JobBookingCubit, JobBookingState>(
                           builder: (context, bookingState) {
-                            final isAlreadySelected = bookingState is JobBookingData
-                                ? bookingState.job.assignedItemsIds.contains(item.sId)
+                            final isAlreadySelected =
+                                bookingState is JobBookingData
+                                ? bookingState.job.assignedItemsIds.contains(
+                                    item.sId,
+                                  )
                                 : false;
 
                             return GestureDetector(
                               onTap: () => _addItem(item),
                               child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                                margin: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 4.h,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12.r),
-                                  border: Border.all(color: Colors.grey.shade200),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                  ),
                                 ),
                                 child: Container(
                                   padding: EdgeInsets.all(16.w),
@@ -289,38 +358,55 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                                         height: 40.h,
                                         decoration: BoxDecoration(
                                           color: Colors.blue.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8.r),
+                                          borderRadius: BorderRadius.circular(
+                                            8.r,
+                                          ),
                                         ),
-                                        child: Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 20.sp),
+                                        child: Icon(
+                                          Icons.inventory_2_outlined,
+                                          color: Colors.blue,
+                                          size: 20.sp,
+                                        ),
                                       ),
                                       SizedBox(width: 12.w),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             _buildHighlightedText(
-                                              item.productName ?? 'Unnamed Item',
+                                              item.productName ??
+                                                  'Unnamed Item',
                                               state.searchQuery,
                                             ),
                                             SizedBox(height: 4.h),
                                             if (item.itemNumber != null) ...[
                                               Text(
                                                 'Item #: ${item.itemNumber}',
-                                                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                                                style: TextStyle(
+                                                  fontSize: 12.sp,
+                                                  color: Colors.grey.shade600,
+                                                ),
                                               ),
                                               SizedBox(height: 2.h),
                                             ],
                                             if (item.manufacturer != null) ...[
                                               Text(
                                                 'Manufacturer: ${item.manufacturer}',
-                                                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                                                style: TextStyle(
+                                                  fontSize: 12.sp,
+                                                  color: Colors.grey.shade600,
+                                                ),
                                               ),
                                               SizedBox(height: 2.h),
                                             ],
                                             if (item.stockValue != null) ...[
                                               Text(
                                                 'Stock: ${item.stockValue} ${item.stockUnit ?? 'units'}',
-                                                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                                                style: TextStyle(
+                                                  fontSize: 12.sp,
+                                                  color: Colors.grey.shade600,
+                                                ),
                                               ),
                                             ],
                                           ],
@@ -328,7 +414,8 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                                       ),
                                       SizedBox(width: 12.w),
                                       Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
                                         children: [
                                           Text(
                                             '${item.salePriceIncVat?.toStringAsFixed(2) ?? '0.00'} €',
@@ -341,13 +428,20 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                                           SizedBox(height: 2.h),
                                           Text(
                                             'excl. VAT',
-                                            style: TextStyle(fontSize: 10.sp, color: Colors.grey.shade500),
+                                            style: TextStyle(
+                                              fontSize: 10.sp,
+                                              color: Colors.grey.shade500,
+                                            ),
                                           ),
                                         ],
                                       ),
                                       if (isAlreadySelected) ...[
                                         SizedBox(width: 8.w),
-                                        Icon(Icons.check_circle, color: Colors.green, size: 20.sp),
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green,
+                                          size: 20.sp,
+                                        ),
                                       ],
                                     ],
                                   ),
@@ -363,7 +457,10 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                   if (state is JobItemNoResults) {
                     return SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           width: double.infinity,
@@ -374,7 +471,10 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                           ),
                           child: Text(
                             'No items found for "${state.searchQuery}"',
-                            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade500),
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.grey.shade500,
+                            ),
                           ),
                         ),
                       ),
@@ -384,7 +484,10 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                   if (state is JobItemError) {
                     return SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           width: double.infinity,
@@ -397,14 +500,19 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                             children: [
                               Text(
                                 'Error: ${state.message}',
-                                style: TextStyle(fontSize: 14.sp, color: Colors.red),
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: Colors.red,
+                                ),
                               ),
                               SizedBox(height: 8.h),
                               ElevatedButton(
                                 onPressed: () {
                                   final userId = storage.read('userId');
                                   if (userId != null) {
-                                    context.read<JobItemCubit>().refreshSearch(userId: userId);
+                                    context.read<JobItemCubit>().refreshSearch(
+                                      userId: userId,
+                                    );
                                   }
                                 },
                                 child: Text('Retry'),
@@ -434,14 +542,20 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                           children: [
                             const Text(
                               'Selected Items',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
                               children: state.job.assignedItemsIds
-                                  .map((itemId) => _buildSelectedItemCard(itemId))
+                                  .map(
+                                    (itemId) => _buildSelectedItemCard(itemId),
+                                  )
                                   .toList(),
                             ),
                             const SizedBox(height: 32),
@@ -465,10 +579,19 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
             // final hasItems = state is JobBookingData && state.job.assignedItemsIds.isNotEmpty;
 
             return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+                left: 24,
+                right: 24,
+              ),
               child: BottomButtonsGroup(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingFileUploadScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const JobBookingFileUploadScreen(),
+                    ),
+                  );
                 },
               ),
             );
@@ -499,10 +622,17 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                 children: [
                   Text(
                     'Item ID: $itemId',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.blue),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.blue,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text('Tap to see details', style: const TextStyle(fontSize: 12, color: Colors.blue)),
+                  Text(
+                    'Tap to see details',
+                    style: const TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
                 ],
               ),
             ],
@@ -516,7 +646,10 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
             child: Container(
               width: 24,
               height: 24,
-              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
               child: const Icon(Icons.close, color: Colors.white, size: 16),
             ),
           ),

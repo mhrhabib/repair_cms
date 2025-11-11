@@ -9,7 +9,9 @@ class BiometricService {
     try {
       final canCheck = await _localAuth.canCheckBiometrics;
       final isSupported = await _localAuth.isDeviceSupported();
-      debugPrint('canCheckBiometrics: $canCheck, isDeviceSupported: $isSupported');
+      debugPrint(
+        'canCheckBiometrics: $canCheck, isDeviceSupported: $isSupported',
+      );
       return canCheck && isSupported;
     } catch (e) {
       debugPrint('Error checking biometrics: $e');
@@ -36,7 +38,9 @@ class BiometricService {
       final bool isAvailable = await _localAuth.canCheckBiometrics;
       final bool isDeviceSupported = await _localAuth.isDeviceSupported();
 
-      debugPrint('📱 Device check - available: $isAvailable, supported: $isDeviceSupported');
+      debugPrint(
+        '📱 Device check - available: $isAvailable, supported: $isDeviceSupported',
+      );
 
       if (!isAvailable || !isDeviceSupported) {
         debugPrint('❌ Biometric not available on this device');
@@ -57,7 +61,10 @@ class BiometricService {
       // This should show the system biometric prompt
       final bool didAuthenticate = await _localAuth.authenticate(
         localizedReason: reason ?? 'Scan your fingerprint or face to continue',
-        options: const AuthenticationOptions(stickyAuth: true, biometricOnly: true),
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
       );
 
       debugPrint('✅ Authentication result: $didAuthenticate');

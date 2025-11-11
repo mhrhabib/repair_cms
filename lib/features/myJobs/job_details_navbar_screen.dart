@@ -5,7 +5,11 @@ class JobDetailsNavbar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onItemSelected;
 
-  const JobDetailsNavbar({super.key, required this.selectedIndex, required this.onItemSelected});
+  const JobDetailsNavbar({
+    super.key,
+    required this.selectedIndex,
+    required this.onItemSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +39,16 @@ class JobDetailsNavbar extends StatelessWidget {
       borderRadius = BorderRadius.only(bottomRight: Radius.circular(12.r));
     } else if (index == 4) {
       // Last item: rounded on top-right and bottom-right
-      borderRadius = BorderRadius.only(bottomLeft: Radius.circular(12.r), bottomRight: Radius.circular(12.r));
+      borderRadius = BorderRadius.only(
+        bottomLeft: Radius.circular(12.r),
+        bottomRight: Radius.circular(12.r),
+      );
     } else {
       // Middle items: no rounding
-      borderRadius = BorderRadius.only(bottomLeft: Radius.circular(12.r), bottomRight: Radius.circular(12.r));
+      borderRadius = BorderRadius.only(
+        bottomLeft: Radius.circular(12.r),
+        bottomRight: Radius.circular(12.r),
+      );
     }
 
     return Expanded(
@@ -54,7 +64,11 @@ class JobDetailsNavbar extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade400, size: 24),
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : Colors.grey.shade400,
+                size: 24,
+              ),
               SizedBox(height: 4.h),
               Text(
                 label,

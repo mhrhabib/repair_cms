@@ -17,7 +17,9 @@ class SignInCubit extends Cubit<SignInStates> {
   Future<void> findUserByEmail(String email) async {
     emit(SignInLoading());
     try {
-      final FindUserResponseModel response = await repository.findUserByEmail(email);
+      final FindUserResponseModel response = await repository.findUserByEmail(
+        email,
+      );
 
       if (response.success) {
         emit(SignInSuccess(email: email, message: response.message));
@@ -40,7 +42,10 @@ class SignInCubit extends Cubit<SignInStates> {
   Future<void> login(String email, String password) async {
     emit(SignInLoading());
     try {
-      final LoginResponseModel response = await repository.login(email, password);
+      final LoginResponseModel response = await repository.login(
+        email,
+        password,
+      );
 
       if (response.success) {
         // Save token and user data to storage
@@ -53,8 +58,13 @@ class SignInCubit extends Cubit<SignInStates> {
           await storage.write('email', response.data!.user.email);
           await storage.write('fullName', response.data!.user.fullName);
           await storage.write('locationId', response.data!.user.location!.id);
-          debugPrint('🔐 User locationId in: ${response.data!.user.location!.id}');
-          saveUserTypeandId(response.data!.user.userType, response.data!.user.id);
+          debugPrint(
+            '🔐 User locationId in: ${response.data!.user.location!.id}',
+          );
+          saveUserTypeandId(
+            response.data!.user.userType,
+            response.data!.user.id,
+          );
         }
 
         emit(

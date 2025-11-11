@@ -1,4 +1,3 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/repository/service_repository.dart';
 import 'package:repair_cms/features/jobBooking/models/service_response_model.dart';
@@ -37,7 +36,12 @@ class ServiceCubit extends Cubit<ServiceState> {
       if (servicesResponse.services.isEmpty) {
         emit(ServiceNoResults(searchQuery: keyword));
       } else {
-        emit(ServiceLoaded(servicesResponse: servicesResponse, searchQuery: keyword));
+        emit(
+          ServiceLoaded(
+            servicesResponse: servicesResponse,
+            searchQuery: keyword,
+          ),
+        );
       }
     } on ServiceException catch (e) {
       emit(ServiceError(message: e.message, searchQuery: keyword));

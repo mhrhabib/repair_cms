@@ -49,14 +49,20 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         if (state is JobError) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${state.message}'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${state.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
 
         if (state is JobStatusUpdated) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Job status updated successfully'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Job status updated successfully'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
 
@@ -78,7 +84,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             builder: (context, state) {
               // If we have a cached job, show it regardless of loading states
               if (_currentJob != null &&
-                  (state is AssignUserListLoading || state is AssignUserListSuccess || state is AssignUserListError)) {
+                  (state is AssignUserListLoading ||
+                      state is AssignUserListSuccess ||
+                      state is AssignUserListError)) {
                 return _buildCurrentScreen(_currentJob!);
               }
 
@@ -180,14 +188,19 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       if (assignUser is Map) {
         // Extract the ID from the user object
         assignUserId = assignUser['_id']?.toString() ?? '';
-        assigneeName = assignUser['fullName'] ?? assignUser['email'] ?? 'Unknown User';
-        debugPrint('🔄 AssignUser is a Map, extracted ID: $assignUserId, Name: $assigneeName');
+        assigneeName =
+            assignUser['fullName'] ?? assignUser['email'] ?? 'Unknown User';
+        debugPrint(
+          '🔄 AssignUser is a Map, extracted ID: $assignUserId, Name: $assigneeName',
+        );
       } else if (assignUser is String) {
         // It's already a string ID - find the name from available users
         assignUserId = assignUser;
         final user = _findUserById(assignUserId);
         assigneeName = user?.fullName ?? user?.email ?? 'Unknown User';
-        debugPrint('🔄 AssignUser is a String ID: $assignUserId, Found Name: $assigneeName');
+        debugPrint(
+          '🔄 AssignUser is a String ID: $assignUserId, Found Name: $assigneeName',
+        );
       } else {
         assignUserId = assignUser.toString();
         assigneeName = 'Unknown User';
@@ -200,7 +213,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           _selectedUserId = assignUserId; // Store ID for dropdown value
         });
 
-        debugPrint('✅ Current assignee set - Display: $selectedAssignee, ID: $_selectedUserId');
+        debugPrint(
+          '✅ Current assignee set - Display: $selectedAssignee, ID: $_selectedUserId',
+        );
       } else {
         debugPrint('❌ Empty assignee ID found');
         setState(() {
@@ -243,24 +258,40 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         debugPrint('✅ User selected - Display: $userName, ID: $newUserId');
 
         // Pass the ID to the API
-        context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, userName);
-        SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
+        context.read<JobCubit>().updateJobAssignee(
+          widget.job.data!.sId!,
+          newUserId,
+          userName,
+        );
+        SnackbarDemo(
+          message: 'Job Updated Successfully',
+        ).showCustomSnackbar(context);
       } else {
         debugPrint('❌ User not found with ID: $newUserId');
-        debugPrint('Available user IDs: ${_availableUsers.map((u) => u.id).join(", ")}');
+        debugPrint(
+          'Available user IDs: ${_availableUsers.map((u) => u.id).join(", ")}',
+        );
 
         // Fallback: still update with the ID
         setState(() {
           _selectedUserId = newUserId;
-          selectedAssignee = 'User ($newUserId)'; // Show ID in name if user not found
+          selectedAssignee =
+              'User ($newUserId)'; // Show ID in name if user not found
         });
 
         // Pass the ID to the API even if user not found locally
-        context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, 'Unknown User');
+        context.read<JobCubit>().updateJobAssignee(
+          widget.job.data!.sId!,
+          newUserId,
+          'Unknown User',
+        );
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Assigned to user ID: $newUserId'), backgroundColor: Colors.orange));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Assigned to user ID: $newUserId'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     } else {
       debugPrint('ℹ️ No user selected or empty user ID');
@@ -275,16 +306,19 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     final jobData = widget.job.data!;
 
     // Initialize job complete status
-    isJobComplete = jobData.isJobCompleted != null && jobData.isJobCompleted! == true;
+    isJobComplete =
+        jobData.isJobCompleted != null && jobData.isJobCompleted! == true;
 
     // Initialize return device status
-    returnDevice = jobData.isDeviceReturned != null && jobData.isDeviceReturned! == true;
+    returnDevice =
+        jobData.isDeviceReturned != null && jobData.isDeviceReturned! == true;
 
     // Initialize due date from job data
     if (jobData.dueDate != null && jobData.dueDate!.isNotEmpty) {
       try {
         final parsedDate = DateTime.parse(jobData.dueDate!);
-        selectedDueDate = "${parsedDate.day}. ${_getMonthName(parsedDate.month)} ${parsedDate.year}";
+        selectedDueDate =
+            "${parsedDate.day}. ${_getMonthName(parsedDate.month)} ${parsedDate.year}";
       } catch (e) {
         selectedDueDate = 'Select due date';
       }
@@ -352,7 +386,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           });
         }
         if (state is JobStatusUpdated) {
-          SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Job Updated Successfully',
+          ).showCustomSnackbar(context);
         }
         if (state is AssignUserListSuccess) {
           setState(() {
@@ -366,7 +402,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
             _isLoadingUsers = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to load users: ${state.message}'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Failed to load users: ${state.message}'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       },
@@ -377,7 +416,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           elevation: 0,
           leading: IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Colors.black87,
+              size: 20,
+            ),
           ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -386,11 +429,19 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                 widget.job.data!.contact!.isEmpty
                     ? 'Job Details'
                     : widget.job.data!.contact![0].firstName ?? 'Job Details',
-                style: GoogleFonts.roboto(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
+                style: GoogleFonts.roboto(
+                  color: Colors.black87,
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               Text(
                 'Auftrag-Nr: ${widget.job.data!.jobNo}',
-                style: GoogleFonts.roboto(color: Colors.grey.shade600, fontSize: 12.sp, fontWeight: FontWeight.w400),
+                style: GoogleFonts.roboto(
+                  color: Colors.grey.shade600,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ],
           ),
@@ -400,7 +451,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
               children: [
                 IconButton(
                   onPressed: () {},
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.black87,
+                  ),
                 ),
                 Positioned(
                   right: 8,
@@ -408,7 +462,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                   child: Container(
                     width: 8.w,
                     height: 8.h,
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
               ],
@@ -435,7 +492,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                 children: [
                   Text(
                     'Set Job Complete',
-                    style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                    style: GoogleFonts.roboto(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                   ),
                   CupertinoSwitch(
                     value: isJobComplete,
@@ -457,7 +518,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                 children: [
                   Text(
                     'Return device',
-                    style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                    style: GoogleFonts.roboto(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                   ),
                   CupertinoSwitch(
                     value: returnDevice,
@@ -533,14 +598,21 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       onTap: _showDatePicker,
                       child: Container(
                         height: 40.h,
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 4.h,
+                        ),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.blue, width: 1.5),
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.calendar_today_outlined, color: Colors.blue, size: 20),
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
@@ -576,12 +648,19 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                             height: 40.h,
                             padding: EdgeInsets.symmetric(horizontal: 12.w),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 1.5,
+                              ),
                               borderRadius: BorderRadius.circular(8.r),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.person_outline, color: Colors.grey, size: 20),
+                                Icon(
+                                  Icons.person_outline,
+                                  color: Colors.grey,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 8.w),
                                 Expanded(
                                   child: Text(
@@ -593,7 +672,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 20.w, height: 20.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                                SizedBox(
+                                  width: 20.w,
+                                  height: 20.h,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                               ],
                             ),
                           )
@@ -623,17 +708,24 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCardInfoRow('Physical location:', job.data!.physicalLocation ?? 'Not specified'),
+        _buildCardInfoRow(
+          'Physical location:',
+          job.data!.physicalLocation ?? 'Not specified',
+        ),
         SizedBox(height: 12.h),
         _buildCardInfoRow('Defect type:', _getDefectType(job)),
         SizedBox(height: 12.h),
-        _buildCardInfoSection('Problem Description:', _getProblemDescription(job)),
+        _buildCardInfoSection(
+          'Problem Description:',
+          _getProblemDescription(job),
+        ),
       ],
     );
   }
 
   String _getDefectType(SingleJobModel job) {
-    if (job.data!.defect!.isNotEmpty && job.data!.defect!.first.defect!.isNotEmpty) {
+    if (job.data!.defect!.isNotEmpty &&
+        job.data!.defect!.first.defect!.isNotEmpty) {
       return job.data!.defect!.first.defect!.first.value!;
     }
     return 'Not specified';
@@ -647,8 +739,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         SizedBox(height: 12.h),
         _buildCardInfoRow('IMEI/SN:', job.data!.deviceData!.serialNo ?? 'N/A'),
         SizedBox(height: 12.h),
-        if (job.data!.deviceData!.model != null) _buildCardInfoRow('Model:', job.data!.deviceData!.model!),
-        if (job.data!.deviceData!.brand != null) _buildCardInfoRow('Brand:', job.data!.deviceData!.brand!),
+        if (job.data!.deviceData!.model != null)
+          _buildCardInfoRow('Model:', job.data!.deviceData!.model!),
+        if (job.data!.deviceData!.brand != null)
+          _buildCardInfoRow('Brand:', job.data!.deviceData!.brand!),
         SizedBox(height: 12.h),
         Align(
           alignment: Alignment.center,
@@ -687,7 +781,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           isJobComplete = true;
         });
 
-        SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Job Updated Successfully',
+        ).showCustomSnackbar(context);
       },
     );
   }
@@ -707,7 +803,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       returnDevice = true;
     });
 
-    SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
+    SnackbarDemo(
+      message: 'Job Updated Successfully',
+    ).showCustomSnackbar(context);
   }
 
   void _setDeviceAsNotReturned() {
@@ -725,7 +823,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       returnDevice = false;
     });
 
-    SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
+    SnackbarDemo(
+      message: 'Job Updated Successfully',
+    ).showCustomSnackbar(context);
   }
 
   void _showReturnDeviceConfirmationDialog() {
@@ -735,7 +835,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         return AlertDialog(
           title: Text(
             'Mark Device as Returned?',
-            style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600),
+            style: GoogleFonts.roboto(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -743,20 +846,32 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
             children: [
               Text(
                 'This will:',
-                style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500),
+                style: GoogleFonts.roboto(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               SizedBox(height: 8.h),
               Text(
                 '• Mark device as returned',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+                style: GoogleFonts.roboto(
+                  fontSize: 14.sp,
+                  color: Colors.grey.shade700,
+                ),
               ),
               Text(
                 '• Archive the job',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+                style: GoogleFonts.roboto(
+                  fontSize: 14.sp,
+                  color: Colors.grey.shade700,
+                ),
               ),
               Text(
                 '• Move job to trash',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+                style: GoogleFonts.roboto(
+                  fontSize: 14.sp,
+                  color: Colors.grey.shade700,
+                ),
               ),
             ],
           ),
@@ -767,7 +882,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
               },
               child: Text(
                 'Cancel',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
+                style: GoogleFonts.roboto(
+                  fontSize: 14.sp,
+                  color: Colors.grey.shade600,
+                ),
               ),
             ),
             ElevatedButton(
@@ -794,11 +912,17 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         return AlertDialog(
           title: Text(
             'Set Job as Incomplete?',
-            style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600),
+            style: GoogleFonts.roboto(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           content: Text(
             'This will change the job status to "In Progress" and mark it as incomplete.',
-            style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+            style: GoogleFonts.roboto(
+              fontSize: 14.sp,
+              color: Colors.grey.shade700,
+            ),
           ),
           actions: [
             TextButton(
@@ -807,7 +931,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
               },
               child: Text(
                 'Cancel',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
+                style: GoogleFonts.roboto(
+                  fontSize: 14.sp,
+                  color: Colors.grey.shade600,
+                ),
               ),
             ),
             ElevatedButton(
@@ -827,7 +954,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                   isJobComplete = false;
                 });
 
-                SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
+                SnackbarDemo(
+                  message: 'Job Updated Successfully',
+                ).showCustomSnackbar(context);
 
                 Navigator.of(context).pop();
               },
@@ -854,15 +983,26 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     return _buildInfoCard(
       title: 'Customer Information',
       children: [
-        _buildInfoRow('Name', '${job.data!.customerDetails!.firstName} ${job.data!.customerDetails!.lastName}'),
+        _buildInfoRow(
+          'Name',
+          '${job.data!.customerDetails!.firstName} ${job.data!.customerDetails!.lastName}',
+        ),
         SizedBox(height: 12.h),
-        _buildInfoRow('Email', job.data!.customerDetails!.email ?? 'No email provided'),
+        _buildInfoRow(
+          'Email',
+          job.data!.customerDetails!.email ?? 'No email provided',
+        ),
         SizedBox(height: 12.h),
-        _buildInfoRow('Phone', '${job.data!.customerDetails!.telephonePrefix} ${job.data!.customerDetails!.telephone}'),
+        _buildInfoRow(
+          'Phone',
+          '${job.data!.customerDetails!.telephonePrefix} ${job.data!.customerDetails!.telephone}',
+        ),
         SizedBox(height: 12.h),
         _buildInfoSection(
           'Address',
-          job.data!.customerDetails!.shippingAddress != null ? _getCustomerAddress(job) : 'No address provided',
+          job.data!.customerDetails!.shippingAddress != null
+              ? _getCustomerAddress(job)
+              : 'No address provided',
         ),
       ],
     );
@@ -872,13 +1012,23 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     return _buildInfoCard(
       title: 'Financial Information',
       children: [
-        _buildInfoRow('Subtotal', '\$${job.data!.subTotal!.toStringAsFixed(2)}'),
+        _buildInfoRow(
+          'Subtotal',
+          '\$${job.data!.subTotal!.toStringAsFixed(2)}',
+        ),
         SizedBox(height: 8.h),
         _buildInfoRow('VAT', '\$${job.data!.vat!.toStringAsFixed(2)}'),
         SizedBox(height: 8.h),
-        _buildInfoRow('Discount', '\$${job.data!.discount!.toStringAsFixed(2)}'),
+        _buildInfoRow(
+          'Discount',
+          '\$${job.data!.discount!.toStringAsFixed(2)}',
+        ),
         SizedBox(height: 8.h),
-        _buildInfoRow('Total', '\$${job.data!.total!.toStringAsFixed(2)}', isTotal: true),
+        _buildInfoRow(
+          'Total',
+          '\$${job.data!.total!.toStringAsFixed(2)}',
+          isTotal: true,
+        ),
       ],
     );
   }
@@ -895,13 +1045,21 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w700, color: const Color(0xFF3A4A67)),
+          style: GoogleFonts.roboto(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF3A4A67),
+          ),
         ),
         SizedBox(width: 6.h),
         Expanded(
           child: Text(
             value,
-            style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+            style: GoogleFonts.roboto(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
           ),
         ),
       ],
@@ -914,7 +1072,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w700, color: const Color(0xFF3A4A67)),
+          style: GoogleFonts.roboto(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF3A4A67),
+          ),
         ),
         SizedBox(height: 6.h),
         Text(
@@ -937,7 +1099,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -945,7 +1113,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           if (title != null) ...[
             Text(
               title,
-              style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+              style: GoogleFonts.roboto(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
             SizedBox(height: 12.h),
           ],
@@ -961,7 +1133,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+          style: GoogleFonts.roboto(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+          ),
         ),
         Text(
           value,
@@ -981,12 +1157,20 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+          style: GoogleFonts.roboto(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+          ),
         ),
         SizedBox(height: 4.h),
         Text(
           value,
-          style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: Colors.black87),
+          style: GoogleFonts.roboto(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ),
         ),
       ],
     );
@@ -1023,7 +1207,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       backgroundColor: Colors.green,
                       child: Text(
                         item.split(' ').map((word) => word[0]).join(),
-                        style: GoogleFonts.roboto(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.roboto(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     SizedBox(width: 8.w),
@@ -1034,7 +1222,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                   Expanded(
                     child: Text(
                       item,
-                      style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                      style: GoogleFonts.roboto(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
                 ],
@@ -1052,7 +1244,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -1076,7 +1274,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       color: Colors.transparent,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(index == 0 ? 12.r : 0),
-                        topRight: Radius.circular(index == _tabTitles.length - 1 ? 12.r : 0),
+                        topRight: Radius.circular(
+                          index == _tabTitles.length - 1 ? 12.r : 0,
+                        ),
                       ),
                     ),
                     child: Column(
@@ -1085,8 +1285,12 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                           title,
                           style: GoogleFonts.roboto(
                             fontSize: 14.sp,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: isSelected ? Colors.blue : Colors.grey.shade600,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                            color: isSelected
+                                ? Colors.blue
+                                : Colors.grey.shade600,
                           ),
                         ),
                         SizedBox(height: 8.h),
@@ -1094,7 +1298,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                           height: 3.h,
                           width: 60.w,
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.blue : Colors.transparent,
+                            color: isSelected
+                                ? Colors.blue
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(4.r),
                           ),
                         ),
@@ -1111,7 +1317,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           // Content area with real data
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            child: _selectedTabIndex == 0 ? _jobDetailsCardContent(job) : _deviceDetailsCardContent(job),
+            child: _selectedTabIndex == 0
+                ? _jobDetailsCardContent(job)
+                : _deviceDetailsCardContent(job),
           ),
         ],
       ),
@@ -1132,10 +1340,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
 
       // Update local state
       setState(() {
-        selectedDueDate = "${picked.day}. ${_getMonthName(picked.month)} ${picked.year}";
+        selectedDueDate =
+            "${picked.day}. ${_getMonthName(picked.month)} ${picked.year}";
       });
 
-      SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Job Updated Successfully',
+      ).showCustomSnackbar(context);
     }
   }
 
@@ -1167,9 +1378,14 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       // Convert to lowercase for API
       final priorityValue = newValue.toLowerCase();
 
-      context.read<JobCubit>().updateJobPriority(widget.job.data!.sId!, priorityValue);
+      context.read<JobCubit>().updateJobPriority(
+        widget.job.data!.sId!,
+        priorityValue,
+      );
 
-      SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Job Updated Successfully',
+      ).showCustomSnackbar(context);
     }
   }
 
@@ -1189,7 +1405,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           isExpanded: true,
           hint: Text(
             'Select assignee',
-            style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+            style: GoogleFonts.roboto(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
           ),
           items: _availableUsers.map((User user) {
             final userName = user.fullName ?? user.email;
@@ -1204,7 +1424,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                     backgroundColor: Colors.blue,
                     child: Text(
                       userInitials,
-                      style: GoogleFonts.roboto(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.roboto(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   SizedBox(width: 8.w),

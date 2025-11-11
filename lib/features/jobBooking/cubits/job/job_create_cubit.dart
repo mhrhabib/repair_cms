@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/jobBooking/repository/job_booking_repository.dart';
 part 'job_create_state.dart';
@@ -12,17 +13,17 @@ class JobCreateCubit extends Cubit<JobCreateState> {
     emit(JobCreateLoading());
 
     try {
-      print('🚀 [JobCubit] Starting job creation...');
+      debugPrint('🚀 [JobCubit] Starting job creation...');
       final response = await jobRepository.createJob(request: request);
 
-      print('✅ [JobCubit] Job created successfully');
+      debugPrint('✅ [JobCubit] Job created successfully');
       emit(JobCreateCreated(response: response));
     } on JobException catch (e) {
-      print('❌ [JobCubit] Job creation failed: ${e.message}');
+      debugPrint('❌ [JobCubit] Job creation failed: ${e.message}');
       emit(JobCreateError(message: e.message));
     } catch (e, stackTrace) {
-      print('💥 [JobCubit] Unexpected error: $e');
-      print('📋 Stack trace: $stackTrace');
+      debugPrint('💥 [JobCubit] Unexpected error: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
       emit(JobCreateError(message: 'An unexpected error occurred: ${e.toString()}'));
     }
   }

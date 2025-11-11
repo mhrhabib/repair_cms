@@ -35,7 +35,10 @@ class SnackbarDemo extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(title: const Text('Custom Snackbar Demo')),
         body: Center(
-          child: ElevatedButton(onPressed: () => showCustomSnackbar(context), child: const Text('Show Snackbar')),
+          child: ElevatedButton(
+            onPressed: () => showCustomSnackbar(context),
+            child: const Text('Show Snackbar'),
+          ),
         ),
       ),
     );
@@ -46,20 +49,28 @@ class CustomSnackbar extends StatefulWidget {
   final String title;
   final VoidCallback onDismiss;
 
-  const CustomSnackbar({super.key, required this.onDismiss, required this.title});
+  const CustomSnackbar({
+    super.key,
+    required this.onDismiss,
+    required this.title,
+  });
 
   @override
   State<CustomSnackbar> createState() => _CustomSnackbarState();
 }
 
-class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProviderStateMixin {
+class _CustomSnackbarState extends State<CustomSnackbar>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, -1),
@@ -100,8 +111,18 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
-                    BoxShadow(color: Colors.blue, blurRadius: 3, offset: Offset(2, 4), spreadRadius: 1),
-                    BoxShadow(color: Colors.blue, blurRadius: 1, offset: Offset(2, 4), spreadRadius: 1),
+                    BoxShadow(
+                      color: Colors.blue,
+                      blurRadius: 3,
+                      offset: Offset(2, 4),
+                      spreadRadius: 1,
+                    ),
+                    BoxShadow(
+                      color: Colors.blue,
+                      blurRadius: 1,
+                      offset: Offset(2, 4),
+                      spreadRadius: 1,
+                    ),
                   ],
                 ),
                 padding: const EdgeInsets.all(30),
@@ -113,14 +134,25 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                         Container(
                           width: 40,
                           height: 40,
-                          decoration: BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                          child: Icon(Icons.today_outlined, color: Colors.white, size: 24),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.today_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             widget.title,
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
                       ],
@@ -130,7 +162,13 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                       alignment: Alignment.centerLeft,
                       child: TextButton(
                         onPressed: _handleDismiss,
-                        child: const Text('Dismiss', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                        child: const Text(
+                          'Dismiss',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ),
                   ],

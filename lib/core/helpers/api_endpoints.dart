@@ -13,7 +13,8 @@ class ApiEndpoints {
   static const String updateProfileById = '$baseUrl/user/<id>';
   static const String updateProfileEmail = '$baseUrl/user/email/<id>';
   static const String updateProfilePassword = '$baseUrl/user/password/<id>';
-  static const String uploadProfileAvatar = '$baseUrl/file-upload/json/<userId>/profile';
+  static const String uploadProfileAvatar =
+      '$baseUrl/file-upload/json/<userId>/profile';
   static const String getAnImage = '$baseUrl/file-upload/json/images';
 
   //job
@@ -22,7 +23,8 @@ class ApiEndpoints {
   static const String getJobById = '$baseUrl/job/<id>';
 
   static const String completeUserJob = '$baseUrl/job/user/complete/<id>';
-  static const String jobFileUpload = '$baseUrl/job/file-upload/<userId>/<jobId>';
+  static const String jobFileUpload =
+      '$baseUrl/job/file-upload/<userId>/<jobId>';
 
   //quick task
   static const String getAllQuickTasks = '$baseUrl/quick-task/user/<id>';
@@ -43,7 +45,8 @@ class ApiEndpoints {
   static const String accessoriesListUrl = '$baseUrl/accessories/user/<id>';
   static const String createAccessories = '$baseUrl/accessories/create';
   //business list
-  static const String businessListUrl = '$baseUrl/customer-or-supplier/user/<id>';
+  static const String businessListUrl =
+      '$baseUrl/customer-or-supplier/user/<id>';
   static const String createBusiness = '$baseUrl/customer-or-supplier';
   static const String updateBusiness = '$baseUrl/customer-or-supplier/<id>';
   //job types

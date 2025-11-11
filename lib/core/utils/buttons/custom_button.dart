@@ -91,7 +91,9 @@ class CustomButton extends StatelessWidget {
             child: CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation(
-                type == AppButtonType.filled ? AppColors.whiteColor : AppColors.whiteColor,
+                type == AppButtonType.filled
+                    ? AppColors.whiteColor
+                    : AppColors.whiteColor,
               ),
             ),
           )
@@ -101,7 +103,10 @@ class CustomButton extends StatelessWidget {
             children: [
               if (icon != null) ...[icon!, const SizedBox(width: 8)],
               Text(text, style: finalTextStyle, textAlign: TextAlign.center),
-              if (trailingIcon != null) ...[const SizedBox(width: 8), trailingIcon!],
+              if (trailingIcon != null) ...[
+                const SizedBox(width: 8),
+                trailingIcon!,
+              ],
             ],
           );
 
@@ -134,13 +139,19 @@ class CustomButton extends StatelessWidget {
           minimumSize: minimumSize,
           maximumSize: maximumSize,
           side: BorderSide(color: buttonBorderColor, width: borderWidth ?? 2.0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius ?? 8.0)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius ?? 8.0),
+          ),
           textStyle: finalTextStyle,
         ),
         child: buttonContent,
       );
     }
 
-    return SizedBox(width: isFullWidth ? double.infinity : width, height: height, child: button);
+    return SizedBox(
+      width: isFullWidth ? double.infinity : width,
+      height: height,
+      child: button,
+    );
   }
 }

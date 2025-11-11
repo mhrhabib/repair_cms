@@ -35,7 +35,17 @@ class Data {
   int? iV;
   String? id;
 
-  Data({this.sId, this.value, this.label, this.isAdmin, this.userId, this.createdAt, this.updatedAt, this.iV, this.id});
+  Data({
+    this.sId,
+    this.value,
+    this.label,
+    this.isAdmin,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
+    this.iV,
+    this.id,
+  });
 
   Data.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];

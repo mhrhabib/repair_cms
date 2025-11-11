@@ -18,11 +18,19 @@ class ProfileOptionsScreen extends StatelessWidget {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black87,
+            size: 20,
+          ),
         ),
         title: const Text(
           'My Profile',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
@@ -37,14 +45,20 @@ class ProfileOptionsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Personal Details',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonalDetailsScreen()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PersonalDetailsScreen(),
+                  ),
+                );
               },
             ),
             Container(
               height: 1,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.diviverColor, width: 0.5),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -63,7 +77,9 @@ class ProfileOptionsScreen extends StatelessWidget {
               height: 1,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.diviverColor, width: 0.5),
+                ),
               ),
             ),
 
@@ -75,7 +91,11 @@ class ProfileOptionsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Password & Security',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => PasswordSecurityScreen()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PasswordSecurityScreen(),
+                  ),
+                );
               },
             ),
             Container(
@@ -83,7 +103,9 @@ class ProfileOptionsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.diviverColor, width: 0.5),
+                ),
               ),
             ),
           ],
@@ -126,7 +148,11 @@ class ProfileOptionsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.fontMainColor,
+                size: 24,
+              ),
             ],
           ),
         ),

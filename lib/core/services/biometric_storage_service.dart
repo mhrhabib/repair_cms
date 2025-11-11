@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class BiometricStorageService {
@@ -28,9 +29,9 @@ class BiometricStorageService {
         iOptions: _iosOptions,
       );
 
-      print('Biometric credentials saved successfully for: $email');
+      debugPrint('Biometric credentials saved successfully for: $email');
     } catch (e) {
-      print('Error saving biometric credentials: $e');
+      debugPrint('Error saving biometric credentials: $e');
       throw Exception('Failed to save biometric credentials');
     }
   }
@@ -47,7 +48,7 @@ class BiometricStorageService {
 
       return {'email': email, 'password': password};
     } catch (e) {
-      print('Error reading biometric credentials: $e');
+      debugPrint('Error reading biometric credentials: $e');
       return {'email': null, 'password': null};
     }
   }
@@ -72,9 +73,9 @@ class BiometricStorageService {
       await _secureStorage.delete(key: 'biometric_email', aOptions: _androidOptions, iOptions: _iosOptions);
       await _secureStorage.delete(key: 'biometric_password', aOptions: _androidOptions, iOptions: _iosOptions);
 
-      print('Biometric authentication disabled');
+      debugPrint('Biometric authentication disabled');
     } catch (e) {
-      print('Error disabling biometric: $e');
+      debugPrint('Error disabling biometric: $e');
     }
   }
 
@@ -83,7 +84,7 @@ class BiometricStorageService {
     try {
       await _secureStorage.deleteAll(aOptions: _androidOptions, iOptions: _iosOptions);
     } catch (e) {
-      print('Error clearing biometric data: $e');
+      debugPrint('Error clearing biometric data: $e');
     }
   }
 }

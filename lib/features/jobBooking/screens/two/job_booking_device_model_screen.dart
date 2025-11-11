@@ -11,10 +11,12 @@ class JobBookingDeviceModelScreen extends StatefulWidget {
   const JobBookingDeviceModelScreen({super.key, required this.brandId});
 
   @override
-  State<JobBookingDeviceModelScreen> createState() => _JobBookingDeviceModelScreenState();
+  State<JobBookingDeviceModelScreen> createState() =>
+      _JobBookingDeviceModelScreenState();
 }
 
-class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScreen> {
+class _JobBookingDeviceModelScreenState
+    extends State<JobBookingDeviceModelScreen> {
   String selectedModel = '';
   String selectedModelId = '';
   final TextEditingController _searchController = TextEditingController();
@@ -77,16 +79,22 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
 
   Future<void> _createNewModel(String modelName) async {
     if (_brandId.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Please select a brand first'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please select a brand first'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
     if (modelName.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Please enter a model name'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter a model name'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -96,7 +104,11 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
 
     try {
       // Use ModelsCubit to create the model
-      await context.read<ModelsCubit>().createModel(name: modelName.trim(), userId: _userId, brandId: _brandId);
+      await context.read<ModelsCubit>().createModel(
+        name: modelName.trim(),
+        userId: _userId,
+        brandId: _brandId,
+      );
 
       // Wait a bit for the state to update
       await Future.delayed(Duration(milliseconds: 300));
@@ -107,7 +119,8 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
 
       if (modelsState is ModelsLoaded) {
         final newModel = modelsState.models.firstWhere(
-          (model) => model.name?.toLowerCase() == modelName.trim().toLowerCase(),
+          (model) =>
+              model.name?.toLowerCase() == modelName.trim().toLowerCase(),
           orElse: () => ModelsModel(),
         );
         newModelId = newModel.sId ?? '';
@@ -116,13 +129,19 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
       // Select the newly created model
       _selectModel(modelName.trim(), newModelId);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Model "$modelName" created successfully'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Model "$modelName" created successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to create model: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create model: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       setState(() {
         _isCreatingModel = false;
@@ -146,8 +165,17 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                     width: MediaQuery.of(context).size.width * .071 * 2,
                     decoration: BoxDecoration(
                       color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(6),
+                        topRight: Radius.circular(0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 1,
+                          blurStyle: BlurStyle.outer,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -171,7 +199,11 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                             color: const Color(0xFF71788F),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(Icons.close, color: Colors.white, size: 24.sp),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -183,9 +215,17 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                         width: 42.w,
                         height: 42.h,
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
                         child: Center(
-                          child: Text('2', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
+                          child: Text(
+                            '2',
+                            style: AppTypography.fontSize24.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -193,13 +233,19 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                     SizedBox(height: 24.h),
 
                     // Question text
-                    Text('Enter the device Model', style: AppTypography.fontSize22, textAlign: TextAlign.center),
+                    Text(
+                      'Enter the device Model',
+                      style: AppTypography.fontSize22,
+                      textAlign: TextAlign.center,
+                    ),
 
                     SizedBox(height: 4.h),
 
                     Text(
                       '(E.g. iPhone 16, Galaxy S24)',
-                      style: AppTypography.fontSize22.copyWith(fontWeight: FontWeight.normal),
+                      style: AppTypography.fontSize22.copyWith(
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
 
                     SizedBox(height: 32.h),
@@ -215,7 +261,7 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                 child: BlocBuilder<ModelsCubit, ModelsState>(
                   builder: (context, state) {
                     if (state is ModelsLoading) {
-                      return Container(
+                      return SizedBox(
                         height: 60.h,
                         child: const Center(child: CircularProgressIndicator()),
                       );
@@ -231,12 +277,19 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                         ),
                         child: Column(
                           children: [
-                            Text('Failed to load models', style: AppTypography.fontSize14.copyWith(color: Colors.red)),
+                            Text(
+                              'Failed to load models',
+                              style: AppTypography.fontSize14.copyWith(
+                                color: Colors.red,
+                              ),
+                            ),
                             SizedBox(height: 8.h),
                             ElevatedButton(
                               onPressed: () {
                                 if (_brandId.isNotEmpty) {
-                                  context.read<ModelsCubit>().getModels(brandId: _brandId);
+                                  context.read<ModelsCubit>().getModels(
+                                    brandId: _brandId,
+                                  );
                                 }
                               },
                               child: const Text('Retry'),
@@ -256,18 +309,30 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                       controller: _searchController,
                       focusNode: _searchFocusNode,
                       items: models,
-                      hintText: models.isEmpty ? 'Type to create a new model...' : 'Search and select model...',
+                      hintText: models.isEmpty
+                          ? 'Type to create a new model...'
+                          : 'Search and select model...',
                       noItemsText: 'No models found',
                       onSuggestionSelected: (model) {
-                        _selectModel(model.name ?? 'Unknown Model', model.sId ?? '');
+                        _selectModel(
+                          model.name ?? 'Unknown Model',
+                          model.sId ?? '',
+                        );
                       },
                       itemBuilder: (context, model) => ListTile(
                         title: Text(
                           model.name ?? 'Unknown Model',
-                          style: AppTypography.fontSize14.copyWith(color: Colors.black),
+                          style: AppTypography.fontSize14.copyWith(
+                            color: Colors.black,
+                          ),
                         ),
                         subtitle: model.sId != null
-                            ? Text('ID: ${model.sId}', style: AppTypography.fontSize12.copyWith(color: Colors.grey))
+                            ? Text(
+                                'ID: ${model.sId}',
+                                style: AppTypography.fontSize12.copyWith(
+                                  color: Colors.grey,
+                                ),
+                              )
                             : null,
                       ),
                       suggestionsCallback: (pattern) {
@@ -275,31 +340,46 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                           return models;
                         }
                         return models
-                            .where((model) => (model.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
+                            .where(
+                              (model) => (model.name ?? '')
+                                  .toLowerCase()
+                                  .contains(pattern.toLowerCase()),
+                            )
                             .toList();
                       },
                       noItemsFoundBuilder: (context, pattern) {
                         if (pattern.isNotEmpty) {
                           // Show "Create new" option when searching and no results
                           return InkWell(
-                            onTap: _isCreatingModel ? null : () => _createNewModel(pattern),
+                            onTap: _isCreatingModel
+                                ? null
+                                : () => _createNewModel(pattern),
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16.w,
+                                vertical: 12.h,
+                              ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: ListTile(
-                                      leading: Icon(Icons.add_circle_outline, color: AppColors.primary, size: 20.sp),
+                                      leading: Icon(
+                                        Icons.add_circle_outline,
+                                        color: AppColors.primary,
+                                        size: 20.sp,
+                                      ),
                                       title: Text(
                                         'Create "$pattern"',
-                                        style: AppTypography.fontSize14.copyWith(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: AppTypography.fontSize14
+                                            .copyWith(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                       subtitle: Text(
                                         'Add as new model for this brand',
-                                        style: AppTypography.fontSize12.copyWith(color: Colors.grey),
+                                        style: AppTypography.fontSize12
+                                            .copyWith(color: Colors.grey),
                                       ),
                                     ),
                                   ),
@@ -308,20 +388,28 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                       ? SizedBox(
                                           width: 20.w,
                                           height: 20.h,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
                                         )
                                       : Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 16.w,
+                                            vertical: 8.h,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: AppColors.primary,
-                                            borderRadius: BorderRadius.circular(6.r),
+                                            borderRadius: BorderRadius.circular(
+                                              6.r,
+                                            ),
                                           ),
                                           child: Text(
                                             'Add',
-                                            style: AppTypography.fontSize14.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                            style: AppTypography.fontSize14
+                                                .copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                           ),
                                         ),
                                 ],
@@ -336,7 +424,11 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                             padding: EdgeInsets.all(16.w),
                             child: Column(
                               children: [
-                                Icon(Icons.info_outline, color: Colors.grey.shade600, size: 32.sp),
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.grey.shade600,
+                                  size: 32.sp,
+                                ),
                                 SizedBox(height: 8.h),
                                 Text(
                                   'No models found for this brand',
@@ -349,7 +441,9 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                 SizedBox(height: 4.h),
                                 Text(
                                   'Start typing to create a new model',
-                                  style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade500),
+                                  style: AppTypography.fontSize12.copyWith(
+                                    color: Colors.grey.shade500,
+                                  ),
                                   textAlign: TextAlign.center,
                                 ),
                               ],
@@ -369,7 +463,10 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
             if (_isCreatingModel)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: 16.h,
+                  ),
                   child: Container(
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
@@ -379,12 +476,18 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                     ),
                     child: Row(
                       children: [
-                        SizedBox(width: 20.w, height: 20.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(
+                          width: 20.w,
+                          height: 20.h,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                         SizedBox(width: 12.w),
                         Expanded(
                           child: Text(
                             'Creating new model...',
-                            style: AppTypography.fontSize14.copyWith(color: Colors.blue.shade800),
+                            style: AppTypography.fontSize14.copyWith(
+                              color: Colors.blue.shade800,
+                            ),
                           ),
                         ),
                       ],
@@ -396,12 +499,17 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
             // Show selected model info
             BlocBuilder<JobBookingCubit, JobBookingState>(
               builder: (context, bookingState) {
-                final deviceModel = bookingState is JobBookingData ? bookingState.device.model : '';
+                final deviceModel = bookingState is JobBookingData
+                    ? bookingState.device.model
+                    : '';
 
                 if (deviceModel.isNotEmpty) {
                   return SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 16.h,
+                      ),
                       child: Container(
                         padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
@@ -411,7 +519,11 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle, color: AppColors.primary, size: 20.sp),
+                            Icon(
+                              Icons.check_circle,
+                              color: AppColors.primary,
+                              size: 20.sp,
+                            ),
                             SizedBox(width: 12.w),
                             Expanded(
                               child: Column(
@@ -419,11 +531,14 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                 children: [
                                   Text(
                                     'Selected Model',
-                                    style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+                                    style: AppTypography.fontSize12.copyWith(
+                                      color: Colors.grey.shade600,
+                                    ),
                                   ),
                                   Text(
                                     deviceModel,
-                                    style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                                    style: AppTypography.fontSize16Bold
+                                        .copyWith(color: AppColors.primary),
                                   ),
                                 ],
                               ),
@@ -435,9 +550,15 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                   selectedModelId = '';
                                   _searchController.clear();
                                 });
-                                context.read<JobBookingCubit>().updateDeviceInfo(model: '');
+                                context
+                                    .read<JobBookingCubit>()
+                                    .updateDeviceInfo(model: '');
                               },
-                              child: Icon(Icons.close, color: Colors.grey, size: 20.sp),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.grey,
+                                size: 20.sp,
+                              ),
                             ),
                           ],
                         ),
@@ -456,16 +577,24 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
       // Fixed bottom navigation bar with keyboard handling
       bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
         builder: (context, bookingState) {
-          final hasSelectedModel = bookingState is JobBookingData && bookingState.device.model.isNotEmpty;
+          final hasSelectedModel =
+              bookingState is JobBookingData &&
+              bookingState.device.model.isNotEmpty;
 
           return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8.h, left: 24.w, right: 24.w),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 8.h,
+              left: 24.w,
+              right: 24.w,
+            ),
             child: BottomButtonsGroup(
               onPressed: hasSelectedModel && !_isCreatingModel
                   ? () {
-                      Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute(builder: (context) => JobBookingAccessoriesScreen()));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => JobBookingAccessoriesScreen(),
+                        ),
+                      );
                       // ScaffoldMessenger.of(context).showSnackBar(
                       //   SnackBar(
                       //     content: Text('Selected model: ${bookingState.device.model}'),

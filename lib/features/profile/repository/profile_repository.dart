@@ -23,7 +23,9 @@ class ProfileRepository {
         debugPrint('✅ Profile data fetched successfully');
         return ProfileResponseModel.fromJson(response.data);
       } else {
-        debugPrint('❌ Profile fetch failed with status: ${response.statusCode}');
+        debugPrint(
+          '❌ Profile fetch failed with status: ${response.statusCode}',
+        );
         throw Exception('Failed to fetch user: ${response.statusCode}');
       }
     } on dio.DioException catch (e) {
@@ -39,26 +41,36 @@ class ProfileRepository {
     }
   }
 
-  Future<UserData> updateUserProfile(String userId, Map<String, dynamic> updateData) async {
+  Future<UserData> updateUserProfile(
+    String userId,
+    Map<String, dynamic> updateData,
+  ) async {
     try {
       final url = ApiEndpoints.updateProfileById.replaceFirst('<id>', userId);
 
       debugPrint('🎯 Updating profile for user: $userId');
       debugPrint('📦 Update data: $updateData');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: updateData);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: updateData,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Profile updated successfully');
         return UserData.fromJson(response.data);
       } else {
-        debugPrint('❌ Profile update failed with status: ${response.statusCode}');
+        debugPrint(
+          '❌ Profile update failed with status: ${response.statusCode}',
+        );
         throw Exception('Failed to update user: ${response.statusCode}');
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ DioException in updateUserProfile: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        throw Exception(
+          'Server error: ${e.response?.data['message'] ?? e.response?.statusCode}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
@@ -70,7 +82,10 @@ class ProfileRepository {
 
   Future<dynamic> updateUserAvatar(String userId, String imagePath) async {
     try {
-      final url = ApiEndpoints.uploadProfileAvatar.replaceFirst('<userId>', userId);
+      final url = ApiEndpoints.uploadProfileAvatar.replaceFirst(
+        '<userId>',
+        userId,
+      );
 
       debugPrint('🚀 [ProfileRepository] Starting avatar upload...');
       debugPrint('   👤 User ID: $userId');
@@ -122,7 +137,9 @@ class ProfileRepository {
         debugPrint('   📁 Server returned path: $imagePath');
         return imagePath;
       } else {
-        throw Exception('Server returned ${response.statusCode}: ${response.data}');
+        throw Exception(
+          'Server returned ${response.statusCode}: ${response.data}',
+        );
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ [ProfileRepository] DIO ERROR DETAILS:');
@@ -147,10 +164,12 @@ class ProfileRepository {
       String errorMessage;
       switch (e.type) {
         case dio.DioExceptionType.connectionTimeout:
-          errorMessage = 'Connection timeout. Please check your internet connection.';
+          errorMessage =
+              'Connection timeout. Please check your internet connection.';
           break;
         case dio.DioExceptionType.sendTimeout:
-          errorMessage = 'Upload timeout. The server is taking too long to respond.';
+          errorMessage =
+              'Upload timeout. The server is taking too long to respond.';
           break;
         case dio.DioExceptionType.receiveTimeout:
           errorMessage = 'Server response timeout.';
@@ -165,7 +184,8 @@ class ProfileRepository {
           errorMessage = 'Request was cancelled.';
           break;
         case dio.DioExceptionType.connectionError:
-          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+          errorMessage =
+              'Cannot connect to server. Please check your internet connection.';
           break;
         case dio.DioExceptionType.unknown:
           errorMessage = 'Network error: ${e.message ?? "Unknown error"}';
@@ -186,9 +206,14 @@ class ProfileRepository {
 
   Future<String> getImageUrl(String imagePath) async {
     try {
-      debugPrint('🚀 [ProfileRepository] Getting image URL for path: $imagePath');
+      debugPrint(
+        '🚀 [ProfileRepository] Getting image URL for path: $imagePath',
+      );
 
-      dio.Response response = await BaseClient.get(url: ApiEndpoints.getAnImage, payload: {'imagePath': imagePath});
+      dio.Response response = await BaseClient.get(
+        url: ApiEndpoints.getAnImage,
+        payload: {'imagePath': imagePath},
+      );
 
       debugPrint('✅ [ProfileRepository] Image URL response received');
       debugPrint('   📊 Status Code: ${response.statusCode}');
@@ -219,27 +244,44 @@ class ProfileRepository {
     }
   }
 
-  Future<bool> changePassword(String userId, String currentPassword, String newPassword) async {
+  Future<bool> changePassword(
+    String userId,
+    String currentPassword,
+    String newPassword,
+  ) async {
     try {
-      final url = ApiEndpoints.updateProfilePassword.replaceFirst('<id>', userId);
+      final url = ApiEndpoints.updateProfilePassword.replaceFirst(
+        '<id>',
+        userId,
+      );
 
       debugPrint('🎯 Changing password for user: $userId');
 
-      final payload = {"password": currentPassword, "updatedPassword": newPassword};
+      final payload = {
+        "password": currentPassword,
+        "updatedPassword": newPassword,
+      };
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Password changed successfully');
         return true;
       } else {
-        debugPrint('❌ Password change failed with status: ${response.statusCode}');
+        debugPrint(
+          '❌ Password change failed with status: ${response.statusCode}',
+        );
         throw Exception('Failed to change password: ${response.statusCode}');
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ DioException in changePassword: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        throw Exception(
+          'Server error: ${e.response?.data['message'] ?? e.response?.statusCode}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
@@ -249,7 +291,11 @@ class ProfileRepository {
     }
   }
 
-  Future<bool> updateUserEmail(String userId, String email, String password) async {
+  Future<bool> updateUserEmail(
+    String userId,
+    String email,
+    String password,
+  ) async {
     try {
       final url = ApiEndpoints.updateProfileEmail.replaceFirst('<id>', userId);
 
@@ -258,7 +304,10 @@ class ProfileRepository {
 
       final payload = {"password": password, "email": email};
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Email updated successfully');
@@ -270,7 +319,9 @@ class ProfileRepository {
     } on dio.DioException catch (e) {
       debugPrint('❌ DioException in updateUserEmail: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        throw Exception(
+          'Server error: ${e.response?.data['message'] ?? e.response?.statusCode}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
@@ -281,26 +332,36 @@ class ProfileRepository {
   }
 
   // Method to update specific fields like language preference
-  Future<UserData> updateUserPreferences(String userId, Map<String, dynamic> preferences) async {
+  Future<UserData> updateUserPreferences(
+    String userId,
+    Map<String, dynamic> preferences,
+  ) async {
     try {
       final url = ApiEndpoints.updateProfileById.replaceFirst('<id>', userId);
 
       debugPrint('🎯 Updating preferences for user: $userId');
       debugPrint('📦 Preferences data: $preferences');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: preferences);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: preferences,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Preferences updated successfully');
         return UserData.fromJson(response.data);
       } else {
-        debugPrint('❌ Preferences update failed with status: ${response.statusCode}');
+        debugPrint(
+          '❌ Preferences update failed with status: ${response.statusCode}',
+        );
         throw Exception('Failed to update preferences: ${response.statusCode}');
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ DioException in updateUserPreferences: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        throw Exception(
+          'Server error: ${e.response?.data['message'] ?? e.response?.statusCode}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }

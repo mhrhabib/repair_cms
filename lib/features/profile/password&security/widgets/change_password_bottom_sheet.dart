@@ -1,6 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -13,23 +11,24 @@ class ChangePasswordBottomSheet extends StatefulWidget {
 
   static void show(BuildContext context) {
     showCupertinoSheet(
-      context: context,
-      // isScrollControlled: true,
-
-      // backgroundColor: Colors.transparent,
-      pageBuilder: (context) =>
-          BlocProvider.value(value: BlocProvider.of<ProfileCubit>(context), child: const ChangePasswordBottomSheet()),
+      context: context, builder: (context) => BlocProvider.value(
+        value: BlocProvider.of<ProfileCubit>(context),
+        child: const ChangePasswordBottomSheet(),
+      ),
     );
   }
 
   @override
-  State<ChangePasswordBottomSheet> createState() => _ChangePasswordBottomSheetState();
+  State<ChangePasswordBottomSheet> createState() =>
+      _ChangePasswordBottomSheetState();
 }
 
 class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   final FocusNode _currentPasswordFocusNode = FocusNode();
   final FocusNode _newPasswordFocusNode = FocusNode();
@@ -59,7 +58,10 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
   }
 
   bool get _doPasswordsMatch {
-    if (_newPasswordController.text.isEmpty && _confirmPasswordController.text.isEmpty) return true;
+    if (_newPasswordController.text.isEmpty &&
+        _confirmPasswordController.text.isEmpty) {
+      return true;
+    }
     return _newPasswordController.text == _confirmPasswordController.text;
   }
 
@@ -80,10 +82,16 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
 
     final profileCubit = context.read<ProfileCubit>();
     final signInCubit = context.read<SignInCubit>();
-    final userId = signInCubit.userId == '' ? storage.read('userId') : signInCubit.userId;
+    final userId = signInCubit.userId == ''
+        ? storage.read('userId')
+        : signInCubit.userId;
 
     try {
-      await profileCubit.changePassword(userId, _currentPasswordController.text, _newPasswordController.text);
+      await profileCubit.changePassword(
+        userId,
+        _currentPasswordController.text,
+        _newPasswordController.text,
+      );
 
       // Success is handled in the BlocListener in parent screen
       if (mounted) {
@@ -123,7 +131,10 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
       height: MediaQuery.of(context).size.height * 0.95,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -143,15 +154,26 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                 child: Container(
                   width: 32,
                   height: 32,
-                  decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(8)),
-                  child: Icon(Icons.close, color: _isLoading ? Colors.grey : Colors.black54, size: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: _isLoading ? Colors.grey : Colors.black54,
+                    size: 20,
+                  ),
                 ),
               ),
               Expanded(
                 child: Text(
                   'Change Password',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.roboto(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.roboto(
+                    color: Colors.black87,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 32),
@@ -199,13 +221,18 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                               });
                             },
                           ),
-                          if (_newPasswordController.text.isNotEmpty && !_isPasswordValid) ...[
+                          if (_newPasswordController.text.isNotEmpty &&
+                              !_isPasswordValid) ...[
                             SizedBox(height: 8.h),
                             Padding(
                               padding: const EdgeInsets.only(left: 4),
                               child: Row(
                                 children: [
-                                  Icon(SolarIconsBold.infoCircle, color: Colors.red, size: 16.w),
+                                  Icon(
+                                    SolarIconsBold.infoCircle,
+                                    color: Colors.red,
+                                    size: 16.w,
+                                  ),
                                   SizedBox(width: 4.w),
                                   Text(
                                     'Password must be at least 8 characters',
@@ -235,17 +262,23 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                             obscureText: _obscureConfirmPassword,
                             onToggleVisibility: () {
                               setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
                               });
                             },
                           ),
-                          if (_confirmPasswordController.text.isNotEmpty && !_doPasswordsMatch) ...[
+                          if (_confirmPasswordController.text.isNotEmpty &&
+                              !_doPasswordsMatch) ...[
                             SizedBox(height: 8.h),
                             Padding(
                               padding: const EdgeInsets.only(left: 4),
                               child: Row(
                                 children: [
-                                  Icon(SolarIconsBold.infoCircle, color: Colors.red, size: 16.w),
+                                  Icon(
+                                    SolarIconsBold.infoCircle,
+                                    color: Colors.red,
+                                    size: 16.w,
+                                  ),
                                   SizedBox(width: 4.w),
                                   Text(
                                     'Passwords do not match',
@@ -290,12 +323,17 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.grey.shade700,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       side: BorderSide(color: Colors.grey.shade400),
                     ),
                     child: Text(
                       'Clear',
-                      style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500),
+                      style: GoogleFonts.roboto(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),
@@ -328,7 +366,11 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
+          style: GoogleFonts.roboto(
+            color: Colors.black54,
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         SizedBox(height: 8.h),
         TextFormField(
@@ -351,10 +393,15 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
-                obscureText ? SolarIconsOutline.eyeClosed : SolarIconsOutline.eye,
+                obscureText
+                    ? SolarIconsOutline.eyeClosed
+                    : SolarIconsOutline.eye,
                 color: Colors.grey.shade600,
                 size: 20,
               ),
@@ -380,10 +427,17 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
         children: [
           Text(
             'Password Requirements:',
-            style: GoogleFonts.roboto(color: Colors.blue.shade800, fontSize: 14.sp, fontWeight: FontWeight.w600),
+            style: GoogleFonts.roboto(
+              color: Colors.blue.shade800,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           SizedBox(height: 8.h),
-          _buildRequirementItem('At least 8 characters long', _newPasswordController.text.length >= 8),
+          _buildRequirementItem(
+            'At least 8 characters long',
+            _newPasswordController.text.length >= 8,
+          ),
           _buildRequirementItem('Passwords match', _doPasswordsMatch),
         ],
       ),
@@ -403,7 +457,10 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
           SizedBox(width: 8.w),
           Text(
             text,
-            style: GoogleFonts.roboto(color: isMet ? Colors.green : Colors.grey.shade600, fontSize: 12.sp),
+            style: GoogleFonts.roboto(
+              color: isMet ? Colors.green : Colors.grey.shade600,
+              fontSize: 12.sp,
+            ),
           ),
         ],
       ),

@@ -7,7 +7,12 @@ class Error404Screen extends StatelessWidget {
   final VoidCallback? onRetry;
   final String? buttonText;
 
-  const Error404Screen({super.key, required this.errorMessage, this.onRetry, this.buttonText = 'Try Again'});
+  const Error404Screen({
+    super.key,
+    required this.errorMessage,
+    this.onRetry,
+    this.buttonText = 'Try Again',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +41,11 @@ class Error404Screen extends StatelessWidget {
               // Error Title
               Text(
                 _getErrorTitle(errorMessage),
-                style: GoogleFonts.roboto(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.black87),
+                style: GoogleFonts.roboto(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
                 textAlign: TextAlign.center,
               ),
 
@@ -64,13 +73,22 @@ class Error404Screen extends StatelessWidget {
                   OutlinedButton(
                     onPressed: () => Navigator.maybePop(context),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       side: BorderSide(color: Colors.blue.shade400),
                     ),
                     child: Text(
                       'Go Back',
-                      style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.blue.shade400),
+                      style: GoogleFonts.roboto(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.blue.shade400,
+                      ),
                     ),
                   ),
 
@@ -82,13 +100,22 @@ class Error404Screen extends StatelessWidget {
                       onPressed: onRetry,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue.shade400,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         elevation: 0,
                       ),
                       child: Text(
                         buttonText!,
-                        style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                        style: GoogleFonts.roboto(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                 ],
@@ -100,7 +127,11 @@ class Error404Screen extends StatelessWidget {
               if (errorMessage.contains('404'))
                 Text(
                   'The resource you\'re looking for might have been moved or doesn\'t exist.',
-                  style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w400, color: Colors.grey.shade500),
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.grey.shade500,
+                  ),
                   textAlign: TextAlign.center,
                 ),
             ],
@@ -142,7 +173,10 @@ class Error404Screen extends StatelessWidget {
     return Container(
       width: 300,
       height: 300,
-      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(150)),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(150),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -150,7 +184,11 @@ class Error404Screen extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             '404',
-            style: GoogleFonts.roboto(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.grey.shade400),
+            style: GoogleFonts.roboto(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade400,
+            ),
           ),
         ],
       ),
@@ -163,7 +201,11 @@ class NetworkErrorScreen extends StatelessWidget {
   final String errorMessage;
   final VoidCallback? onRetry;
 
-  const NetworkErrorScreen({super.key, required this.errorMessage, this.onRetry});
+  const NetworkErrorScreen({
+    super.key,
+    required this.errorMessage,
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +232,11 @@ class NetworkErrorScreen extends StatelessWidget {
 
               Text(
                 'Oops! Something went wrong',
-                style: GoogleFonts.roboto(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black87),
+                style: GoogleFonts.roboto(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
                 textAlign: TextAlign.center,
               ),
 
@@ -216,13 +262,22 @@ class NetworkErrorScreen extends StatelessWidget {
                   onPressed: onRetry,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade400,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     elevation: 0,
                   ),
                   child: Text(
                     'Retry',
-                    style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                    style: GoogleFonts.roboto(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
             ],
@@ -236,7 +291,10 @@ class NetworkErrorScreen extends StatelessWidget {
     return Container(
       width: 250,
       height: 250,
-      decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        shape: BoxShape.circle,
+      ),
       child: const Icon(Icons.wifi_off, size: 80, color: Colors.grey),
     );
   }

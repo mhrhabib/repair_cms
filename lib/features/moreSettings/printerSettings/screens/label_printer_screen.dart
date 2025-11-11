@@ -14,7 +14,9 @@ class LabelPrinterScreen extends StatefulWidget {
 
 class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   String? selectedPrinter;
-  final TextEditingController ipController = TextEditingController(text: '192.169.5.1');
+  final TextEditingController ipController = TextEditingController(
+    text: '192.169.5.1',
+  );
   String selectedProtocol = 'Brother QL';
   bool isPrinting = false;
 
@@ -28,7 +30,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
 
   Future<void> _testPrint() async {
     if (ipController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter printer IP address')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter printer IP address')),
+      );
       return;
     }
 
@@ -75,15 +79,20 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                   ? 'Test label printed successfully!'
                   : 'Print failed: ${printResult.errorCode}',
             ),
-            backgroundColor: printResult.errorCode == ErrorCode.ERROR_NONE ? Colors.green : Colors.red,
+            backgroundColor: printResult.errorCode == ErrorCode.ERROR_NONE
+                ? Colors.green
+                : Colors.red,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -107,7 +116,11 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
         ),
         title: const Text(
           'Label Printer',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
@@ -121,7 +134,11 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
                 padding: const EdgeInsets.all(20),
@@ -130,14 +147,22 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                   children: [
                     const Text(
                       'Printer Configuration',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 24),
 
                     // Network Printer Dropdown
                     const Text(
                       'Network Printer',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -151,18 +176,34 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                           value: selectedPrinter,
                           hint: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Select Network Printer', style: TextStyle(color: Colors.black87)),
+                            child: Text(
+                              'Select Network Printer',
+                              style: TextStyle(color: Colors.black87),
+                            ),
                           ),
                           icon: const Padding(
                             padding: EdgeInsets.only(right: 16),
-                            child: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Colors.blue,
+                            ),
                           ),
-                          items: ['Brother TD-4550DNWB', 'Brother QL-820NWB', 'Brother PT-P750W'].map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(value)),
-                            );
-                          }).toList(),
+                          items:
+                              [
+                                'Brother TD-4550DNWB',
+                                'Brother QL-820NWB',
+                                'Brother PT-P750W',
+                              ].map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: Text(value),
+                                  ),
+                                );
+                              }).toList(),
                           onChanged: (String? newValue) {
                             setState(() {
                               selectedPrinter = newValue;
@@ -176,7 +217,11 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                     // IP Address Field
                     const Text(
                       'IP Address',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -197,7 +242,10 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(color: Colors.blue),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -205,7 +253,11 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                     // Printer Protocol Dropdown
                     const Text(
                       'Printer Protocol',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -219,12 +271,20 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                           value: selectedProtocol,
                           icon: const Padding(
                             padding: EdgeInsets.only(right: 16),
-                            child: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Colors.blue,
+                            ),
                           ),
                           items: protocols.map((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
-                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(value)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Text(value),
+                              ),
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
@@ -247,7 +307,11 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2)),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
               ],
             ),
             child: SafeArea(
@@ -261,7 +325,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: isPrinting
                       ? const SizedBox(
@@ -269,10 +335,18 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                           width: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
-                      : const Text('Test Print', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      : const Text(
+                          'Test Print',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ),

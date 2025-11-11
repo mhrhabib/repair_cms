@@ -44,7 +44,9 @@ class EmailService {
         debugPrint('✅ Job completion email sent successfully');
       } else {
         debugPrint('❌ Failed to send email. Status: ${response.statusCode}');
-        throw Exception('Failed to send completion email: ${response.statusCode}');
+        throw Exception(
+          'Failed to send completion email: ${response.statusCode}',
+        );
       }
     } catch (e) {
       debugPrint('❌ Error sending job completion email: $e');

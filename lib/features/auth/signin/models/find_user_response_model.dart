@@ -5,6 +5,9 @@ class FindUserResponseModel {
   FindUserResponseModel({required this.success, required this.message});
 
   factory FindUserResponseModel.fromJson(Map<String, dynamic> json) {
-    return FindUserResponseModel(success: json['success'] ?? false, message: json['message'] ?? '');
+    return FindUserResponseModel(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+    );
   }
 }

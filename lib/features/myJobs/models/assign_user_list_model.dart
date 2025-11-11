@@ -7,7 +7,9 @@ class AssignUserListModel {
   factory AssignUserListModel.fromJson(Map<String, dynamic> json) {
     return AssignUserListModel(
       success: json['success'] ?? false,
-      data: (json['data'] as List<dynamic>).map((e) => User.fromJson(e)).toList(),
+      data: (json['data'] as List<dynamic>)
+          .map((e) => User.fromJson(e))
+          .toList(),
     );
   }
 }
@@ -134,7 +136,9 @@ class User {
       position: json['position'],
       shortName: json['shortName'],
 
-      currency: json['currency'] != null ? Currency.fromJson(json['currency']) : null,
+      currency: json['currency'] != null
+          ? Currency.fromJson(json['currency'])
+          : null,
 
       // dateFormat: json['dateFormat'] != null ? DateFormatModel.fromJson(json['dateFormat']) : null,
       // timeFormat: json['timeFormat'] != null ? TimeFormatModel.fromJson(json['timeFormat']) : null,
@@ -143,7 +147,9 @@ class User {
       userType: json['userType'],
       isSubUser: json['isSubUser'] ?? false,
 
-      location: json['location'] != null ? Location.fromJson(json['location']) : null,
+      location: json['location'] != null
+          ? Location.fromJson(json['location'])
+          : null,
       repairTrackingId: json['repair_tracking_id'],
 
       appStoreAccess: json['app_store_access'],
@@ -173,13 +179,19 @@ class User {
       emailBasedAuthEnabled: json['email_based_auth_enabled'],
       twoFactorEmail: json['two_factor_email'],
 
-      subscription: json['subscription'] != null ? Subscription.fromJson(json['subscription']) : null,
+      subscription: json['subscription'] != null
+          ? Subscription.fromJson(json['subscription'])
+          : null,
 
-      accessList: json['accessList'] != null ? List<String>.from(json['accessList']) : [],
+      accessList: json['accessList'] != null
+          ? List<String>.from(json['accessList'])
+          : [],
 
       getFeature: json['getFeatureUpdate'],
 
-      jobRights: json['job_rights'] != null ? JobRights.fromJson(json['job_rights']) : null,
+      jobRights: json['job_rights'] != null
+          ? JobRights.fromJson(json['job_rights'])
+          : null,
     );
   }
 }
@@ -192,10 +204,20 @@ class Currency {
   final String code;
   final String symbol;
 
-  Currency({required this.value, required this.name, required this.code, required this.symbol});
+  Currency({
+    required this.value,
+    required this.name,
+    required this.code,
+    required this.symbol,
+  });
 
   factory Currency.fromJson(Map<String, dynamic> json) {
-    return Currency(value: json['value'], name: json['name'], code: json['code'], symbol: json['symbol']);
+    return Currency(
+      value: json['value'],
+      name: json['name'],
+      code: json['code'],
+      symbol: json['symbol'],
+    );
   }
 }
 
@@ -204,10 +226,18 @@ class DateFormatModel {
   final String name;
   final String format;
 
-  DateFormatModel({required this.value, required this.name, required this.format});
+  DateFormatModel({
+    required this.value,
+    required this.name,
+    required this.format,
+  });
 
   factory DateFormatModel.fromJson(Map<String, dynamic> json) {
-    return DateFormatModel(value: json['value'], name: json['name'], format: json['format']);
+    return DateFormatModel(
+      value: json['value'],
+      name: json['name'],
+      format: json['format'],
+    );
   }
 }
 
@@ -217,7 +247,12 @@ class TimeFormatModel {
   final String format;
   final bool hour12;
 
-  TimeFormatModel({required this.value, required this.name, required this.format, required this.hour12});
+  TimeFormatModel({
+    required this.value,
+    required this.name,
+    required this.format,
+    required this.hour12,
+  });
 
   factory TimeFormatModel.fromJson(Map<String, dynamic> json) {
     return TimeFormatModel(

@@ -1,20 +1,20 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/ten/job_booking_add_items_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
-import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 
 class JobBookingProblemDescriptionScreen extends StatefulWidget {
   const JobBookingProblemDescriptionScreen({super.key});
 
   @override
-  State<JobBookingProblemDescriptionScreen> createState() => _JobBookingProblemDescriptionScreenState();
+  State<JobBookingProblemDescriptionScreen> createState() =>
+      _JobBookingProblemDescriptionScreenState();
 }
 
-class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDescriptionScreen> {
-  final TextEditingController _problemDescriptionController = TextEditingController();
+class _JobBookingProblemDescriptionScreenState
+    extends State<JobBookingProblemDescriptionScreen> {
+  final TextEditingController _problemDescriptionController =
+      TextEditingController();
   final TextEditingController _internalNoteController = TextEditingController();
 
   bool _isProblemDescriptionValid = false;
@@ -46,7 +46,9 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
 
   void _validateProblemDescription() {
     setState(() {
-      _isProblemDescriptionValid = _problemDescriptionController.text.trim().isNotEmpty;
+      _isProblemDescriptionValid = _problemDescriptionController.text
+          .trim()
+          .isNotEmpty;
     });
   }
 
@@ -65,7 +67,12 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
       cubit.updateDefectInfo(internalNote: internalNotes);
 
       // Navigate to next screen
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingAddItemsScreen()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const JobBookingAddItemsScreen(),
+        ),
+      );
     } else {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,8 +106,17 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                     width: MediaQuery.of(context).size.width * .071 * 9,
                     decoration: BoxDecoration(
                       color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(6),
+                        topRight: Radius.circular(0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 1,
+                          blurStyle: BlurStyle.outer,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -116,8 +132,15 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                         onTap: () => Navigator.pop(context),
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ],
@@ -131,11 +154,18 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                   child: Container(
                     width: 40,
                     height: 40,
-                    decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
                     child: const Center(
                       child: Text(
                         '9',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -150,10 +180,17 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                   children: [
                     Text(
                       'Problem Description',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
                     SizedBox(height: 8),
-                    Text('(Describe the defect and issue)', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    Text(
+                      '(Describe the defect and issue)',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
                   ],
                 ),
               ),
@@ -170,7 +207,11 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                       // Problem Description field
                       const Text(
                         'Problem Description*',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       TextField(
@@ -178,7 +219,10 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                         maxLines: 4,
                         decoration: InputDecoration(
                           hintText: 'Describe the problem in detail',
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -189,10 +233,18 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.blue, width: 2),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          errorText: _isProblemDescriptionValid ? null : 'Problem description is required',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          errorText: _isProblemDescriptionValid
+                              ? null
+                              : 'Problem description is required',
                         ),
                         style: const TextStyle(fontSize: 16),
                         onChanged: (value) => _validateProblemDescription(),
@@ -203,7 +255,11 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                       // Internal Note field
                       const Text(
                         'Internal Note',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       TextField(
@@ -211,7 +267,10 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                         maxLines: 4,
                         decoration: InputDecoration(
                           hintText: 'Add internal notes (optional)',
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -222,9 +281,15 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.blue, width: 2),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                         ),
                         style: const TextStyle(fontSize: 16),
                       ),
@@ -238,7 +303,11 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
           ),
         ),
         bottomNavigationBar: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+            left: 24,
+            right: 24,
+          ),
           child: BottomButtonsGroup(onPressed: _saveDataAndNavigate),
         ),
       ),

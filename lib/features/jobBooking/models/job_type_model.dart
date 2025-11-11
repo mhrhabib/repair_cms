@@ -34,7 +34,16 @@ class JobType {
   int? iV;
   String? id;
 
-  JobType({this.sId, this.name, this.isAdmin, this.userId, this.createdAt, this.updatedAt, this.iV, this.id});
+  JobType({
+    this.sId,
+    this.name,
+    this.isAdmin,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
+    this.iV,
+    this.id,
+  });
 
   JobType.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];

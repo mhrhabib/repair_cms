@@ -14,7 +14,9 @@ class QuickTaskCubit extends Cubit<QuickTaskState> {
   Future<void> getTodos() async {
     emit(QuickTaskLoading());
     try {
-      final response = await _repository.getTodos(userId: storage.read('userId'));
+      final response = await _repository.getTodos(
+        userId: storage.read('userId'),
+      );
       emit(QuickTaskLoaded(response));
     } catch (e) {
       emit(QuickTaskError(e.toString()));

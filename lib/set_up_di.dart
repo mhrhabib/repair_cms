@@ -44,56 +44,102 @@ class SetUpDI {
     // Register SignInRepository
     _getIt.registerLazySingleton<SignInRepository>(() => SignInRepository());
     // Register SignInCubit with the repository dependency
-    _getIt.registerFactory<SignInCubit>(() => SignInCubit(repository: _getIt<SignInRepository>()));
+    _getIt.registerFactory<SignInCubit>(
+      () => SignInCubit(repository: _getIt<SignInRepository>()),
+    );
 
     // You can register other repositories and cubits similarly
-    _getIt.registerLazySingleton<ForgotPasswordRepository>(() => ForgotPasswordRepository());
+    _getIt.registerLazySingleton<ForgotPasswordRepository>(
+      () => ForgotPasswordRepository(),
+    );
     _getIt.registerFactory<ForgotPasswordCubit>(
       () => ForgotPasswordCubit(repository: _getIt<ForgotPasswordRepository>()),
     );
 
     // profile repository and cubit can be registered here as well
     _getIt.registerLazySingleton<ProfileRepository>(() => ProfileRepository());
-    _getIt.registerFactory<ProfileCubit>(() => ProfileCubit(repository: _getIt<ProfileRepository>()));
+    _getIt.registerFactory<ProfileCubit>(
+      () => ProfileCubit(repository: _getIt<ProfileRepository>()),
+    );
     // job repository and cubit
     _getIt.registerLazySingleton<JobRepository>(() => JobRepository());
-    _getIt.registerFactory<JobCubit>(() => JobCubit(repository: _getIt<JobRepository>()));
-    _getIt.registerLazySingleton<DashboardRepository>(() => DashboardRepository());
-    _getIt.registerFactory<DashboardCubit>(() => DashboardCubit(repository: _getIt<DashboardRepository>()));
+    _getIt.registerFactory<JobCubit>(
+      () => JobCubit(repository: _getIt<JobRepository>()),
+    );
+    _getIt.registerLazySingleton<DashboardRepository>(
+      () => DashboardRepository(),
+    );
+    _getIt.registerFactory<DashboardCubit>(
+      () => DashboardCubit(repository: _getIt<DashboardRepository>()),
+    );
 
     // quick task repository and cubit
-    _getIt.registerLazySingleton<QuickTaskRepository>(() => QuickTaskRepository());
-    _getIt.registerFactory<QuickTaskCubit>(() => QuickTaskCubit(_getIt<QuickTaskRepository>()));
+    _getIt.registerLazySingleton<QuickTaskRepository>(
+      () => QuickTaskRepository(),
+    );
+    _getIt.registerFactory<QuickTaskCubit>(
+      () => QuickTaskCubit(_getIt<QuickTaskRepository>()),
+    );
 
     //service list repository and cubit can be registered here as well
-    _getIt.registerLazySingleton<ServiceRepository>(() => ServiceRepositoryImpl());
-    _getIt.registerFactory<ServiceCubit>(() => ServiceCubit(serviceRepository: _getIt<ServiceRepository>()));
+    _getIt.registerLazySingleton<ServiceRepository>(
+      () => ServiceRepositoryImpl(),
+    );
+    _getIt.registerFactory<ServiceCubit>(
+      () => ServiceCubit(serviceRepository: _getIt<ServiceRepository>()),
+    );
 
     // job booking cubit
-    _getIt.registerLazySingleton<JobBookingRepository>(() => JobBookingRepositoryImpl());
-    _getIt.registerFactory<JobCreateCubit>(() => JobCreateCubit(jobRepository: _getIt<JobBookingRepository>()));
+    _getIt.registerLazySingleton<JobBookingRepository>(
+      () => JobBookingRepositoryImpl(),
+    );
+    _getIt.registerFactory<JobCreateCubit>(
+      () => JobCreateCubit(jobRepository: _getIt<JobBookingRepository>()),
+    );
     _getIt.registerFactory<JobBookingCubit>(() => JobBookingCubit());
     //brand repository and cubit can be registered here as well
     _getIt.registerLazySingleton<BrandRepository>(() => BrandRepositoryImpl());
-    _getIt.registerFactory<BrandCubit>(() => BrandCubit(brandRepository: _getIt<BrandRepository>()));
+    _getIt.registerFactory<BrandCubit>(
+      () => BrandCubit(brandRepository: _getIt<BrandRepository>()),
+    );
     //models repository and cubit can be registered here as well
-    _getIt.registerLazySingleton<ModelsRepository>(() => ModelsRepositoryImpl());
-    _getIt.registerFactory<ModelsCubit>(() => ModelsCubit(modelsRepository: _getIt<ModelsRepository>()));
+    _getIt.registerLazySingleton<ModelsRepository>(
+      () => ModelsRepositoryImpl(),
+    );
+    _getIt.registerFactory<ModelsCubit>(
+      () => ModelsCubit(modelsRepository: _getIt<ModelsRepository>()),
+    );
     //accessory repository and cubit can be registered here as well
-    _getIt.registerLazySingleton<AccessoriesRepository>(() => AccessoriesRepositoryImpl());
+    _getIt.registerLazySingleton<AccessoriesRepository>(
+      () => AccessoriesRepositoryImpl(),
+    );
     _getIt.registerFactory<AccessoriesCubit>(
-      () => AccessoriesCubit(accessoriesRepository: _getIt<AccessoriesRepository>()),
+      () => AccessoriesCubit(
+        accessoriesRepository: _getIt<AccessoriesRepository>(),
+      ),
     );
     //contact type repository and cubit can be registered here as well
-    _getIt.registerLazySingleton<ContactTypeRepository>(() => ContactTypeRepositoryImpl());
+    _getIt.registerLazySingleton<ContactTypeRepository>(
+      () => ContactTypeRepositoryImpl(),
+    );
     _getIt.registerFactory<ContactTypeCubit>(
-      () => ContactTypeCubit(contactTypeRepository: _getIt<ContactTypeRepository>()),
+      () => ContactTypeCubit(
+        contactTypeRepository: _getIt<ContactTypeRepository>(),
+      ),
     );
     //job type repo and cubit can be registered here as well
-    _getIt.registerLazySingleton<JobTypeRepository>(() => JobTypeRepositoryImpl());
-    _getIt.registerFactory<JobTypeCubit>(() => JobTypeCubit(jobTypeRepository: _getIt<JobTypeRepository>()));
+    _getIt.registerLazySingleton<JobTypeRepository>(
+      () => JobTypeRepositoryImpl(),
+    );
+    _getIt.registerFactory<JobTypeCubit>(
+      () => JobTypeCubit(jobTypeRepository: _getIt<JobTypeRepository>()),
+    );
     //job item repo and cubit can be registered here as well
-    _getIt.registerLazySingleton<JobItemRepository>(() => JobItemRepositoryImpl());
-    _getIt.registerFactory<JobItemCubit>(() => JobItemCubit(_getIt<JobItemRepository>()));
+    _getIt.registerLazySingleton<JobItemRepository>(
+      () => JobItemRepositoryImpl(),
+    );
+    _getIt.registerFactory<JobItemCubit>(
+      () => JobItemCubit(_getIt<JobItemRepository>()),
+    );
   }
 }

@@ -14,7 +14,9 @@ class ThermalPrinterScreen extends StatefulWidget {
 
 class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   String? selectedPrinter;
-  final TextEditingController ipController = TextEditingController(text: '192.169.5.1');
+  final TextEditingController ipController = TextEditingController(
+    text: '192.169.5.1',
+  );
   String selectedProtocol = 'ECS/POS';
   bool isPrinting = false;
 
@@ -28,7 +30,9 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
 
   Future<void> _testPrint() async {
     if (ipController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter printer IP address')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter printer IP address')),
+      );
       return;
     }
 
@@ -42,7 +46,8 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
       var printInfo = PrinterInfo();
 
       // Set printer model for thermal printer (80mm)
-      printInfo.printerModel = Model.QL_820NWB; // or appropriate 80mm thermal model
+      printInfo.printerModel =
+          Model.QL_820NWB; // or appropriate 80mm thermal model
       printInfo.port = Port.NET;
       printInfo.ipAddress = ipController.text;
 
@@ -54,7 +59,8 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
 
       // Send test print
       var printResult = await printer.printText(
-        'Test Print\n\nThermal Printer (80mm)\nConfiguration Test\n\n' as Paragraph,
+        'Test Print\n\nThermal Printer (80mm)\nConfiguration Test\n\n'
+            as Paragraph,
       );
 
       if (mounted) {
@@ -70,7 +76,9 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
     } finally {
       if (mounted) {
@@ -94,7 +102,11 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
         ),
         title: const Text(
           'Thermal Printer (80mm)',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
@@ -108,7 +120,11 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
                 padding: const EdgeInsets.all(20),
@@ -117,14 +133,22 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                   children: [
                     const Text(
                       'Printer Configuration',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 24),
 
                     // Network Printer Dropdown
                     const Text(
                       'Network Printer',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -138,20 +162,34 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                           value: selectedPrinter,
                           hint: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Select Network Printer', style: TextStyle(color: Colors.black87)),
+                            child: Text(
+                              'Select Network Printer',
+                              style: TextStyle(color: Colors.black87),
+                            ),
                           ),
                           icon: const Padding(
                             padding: EdgeInsets.only(right: 16),
-                            child: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Colors.blue,
+                            ),
                           ),
-                          items: ['Brother QL-820NWB', 'Brother TD-4550DNWB', 'Thermal Printer 80mm'].map((
-                            String value,
-                          ) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(value)),
-                            );
-                          }).toList(),
+                          items:
+                              [
+                                'Brother QL-820NWB',
+                                'Brother TD-4550DNWB',
+                                'Thermal Printer 80mm',
+                              ].map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: Text(value),
+                                  ),
+                                );
+                              }).toList(),
                           onChanged: (String? newValue) {
                             setState(() {
                               selectedPrinter = newValue;
@@ -165,7 +203,11 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                     // IP Address Field
                     const Text(
                       'IP Address',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -186,7 +228,10 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(color: Colors.blue),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -194,7 +239,11 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                     // Printer Protocol Dropdown
                     const Text(
                       'Printer Protocol',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -208,12 +257,20 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                           value: selectedProtocol,
                           icon: const Padding(
                             padding: EdgeInsets.only(right: 16),
-                            child: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Colors.blue,
+                            ),
                           ),
                           items: protocols.map((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
-                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(value)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Text(value),
+                              ),
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
@@ -236,7 +293,11 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2)),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
               ],
             ),
             child: SafeArea(
@@ -250,7 +311,9 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: isPrinting
                       ? const SizedBox(
@@ -258,10 +321,18 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                           width: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
-                      : const Text('Test Print', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      : const Text(
+                          'Test Print',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ),

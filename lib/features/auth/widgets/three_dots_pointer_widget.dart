@@ -22,21 +22,30 @@ class ThreeDotsPointerWidget extends StatelessWidget {
         Container(
           width: 12.w,
           height: 12.w,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: activeIndex == 0 ? primaryColor : secondaryColor),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: activeIndex == 0 ? primaryColor : secondaryColor,
+          ),
         ),
 
         // Second dot
         Container(
           width: 12.w,
           height: 12.w,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: activeIndex == 1 ? primaryColor : secondaryColor),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: activeIndex == 1 ? primaryColor : secondaryColor,
+          ),
         ),
 
         // Third dot
         Container(
           width: 12.w,
           height: 12.w,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: activeIndex == 2 ? primaryColor : secondaryColor),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: activeIndex == 2 ? primaryColor : secondaryColor,
+          ),
         ),
       ],
     );

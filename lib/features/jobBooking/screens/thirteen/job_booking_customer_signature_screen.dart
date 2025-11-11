@@ -11,10 +11,12 @@ class JobBookingCustomerSignatureScreen extends StatefulWidget {
   const JobBookingCustomerSignatureScreen({super.key});
 
   @override
-  State<JobBookingCustomerSignatureScreen> createState() => _JobBookingCustomerSignatureScreenState();
+  State<JobBookingCustomerSignatureScreen> createState() =>
+      _JobBookingCustomerSignatureScreenState();
 }
 
-class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSignatureScreen> {
+class _JobBookingCustomerSignatureScreenState
+    extends State<JobBookingCustomerSignatureScreen> {
   bool _hasSignature = false;
   bool _isSaving = false;
   final List<List<Offset>> _signaturePaths = [];
@@ -30,7 +32,8 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
   }
 
   void _onPanStart(DragStartDetails details) {
-    final RenderBox box = _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox box =
+        _signatureKey.currentContext!.findRenderObject() as RenderBox;
     final localPosition = box.globalToLocal(details.globalPosition);
 
     // Check if the touch is within the signature area bounds
@@ -47,7 +50,8 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
-    final RenderBox box = _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox box =
+        _signatureKey.currentContext!.findRenderObject() as RenderBox;
     final localPosition = box.globalToLocal(details.globalPosition);
 
     // Only add points that are within the signature area bounds
@@ -82,18 +86,28 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
 
         if (signatureBase64.isNotEmpty) {
           // Save to cubit
-          context.read<JobBookingCubit>().updateCustomerSignature(signatureBase64);
+          context.read<JobBookingCubit>().updateCustomerSignature(
+            signatureBase64,
+          );
 
           // Navigate to next screen
           if (mounted) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingSelectPrinterScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const JobBookingSelectPrinterScreen(),
+              ),
+            );
           }
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error saving signature: $e'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error saving signature: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } finally {
         if (mounted) {
@@ -107,9 +121,15 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
 
   Future<String> _captureSignatureAsBase64() async {
     try {
-      final RenderRepaintBoundary boundary = _signatureKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0); // High resolution
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final RenderRepaintBoundary boundary =
+          _signatureKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(
+        pixelRatio: 3.0,
+      ); // High resolution
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
       final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
       // Convert to base64
@@ -137,8 +157,17 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
               width: MediaQuery.of(context).size.width * .071 * 13,
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade300,
+                    blurRadius: 1,
+                    blurStyle: BlurStyle.outer,
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -158,7 +187,11 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                             color: const Color(0xFF71788F),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(Icons.close, color: Colors.white, size: 24.sp),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -170,9 +203,17 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                         width: 42.w,
                         height: 42.h,
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
                         child: Center(
-                          child: Text('13', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
+                          child: Text(
+                            '13',
+                            style: AppTypography.fontSize24.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -180,7 +221,11 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                     SizedBox(height: 24.h),
 
                     // Title
-                    Text('Customer Signature', style: AppTypography.fontSize22, textAlign: TextAlign.center),
+                    Text(
+                      'Customer Signature',
+                      style: AppTypography.fontSize22,
+                      textAlign: TextAlign.center,
+                    ),
 
                     SizedBox(height: 32.h),
 
@@ -189,7 +234,10 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                       width: double.infinity,
                       height: 280.h,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300, width: 2),
+                        border: Border.all(
+                          color: Colors.grey.shade300,
+                          width: 2,
+                        ),
                         borderRadius: BorderRadius.circular(8.r),
                         color: AppColors.whiteColor,
                       ),
@@ -207,18 +255,24 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                                 height: double.infinity,
                                 color: Colors.transparent,
                                 child: CustomPaint(
-                                  painter: SignaturePainter(signaturePaths: _signaturePaths, currentPath: _currentPath),
+                                  painter: SignaturePainter(
+                                    signaturePaths: _signaturePaths,
+                                    currentPath: _currentPath,
+                                  ),
                                   child: SizedBox(
                                     width: double.infinity,
                                     height: double.infinity,
                                     child: Center(
                                       child: Text(
                                         'SIGN HERE',
-                                        style: AppTypography.fontSize16.copyWith(
-                                          color: _hasSignature ? Colors.transparent : Colors.grey.shade300,
-                                          fontWeight: FontWeight.w300,
-                                          letterSpacing: 2,
-                                        ),
+                                        style: AppTypography.fontSize16
+                                            .copyWith(
+                                              color: _hasSignature
+                                                  ? Colors.transparent
+                                                  : Colors.grey.shade300,
+                                              fontWeight: FontWeight.w300,
+                                              letterSpacing: 2,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -234,7 +288,10 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                             child: GestureDetector(
                               onTap: _resetSignature,
                               child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 6.h,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.primary,
                                   borderRadius: BorderRadius.circular(16.r),
@@ -242,7 +299,11 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.refresh, color: Colors.white, size: 16.sp),
+                                    Icon(
+                                      Icons.refresh,
+                                      color: Colors.white,
+                                      size: 16.sp,
+                                    ),
                                     SizedBox(width: 4.w),
                                     Text(
                                       'Reset',
@@ -265,7 +326,9 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
                     // Helper text
                     Text(
                       'Please sign above to confirm service agreement and device condition acknowledgment',
-                      style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600),
+                      style: AppTypography.fontSize14.copyWith(
+                        color: Colors.grey.shade600,
+                      ),
                       textAlign: TextAlign.center,
                     ),
 
@@ -273,7 +336,9 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
 
                     // Navigation buttons
                     BottomButtonsGroup(
-                      onPressed: (_hasSignature && !_isSaving) ? _saveSignatureAndNavigate : null,
+                      onPressed: (_hasSignature && !_isSaving)
+                          ? _saveSignatureAndNavigate
+                          : null,
 
                       okButtonText: _isSaving ? 'Saving...' : 'Continue',
                     ),

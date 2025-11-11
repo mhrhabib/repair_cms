@@ -8,7 +8,16 @@ class ModelsModel {
   int? iV;
   String? id;
 
-  ModelsModel({this.sId, this.name, this.brandId, this.userId, this.createdAt, this.updatedAt, this.iV, this.id});
+  ModelsModel({
+    this.sId,
+    this.name,
+    this.brandId,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
+    this.iV,
+    this.id,
+  });
 
   ModelsModel.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];

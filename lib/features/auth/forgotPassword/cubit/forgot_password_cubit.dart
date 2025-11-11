@@ -7,7 +7,8 @@ part 'forgot_password_state.dart';
 class ForgotPasswordCubit extends Cubit<ForgotPasswordState> {
   final ForgotPasswordRepository repository;
 
-  ForgotPasswordCubit({required this.repository}) : super(ForgotPasswordInitial());
+  ForgotPasswordCubit({required this.repository})
+    : super(ForgotPasswordInitial());
 
   void updateOtp(String otp) {
     if (state is! ForgotPasswordLoading) {

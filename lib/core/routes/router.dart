@@ -14,26 +14,45 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: RouteNames.splash,
     routes: [
-      GoRoute(path: RouteNames.splash, builder: (context, state) => const SplashScreen()),
-      GoRoute(path: RouteNames.home, builder: (context, state) => const HomeScreen()),
-      GoRoute(path: RouteNames.dashboard, builder: (context, state) => DashboardScreen()),
-      GoRoute(path: RouteNames.getStarted, builder: (context, state) => const GetStartedScreen()),
-      GoRoute(path: RouteNames.signIn, builder: (context, state) => SignInScreen()),
+      GoRoute(
+        path: RouteNames.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.home,
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.dashboard,
+        builder: (context, state) => DashboardScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.getStarted,
+        builder: (context, state) => const GetStartedScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.signIn,
+        builder: (context, state) => SignInScreen(),
+      ),
       GoRoute(
         path: RouteNames.passwordInput,
-        builder: (context, state) => PasswordInputScreen(email: state.extra as String),
+        builder: (context, state) =>
+            PasswordInputScreen(email: state.extra as String),
       ),
       GoRoute(
         path: RouteNames.passwordForgotten,
-        builder: (context, state) => PasswordForgottenScreen(email: state.extra as String),
+        builder: (context, state) =>
+            PasswordForgottenScreen(email: state.extra as String),
       ),
       GoRoute(
         path: RouteNames.verifyCode,
-        builder: (context, state) => VerifyCodeScreen(email: state.extra as String),
+        builder: (context, state) =>
+            VerifyCodeScreen(email: state.extra as String),
       ),
       GoRoute(
         path: RouteNames.setNewPassword,
-        builder: (context, state) => SetNewPasswordScreen(email: state.extra as String),
+        builder: (context, state) =>
+            SetNewPasswordScreen(email: state.extra as String),
       ),
     ],
   );

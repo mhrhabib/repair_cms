@@ -16,11 +16,27 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   // Updated tab configuration with all status filters
   final List<TabConfig> _tabs = [
     TabConfig(title: 'All\nJobs', color: Colors.blue, status: ''),
-    TabConfig(title: 'Repair in\nProgress', color: Colors.orange, status: 'in_progress'),
+    TabConfig(
+      title: 'Repair in\nProgress',
+      color: Colors.orange,
+      status: 'in_progress',
+    ),
     TabConfig(title: 'Rejected\nQuotes', color: Colors.red, status: 'rejected'),
-    TabConfig(title: 'Quotation\nAccepted', color: Colors.green, status: 'accepted_quotes'),
-    TabConfig(title: 'Parts Not\nAvailable', color: Colors.purple, status: 'parts_not_available'),
-    TabConfig(title: 'Ready To\nReturn', color: Colors.teal, status: 'ready_to_return'),
+    TabConfig(
+      title: 'Quotation\nAccepted',
+      color: Colors.green,
+      status: 'accepted_quotes',
+    ),
+    TabConfig(
+      title: 'Parts Not\nAvailable',
+      color: Colors.purple,
+      status: 'parts_not_available',
+    ),
+    TabConfig(
+      title: 'Ready To\nReturn',
+      color: Colors.teal,
+      status: 'ready_to_return',
+    ),
     TabConfig(title: 'Archive', color: Colors.grey, status: 'archive'),
   ];
 
@@ -58,7 +74,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
             leading: const Icon(Icons.search, color: Colors.black87),
             title: const Text(
               'My Jobs',
-              style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             centerTitle: true,
             actions: [
@@ -106,20 +126,34 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                       return GestureDetector(
                         onTap: () => _onTabChanged(index),
                         child: Container(
-                          margin: EdgeInsets.only(top: 1.h, bottom: 1.h, left: 4.w, right: 4.w),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          margin: EdgeInsets.only(
+                            top: 1.h,
+                            bottom: 1.h,
+                            left: 4.w,
+                            right: 4.w,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.transparent,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(2, 2),
                                     ),
@@ -131,11 +165,17 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 8,
+                                ),
                                 height: 40.h,
                                 width: 40.w,
                                 alignment: Alignment.center,
-                                decoration: BoxDecoration(shape: BoxShape.circle, color: tab.color),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: tab.color,
+                                ),
                                 child: Text(
                                   count.toString(),
                                   style: GoogleFonts.roboto(
@@ -152,7 +192,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                   tab.title,
                                   style: GoogleFonts.roboto(
                                     fontSize: 14.sp,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w500,
                                     color: Colors.black87,
                                   ),
                                   textAlign: TextAlign.center,
@@ -240,7 +282,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
               child: Center(
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: Text('No jobs found', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  child: Text(
+                    'No jobs found',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
                 ),
               ),
             );
@@ -259,7 +304,12 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
               final job = jobs[index];
               return Padding(
-                padding: EdgeInsets.only(top: index == 0 ? 16.h : 0, bottom: 16.h, left: 16.w, right: 16.w),
+                padding: EdgeInsets.only(
+                  top: index == 0 ? 16.h : 0,
+                  bottom: 16.h,
+                  left: 16.w,
+                  right: 16.w,
+                ),
                 child: JobCardWidget(job: job),
               );
             }, childCount: state.hasMore ? jobs.length + 1 : jobs.length),
@@ -270,7 +320,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
           child: Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
-              child: Text('No jobs available', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              child: Text(
+                'No jobs available',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
             ),
           ),
         );
@@ -288,7 +341,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Filter Jobs', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Filter Jobs',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 16.h),
               // Add filter options here (date range, status, etc.)
               ElevatedButton(

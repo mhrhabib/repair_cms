@@ -11,10 +11,12 @@ import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart
 class JobBookingStartBookingJobScreen extends StatefulWidget {
   const JobBookingStartBookingJobScreen({super.key});
   @override
-  State<JobBookingStartBookingJobScreen> createState() => _JobBookingStartBookingJobScreenState();
+  State<JobBookingStartBookingJobScreen> createState() =>
+      _JobBookingStartBookingJobScreenState();
 }
 
-class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBookingJobScreen> {
+class _JobBookingStartBookingJobScreenState
+    extends State<JobBookingStartBookingJobScreen> {
   String _selectedBrand = '';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -59,13 +61,19 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
     final state = context.read<BrandCubit>().state;
     if (state is BrandAdded) {
       _selectBrand(brandName);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Brand "$brandName" added successfully!'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Brand "$brandName" added successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } else if (state is BrandAddError) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to add brand: ${state.message}'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add brand: ${state.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
 
     setState(() => _isAddingBrand = false);
@@ -87,8 +95,17 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                     width: MediaQuery.of(context).size.width * .071,
                     decoration: BoxDecoration(
                       color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(6),
+                        topRight: Radius.circular(0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 1,
+                          blurStyle: BlurStyle.outer,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -112,7 +129,11 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                             color: const Color(0xFF71788F),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(Icons.close, color: Colors.white, size: 24.sp),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -123,22 +144,36 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                         width: 42.w,
                         height: 42.h,
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
                         child: Center(
-                          child: Text('1', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
+                          child: Text(
+                            '1',
+                            style: AppTypography.fontSize24.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ),
 
                     SizedBox(height: 24.h),
 
-                    Text('What is the device brand', style: AppTypography.fontSize22, textAlign: TextAlign.center),
+                    Text(
+                      'What is the device brand',
+                      style: AppTypography.fontSize22,
+                      textAlign: TextAlign.center,
+                    ),
 
                     SizedBox(height: 4.h),
 
                     Text(
                       '(E.g. Samsung, Apple, Cannon)',
-                      style: AppTypography.fontSize22.copyWith(fontWeight: FontWeight.normal),
+                      style: AppTypography.fontSize22.copyWith(
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
 
                     SizedBox(height: 32.h),
@@ -170,10 +205,17 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                         ),
                         child: Column(
                           children: [
-                            Text('Failed to load brands', style: AppTypography.fontSize14.copyWith(color: Colors.red)),
+                            Text(
+                              'Failed to load brands',
+                              style: AppTypography.fontSize14.copyWith(
+                                color: Colors.red,
+                              ),
+                            ),
                             SizedBox(height: 8.h),
                             ElevatedButton(
-                              onPressed: () => context.read<BrandCubit>().getBrands(userId: _userId),
+                              onPressed: () => context
+                                  .read<BrandCubit>()
+                                  .getBrands(userId: _userId),
                               child: Text('Retry'),
                             ),
                           ],
@@ -182,8 +224,12 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                     }
 
                     if (state is BrandLoaded || state is BrandSearchResult) {
-                      final brands = state is BrandLoaded ? state.brands : (state as BrandSearchResult).brands;
-                      final allBrands = state is BrandLoaded ? state.brands : (state as BrandSearchResult).allBrands;
+                      final brands = state is BrandLoaded
+                          ? state.brands
+                          : (state as BrandSearchResult).brands;
+                      final allBrands = state is BrandLoaded
+                          ? state.brands
+                          : (state as BrandSearchResult).allBrands;
 
                       return CustomDropdownSearch<BrandModel>(
                         controller: _searchController,
@@ -194,7 +240,8 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                         isMultiSelectDropdown: false,
                         onSuggestionSelected: (brand) async {
                           // Check if this is the "Add new" option
-                          if (brand.id == null && brand.name?.startsWith('Add "') == true) {
+                          if (brand.id == null &&
+                              brand.name?.startsWith('Add "') == true) {
                             // Extract the brand name from 'Add "BrandName" as new brand'
 
                             final brandName = brand.name?.split('"')[1] ?? '';
@@ -210,13 +257,20 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                         },
                         itemBuilder: (context, brand) {
                           // Check if this is a "new" brand (add new option)
-                          final isNewOption = brand.id == null && brand.name?.startsWith('Add "') == true;
+                          final isNewOption =
+                              brand.id == null &&
+                              brand.name?.startsWith('Add "') == true;
 
                           if (isNewOption) {
                             return Container(
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE3F2FD), // Light blue background
-                                border: Border.all(color: AppColors.primary, width: 1.5),
+                                color: const Color(
+                                  0xFFE3F2FD,
+                                ), // Light blue background
+                                border: Border.all(
+                                  color: AppColors.primary,
+                                  width: 1.5,
+                                ),
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
                               child: ListTile(
@@ -231,17 +285,23 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                                     ),
                                     SizedBox(width: 8.w),
                                     Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.w,
+                                        vertical: 2.h,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: AppColors.primary,
-                                        borderRadius: BorderRadius.circular(4.r),
+                                        borderRadius: BorderRadius.circular(
+                                          4.r,
+                                        ),
                                       ),
                                       child: Text(
                                         'NEW',
-                                        style: AppTypography.fontSize12.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: AppTypography.fontSize12
+                                            .copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -275,16 +335,28 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                           }
 
                           final filteredBrands = allBrands
-                              .where((brand) => (brand.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
+                              .where(
+                                (brand) => (brand.name ?? '')
+                                    .toLowerCase()
+                                    .contains(pattern.toLowerCase()),
+                              )
                               .toList();
 
                           // Add "Add new" option if no exact match
                           final exactMatch = filteredBrands.any(
-                            (brand) => brand.name?.toLowerCase() == pattern.toLowerCase(),
+                            (brand) =>
+                                brand.name?.toLowerCase() ==
+                                pattern.toLowerCase(),
                           );
 
                           if (!exactMatch && pattern.isNotEmpty) {
-                            filteredBrands.insert(0, BrandModel(id: null, name: 'Add "$pattern" as new brand'));
+                            filteredBrands.insert(
+                              0,
+                              BrandModel(
+                                id: null,
+                                name: 'Add "$pattern" as new brand',
+                              ),
+                            );
                           }
 
                           return filteredBrands;
@@ -300,7 +372,8 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                       displayAllSuggestionWhenTap: false,
                       isMultiSelectDropdown: false,
                       onSuggestionSelected: (brand) {},
-                      itemBuilder: (context, brand) => ListTile(title: Text(brand.name ?? 'Unknown')),
+                      itemBuilder: (context, brand) =>
+                          ListTile(title: Text(brand.name ?? 'Unknown')),
                       suggestionsCallback: (pattern) => [],
                     );
                   },
@@ -311,12 +384,17 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
             // Show selected brand info
             BlocBuilder<JobBookingCubit, JobBookingState>(
               builder: (context, bookingState) {
-                final deviceBrand = bookingState is JobBookingData ? bookingState.device.brand : '';
+                final deviceBrand = bookingState is JobBookingData
+                    ? bookingState.device.brand
+                    : '';
 
                 if (deviceBrand.isNotEmpty) {
                   return SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 16.h,
+                      ),
                       child: Container(
                         padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
@@ -326,7 +404,11 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle, color: AppColors.primary, size: 20.sp),
+                            Icon(
+                              Icons.check_circle,
+                              color: AppColors.primary,
+                              size: 20.sp,
+                            ),
                             SizedBox(width: 12.w),
                             Expanded(
                               child: Column(
@@ -334,11 +416,14 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                                 children: [
                                   Text(
                                     'Selected Brand',
-                                    style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+                                    style: AppTypography.fontSize12.copyWith(
+                                      color: Colors.grey.shade600,
+                                    ),
                                   ),
                                   Text(
                                     deviceBrand,
-                                    style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                                    style: AppTypography.fontSize16Bold
+                                        .copyWith(color: AppColors.primary),
                                   ),
                                 ],
                               ),
@@ -349,9 +434,15 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                                   _selectedBrand = '';
                                   _searchController.clear();
                                 });
-                                context.read<JobBookingCubit>().updateDeviceInfo(brand: '');
+                                context
+                                    .read<JobBookingCubit>()
+                                    .updateDeviceInfo(brand: '');
                               },
-                              child: Icon(Icons.close, color: Colors.grey, size: 20.sp),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.grey,
+                                size: 20.sp,
+                              ),
                             ),
                           ],
                         ),
@@ -368,13 +459,25 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
             if (_isAddingBrand)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: 16.h,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(width: 16.w, height: 16.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(
+                        width: 16.w,
+                        height: 16.h,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                       SizedBox(width: 8.w),
-                      Text('Adding brand...', style: AppTypography.fontSize14.copyWith(color: Colors.grey)),
+                      Text(
+                        'Adding brand...',
+                        style: AppTypography.fontSize14.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -389,7 +492,9 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
                       child: Text(
                         '${state.brands.length} brands available',
-                        style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+                        style: AppTypography.fontSize12.copyWith(
+                          color: Colors.grey.shade600,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -406,16 +511,24 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
 
       bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
         builder: (context, bookingState) {
-          final hasSelectedBrand = bookingState is JobBookingData && bookingState.device.brand.isNotEmpty;
+          final hasSelectedBrand =
+              bookingState is JobBookingData &&
+              bookingState.device.brand.isNotEmpty;
 
           return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8.h, left: 24.w, right: 24.w),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 8.h,
+              left: 24.w,
+              right: 24.w,
+            ),
             child: BottomButtonsGroup(
               onPressed: hasSelectedBrand
                   ? () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => JobBookingDeviceModelScreen(brandId: _selectedBrandId!),
+                          builder: (context) => JobBookingDeviceModelScreen(
+                            brandId: _selectedBrandId!,
+                          ),
                         ),
                       );
                     }

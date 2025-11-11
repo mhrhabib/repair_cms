@@ -70,7 +70,10 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
           // Navigate to reset password screen
           context.push(RouteNames.setNewPassword, extra: widget.email);
         } else if (state is ForgotPasswordEmailSent) {
-          showCustomToast('Verification code sent successfully!', isError: false);
+          showCustomToast(
+            'Verification code sent successfully!',
+            isError: false,
+          );
         }
       },
       builder: (context, state) {
@@ -79,14 +82,24 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
         final isLoading = state is ForgotPasswordLoading;
 
         return Scaffold(
-          appBar: AppBar(iconTheme: IconThemeData(color: AppColors.primary, weight: 800, fill: 0.4)),
+          appBar: AppBar(
+            iconTheme: IconThemeData(
+              color: AppColors.primary,
+              weight: 800,
+              fill: 0.4,
+            ),
+          ),
           body: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: 20.h),
-                Text('Check Your Email!', textAlign: TextAlign.center, style: AppTypography.sfProHeadLineTextStyle28),
+                Text(
+                  'Check Your Email!',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.sfProHeadLineTextStyle28,
+                ),
                 SizedBox(height: 8.h),
                 Text(
                   'Please fill in the code which has been sent to your email',
@@ -97,12 +110,18 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                 Text(
                   widget.email,
                   textAlign: TextAlign.center,
-                  style: AppTypography.sfProText15.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  style: AppTypography.sfProText15.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
                 SizedBox(height: 60.h),
                 Text(
                   'Verification Code',
-                  style: AppTypography.sfProHeadLineTextStyle28.copyWith(color: AppColors.primary, fontSize: 22.sp),
+                  style: AppTypography.sfProHeadLineTextStyle28.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 22.sp,
+                  ),
                 ),
                 SizedBox(height: 16.h),
                 Pinput(
@@ -120,7 +139,10 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.secondary,
                       borderRadius: BorderRadius.circular(20.r),
-                      border: Border.all(color: AppColors.secondary, width: 1.w),
+                      border: Border.all(
+                        color: AppColors.secondary,
+                        width: 1.w,
+                      ),
                     ),
                   ),
                   showCursor: true,
@@ -140,7 +162,9 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                 if (_timer?.isActive ?? false)
                   Text(
                     'Code expires in ${_formatTime(_secondsRemaining)}',
-                    style: AppTypography.sfProText15.copyWith(color: AppColors.secondary),
+                    style: AppTypography.sfProText15.copyWith(
+                      color: AppColors.secondary,
+                    ),
                   )
                 else
                   Column(
@@ -148,7 +172,9 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                       Text(
                         'Didn\'t receive the code? Please check your spam folder',
                         textAlign: TextAlign.center,
-                        style: AppTypography.sfProText15.copyWith(color: AppColors.secondary),
+                        style: AppTypography.sfProText15.copyWith(
+                          color: AppColors.secondary,
+                        ),
                       ),
                       SizedBox(height: 8.h),
                       TextButton(
@@ -168,7 +194,12 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                 if (isLoading)
                   CircularProgressIndicator(color: AppColors.primary)
                 else if (currentOtp.length == 4 && (_timer?.isActive ?? false))
-                  Text('Verifying...', style: AppTypography.sfProText15.copyWith(color: AppColors.primary)),
+                  Text(
+                    'Verifying...',
+                    style: AppTypography.sfProText15.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
               ],
             ),
           ),

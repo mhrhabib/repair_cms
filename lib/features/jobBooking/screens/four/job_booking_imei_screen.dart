@@ -54,8 +54,17 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
               width: MediaQuery.of(context).size.width * .071 * 4,
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade300,
+                    blurRadius: 1,
+                    blurStyle: BlurStyle.outer,
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -75,7 +84,11 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                             color: const Color(0xFF71788F),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(Icons.close, color: Colors.white, size: 24.sp),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -87,9 +100,17 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                         width: 42.w,
                         height: 42.h,
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
                         child: Center(
-                          child: Text('4', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
+                          child: Text(
+                            '4',
+                            style: AppTypography.fontSize24.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -135,10 +156,17 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                           borderRadius: BorderRadius.circular(8.r),
                           borderSide: BorderSide(color: AppColors.primary),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
                         suffixIcon: _imeiController.text.isNotEmpty
                             ? IconButton(
-                                icon: Icon(Icons.clear, color: Colors.grey, size: 20.sp),
+                                icon: Icon(
+                                  Icons.clear,
+                                  color: Colors.grey,
+                                  size: 20.sp,
+                                ),
                                 onPressed: () {
                                   _imeiController.clear();
                                   _updateImeiInCubit();
@@ -186,7 +214,8 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                     // Show current IMEI from cubit
                     BlocBuilder<JobBookingCubit, JobBookingState>(
                       builder: (context, state) {
-                        if (state is JobBookingData && state.device.imei.isNotEmpty) {
+                        if (state is JobBookingData &&
+                            state.device.imei.isNotEmpty) {
                           return Padding(
                             padding: EdgeInsets.only(top: 16.h),
                             child: Container(
@@ -194,23 +223,36 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(8.r),
-                                border: Border.all(color: Colors.green.shade100),
+                                border: Border.all(
+                                  color: Colors.green.shade100,
+                                ),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.check_circle, color: Colors.green.shade600, size: 18.sp),
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green.shade600,
+                                    size: 18.sp,
+                                  ),
                                   SizedBox(width: 8.w),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'IMEI Saved',
-                                          style: AppTypography.fontSize12.copyWith(color: Colors.green.shade800),
+                                          style: AppTypography.fontSize12
+                                              .copyWith(
+                                                color: Colors.green.shade800,
+                                              ),
                                         ),
                                         Text(
                                           state.device.imei,
-                                          style: AppTypography.fontSize12.copyWith(color: Colors.green.shade700),
+                                          style: AppTypography.fontSize12
+                                              .copyWith(
+                                                color: Colors.green.shade700,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -218,9 +260,15 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                                   GestureDetector(
                                     onTap: () {
                                       _imeiController.clear();
-                                      context.read<JobBookingCubit>().updateDeviceInfo(imei: '');
+                                      context
+                                          .read<JobBookingCubit>()
+                                          .updateDeviceInfo(imei: '');
                                     },
-                                    child: Icon(Icons.clear, color: Colors.green.shade600, size: 16.sp),
+                                    child: Icon(
+                                      Icons.clear,
+                                      color: Colors.green.shade600,
+                                      size: 16.sp,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -243,7 +291,9 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
       ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 8.h : 8.h,
+          bottom: MediaQuery.of(context).viewInsets.bottom > 0
+              ? MediaQuery.of(context).viewInsets.bottom + 8.h
+              : 8.h,
           left: 24.w,
           right: 24.w,
         ),
@@ -269,7 +319,9 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
     // Save the IMEI before navigating
     _updateImeiInCubit();
 
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingDeviceSecurityScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => JobBookingDeviceSecurityScreen()),
+    );
 
     final imei = _imeiController.text.trim();
     if (imei.isNotEmpty) {

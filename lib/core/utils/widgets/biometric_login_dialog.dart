@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/services/biometric_service.dart';
 
@@ -6,7 +5,11 @@ class BiometricLoginDialog extends StatefulWidget {
   final VoidCallback onBiometricSuccess;
   final VoidCallback onUsePassword;
 
-  const BiometricLoginDialog({super.key, required this.onBiometricSuccess, required this.onUsePassword});
+  const BiometricLoginDialog({
+    super.key,
+    required this.onBiometricSuccess,
+    required this.onUsePassword,
+  });
 
   @override
   State<BiometricLoginDialog> createState() => _BiometricLoginDialogState();
@@ -27,10 +30,13 @@ class _BiometricLoginDialogState extends State<BiometricLoginDialog> {
   Future<void> _initializeAndAuthenticate() async {
     try {
       // Get biometric type
-      final availableBiometrics = await _biometricService.getAvailableBiometrics();
+      final availableBiometrics = await _biometricService
+          .getAvailableBiometrics();
       if (mounted) {
         setState(() {
-          _biometricType = _biometricService.getBiometricTypeName(availableBiometrics);
+          _biometricType = _biometricService.getBiometricTypeName(
+            availableBiometrics,
+          );
         });
       }
 
@@ -51,11 +57,15 @@ class _BiometricLoginDialogState extends State<BiometricLoginDialog> {
 
     setState(() {
       _isAuthenticating = true;
-      _statusMessage = _biometricType.contains('Face') ? 'Look at the camera...' : 'Touch the sensor...';
+      _statusMessage = _biometricType.contains('Face')
+          ? 'Look at the camera...'
+          : 'Touch the sensor...';
     });
 
     try {
-      final isAuthenticated = await _biometricService.authenticate(reason: 'Verify it\'s you to login to your account');
+      final isAuthenticated = await _biometricService.authenticate(
+        reason: 'Verify it\'s you to login to your account',
+      );
 
       if (!mounted) return;
 
@@ -114,13 +124,19 @@ class _BiometricLoginDialogState extends State<BiometricLoginDialog> {
                     : Icons.fingerprint,
                 key: ValueKey(_statusMessage.contains('successful')),
                 size: 60,
-                color: _statusMessage.contains('successful') ? Colors.green : AppColors.primary,
+                color: _statusMessage.contains('successful')
+                    ? Colors.green
+                    : AppColors.primary,
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              _statusMessage.contains('successful') ? 'Success!' : 'Verify It\'s You',
-              style: AppTypography.sfProHeadLineTextStyle28.copyWith(fontSize: 24),
+              _statusMessage.contains('successful')
+                  ? 'Success!'
+                  : 'Verify It\'s You',
+              style: AppTypography.sfProHeadLineTextStyle28.copyWith(
+                fontSize: 24,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -147,7 +163,9 @@ class _BiometricLoginDialogState extends State<BiometricLoginDialog> {
                         height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.primary,
+                          ),
                         ),
                       ),
                     ),
@@ -174,7 +192,12 @@ class _BiometricLoginDialogState extends State<BiometricLoginDialog> {
           if (!_isAuthenticating) ...[
             TextButton(
               onPressed: _onUsePassword,
-              child: Text('Use Password', style: AppTypography.sfProText15.copyWith(color: AppColors.primary)),
+              child: Text(
+                'Use Password',
+                style: AppTypography.sfProText15.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
             ),
           ],
           if (!_isAuthenticating && _statusMessage.contains('failed'))
@@ -182,9 +205,14 @@ class _BiometricLoginDialogState extends State<BiometricLoginDialog> {
               onPressed: _authenticate,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: Text('Try Again', style: AppTypography.sfProText15.copyWith(color: Colors.white)),
+              child: Text(
+                'Try Again',
+                style: AppTypography.sfProText15.copyWith(color: Colors.white),
+              ),
             ),
         ],
       ),

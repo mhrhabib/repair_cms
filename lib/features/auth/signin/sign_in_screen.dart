@@ -40,8 +40,10 @@ class _SignInScreenState extends State<SignInScreen> {
 
   void _checkBiometricOnStart() async {
     try {
-      final isBiometricEnabled = await BiometricStorageService.isBiometricEnabled();
-      final hasCredentials = await BiometricStorageService.hasBiometricCredentials();
+      final isBiometricEnabled =
+          await BiometricStorageService.isBiometricEnabled();
+      final hasCredentials =
+          await BiometricStorageService.hasBiometricCredentials();
 
       setState(() {
         _showBiometricOption = isBiometricEnabled && hasCredentials;
@@ -103,7 +105,9 @@ class _SignInScreenState extends State<SignInScreen> {
     if (!_hasCheckedBiometric) {
       return Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -149,11 +153,18 @@ class _SignInScreenState extends State<SignInScreen> {
                           // Email Input
                           Container(
                             decoration: BoxDecoration(
-                              border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: AppColors.diviverColor,
+                                ),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Text('Email', style: AppTypography.sfProHintTextStyle17),
+                                Text(
+                                  'Email',
+                                  style: AppTypography.sfProHintTextStyle17,
+                                ),
                                 Expanded(
                                   child: TextFormField(
                                     controller: _emailController,
@@ -161,26 +172,45 @@ class _SignInScreenState extends State<SignInScreen> {
                                     style: AppTypography.sfProHintTextStyle17,
                                     decoration: InputDecoration(
                                       hintText: 'your@business.com',
-                                      hintStyle: AppTypography.sfProHintTextStyle17,
+                                      hintStyle:
+                                          AppTypography.sfProHintTextStyle17,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 14,
+                                          ),
                                       suffixIcon: _isEmailValid
                                           ? Container(
-                                              margin: EdgeInsets.only(right: RadiusConstants.md),
-                                              child: Icon(Icons.check_circle, color: AppColors.greenColor, size: 30.w),
+                                              margin: EdgeInsets.only(
+                                                right: RadiusConstants.md,
+                                              ),
+                                              child: Icon(
+                                                Icons.check_circle,
+                                                color: AppColors.greenColor,
+                                                size: 30.w,
+                                              ),
                                             )
                                           : null,
-                                      errorStyle: const TextStyle(color: Colors.red, fontSize: 14),
+                                      errorStyle: const TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                     keyboardType: TextInputType.emailAddress,
                                     textInputAction: TextInputAction.done,
                                     validator: _emailValidator,
                                     onFieldSubmitted: (_) {
-                                      if (_formKey.currentState!.validate() && _isEmailValid) {
-                                        context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
+                                      if (_formKey.currentState!.validate() &&
+                                          _isEmailValid) {
+                                        context
+                                            .read<SignInCubit>()
+                                            .findUserByEmail(
+                                              _emailController.text.trim(),
+                                            );
                                       }
                                     },
                                   ),
@@ -204,7 +234,12 @@ class _SignInScreenState extends State<SignInScreen> {
 
         // Bottom Button
         bottomNavigationBar: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16, left: 16, right: 16, top: 8),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            left: 16,
+            right: 16,
+            top: 8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
@@ -225,8 +260,11 @@ class _SignInScreenState extends State<SignInScreen> {
                           onPressed: state is SignInLoading
                               ? null
                               : () {
-                                  if (_formKey.currentState!.validate() && _isEmailValid) {
-                                    context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
+                                  if (_formKey.currentState!.validate() &&
+                                      _isEmailValid) {
+                                    context.read<SignInCubit>().findUserByEmail(
+                                      _emailController.text.trim(),
+                                    );
                                   }
                                 },
                           child: state is SignInLoading
@@ -235,7 +273,9 @@ class _SignInScreenState extends State<SignInScreen> {
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.whiteColor,
+                                    ),
                                   ),
                                 )
                               : null,
@@ -246,10 +286,17 @@ class _SignInScreenState extends State<SignInScreen> {
                   if (_showBiometricOption) ...[
                     const SizedBox(width: 12),
                     Container(
-                      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: IconButton(
                         onPressed: _authenticateWithBiometric,
-                        icon: Icon(Icons.fingerprint, size: 28, color: Colors.white),
+                        icon: Icon(
+                          Icons.fingerprint,
+                          size: 28,
+                          color: Colors.white,
+                        ),
                         padding: const EdgeInsets.all(12),
                       ),
                     ),
@@ -273,19 +320,26 @@ class _SignInScreenState extends State<SignInScreen> {
       final bool isAvailable = await auth.canCheckBiometrics;
       final bool isDeviceSupported = await auth.isDeviceSupported();
 
-      debugPrint('📱 isAvailable: $isAvailable, isDeviceSupported: $isDeviceSupported');
+      debugPrint(
+        '📱 isAvailable: $isAvailable, isDeviceSupported: $isDeviceSupported',
+      );
 
       if (!isAvailable || !isDeviceSupported) {
         showCustomToast('Biometric not available', isError: true);
         return;
       }
 
-      debugPrint('🚀 Calling authenticate - system prompt should appear now...');
+      debugPrint(
+        '🚀 Calling authenticate - system prompt should appear now...',
+      );
 
       // Call authenticate - THIS should show the system bottom sheet
       final bool didAuthenticate = await auth.authenticate(
         localizedReason: 'Scan your fingerprint or face to continue',
-        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
       );
 
       debugPrint('✅ Authentication completed: $didAuthenticate');
@@ -294,7 +348,8 @@ class _SignInScreenState extends State<SignInScreen> {
         debugPrint('🎉 Authentication successful!');
 
         // Get saved credentials
-        final credentials = await BiometricStorageService.getBiometricCredentials();
+        final credentials =
+            await BiometricStorageService.getBiometricCredentials();
 
         if (credentials['email'] != null && credentials['password'] != null) {
           _emailController.text = credentials['email']!;

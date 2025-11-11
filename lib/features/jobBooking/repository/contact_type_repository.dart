@@ -13,9 +13,14 @@ abstract class ContactTypeRepository {
     int? page,
   });
 
-  Future<Customersorsuppliers> createBusiness({required Map<String, dynamic> payload});
+  Future<Customersorsuppliers> createBusiness({
+    required Map<String, dynamic> payload,
+  });
 
-  Future<Customersorsuppliers> updateBusiness({required String profileId, required Map<String, dynamic> payload});
+  Future<Customersorsuppliers> updateBusiness({
+    required String profileId,
+    required Map<String, dynamic> payload,
+  });
 }
 
 class ContactTypeRepositoryImpl implements ContactTypeRepository {
@@ -28,7 +33,9 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
     int? page = 1,
   }) async {
     try {
-      debugPrint('🚀 [ContactTypeRepository] Fetching profile list for type: $type2');
+      debugPrint(
+        '🚀 [ContactTypeRepository] Fetching profile list for type: $type2',
+      );
 
       // Build query parameters
       final Map<String, dynamic> queryParams = {
@@ -41,12 +48,18 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
         queryParams['keyword'] = keyword;
       }
 
-      final String url = ApiEndpoints.businessListUrl.replaceAll('<id>', userId);
+      final String url = ApiEndpoints.businessListUrl.replaceAll(
+        '<id>',
+        userId,
+      );
       debugPrint('   📍 URL: $url');
       debugPrint('   👤 User ID: $userId');
       debugPrint('   🔍 Query Params: $queryParams');
 
-      dio.Response response = await BaseClient.get(url: url, payload: queryParams);
+      dio.Response response = await BaseClient.get(
+        url: url,
+        payload: queryParams,
+      );
 
       debugPrint('✅ [ContactTypeRepository] Profile response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
@@ -55,7 +68,9 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
         final businessModel = BusinessModel.fromJson(response.data);
 
         if (businessModel.customersorsuppliers != null) {
-          debugPrint('   📦 Parsed ${businessModel.customersorsuppliers!.length} profiles');
+          debugPrint(
+            '   📦 Parsed ${businessModel.customersorsuppliers!.length} profiles',
+          );
           return businessModel.customersorsuppliers!;
         } else {
           debugPrint('   ⚠️ No profiles found');
@@ -69,20 +84,30 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
       }
     } on dio.DioException catch (e) {
       debugPrint('🌐 [ContactTypeRepository] DioException: ${e.message}');
-      throw ContactTypeException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw ContactTypeException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e, stackTrace) {
-      debugPrint('💥 [ContactTypeRepository] Unexpected error: $e\n$stackTrace');
+      debugPrint(
+        '💥 [ContactTypeRepository] Unexpected error: $e\n$stackTrace',
+      );
       throw ContactTypeException(message: 'Unexpected error: $e');
     }
   }
 
   @override
-  Future<Customersorsuppliers> createBusiness({required Map<String, dynamic> payload}) async {
+  Future<Customersorsuppliers> createBusiness({
+    required Map<String, dynamic> payload,
+  }) async {
     try {
       debugPrint('🚀 [ContactTypeRepository] Creating new profile');
       debugPrint('   📦 Payload: $payload');
 
-      dio.Response response = await BaseClient.post(url: ApiEndpoints.createBusiness, payload: payload);
+      dio.Response response = await BaseClient.post(
+        url: ApiEndpoints.createBusiness,
+        payload: payload,
+      );
 
       debugPrint('✅ [ContactTypeRepository] Create profile response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
@@ -94,15 +119,23 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
 
         // Check if response has 'customer' or 'customerorsupplier' array
         if (responseData.containsKey('customer')) {
-          final createdBusiness = Customersorsuppliers.fromJson(responseData['customer']);
-          debugPrint('   🎉 Profile created successfully with ID: ${createdBusiness.sId}');
+          final createdBusiness = Customersorsuppliers.fromJson(
+            responseData['customer'],
+          );
+          debugPrint(
+            '   🎉 Profile created successfully with ID: ${createdBusiness.sId}',
+          );
           return createdBusiness;
         } else if (responseData.containsKey('customerorsupplier') &&
             responseData['customerorsupplier'] is List &&
             responseData['customerorsupplier'].isNotEmpty) {
           // Handle array response structure
-          final createdBusiness = Customersorsuppliers.fromJson(responseData['customerorsupplier'][0]);
-          debugPrint('   🎉 Profile created successfully with ID: ${createdBusiness.sId}');
+          final createdBusiness = Customersorsuppliers.fromJson(
+            responseData['customerorsupplier'][0],
+          );
+          debugPrint(
+            '   🎉 Profile created successfully with ID: ${createdBusiness.sId}',
+          );
           return createdBusiness;
         } else {
           debugPrint('   ⚠️ Unexpected response structure: $responseData');
@@ -118,14 +151,20 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
         );
       }
     } on dio.DioException catch (e) {
-      debugPrint('🌐 [ContactTypeRepository] DioException during profile creation: ${e.message}');
+      debugPrint(
+        '🌐 [ContactTypeRepository] DioException during profile creation: ${e.message}',
+      );
       throw ContactTypeException(
         message: 'Network error while creating profile: ${e.message}',
         statusCode: e.response?.statusCode,
       );
     } catch (e, stackTrace) {
-      debugPrint('💥 [ContactTypeRepository] Unexpected error during profile creation: $e\n$stackTrace');
-      throw ContactTypeException(message: 'Unexpected error while creating profile: $e');
+      debugPrint(
+        '💥 [ContactTypeRepository] Unexpected error during profile creation: $e\n$stackTrace',
+      );
+      throw ContactTypeException(
+        message: 'Unexpected error while creating profile: $e',
+      );
     }
   }
 
@@ -135,14 +174,22 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
     required Map<String, dynamic> payload,
   }) async {
     try {
-      debugPrint('🚀 [ContactTypeRepository] Updating profile with ID: $profileId');
+      debugPrint(
+        '🚀 [ContactTypeRepository] Updating profile with ID: $profileId',
+      );
       debugPrint('   📦 Payload: $payload');
 
       // Construct the update URL
-      final String url = ApiEndpoints.updateBusiness.replaceAll('<id>', profileId);
+      final String url = ApiEndpoints.updateBusiness.replaceAll(
+        '<id>',
+        profileId,
+      );
       debugPrint('   📍 URL: $url');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       debugPrint('✅ [ContactTypeRepository] Update profile response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
@@ -155,14 +202,20 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
         // Check if response has 'customer' or 'customerorsupplier' array
         if (responseData['success'] == true) {
           final updatedBusiness = Customersorsuppliers.fromJson(responseData);
-          debugPrint('   🎉 Profile updated successfully with ID: ${updatedBusiness.sId}');
+          debugPrint(
+            '   🎉 Profile updated successfully with ID: ${updatedBusiness.sId}',
+          );
           return updatedBusiness;
         } else if (responseData.containsKey('customerorsupplier') &&
             responseData['customerorsupplier'] is List &&
             responseData['customerorsupplier'].isNotEmpty) {
           // Handle array response structure
-          final updatedBusiness = Customersorsuppliers.fromJson(responseData['customerorsupplier'][0]);
-          debugPrint('   🎉 Profile updated successfully with ID: ${updatedBusiness.sId}');
+          final updatedBusiness = Customersorsuppliers.fromJson(
+            responseData['customerorsupplier'][0],
+          );
+          debugPrint(
+            '   🎉 Profile updated successfully with ID: ${updatedBusiness.sId}',
+          );
           return updatedBusiness;
         } else {
           debugPrint('   ⚠️ Unexpected response structure: $responseData');
@@ -178,14 +231,20 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
         );
       }
     } on dio.DioException catch (e) {
-      debugPrint('🌐 [ContactTypeRepository] DioException during profile update: ${e.message}');
+      debugPrint(
+        '🌐 [ContactTypeRepository] DioException during profile update: ${e.message}',
+      );
       throw ContactTypeException(
         message: 'Network error while updating profile: ${e.message}',
         statusCode: e.response?.statusCode,
       );
     } catch (e, stackTrace) {
-      debugPrint('💥 [ContactTypeRepository] Unexpected error during profile update: $e\n$stackTrace');
-      throw ContactTypeException(message: 'Unexpected error while updating profile: $e');
+      debugPrint(
+        '💥 [ContactTypeRepository] Unexpected error during profile update: $e\n$stackTrace',
+      );
+      throw ContactTypeException(
+        message: 'Unexpected error while updating profile: $e',
+      );
     }
   }
 }
@@ -197,5 +256,6 @@ class ContactTypeException implements Exception {
   ContactTypeException({required this.message, this.statusCode});
 
   @override
-  String toString() => 'ContactTypeException: $message${statusCode != null ? ' ($statusCode)' : ''}';
+  String toString() =>
+      'ContactTypeException: $message${statusCode != null ? ' ($statusCode)' : ''}';
 }

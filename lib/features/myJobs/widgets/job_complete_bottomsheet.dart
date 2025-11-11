@@ -5,7 +5,11 @@ class JobCompleteBottomSheet extends StatefulWidget {
   final Function(String notes, bool sendEmail) onConfirm;
   final bool sendEmailNotification;
 
-  const JobCompleteBottomSheet({super.key, required this.onConfirm, this.sendEmailNotification = true});
+  const JobCompleteBottomSheet({
+    super.key,
+    required this.onConfirm,
+    this.sendEmailNotification = true,
+  });
 
   @override
   State<JobCompleteBottomSheet> createState() => _JobCompleteBottomSheetState();
@@ -26,7 +30,10 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r), topRight: Radius.circular(20.r)),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.r),
+          topRight: Radius.circular(20.r),
+        ),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
@@ -37,7 +44,10 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
             Container(
               width: 40.w,
               height: 4.h,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2.r)),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
             ),
 
             SizedBox(height: 24.h),
@@ -45,7 +55,11 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
             // Title
             Text(
               'Set Job Complete',
-              style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+              style: GoogleFonts.roboto(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
 
             SizedBox(height: 20.h),
@@ -55,7 +69,9 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
               controller: notesController,
               decoration: InputDecoration(
                 labelText: 'Notes (Optional)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
                 hintText: 'Add any notes about job completion...',
               ),
               maxLines: 3,
@@ -71,7 +87,11 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
                 SizedBox(width: 8.w),
                 Text(
                   'Send completion email to customer',
-                  style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                  style: GoogleFonts.roboto(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
                 ),
               ],
             ),
@@ -88,9 +108,16 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: sendEmailNotification ? Colors.blue.shade50 : Colors.grey.shade100,
+                  color: sendEmailNotification
+                      ? Colors.blue.shade50
+                      : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: sendEmailNotification ? Colors.blue : Colors.grey.shade300, width: 1.5),
+                  border: Border.all(
+                    color: sendEmailNotification
+                        ? Colors.blue
+                        : Colors.grey.shade300,
+                    width: 1.5,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -99,16 +126,27 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
                       width: 20.w,
                       height: 20.h,
                       decoration: BoxDecoration(
-                        color: sendEmailNotification ? Colors.blue : Colors.white,
+                        color: sendEmailNotification
+                            ? Colors.blue
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(4.r),
-                        border: Border.all(color: sendEmailNotification ? Colors.blue : Colors.grey.shade400, width: 2),
+                        border: Border.all(
+                          color: sendEmailNotification
+                              ? Colors.blue
+                              : Colors.grey.shade400,
+                          width: 2,
+                        ),
                       ),
-                      child: sendEmailNotification ? Icon(Icons.check, color: Colors.white, size: 14.sp) : null,
+                      child: sendEmailNotification
+                          ? Icon(Icons.check, color: Colors.white, size: 14.sp)
+                          : null,
                     ),
                     SizedBox(width: 8.w),
                     Icon(
                       Icons.email_outlined,
-                      color: sendEmailNotification ? Colors.blue : Colors.grey.shade600,
+                      color: sendEmailNotification
+                          ? Colors.blue
+                          : Colors.grey.shade600,
                       size: 18.sp,
                     ),
                     SizedBox(width: 6.w),
@@ -117,7 +155,9 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
                       style: GoogleFonts.roboto(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w500,
-                        color: sendEmailNotification ? Colors.blue : Colors.grey.shade700,
+                        color: sendEmailNotification
+                            ? Colors.blue
+                            : Colors.grey.shade700,
                       ),
                     ),
                   ],
@@ -138,12 +178,18 @@ class _JobCompleteBottomSheetState extends State<JobCompleteBottomSheet> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
                   'Confirm Complete',
-                  style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.white),
+                  style: GoogleFonts.roboto(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -172,6 +218,9 @@ void showJobCompleteBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (context) => JobCompleteBottomSheet(onConfirm: onConfirm, sendEmailNotification: sendEmailNotification),
+    builder: (context) => JobCompleteBottomSheet(
+      onConfirm: onConfirm,
+      sendEmailNotification: sendEmailNotification,
+    ),
   );
 }

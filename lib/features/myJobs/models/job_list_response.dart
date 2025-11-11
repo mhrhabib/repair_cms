@@ -30,7 +30,11 @@ class JobListResponse {
   factory JobListResponse.fromJson(Map<String, dynamic> json) {
     return JobListResponse(
       success: json['success'] ?? false,
-      jobs: (json['jobs'] as List<dynamic>?)?.map((job) => Job.fromJson(job)).toList() ?? [],
+      jobs:
+          (json['jobs'] as List<dynamic>?)
+              ?.map((job) => Job.fromJson(job))
+              .toList() ??
+          [],
       currentTotalJobs: json['currentTotalJobs'] ?? 0,
       pages: json['pages'] ?? 0,
       totalJobs: json['totalJobs'] ?? 0,
@@ -189,10 +193,18 @@ class Job {
       customerId: json['customerId'] ?? '',
       assignedItemsIds: List<String>.from(json['assignedItemsIds'] ?? []),
       emailConfirmation: json['emailConfirmation'] ?? false,
-      files: (json['files'] as List<dynamic>?)?.map((file) => JobFile.fromJson(file)).toList() ?? [],
+      files:
+          (json['files'] as List<dynamic>?)
+              ?.map((file) => JobFile.fromJson(file))
+              .toList() ??
+          [],
       printOption: json['printOption'] ?? '',
       printDeviceLabel: json['printDeviceLabel'] ?? false,
-      jobStatus: (json['jobStatus'] as List<dynamic>?)?.map((status) => JobStatus.fromJson(status)).toList() ?? [],
+      jobStatus:
+          (json['jobStatus'] as List<dynamic>?)
+              ?.map((status) => JobStatus.fromJson(status))
+              .toList() ??
+          [],
       customerDetails: CustomerDetails.fromJson(json['customerDetails'] ?? {}),
       deviceData: DeviceData.fromJson(json['deviceData'] ?? {}),
       status: json['status'] ?? '',
@@ -201,30 +213,66 @@ class Job {
       salutationHTMLmarkup: json['salutationHTMLmarkup'] ?? '',
       termsAndConditionsHTMLmarkup: json['termsAndConditionsHTMLmarkup'] ?? '',
       receiptFooter: ReceiptFooter.fromJson(json['receipt_footer'] ?? {}),
-      loggedUserId: (json['loggedUserId'] as List<dynamic>?)?.map((user) => LoggedUser.fromJson(user)).toList() ?? [],
+      loggedUserId:
+          (json['loggedUserId'] as List<dynamic>?)
+              ?.map((user) => LoggedUser.fromJson(user))
+              .toList() ??
+          [],
       userId: json['userId'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? '2023-01-01T00:00:00.000Z'),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? '2023-01-01T00:00:00.000Z'),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
       version: json['__v'] ?? 0,
       jobTrackingNumber: json['job_tracking_number'] ?? '',
       physicalLocation: json['physicalLocation'] ?? '',
       signatureFilePath: json['signatureFilePath'],
       jobPriority: json['job_priority'],
       assignUser: json['assign_user'] ?? [],
-      dueDate: json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
+      dueDate: json['due_date'] != null
+          ? DateTime.parse(json['due_date'])
+          : null,
       lastReminderSent: json['lastReminderSent'],
       isDeviceReturned: json['is_device_returned'],
       isJobCompleted: json['is_job_completed'],
       prioritySort: json['prioritySort'],
-      services: (json['services'] as List<dynamic>?)?.map((service) => Service.fromJson(service)).toList() ?? [],
+      services:
+          (json['services'] as List<dynamic>?)
+              ?.map((service) => Service.fromJson(service))
+              .toList() ??
+          [],
       assignedItems:
-          (json['assignedItems'] as List<dynamic>?)?.map((item) => AssignedItem.fromJson(item)).toList() ?? [],
-      device: (json['device'] as List<dynamic>?)?.map((device) => Device.fromJson(device)).toList() ?? [],
-      contact: (json['contact'] as List<dynamic>?)?.map((contact) => Contact.fromJson(contact)).toList() ?? [],
-      defect: (json['defect'] as List<dynamic>?)?.map((defect) => Defect.fromJson(defect)).toList() ?? [],
-      userData: (json['userData'] as List<dynamic>?)?.map((user) => UserData.fromJson(user)).toList() ?? [],
+          (json['assignedItems'] as List<dynamic>?)
+              ?.map((item) => AssignedItem.fromJson(item))
+              .toList() ??
+          [],
+      device:
+          (json['device'] as List<dynamic>?)
+              ?.map((device) => Device.fromJson(device))
+              .toList() ??
+          [],
+      contact:
+          (json['contact'] as List<dynamic>?)
+              ?.map((contact) => Contact.fromJson(contact))
+              .toList() ??
+          [],
+      defect:
+          (json['defect'] as List<dynamic>?)
+              ?.map((defect) => Defect.fromJson(defect))
+              .toList() ??
+          [],
+      userData:
+          (json['userData'] as List<dynamic>?)
+              ?.map((user) => UserData.fromJson(user))
+              .toList() ??
+          [],
       locationData:
-          (json['locationData'] as List<dynamic>?)?.map((location) => LocationData.fromJson(location)).toList() ?? [],
+          (json['locationData'] as List<dynamic>?)
+              ?.map((location) => LocationData.fromJson(location))
+              .toList() ??
+          [],
       b2bpartnerId: json['b2bpartnerId'],
       jobSource: json['jobSource'],
     );
@@ -281,7 +329,9 @@ class Job {
       'contact': contact.map((contact) => contact.toJson()).toList(),
       'defect': defect.map((defect) => defect.toJson()).toList(),
       'userData': userData.map((user) => user.toJson()).toList(),
-      'locationData': locationData.map((location) => location.toJson()).toList(),
+      'locationData': locationData
+          .map((location) => location.toJson())
+          .toList(),
       'b2bpartnerId': b2bpartnerId,
       'jobSource': jobSource,
     };
@@ -294,7 +344,12 @@ class JobFile {
   final String fileName;
   final int size;
 
-  JobFile({required this.file, required this.id, required this.fileName, required this.size});
+  JobFile({
+    required this.file,
+    required this.id,
+    required this.fileName,
+    required this.size,
+  });
 
   factory JobFile.fromJson(Map<String, dynamic> json) {
     return JobFile(
@@ -451,7 +506,9 @@ class CustomerDetails {
       'shipping_address': shippingAddress.toJson(),
       'vatNo': vatNo,
       'reverseCharge': reverseCharge,
-      'contact_persons': contactPersons?.map((person) => person.toJson()).toList(),
+      'contact_persons': contactPersons
+          ?.map((person) => person.toJson())
+          .toList(),
     };
   }
 }
@@ -500,7 +557,9 @@ class Address {
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.parse('2023-01-01T00:00:00.000Z'),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
     );
   }
 
@@ -593,7 +652,11 @@ class DeviceData {
       brandId: json['brandId'],
       model: json['model'],
       type: json['type'],
-      condition: (json['condition'] as List<dynamic>?)?.map((cond) => Condition.fromJson(cond)).toList() ?? [],
+      condition:
+          (json['condition'] as List<dynamic>?)
+              ?.map((cond) => Condition.fromJson(cond))
+              .toList() ??
+          [],
       serialNo: json['serial_no'],
       category: json['category'],
       imei: json['imei'],
@@ -646,8 +709,12 @@ class Condition {
       label: json['label'],
       isAdmin: json['isAdmin'],
       userId: json['userId'],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
       version: json['__v'],
     );
   }
@@ -741,8 +808,12 @@ class ReceiptAddress {
       country: json['country'] ?? '',
       id: json['_id'],
       companyId: json['companyId'],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
       version: json['__v'],
       organization: json['organization'],
     );
@@ -800,8 +871,12 @@ class ReceiptContact {
       id: json['_id'],
       fax: json['fax'],
       companyId: json['companyId'],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
       version: json['__v'],
     );
   }
@@ -850,8 +925,12 @@ class BankDetails {
       bic: json['bic'] ?? '',
       id: json['_id'],
       companyId: json['companyId'],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
       version: json['__v'],
     );
   }
@@ -878,7 +957,11 @@ class LoggedUser {
   LoggedUser({required this.id, required this.email, required this.fullName});
 
   factory LoggedUser.fromJson(Map<String, dynamic> json) {
-    return LoggedUser(id: json['_id'] ?? '', email: json['email'] ?? '', fullName: json['fullName'] ?? '');
+    return LoggedUser(
+      id: json['_id'] ?? '',
+      email: json['email'] ?? '',
+      fullName: json['fullName'] ?? '',
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -960,12 +1043,20 @@ class Service {
       enableSearchInExpress: json['enable_search_in_express'] ?? false,
       userId: json['userId'] ?? '',
       location: json['location'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? '2023-01-01T00:00:00.000Z'),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? '2023-01-01T00:00:00.000Z'),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
       description: json['description'],
-      images: (json['images'] as List<dynamic>?)?.map((image) => ServiceImage.fromJson(image)).toList(),
+      images: (json['images'] as List<dynamic>?)
+          ?.map((image) => ServiceImage.fromJson(image))
+          .toList(),
       assignedItems: json['assignedItems'],
-      assignedItemIds: json['assignedItemIds'] != null ? List<String>.from(json['assignedItemIds']) : null,
+      assignedItemIds: json['assignedItemIds'] != null
+          ? List<String>.from(json['assignedItemIds'])
+          : null,
       laborRate: (json['labor_rate'] ?? 0).toDouble(),
       profitMarkup: (json['profitMarkup'] ?? 0).toDouble(),
       serviceTimeInMinutes: json['service_time_in_minutes'],
@@ -1012,7 +1103,12 @@ class ServiceImage {
   final String id;
   final String? url;
 
-  ServiceImage({required this.favorite, required this.path, required this.id, this.url});
+  ServiceImage({
+    required this.favorite,
+    required this.path,
+    required this.id,
+    this.url,
+  });
 
   factory ServiceImage.fromJson(Map<String, dynamic> json) {
     return ServiceImage(
@@ -1102,18 +1198,31 @@ class AssignedItem {
       purchasePriceIncVat: (json['purchasePriceIncVat'] ?? 0).toDouble(),
       salePriceExlVat: (json['salePriceExlVat'] ?? 0).toDouble(),
       salePriceIncVat: (json['salePriceIncVat'] ?? 0).toDouble(),
-      barcode: (json['barcode'] as List<dynamic>?)?.map((barcode) => Barcode.fromJson(barcode)).toList() ?? [],
+      barcode:
+          (json['barcode'] as List<dynamic>?)
+              ?.map((barcode) => Barcode.fromJson(barcode))
+              .toList() ??
+          [],
       supplierPriceList:
-          (json['supplierPriceList'] as List<dynamic>?)?.map((supplier) => SupplierPrice.fromJson(supplier)).toList() ??
+          (json['supplierPriceList'] as List<dynamic>?)
+              ?.map((supplier) => SupplierPrice.fromJson(supplier))
+              .toList() ??
           [],
       supplierList:
-          (json['supplierList'] as List<dynamic>?)?.map((supplier) => Supplier.fromJson(supplier)).toList() ?? [],
+          (json['supplierList'] as List<dynamic>?)
+              ?.map((supplier) => Supplier.fromJson(supplier))
+              .toList() ??
+          [],
       serialNoManagement: json['serialNoManagement'] ?? false,
       pricingCalculator: json['pricingCalculator'] ?? false,
       location: json['location'] ?? '',
       userId: json['userId'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? '2023-01-01T00:00:00.000Z'),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? '2023-01-01T00:00:00.000Z'),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
       version: json['__v'] ?? 0,
       physicalLocation: json['physicalLocation'],
     );
@@ -1137,8 +1246,12 @@ class AssignedItem {
       'salePriceExlVat': salePriceExlVat,
       'salePriceIncVat': salePriceIncVat,
       'barcode': barcode.map((barcode) => barcode.toJson()).toList(),
-      'supplierPriceList': supplierPriceList.map((supplier) => supplier.toJson()).toList(),
-      'supplierList': supplierList.map((supplier) => supplier.toJson()).toList(),
+      'supplierPriceList': supplierPriceList
+          .map((supplier) => supplier.toJson())
+          .toList(),
+      'supplierList': supplierList
+          .map((supplier) => supplier.toJson())
+          .toList(),
       'serialNoManagement': serialNoManagement,
       'pricingCalculator': pricingCalculator,
       'location': location,
@@ -1314,12 +1427,20 @@ class Device {
       model: json['model'] ?? '',
       category: json['category'],
       imei: json['imei'],
-      condition: (json['condition'] as List<dynamic>?)?.map((cond) => Condition.fromJson(cond)).toList() ?? [],
+      condition:
+          (json['condition'] as List<dynamic>?)
+              ?.map((cond) => Condition.fromJson(cond))
+              .toList() ??
+          [],
       accessories: json['accessories'] ?? [],
       deviceSecurity: json['deviceSecurity'],
       securityLock: json['securityLock'] ?? [],
-      createdAt: DateTime.parse(json['createdAt'] ?? '2023-01-01T00:00:00.000Z'),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? '2023-01-01T00:00:00.000Z'),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
       version: json['__v'] ?? 0,
       brandId: json['brandId'],
       serialNo: json['serial_no'],
@@ -1395,8 +1516,12 @@ class Contact {
       email: json['email'] ?? '',
       customerId: json['customerId'] ?? '',
       organization: json['organization'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? '2023-01-01T00:00:00.000Z'),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? '2023-01-01T00:00:00.000Z'),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
       version: json['__v'] ?? 0,
       title: json['title'],
     );
@@ -1450,14 +1575,26 @@ class Defect {
   factory Defect.fromJson(Map<String, dynamic> json) {
     return Defect(
       id: json['_id'] ?? '',
-      defect: (json['defect'] as List<dynamic>?)?.map((defect) => DefectItem.fromJson(defect)).toList() ?? [],
+      defect:
+          (json['defect'] as List<dynamic>?)
+              ?.map((defect) => DefectItem.fromJson(defect))
+              .toList() ??
+          [],
       jobType: json['jobType'] ?? '',
       reference: json['reference'] ?? '',
       description: json['description'] ?? '',
-      internalNote: (json['internalNote'] as List<dynamic>?)?.map((note) => InternalNote.fromJson(note)).toList() ?? [],
+      internalNote:
+          (json['internalNote'] as List<dynamic>?)
+              ?.map((note) => InternalNote.fromJson(note))
+              .toList() ??
+          [],
       assignItems: json['assignItems'] ?? [],
-      createdAt: DateTime.parse(json['createdAt'] ?? '2023-01-01T00:00:00.000Z'),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? '2023-01-01T00:00:00.000Z'),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? '2023-01-01T00:00:00.000Z',
+      ),
       version: json['__v'] ?? 0,
     );
   }
@@ -1506,8 +1643,12 @@ class DefectItem {
       label: json['label'],
       isAdmin: json['isAdmin'],
       userId: json['userId'],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
       version: json['__v'],
     );
   }
@@ -1597,7 +1738,13 @@ class InternalNote {
   }
 
   Map<String, dynamic> toJson() {
-    return {'text': text, 'userId': userId, 'createdAt': createdAt.toIso8601String(), 'userName': userName, 'id': id};
+    return {
+      'text': text,
+      'userId': userId,
+      'createdAt': createdAt.toIso8601String(),
+      'userName': userName,
+      'id': id,
+    };
   }
 }
 
@@ -1651,7 +1798,12 @@ class Currency {
   final String code;
   final String symbol;
 
-  Currency({required this.value, required this.name, required this.code, required this.symbol});
+  Currency({
+    required this.value,
+    required this.name,
+    required this.code,
+    required this.symbol,
+  });
 
   factory Currency.fromJson(Map<String, dynamic> json) {
     return Currency(
@@ -1675,7 +1827,11 @@ class DateFormat {
   DateFormat({required this.value, required this.name, required this.format});
 
   factory DateFormat.fromJson(Map<String, dynamic> json) {
-    return DateFormat(value: json['value'] ?? '', name: json['name'] ?? '', format: json['format'] ?? '');
+    return DateFormat(
+      value: json['value'] ?? '',
+      name: json['name'] ?? '',
+      format: json['format'] ?? '',
+    );
   }
 
   Map<String, dynamic> toJson() {

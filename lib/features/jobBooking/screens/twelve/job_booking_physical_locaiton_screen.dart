@@ -6,10 +6,12 @@ class JobBookingPhysicalLocationScreen extends StatefulWidget {
   const JobBookingPhysicalLocationScreen({super.key});
 
   @override
-  State<JobBookingPhysicalLocationScreen> createState() => _JobBookingPhysicalLocationScreenState();
+  State<JobBookingPhysicalLocationScreen> createState() =>
+      _JobBookingPhysicalLocationScreenState();
 }
 
-class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLocationScreen> {
+class _JobBookingPhysicalLocationScreenState
+    extends State<JobBookingPhysicalLocationScreen> {
   final TextEditingController _locationController = TextEditingController();
 
   @override
@@ -22,14 +24,24 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
   void _saveAndNavigate() {
     if (_locationController.text.isNotEmpty) {
       // Save to cubit
-      context.read<JobBookingCubit>().updatePhysicalLocation(_locationController.text.trim());
+      context.read<JobBookingCubit>().updatePhysicalLocation(
+        _locationController.text.trim(),
+      );
 
       // Navigate to next screen
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingCustomerSignatureScreen()));
-    } else {
-      ScaffoldMessenger.of(
+      Navigator.push(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please specify a storage location'), backgroundColor: Colors.red));
+        MaterialPageRoute(
+          builder: (context) => const JobBookingCustomerSignatureScreen(),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please specify a storage location'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -46,8 +58,17 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
               width: MediaQuery.of(context).size.width * .071 * 13,
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade300,
+                    blurRadius: 1,
+                    blurStyle: BlurStyle.outer,
+                  ),
+                ],
               ),
             ),
             // Header
@@ -59,8 +80,15 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
                     onTap: () => Navigator.pop(context),
                     child: Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.close, color: Colors.white, size: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[600],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -71,11 +99,18 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
             Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: Colors.blue,
+                shape: BoxShape.circle,
+              ),
               child: const Center(
                 child: Text(
                   '12',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -85,12 +120,19 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
             // Title and subtitle
             const Text(
               'Physical Location',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
 
             const SizedBox(height: 8),
 
-            Text('(Storage during service)', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+            Text(
+              '(Storage during service)',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
 
             const SizedBox(height: 32),
 
@@ -106,13 +148,27 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
                       controller: _locationController,
                       decoration: InputDecoration(
                         hintText: 'Enter storage location',
-                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-                        border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 16,
+                        ),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
-                      style: const TextStyle(fontSize: 16, color: Colors.black87),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
                     ),
 
                     const SizedBox(height: 16),
@@ -133,8 +189,15 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
                           child: Container(
                             width: 40,
                             height: 40,
-                            decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20)),
-                            child: const Icon(Icons.chevron_left, color: Colors.grey, size: 24),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.chevron_left,
+                              color: Colors.grey,
+                              size: 24,
+                            ),
                           ),
                         ),
 
@@ -147,12 +210,18 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
                             onPressed: _saveAndNavigate,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
                               elevation: 0,
                             ),
                             child: const Text(
                               'Continue',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),

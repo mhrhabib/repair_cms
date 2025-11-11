@@ -15,7 +15,10 @@ class ContactTypeLoaded extends ContactTypeState {
   final List<Customersorsuppliers> businesses;
   final List<Customersorsuppliers> allBusinesses;
 
-  const ContactTypeLoaded({required this.businesses, required this.allBusinesses});
+  const ContactTypeLoaded({
+    required this.businesses,
+    required this.allBusinesses,
+  });
 
   @override
   List<Object> get props => [businesses, allBusinesses];
@@ -26,7 +29,11 @@ class ContactTypeSearchResult extends ContactTypeState {
   final List<Customersorsuppliers> allBusinesses;
   final String searchQuery;
 
-  const ContactTypeSearchResult({required this.businesses, required this.allBusinesses, required this.searchQuery});
+  const ContactTypeSearchResult({
+    required this.businesses,
+    required this.allBusinesses,
+    required this.searchQuery,
+  });
 
   @override
   List<Object> get props => [businesses, allBusinesses, searchQuery];

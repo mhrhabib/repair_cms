@@ -28,7 +28,9 @@ class ServiceRepositoryImpl implements ServiceRepository {
     try {
       debugPrint('🚀 [ServiceRepository] Starting API call with parameters:');
       debugPrint('   📍 URL: ${ApiEndpoints.servicesListUrl}');
-      debugPrint('   🔧 manufacturer: $manufacturer (${manufacturer.runtimeType})');
+      debugPrint(
+        '   🔧 manufacturer: $manufacturer (${manufacturer.runtimeType})',
+      );
       debugPrint('   🔧 model: $model (${model.runtimeType})');
       debugPrint('   🔧 ase: $ase (${ase.runtimeType})');
       debugPrint('   🔧 name: $name (${name.runtimeType})');
@@ -57,15 +59,23 @@ class ServiceRepositoryImpl implements ServiceRepository {
 
         // Check critical fields
         if (data.containsKey('success')) {
-          debugPrint('   ✅ success: ${data['success']} (${data['success'].runtimeType})');
+          debugPrint(
+            '   ✅ success: ${data['success']} (${data['success'].runtimeType})',
+          );
         }
         if (data.containsKey('totalServices')) {
-          debugPrint('   ✅ totalServices: ${data['totalServices']} (${data['totalServices'].runtimeType})');
+          debugPrint(
+            '   ✅ totalServices: ${data['totalServices']} (${data['totalServices'].runtimeType})',
+          );
         }
         if (data.containsKey('services')) {
-          debugPrint('   ✅ services: ${data['services']} (${data['services'].runtimeType})');
+          debugPrint(
+            '   ✅ services: ${data['services']} (${data['services'].runtimeType})',
+          );
           if (data['services'] is List) {
-            debugPrint('   📋 services list length: ${(data['services'] as List).length}');
+            debugPrint(
+              '   📋 services list length: ${(data['services'] as List).length}',
+            );
             if ((data['services'] as List).isNotEmpty) {
               final firstService = (data['services'] as List).first;
               if (firstService is Map) {
@@ -79,13 +89,17 @@ class ServiceRepositoryImpl implements ServiceRepository {
       }
 
       if (response.statusCode == 200) {
-        debugPrint('🔄 [ServiceRepository] Parsing response with ServiceResponseModel.fromJson');
+        debugPrint(
+          '🔄 [ServiceRepository] Parsing response with ServiceResponseModel.fromJson',
+        );
         try {
           final result = ServiceResponseModel.fromJson(response.data);
           debugPrint('✅ [ServiceRepository] Successfully parsed response');
           return result;
         } catch (parseError, parseStack) {
-          debugPrint('❌ [ServiceRepository] Error in ServiceResponseModel.fromJson:');
+          debugPrint(
+            '❌ [ServiceRepository] Error in ServiceResponseModel.fromJson:',
+          );
           debugPrint('   💥 Parse Error: $parseError');
           debugPrint('   📋 Parse Stack: $parseStack');
           rethrow;
@@ -102,7 +116,10 @@ class ServiceRepositoryImpl implements ServiceRepository {
       debugPrint('   📍 Type: ${e.type}');
       debugPrint('   🔧 Response: ${e.response?.data}');
       debugPrint('   📊 Status: ${e.response?.statusCode}');
-      throw ServiceException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw ServiceException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e, stackTrace) {
       debugPrint('💥 [ServiceRepository] Unexpected error:');
       debugPrint('   💥 Error: $e');
@@ -120,5 +137,6 @@ class ServiceException implements Exception {
   ServiceException({required this.message, this.statusCode});
 
   @override
-  String toString() => 'ServiceException: $message${statusCode != null ? ' ($statusCode)' : ''}';
+  String toString() =>
+      'ServiceException: $message${statusCode != null ? ' ($statusCode)' : ''}';
 }

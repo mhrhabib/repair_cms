@@ -5,7 +5,12 @@ class SendOtpResponseModel {
   final String? data;
   final String? error;
 
-  SendOtpResponseModel({required this.success, required this.message, this.data, this.error});
+  SendOtpResponseModel({
+    required this.success,
+    required this.message,
+    this.data,
+    this.error,
+  });
 
   factory SendOtpResponseModel.fromJson(Map<String, dynamic> json) {
     return SendOtpResponseModel(
@@ -23,7 +28,12 @@ class VerifyOtpResponseModel {
   final String? data;
   final String? error;
 
-  VerifyOtpResponseModel({required this.success, required this.message, this.data, this.error});
+  VerifyOtpResponseModel({
+    required this.success,
+    required this.message,
+    this.data,
+    this.error,
+  });
 
   factory VerifyOtpResponseModel.fromJson(Map<String, dynamic> json) {
     return VerifyOtpResponseModel(
@@ -41,7 +51,12 @@ class ResetPasswordResponseModel {
   final String? data;
   final String? error;
 
-  ResetPasswordResponseModel({required this.success, required this.message, this.data, this.error});
+  ResetPasswordResponseModel({
+    required this.success,
+    required this.message,
+    this.data,
+    this.error,
+  });
 
   factory ResetPasswordResponseModel.fromJson(Map<String, dynamic> json) {
     return ResetPasswordResponseModel(

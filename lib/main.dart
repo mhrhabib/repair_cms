@@ -46,25 +46,68 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (context) => SignInCubit(repository: SetUpDI.getIt<SignInRepository>())),
-        BlocProvider(create: (context) => ForgotPasswordCubit(repository: SetUpDI.getIt<ForgotPasswordRepository>())),
-        BlocProvider(create: (context) => ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>())),
-        BlocProvider(create: (context) => JobCubit(repository: SetUpDI.getIt<JobRepository>())),
-        BlocProvider(create: (context) => DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>())),
-        BlocProvider(create: (context) => QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>())),
-        BlocProvider(create: (context) => ServiceCubit(serviceRepository: SetUpDI.getIt<ServiceRepository>())),
-        BlocProvider(create: (context) => JobCreateCubit(jobRepository: SetUpDI.getIt<JobBookingRepository>())),
+        BlocProvider(
+          create: (context) =>
+              SignInCubit(repository: SetUpDI.getIt<SignInRepository>()),
+        ),
+        BlocProvider(
+          create: (context) => ForgotPasswordCubit(
+            repository: SetUpDI.getIt<ForgotPasswordRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) =>
+              ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              JobCubit(repository: SetUpDI.getIt<JobRepository>()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>()),
+        ),
+        BlocProvider(
+          create: (context) => ServiceCubit(
+            serviceRepository: SetUpDI.getIt<ServiceRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => JobCreateCubit(
+            jobRepository: SetUpDI.getIt<JobBookingRepository>(),
+          ),
+        ),
         BlocProvider(create: (context) => JobBookingCubit()),
-        BlocProvider(create: (context) => BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>())),
-        BlocProvider(create: (context) => ModelsCubit(modelsRepository: SetUpDI.getIt<ModelsRepository>())),
         BlocProvider(
-          create: (context) => AccessoriesCubit(accessoriesRepository: SetUpDI.getIt<AccessoriesRepository>()),
+          create: (context) =>
+              BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>()),
         ),
         BlocProvider(
-          create: (context) => ContactTypeCubit(contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>()),
+          create: (context) =>
+              ModelsCubit(modelsRepository: SetUpDI.getIt<ModelsRepository>()),
         ),
-        BlocProvider(create: (context) => JobTypeCubit(jobTypeRepository: SetUpDI.getIt<JobTypeRepository>())),
-        BlocProvider(create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>())),
+        BlocProvider(
+          create: (context) => AccessoriesCubit(
+            accessoriesRepository: SetUpDI.getIt<AccessoriesRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => ContactTypeCubit(
+            contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => JobTypeCubit(
+            jobTypeRepository: SetUpDI.getIt<JobTypeRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>()),
+        ),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),
@@ -73,7 +116,9 @@ class MyApp extends StatelessWidget {
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
           title: 'Repair CMS',
-          theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          ),
           routerConfig: AppRouter.router,
         ),
       ),

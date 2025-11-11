@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 
 /// Service class to handle Brother printer operations
 class BrotherPrinterService {
-  static final BrotherPrinterService _instance = BrotherPrinterService._internal();
+  static final BrotherPrinterService _instance =
+      BrotherPrinterService._internal();
   factory BrotherPrinterService() => _instance;
   BrotherPrinterService._internal();
 
@@ -43,7 +44,11 @@ class BrotherPrinterService {
         message: _getErrorMessage(result.errorCode),
       );
     } catch (e) {
-      return PrinterResult(success: false, errorCode: ErrorCode.ERROR_BATTERY_EMPTY, message: 'Error: ${e.toString()}');
+      return PrinterResult(
+        success: false,
+        errorCode: ErrorCode.ERROR_BATTERY_EMPTY,
+        message: 'Error: ${e.toString()}',
+      );
     }
   }
 
@@ -80,7 +85,11 @@ class BrotherPrinterService {
         message: _getErrorMessage(result.errorCode),
       );
     } catch (e) {
-      return PrinterResult(success: false, errorCode: ErrorCode.ERROR_BUFFER_FULL, message: 'Error: ${e.toString()}');
+      return PrinterResult(
+        success: false,
+        errorCode: ErrorCode.ERROR_BUFFER_FULL,
+        message: 'Error: ${e.toString()}',
+      );
     }
   }
 
@@ -113,12 +122,19 @@ class BrotherPrinterService {
         message: _getErrorMessage(result.errorCode),
       );
     } catch (e) {
-      return PrinterResult(success: false, errorCode: ErrorCode.ERROR_BATTERY_EMPTY, message: 'Error: ${e.toString()}');
+      return PrinterResult(
+        success: false,
+        errorCode: ErrorCode.ERROR_BATTERY_EMPTY,
+        message: 'Error: ${e.toString()}',
+      );
     }
   }
 
   /// Get printer status
-  Future<PrinterStatus> getPrinterStatus({required String ipAddress, required Model printerModel}) async {
+  Future<PrinterStatus> getPrinterStatus({
+    required String ipAddress,
+    required Model printerModel,
+  }) async {
     try {
       var printer = Printer();
       var printInfo = PrinterInfo();
@@ -137,7 +153,11 @@ class BrotherPrinterService {
         message: _getErrorMessage(status.errorCode),
       );
     } catch (e) {
-      return PrinterStatus(isConnected: false, errorCode: ErrorCode.ERROR_CANCEL, message: 'Error: ${e.toString()}');
+      return PrinterStatus(
+        isConnected: false,
+        errorCode: ErrorCode.ERROR_CANCEL,
+        message: 'Error: ${e.toString()}',
+      );
     }
   }
 
@@ -188,7 +208,11 @@ class PrinterResult {
   final ErrorCode errorCode;
   final String message;
 
-  PrinterResult({required this.success, required this.errorCode, required this.message});
+  PrinterResult({
+    required this.success,
+    required this.errorCode,
+    required this.message,
+  });
 }
 
 /// Status class for printer connection
@@ -197,7 +221,11 @@ class PrinterStatus {
   final ErrorCode errorCode;
   final String message;
 
-  PrinterStatus({required this.isConnected, required this.errorCode, required this.message});
+  PrinterStatus({
+    required this.isConnected,
+    required this.errorCode,
+    required this.message,
+  });
 }
 
 /// Example usage class
@@ -243,7 +271,10 @@ class PrinterExamples {
 
   /// Example: Check printer status before printing
   Future<bool> checkPrinterBeforePrint(String ipAddress) async {
-    final status = await _printerService.getPrinterStatus(ipAddress: ipAddress, printerModel: Model.TD_4550DNWB);
+    final status = await _printerService.getPrinterStatus(
+      ipAddress: ipAddress,
+      printerModel: Model.TD_4550DNWB,
+    );
 
     if (status.isConnected) {
       print('Printer is ready');

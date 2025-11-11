@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+// ignore_for_file: unused_element
+
 import 'package:flutter_svg/svg.dart';
 import 'package:repair_cms/core/app_exports.dart';
 
@@ -352,7 +353,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               leading: Container(
                 width: 32,
                 height: 32,
-                decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
               ),
               title: const Text(

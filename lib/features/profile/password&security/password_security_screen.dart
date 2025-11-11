@@ -13,9 +13,11 @@ class PasswordSecurityScreen extends StatefulWidget {
 }
 
 class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   final bool _isTwoFactorEnabled = true;
   bool _isTrustedEmailEnabled = true;
@@ -62,12 +64,17 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
   }
 
   bool get _isPasswordValid {
-    if (_newPasswordController.text.isEmpty) return true; // Don't validate empty password
+    if (_newPasswordController.text.isEmpty) {
+      return true; // Don't validate empty password
+    }
     return _newPasswordController.text.length >= 8;
   }
 
   bool get _doPasswordsMatch {
-    if (_newPasswordController.text.isEmpty && _confirmPasswordController.text.isEmpty) return true;
+    if (_newPasswordController.text.isEmpty &&
+        _confirmPasswordController.text.isEmpty) {
+      return true;
+    }
     return _newPasswordController.text == _confirmPasswordController.text;
   }
 
@@ -76,7 +83,9 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
     // If changing password, validate requirements
     if (_newPasswordController.text.isNotEmpty) {
-      return _currentPasswordController.text.isNotEmpty && _isPasswordValid && _doPasswordsMatch;
+      return _currentPasswordController.text.isNotEmpty &&
+          _isPasswordValid &&
+          _doPasswordsMatch;
     }
 
     return true; // For toggle changes only
@@ -94,7 +103,10 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
     // For now, just show a snackbar
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Security settings saved successfully'), duration: Duration(seconds: 2)),
+      const SnackBar(
+        content: Text('Security settings saved successfully'),
+        duration: Duration(seconds: 2),
+      ),
     );
 
     // Clear password fields after saving
@@ -123,7 +135,11 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
       listener: (context, state) {
         if (state is ProfileError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red, duration: const Duration(seconds: 3)),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
           );
         }
 
@@ -148,11 +164,19 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+              icon: const Icon(
+                Icons.arrow_back_ios,
+                color: Colors.black87,
+                size: 20,
+              ),
             ),
             title: const Text(
               'Password & Security',
-              style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             centerTitle: true,
           ),
@@ -164,7 +188,11 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
               child: Padding(
@@ -281,7 +309,11 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
+          style: GoogleFonts.roboto(
+            color: Colors.black54,
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -304,10 +336,15 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
-                obscureText ? SolarIconsOutline.eyeClosed : SolarIconsOutline.eye,
+                obscureText
+                    ? SolarIconsOutline.eyeClosed
+                    : SolarIconsOutline.eye,
                 color: Colors.grey.shade600,
                 size: 20,
               ),
@@ -320,13 +357,21 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
     );
   }
 
-  Widget _buildToggleField({required String label, required bool value, required ValueChanged<bool> onChanged}) {
+  Widget _buildToggleField({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(color: AppColors.fontMainColor, fontSize: 11.sp, fontWeight: FontWeight.w400),
+          style: GoogleFonts.roboto(
+            color: AppColors.fontMainColor,
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w400,
+          ),
         ),
         Transform.scale(
           scale: 0.8,

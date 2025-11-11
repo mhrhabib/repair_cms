@@ -7,10 +7,20 @@ class CreateJobRequest {
   final Device device;
   final Contact contact;
 
-  CreateJobRequest({required this.job, required this.defect, required this.device, required this.contact});
+  CreateJobRequest({
+    required this.job,
+    required this.defect,
+    required this.device,
+    required this.contact,
+  });
 
   Map<String, dynamic> toJson() {
-    return {'job': job.toJson(), 'defect': defect.toJson(), 'device': device.toJson(), 'contact': contact.toJson()};
+    return {
+      'job': job.toJson(),
+      'defect': defect.toJson(),
+      'device': device.toJson(),
+      'contact': contact.toJson(),
+    };
   }
 }
 
@@ -144,7 +154,8 @@ class Job {
       physicalLocation: physicalLocation ?? this.physicalLocation,
       signatureFilePath: signatureFilePath ?? this.signatureFilePath,
       salutationHTMLmarkup: salutationHTMLmarkup ?? this.salutationHTMLmarkup,
-      termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup ?? this.termsAndConditionsHTMLmarkup,
+      termsAndConditionsHTMLmarkup:
+          termsAndConditionsHTMLmarkup ?? this.termsAndConditionsHTMLmarkup,
       receiptFooter: receiptFooter ?? this.receiptFooter,
       printOption: printOption ?? this.printOption,
     );
@@ -331,7 +342,15 @@ class CustomerAddress {
   final String? state;
   final String? country;
 
-  CustomerAddress({this.id, this.street, this.no, this.zip, this.city, this.state, this.country});
+  CustomerAddress({
+    this.id,
+    this.street,
+    this.no,
+    this.zip,
+    this.city,
+    this.state,
+    this.country,
+  });
 
   Map<String, dynamic> toJson() {
     return {
@@ -426,7 +445,14 @@ class CompanyAddress {
   });
 
   Map<String, dynamic> toJson() {
-    return {'companyName': companyName, 'street': street, 'num': num, 'zip': zip, 'city': city, 'country': country};
+    return {
+      'companyName': companyName,
+      'street': street,
+      'num': num,
+      'zip': zip,
+      'city': city,
+      'country': country,
+    };
   }
 
   CompanyAddress copyWith({
@@ -454,13 +480,28 @@ class CompanyContact {
   final String email;
   final String website;
 
-  CompanyContact({required this.ceo, required this.telephone, required this.email, required this.website});
+  CompanyContact({
+    required this.ceo,
+    required this.telephone,
+    required this.email,
+    required this.website,
+  });
 
   Map<String, dynamic> toJson() {
-    return {'ceo': ceo, 'telephone': telephone, 'email': email, 'website': website};
+    return {
+      'ceo': ceo,
+      'telephone': telephone,
+      'email': email,
+      'website': website,
+    };
   }
 
-  CompanyContact copyWith({String? ceo, String? telephone, String? email, String? website}) {
+  CompanyContact copyWith({
+    String? ceo,
+    String? telephone,
+    String? email,
+    String? website,
+  }) {
     return CompanyContact(
       ceo: ceo ?? this.ceo,
       telephone: telephone ?? this.telephone,
@@ -482,7 +523,11 @@ class BankDetails {
   }
 
   BankDetails copyWith({String? bankName, String? iban, String? bic}) {
-    return BankDetails(bankName: bankName ?? this.bankName, iban: iban ?? this.iban, bic: bic ?? this.bic);
+    return BankDetails(
+      bankName: bankName ?? this.bankName,
+      iban: iban ?? this.iban,
+      bic: bic ?? this.bic,
+    );
   }
 }
 
@@ -491,13 +536,25 @@ class Defect {
   final List<DefectItem> defect;
   final List<dynamic> internalNote;
 
-  Defect({required this.jobType, required this.defect, required this.internalNote});
+  Defect({
+    required this.jobType,
+    required this.defect,
+    required this.internalNote,
+  });
 
   Map<String, dynamic> toJson() {
-    return {'jobType': jobType, 'defect': defect.map((item) => item.toJson()).toList(), 'internalNote': internalNote};
+    return {
+      'jobType': jobType,
+      'defect': defect.map((item) => item.toJson()).toList(),
+      'internalNote': internalNote,
+    };
   }
 
-  Defect copyWith({String? jobType, List<DefectItem>? defect, List<dynamic>? internalNote}) {
+  Defect copyWith({
+    String? jobType,
+    List<DefectItem>? defect,
+    List<dynamic>? internalNote,
+  }) {
     return Defect(
       jobType: jobType ?? this.jobType,
       defect: defect ?? this.defect,
@@ -703,7 +760,10 @@ class JobData {
   JobData({required this.id, required this.jobNo});
 
   factory JobData.fromJson(Map<String, dynamic> json) {
-    return JobData(id: json['_id'] ?? json['id'] ?? '', jobNo: json['jobNo'] ?? '');
+    return JobData(
+      id: json['_id'] ?? json['id'] ?? '',
+      jobNo: json['jobNo'] ?? '',
+    );
   }
 
   JobData copyWith({String? id, String? jobNo}) {

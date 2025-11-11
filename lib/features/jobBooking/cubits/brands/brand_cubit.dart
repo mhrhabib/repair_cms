@@ -1,4 +1,3 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/repository/brand_repository.dart';
 import 'package:repair_cms/features/jobBooking/models/brand_model.dart';
@@ -25,7 +24,9 @@ class BrandCubit extends Cubit<BrandState> {
     } catch (e, stackTrace) {
       debugPrint('💥 [BrandCubit] Unexpected error: $e');
       debugPrint('📋 Stack trace: $stackTrace');
-      emit(BrandError(message: 'An unexpected error occurred: ${e.toString()}'));
+      emit(
+        BrandError(message: 'An unexpected error occurred: ${e.toString()}'),
+      );
     }
   }
 
@@ -44,7 +45,10 @@ class BrandCubit extends Cubit<BrandState> {
 
     try {
       debugPrint('🚀 [BrandCubit] Adding new brand: $name');
-      final newBrand = await brandRepository.addBrand(userId: userId, name: name);
+      final newBrand = await brandRepository.addBrand(
+        userId: userId,
+        name: name,
+      );
 
       debugPrint('✅ [BrandCubit] Successfully added brand: ${newBrand.name}');
 
@@ -93,10 +97,17 @@ class BrandCubit extends Cubit<BrandState> {
         emit(BrandLoaded(brands: currentState.allBrands));
       } else {
         final filteredBrands = currentState.allBrands.where((brand) {
-          return brand.name?.toLowerCase().contains(query.toLowerCase()) ?? false;
+          return brand.name?.toLowerCase().contains(query.toLowerCase()) ??
+              false;
         }).toList();
 
-        emit(BrandSearchResult(brands: filteredBrands, allBrands: currentState.allBrands, searchQuery: query));
+        emit(
+          BrandSearchResult(
+            brands: filteredBrands,
+            allBrands: currentState.allBrands,
+            searchQuery: query,
+          ),
+        );
       }
     }
   }

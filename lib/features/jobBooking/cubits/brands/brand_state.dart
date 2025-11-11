@@ -25,7 +25,11 @@ class BrandSearchResult extends BrandState {
   final List<BrandModel> allBrands;
   final String searchQuery;
 
-  BrandSearchResult({required this.brands, required this.allBrands, required this.searchQuery});
+  BrandSearchResult({
+    required this.brands,
+    required this.allBrands,
+    required this.searchQuery,
+  });
 }
 
 class BrandAdding extends BrandState {}

@@ -15,7 +15,10 @@ class AccessoriesLoaded extends AccessoriesState {
   final List<Data> accessories;
   final List<Data> allAccessories;
 
-  const AccessoriesLoaded({required this.accessories, required this.allAccessories});
+  const AccessoriesLoaded({
+    required this.accessories,
+    required this.allAccessories,
+  });
 
   @override
   List<Object> get props => [accessories, allAccessories];
@@ -26,7 +29,11 @@ class AccessoriesSearchResult extends AccessoriesState {
   final List<Data> allAccessories;
   final String searchQuery;
 
-  const AccessoriesSearchResult({required this.accessories, required this.allAccessories, required this.searchQuery});
+  const AccessoriesSearchResult({
+    required this.accessories,
+    required this.allAccessories,
+    required this.searchQuery,
+  });
 
   @override
   List<Object> get props => [accessories, allAccessories, searchQuery];

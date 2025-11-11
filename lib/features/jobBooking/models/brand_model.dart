@@ -7,7 +7,15 @@ class BrandModel {
   int? iV;
   String? id;
 
-  BrandModel({this.sId, this.name, this.userId, this.createdAt, this.updatedAt, this.iV, this.id});
+  BrandModel({
+    this.sId,
+    this.name,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
+    this.iV,
+    this.id,
+  });
 
   BrandModel.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];

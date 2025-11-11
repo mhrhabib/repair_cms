@@ -15,7 +15,11 @@ class DashboardCubit extends Cubit<DashboardState> {
   DashboardCubit({required this.repository}) : super(DashboardInitial());
 
   // Get completed jobs with date range
-  Future<void> getDashboardStats({DateTime? startDate, DateTime? endDate, String? userId}) async {
+  Future<void> getDashboardStats({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? userId,
+  }) async {
     emit(DashboardLoading());
 
     try {
@@ -41,7 +45,12 @@ class DashboardCubit extends Cubit<DashboardState> {
       debugPrint('📊 Completed Jobs: ${response.completedJobs}');
       debugPrint('📈 Total Jobs: ${response.totalJobs}');
 
-      emit(DashboardLoaded(dashboardStats: _dashboardStats, jobProgress: _jobProgress));
+      emit(
+        DashboardLoaded(
+          dashboardStats: _dashboardStats,
+          jobProgress: _jobProgress,
+        ),
+      );
     } catch (e) {
       debugPrint('❌ DashboardCubit Error: $e');
       emit(DashboardError(message: e.toString()));
@@ -65,7 +74,12 @@ class DashboardCubit extends Cubit<DashboardState> {
       debugPrint('✅ Quotation Confirmed: ${response.acceptedQuotesJobs}');
       debugPrint('❌ Quotation Rejected: ${response.rejectQuotesJobs}');
 
-      emit(DashboardLoaded(dashboardStats: _dashboardStats, jobProgress: _jobProgress));
+      emit(
+        DashboardLoaded(
+          dashboardStats: _dashboardStats,
+          jobProgress: _jobProgress,
+        ),
+      );
     } catch (e) {
       debugPrint('❌ DashboardCubit Job Progress Error: $e');
       emit(DashboardError(message: e.toString()));
@@ -73,7 +87,11 @@ class DashboardCubit extends Cubit<DashboardState> {
   }
 
   // Load all dashboard data
-  Future<void> loadAllDashboardData({DateTime? startDate, DateTime? endDate, String? userId}) async {
+  Future<void> loadAllDashboardData({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? userId,
+  }) async {
     emit(DashboardLoading());
 
     try {
@@ -105,7 +123,12 @@ class DashboardCubit extends Cubit<DashboardState> {
 
       debugPrint('✅ DashboardCubit: All data loaded successfully');
 
-      emit(DashboardLoaded(dashboardStats: _dashboardStats, jobProgress: _jobProgress));
+      emit(
+        DashboardLoaded(
+          dashboardStats: _dashboardStats,
+          jobProgress: _jobProgress,
+        ),
+      );
     } catch (e) {
       debugPrint('❌ DashboardCubit All Data Error: $e');
       emit(DashboardError(message: e.toString()));

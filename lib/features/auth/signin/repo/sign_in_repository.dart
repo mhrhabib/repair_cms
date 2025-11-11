@@ -45,7 +45,9 @@ class SignInRepository {
       }
     } on dio.DioException catch (e) {
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        throw Exception(
+          'Server error: ${e.response?.data['message'] ?? e.response?.statusCode}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }

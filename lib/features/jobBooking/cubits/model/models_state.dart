@@ -26,7 +26,11 @@ class ModelsSearchResult extends ModelsState {
   final List<ModelsModel> allModels;
   final String searchQuery;
 
-  const ModelsSearchResult({required this.models, required this.allModels, required this.searchQuery});
+  const ModelsSearchResult({
+    required this.models,
+    required this.allModels,
+    required this.searchQuery,
+  });
 
   @override
   List<Object> get props => [models, allModels, searchQuery];

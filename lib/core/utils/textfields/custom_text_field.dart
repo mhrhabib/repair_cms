@@ -65,7 +65,10 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           padding: EdgeInsets.only(top: 14.h),
           child: Text(
             widget.title,
-            style: AppTypography.sfProHeadLineTextStyle28.copyWith(fontWeight: FontWeight.w500, fontSize: 14.sp),
+            style: AppTypography.sfProHeadLineTextStyle28.copyWith(
+              fontWeight: FontWeight.w500,
+              fontSize: 14.sp,
+            ),
           ),
         ),
         SizedBox(width: 12.w),
@@ -91,17 +94,36 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                             icon: Container(
                               width: 24.w,
                               height: 24.w,
-                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[200]),
-                              child: Icon(Icons.question_mark, size: 14.w, color: Colors.grey[600]),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.grey[200],
+                              ),
+                              child: Icon(
+                                Icons.question_mark,
+                                size: 14.w,
+                                color: Colors.grey[600],
+                              ),
                             ),
                             onPressed: _toggleObscureText,
                           )
-                        : Icon(Icons.check_circle, size: 20.w, color: Colors.green)
+                        : Icon(
+                            Icons.check_circle,
+                            size: 20.w,
+                            color: Colors.green,
+                          )
                   : null,
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[400]!)),
-              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
-              errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-              focusedErrorBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey[400]!),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primary),
+              ),
+              errorBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.red),
+              ),
+              focusedErrorBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.red),
+              ),
             ),
           ),
         ),

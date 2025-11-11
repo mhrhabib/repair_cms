@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter/widgets.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
@@ -38,7 +39,7 @@ class QuickTaskRepository {
     try {
       dio.Response response = await BaseClient.post(url: ApiEndpoints.createTodo, payload: todo);
 
-      print(response.data);
+      debugPrint(response.data);
 
       if (response.statusCode == 201) {
         return response.data;

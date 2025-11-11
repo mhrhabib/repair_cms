@@ -46,7 +46,10 @@ class JobTypeRepositoryImpl implements JobTypeRepository {
       debugPrint('   💥 Error: ${e.message}');
       debugPrint('   📍 Type: ${e.type}');
       debugPrint('   🔧 Response: ${e.response?.data}');
-      throw JobTypeException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw JobTypeException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e, stackTrace) {
       debugPrint('💥 [JobTypeRepository] Unexpected error:');
       debugPrint('   💥 Error: $e');
@@ -63,5 +66,6 @@ class JobTypeException implements Exception {
   JobTypeException({required this.message, this.statusCode});
 
   @override
-  String toString() => 'JobTypeException: $message${statusCode != null ? ' ($statusCode)' : ''}';
+  String toString() =>
+      'JobTypeException: $message${statusCode != null ? ' ($statusCode)' : ''}';
 }

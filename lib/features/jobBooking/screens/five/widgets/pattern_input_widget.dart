@@ -4,8 +4,11 @@ class PatternInputWidget extends StatefulWidget {
   final List<int> initialPattern;
   final Function(List<int>) onPatternChanged;
 
-  const PatternInputWidget({Key? key, required this.onPatternChanged, this.initialPattern = const []})
-    : super(key: key);
+  const PatternInputWidget({
+    super.key,
+    required this.onPatternChanged,
+    this.initialPattern = const [],
+  });
 
   @override
   _PatternInputWidgetState createState() => _PatternInputWidgetState();
@@ -36,7 +39,8 @@ class _PatternInputWidgetState extends State<PatternInputWidget> {
   @override
   void didUpdateWidget(covariant PatternInputWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialPattern != oldWidget.initialPattern && widget.initialPattern.isEmpty) {
+    if (widget.initialPattern != oldWidget.initialPattern &&
+        widget.initialPattern.isEmpty) {
       setState(() {
         connectedDots.clear();
       });
@@ -48,8 +52,12 @@ class _PatternInputWidgetState extends State<PatternInputWidget> {
     final double spacing = containerSize / 3;
 
     for (int i = 0; i < dotPositions.length; i++) {
-      final pos = Offset((dotPositions[i].dx + 0.5) * spacing, (dotPositions[i].dy + 0.5) * spacing);
-      if ((position - pos).distance < dotRadius * 2.5 && !connectedDots.contains(i)) {
+      final pos = Offset(
+        (dotPositions[i].dx + 0.5) * spacing,
+        (dotPositions[i].dy + 0.5) * spacing,
+      );
+      if ((position - pos).distance < dotRadius * 2.5 &&
+          !connectedDots.contains(i)) {
         setState(() => connectedDots.add(i));
         break;
       }
@@ -68,7 +76,11 @@ class _PatternInputWidgetState extends State<PatternInputWidget> {
           border: Border.all(color: Colors.grey.shade300),
         ),
         child: CustomPaint(
-          painter: PatternPainter(dotPositions: dotPositions, connectedDots: connectedDots, containerSize: 260.w),
+          painter: PatternPainter(
+            dotPositions: dotPositions,
+            connectedDots: connectedDots,
+            containerSize: 260.w,
+          ),
           child: GestureDetector(
             onPanStart: (details) {
               setState(() {
@@ -84,7 +96,9 @@ class _PatternInputWidgetState extends State<PatternInputWidget> {
             },
             onPanEnd: (details) {
               setState(() => isDrawing = false);
-              widget.onPatternChanged(connectedDots); // Notify parent of final pattern
+              widget.onPatternChanged(
+                connectedDots,
+              ); // Notify parent of final pattern
             },
             child: Container(color: Colors.transparent),
           ),
@@ -100,7 +114,11 @@ class PatternPainter extends CustomPainter {
   final List<int> connectedDots;
   final double containerSize;
 
-  PatternPainter({required this.dotPositions, required this.connectedDots, required this.containerSize});
+  PatternPainter({
+    required this.dotPositions,
+    required this.connectedDots,
+    required this.containerSize,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -119,8 +137,13 @@ class PatternPainter extends CustomPainter {
 
     // Draw grid dots
     for (int i = 0; i < dotPositions.length; i++) {
-      final pos = Offset((dotPositions[i].dx + 0.5) * spacing, (dotPositions[i].dy + 0.5) * spacing);
-      dotPaint.color = connectedDots.contains(i) ? AppColors.primary.withOpacity(0.3) : Colors.grey.shade400;
+      final pos = Offset(
+        (dotPositions[i].dx + 0.5) * spacing,
+        (dotPositions[i].dy + 0.5) * spacing,
+      );
+      dotPaint.color = connectedDots.contains(i)
+          ? AppColors.primary.withOpacity(0.3)
+          : Colors.grey.shade400;
       canvas.drawCircle(pos, dotRadius, dotPaint);
       if (connectedDots.contains(i)) {
         canvas.drawCircle(pos, dotRadius * 0.5, connectedDotPaint);
@@ -132,8 +155,14 @@ class PatternPainter extends CustomPainter {
       for (int i = 0; i < connectedDots.length - 1; i++) {
         final startDot = dotPositions[connectedDots[i]];
         final endDot = dotPositions[connectedDots[i + 1]];
-        final startPos = Offset((startDot.dx + 0.5) * spacing, (startDot.dy + 0.5) * spacing);
-        final endPos = Offset((endDot.dx + 0.5) * spacing, (endDot.dy + 0.5) * spacing);
+        final startPos = Offset(
+          (startDot.dx + 0.5) * spacing,
+          (startDot.dy + 0.5) * spacing,
+        );
+        final endPos = Offset(
+          (endDot.dx + 0.5) * spacing,
+          (endDot.dy + 0.5) * spacing,
+        );
         canvas.drawLine(startPos, endPos, linePaint);
       }
     }

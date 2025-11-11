@@ -20,7 +20,12 @@ class LoginSuccess extends SignInStates {
   final String? token;
   final User? user;
 
-  LoginSuccess({required this.email, required this.message, this.token, this.user});
+  LoginSuccess({
+    required this.email,
+    required this.message,
+    this.token,
+    this.user,
+  });
 }
 
 class SignInError extends SignInStates {

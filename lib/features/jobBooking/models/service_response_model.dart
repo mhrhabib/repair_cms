@@ -3,13 +3,21 @@ class ServiceResponseModel {
   final int totalServices;
   final List<ServiceModel> services;
 
-  ServiceResponseModel({required this.success, required this.totalServices, required this.services});
+  ServiceResponseModel({
+    required this.success,
+    required this.totalServices,
+    required this.services,
+  });
 
   factory ServiceResponseModel.fromJson(Map<String, dynamic> json) {
     return ServiceResponseModel(
       success: json['success'] ?? false,
       totalServices: json['totalServices'] ?? 0,
-      services: (json['services'] as List<dynamic>?)?.map((service) => ServiceModel.fromJson(service)).toList() ?? [],
+      services:
+          (json['services'] as List<dynamic>?)
+              ?.map((service) => ServiceModel.fromJson(service))
+              .toList() ??
+          [],
     );
   }
 
@@ -110,13 +118,25 @@ class ServiceModel {
       category: json['category'] ?? '',
       manufacturer: json['manufacturer'] ?? '',
       model: json['model'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? DateTime.now().toIso8601String(),
+      ),
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      images: (json['images'] as List<dynamic>?)?.map((image) => ServiceImage.fromJson(image)).toList() ?? [],
+      images:
+          (json['images'] as List<dynamic>?)
+              ?.map((image) => ServiceImage.fromJson(image))
+              .toList() ??
+          [],
       assignedItems:
-          (json['assignedItems'] as List<dynamic>?)?.map((item) => AssignedItem.fromJson(item)).toList() ?? [],
-      assignedItemIds: (json['assignedItemIds'] as List<dynamic>?)?.cast<String>() ?? [],
+          (json['assignedItems'] as List<dynamic>?)
+              ?.map((item) => AssignedItem.fromJson(item))
+              .toList() ??
+          [],
+      assignedItemIds:
+          (json['assignedItemIds'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 
@@ -163,7 +183,11 @@ class ServiceImage {
   ServiceImage({required this.favorite, required this.path, required this.id});
 
   factory ServiceImage.fromJson(Map<String, dynamic> json) {
-    return ServiceImage(favorite: json['favorite'] ?? false, path: json['path'] ?? '', id: json['id'] ?? '');
+    return ServiceImage(
+      favorite: json['favorite'] ?? false,
+      path: json['path'] ?? '',
+      id: json['id'] ?? '',
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -240,20 +264,33 @@ class AssignedItem {
       profitMarkup: (json['profitMarkup'] as num?)?.toDouble() ?? 0.0,
       profitMarkupSymbol: json['profitMarkupSymbol'] ?? '',
       description: json['description'] ?? '',
-      purchasePriceExlVat: (json['purchasePriceExlVat'] as num?)?.toDouble() ?? 0.0,
-      purchasePriceIncVat: (json['purchasePriceIncVat'] as num?)?.toDouble() ?? 0.0,
+      purchasePriceExlVat:
+          (json['purchasePriceExlVat'] as num?)?.toDouble() ?? 0.0,
+      purchasePriceIncVat:
+          (json['purchasePriceIncVat'] as num?)?.toDouble() ?? 0.0,
       salePriceExlVat: (json['salePriceExlVat'] as num?)?.toDouble() ?? 0.0,
       salePriceIncVat: (json['salePriceIncVat'] as num?)?.toDouble() ?? 0.0,
       serialNoManagement: json['serialNoManagement'] ?? false,
       pricingCalculator: json['pricingCalculator'] ?? false,
       location: json['location'] ?? '',
       userId: json['userId'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
-      images: (json['images'] as List<dynamic>?)?.map((image) => ItemImage.fromJson(image)).toList() ?? [],
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      images:
+          (json['images'] as List<dynamic>?)
+              ?.map((image) => ItemImage.fromJson(image))
+              .toList() ??
+          [],
       transactions: json['transactions'] ?? [],
       stockSetting:
-          (json['stockSetting'] as List<dynamic>?)?.map((setting) => StockSetting.fromJson(setting)).toList() ?? [],
+          (json['stockSetting'] as List<dynamic>?)
+              ?.map((setting) => StockSetting.fromJson(setting))
+              .toList() ??
+          [],
     );
   }
 
@@ -313,8 +350,12 @@ class ItemImage {
       favorite: json['favorite'] ?? false,
       path: json['path'] ?? '',
       itemId: json['itemId'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? DateTime.now().toIso8601String(),
+      ),
       url: json['url'] ?? '',
     );
   }

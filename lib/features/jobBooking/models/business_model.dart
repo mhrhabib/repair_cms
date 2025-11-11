@@ -18,7 +18,9 @@ class BusinessModel {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['totalCustomersOrSupplier'] = totalCustomersOrSupplier;
     if (customersorsuppliers != null) {
-      data['customersorsuppliers'] = customersorsuppliers!.map((v) => v.toJson()).toList();
+      data['customersorsuppliers'] = customersorsuppliers!
+          .map((v) => v.toJson())
+          .toList();
     }
     return data;
   }
@@ -121,16 +123,24 @@ class Customersorsuppliers {
     data['updatedAt'] = updatedAt;
     data['__v'] = iV;
     if (billingAddresses != null) {
-      data['billing_addresses'] = billingAddresses!.map((v) => v.toJson()).toList();
+      data['billing_addresses'] = billingAddresses!
+          .map((v) => v.toJson())
+          .toList();
     }
     if (shippingAddresses != null) {
-      data['shipping_addresses'] = shippingAddresses!.map((v) => v.toJson()).toList();
+      data['shipping_addresses'] = shippingAddresses!
+          .map((v) => v.toJson())
+          .toList();
     }
     if (customerBankDetails != null) {
-      data['customer_bank_details'] = customerBankDetails!.map((v) => v.toJson()).toList();
+      data['customer_bank_details'] = customerBankDetails!
+          .map((v) => v.toJson())
+          .toList();
     }
     if (customerContactDetail != null) {
-      data['CustomerContactDetail'] = customerContactDetail!.map((v) => v.toJson()).toList();
+      data['CustomerContactDetail'] = customerContactDetail!
+          .map((v) => v.toJson())
+          .toList();
     }
 
     return data;
@@ -147,7 +157,16 @@ class BillingAddresses {
   String? customerId;
   int? iV;
 
-  BillingAddresses({this.sId, this.primary, this.street, this.zip, this.city, this.country, this.customerId, this.iV});
+  BillingAddresses({
+    this.sId,
+    this.primary,
+    this.street,
+    this.zip,
+    this.city,
+    this.country,
+    this.customerId,
+    this.iV,
+  });
 
   BillingAddresses.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -237,7 +256,15 @@ class CustomerBankDetails {
   String? customerId;
   int? iV;
 
-  CustomerBankDetails({this.sId, this.iban, this.bic, this.vatNo, this.reverseCharge, this.customerId, this.iV});
+  CustomerBankDetails({
+    this.sId,
+    this.iban,
+    this.bic,
+    this.vatNo,
+    this.reverseCharge,
+    this.customerId,
+    this.iV,
+  });
 
   CustomerBankDetails.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -269,7 +296,13 @@ class CustomerContactDetail {
   List<CustomerTelephones>? customerTelephones;
   List<CustomerEmails>? customerEmails;
 
-  CustomerContactDetail({this.sId, this.customerId, this.iV, this.customerTelephones, this.customerEmails});
+  CustomerContactDetail({
+    this.sId,
+    this.customerId,
+    this.iV,
+    this.customerTelephones,
+    this.customerEmails,
+  });
 
   CustomerContactDetail.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -295,7 +328,9 @@ class CustomerContactDetail {
     data['customerId'] = customerId;
     data['__v'] = iV;
     if (customerTelephones != null) {
-      data['customer_telephones'] = customerTelephones!.map((v) => v.toJson()).toList();
+      data['customer_telephones'] = customerTelephones!
+          .map((v) => v.toJson())
+          .toList();
     }
     if (customerEmails != null) {
       data['CustomerEmails'] = customerEmails!.map((v) => v.toJson()).toList();
@@ -354,7 +389,13 @@ class CustomerEmails {
   String? customerContactId;
   int? iV;
 
-  CustomerEmails({this.sId, this.email, this.isPrimary, this.customerContactId, this.iV});
+  CustomerEmails({
+    this.sId,
+    this.email,
+    this.isPrimary,
+    this.customerContactId,
+    this.iV,
+  });
 
   CustomerEmails.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
