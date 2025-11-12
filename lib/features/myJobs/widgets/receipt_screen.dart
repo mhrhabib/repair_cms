@@ -1,9 +1,111 @@
 import 'package:flutter/material.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
+import 'package:repair_cms/features/moreSettings/printerSettings/service/receipt_print_service.dart';
+import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
+import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
+import 'package:repair_cms/core/helpers/show_toast.dart';
 
 class ReceiptScreen extends StatelessWidget {
-  const ReceiptScreen({super.key, required this.job});
+  ReceiptScreen({super.key, required this.job});
   final SingleJobModel job;
+
+  final _printService = ReceiptPrintService();
+  final _settingsService = PrinterSettingsService();
+
+  /// Show printer selection dialog
+  Future<void> _showPrinterSelection(BuildContext context) async {
+    final configuredPrinters = _printService.getConfiguredPrinters();
+
+    if (configuredPrinters.isEmpty) {
+      showCustomToast(
+        'No printers configured. Please configure a printer in Settings > Printer Settings',
+        isError: true,
+      );
+      return;
+    }
+
+    // ignore: use_build_context_synchronously
+    final selectedPrinter = await showDialog<PrinterConfigModel>(
+      context: context,
+      builder: (context) => _PrinterSelectionDialog(
+        printers: configuredPrinters,
+        defaultPrinterType: _settingsService.getDefaultPrinterType(),
+      ),
+    );
+
+    if (selectedPrinter != null && context.mounted) {
+      _printReceipt(context, selectedPrinter);
+    }
+  }
+
+  /// Print receipt with selected printer
+  Future<void> _printReceipt(BuildContext context, PrinterConfigModel printer) async {
+    // Generate receipt text from job data
+    final receiptText = _generateReceiptText();
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Print using selected printer
+    final result = await _printService.printWithPrinterType(printer.printerType, receiptText);
+
+    // Hide loading
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
+
+    // Show result
+    if (context.mounted) {
+      showCustomToast(result.message, isError: !result.success);
+    }
+  }
+
+  /// Generate receipt text from job data
+  String _generateReceiptText() {
+    final customer = job.data?.customerDetails;
+    final device = job.data?.deviceData;
+    final jobNo = job.data?.jobNo ?? 'N/A';
+    final total = job.data?.total ?? 0;
+
+    return '''
+    ================================
+           JOB RECEIPT
+    ================================
+    
+    Job No: $jobNo
+    Date: ${_formatDate(job.data?.createdAt)}
+    
+    Customer:
+    ${customer?.firstName ?? 'N/A'} ${customer?.lastName ?? ''}
+    Customer No: ${customer?.customerNo ?? 'N/A'}
+    
+    Device:
+    ${device?.brand ?? 'N/A'} ${device?.model ?? ''}
+    SN: ${device?.serialNo ?? 'N/A'}
+    
+    --------------------------------
+    Total: €${total.toStringAsFixed(2)}
+    --------------------------------
+    
+    Thank you for your business!
+    
+    ================================
+    ''';
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return 'N/A';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,12 +116,7 @@ class ReceiptScreen extends StatelessWidget {
         title: const Text('Preview'),
         actions: [
           IconButton(icon: const Icon(Icons.cloud_download_outlined), onPressed: () {}),
-          IconButton(
-            icon: const Icon(Icons.print_outlined),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => PrintSettingsPage(jobData: job)));
-            },
-          ),
+          IconButton(icon: const Icon(Icons.print_outlined), onPressed: () => _showPrinterSelection(context)),
         ],
       ),
       body: SingleChildScrollView(
@@ -743,5 +840,83 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
         ),
       ),
     );
+  }
+}
+
+/// Printer selection dialog
+class _PrinterSelectionDialog extends StatelessWidget {
+  final List<PrinterConfigModel> printers;
+  final String? defaultPrinterType;
+
+  const _PrinterSelectionDialog({required this.printers, this.defaultPrinterType});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Select Printer'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.separated(
+          shrinkWrap: true,
+          itemCount: printers.length,
+          separatorBuilder: (context, index) => const Divider(),
+          itemBuilder: (context, index) {
+            final printer = printers[index];
+            final isDefault = printer.printerType == defaultPrinterType;
+
+            return ListTile(
+              leading: Icon(_getPrinterIcon(printer.printerType), color: Colors.blue, size: 32),
+              title: Text(_getPrinterTitle(printer.printerType), style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(printer.printerModel ?? 'Unknown Model'),
+                  Text(printer.ipAddress ?? 'No IP', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  if (isDefault)
+                    Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
+                      child: const Text(
+                        'DEFAULT',
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                ],
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => Navigator.of(context).pop(printer),
+            );
+          },
+        ),
+      ),
+      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))],
+    );
+  }
+
+  IconData _getPrinterIcon(String printerType) {
+    switch (printerType) {
+      case 'thermal':
+        return Icons.receipt_long;
+      case 'label':
+        return Icons.label;
+      case 'a4':
+        return Icons.description;
+      default:
+        return Icons.print;
+    }
+  }
+
+  String _getPrinterTitle(String printerType) {
+    switch (printerType) {
+      case 'thermal':
+        return 'Thermal Printer (80mm)';
+      case 'label':
+        return 'Label Printer';
+      case 'a4':
+        return 'A4 Receipt Printer';
+      default:
+        return 'Printer';
+    }
   }
 }

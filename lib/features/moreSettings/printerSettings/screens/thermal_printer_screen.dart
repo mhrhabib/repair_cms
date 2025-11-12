@@ -1,9 +1,12 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:another_brother/label_info.dart';
 import 'package:another_brother/printer_info.dart';
+import 'package:repair_cms/core/helpers/show_toast.dart';
+import '../models/printer_config_model.dart';
+import '../service/printer_settings_service.dart';
 
 class ThermalPrinterScreen extends StatefulWidget {
   const ThermalPrinterScreen({super.key});
@@ -17,8 +20,62 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   final TextEditingController ipController = TextEditingController(text: '192.169.5.1');
   String selectedProtocol = 'ECS/POS';
   bool isPrinting = false;
+  bool isDefault = false;
 
   final List<String> protocols = ['ECS/POS', 'STAR', 'EPSON'];
+  final _printerSettingsService = PrinterSettingsService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedSettings();
+  }
+
+  /// Load saved printer settings
+  void _loadSavedSettings() {
+    final savedConfig = _printerSettingsService.getThermalPrinter();
+    if (savedConfig != null) {
+      setState(() {
+        selectedPrinter = savedConfig.printerModel;
+        ipController.text = savedConfig.ipAddress ?? '192.169.5.1';
+        selectedProtocol = savedConfig.protocol ?? 'ECS/POS';
+        isDefault = savedConfig.isDefault;
+      });
+    }
+  }
+
+  /// Save printer settings
+  Future<void> _saveSettings() async {
+    if (ipController.text.isEmpty) {
+      showCustomToast('Please enter printer IP address', isError: true);
+      return;
+    }
+
+    final config = PrinterConfigModel(
+      printerType: 'thermal',
+      printerModel: selectedPrinter,
+      ipAddress: ipController.text,
+      protocol: selectedProtocol,
+      isDefault: isDefault,
+      lastUpdated: DateTime.now(),
+    );
+
+    try {
+      await _printerSettingsService.saveThermalPrinter(config);
+
+      if (isDefault) {
+        await _printerSettingsService.setDefaultPrinterType('thermal');
+      }
+
+      if (mounted) {
+        showCustomToast('Thermal printer settings saved!', isError: false);
+      }
+    } catch (e) {
+      if (mounted) {
+        showCustomToast('Failed to save settings: $e', isError: true);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -52,10 +109,15 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
 
       await printer.setPrinterInfo(printInfo);
 
+      // Create Paragraph for printing
+      final paragraphBuilder = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: TextAlign.left, fontSize: 12.0))
+        ..pushStyle(ui.TextStyle(color: const Color(0xFF000000), fontSize: 12.0))
+        ..addText('Test Print\n\nThermal Printer (80mm)\nConfiguration Test\n\n');
+
+      final paragraph = paragraphBuilder.build()..layout(const ui.ParagraphConstraints(width: 300));
+
       // Send test print
-      var printResult = await printer.printText(
-        'Test Print\n\nThermal Printer (80mm)\nConfiguration Test\n\n' as Paragraph,
-      );
+      var printResult = await printer.printText(paragraph);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -224,13 +286,34 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 24),
+
+                    // Set as default checkbox
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                        'Set as default receipt printer',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                      ),
+                      subtitle: const Text(
+                        'Use this printer for all receipts by default',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
+                      value: isDefault,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          isDefault = value ?? false;
+                        });
+                      },
+                      activeColor: Colors.blue,
+                    ),
                   ],
                 ),
               ),
             ),
           ),
 
-          // Test Print Button
+          // Action Buttons
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -240,29 +323,50 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
               ],
             ),
             child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: isPrinting ? null : _testPrint,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Column(
+                children: [
+                  // Save Settings Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _saveSettings,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Save Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ),
                   ),
-                  child: isPrinting
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text('Test Print', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                ),
+                  const SizedBox(height: 12),
+                  // Test Print Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: isPrinting ? null : _testPrint,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: isPrinting
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text('Test Print', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:another_brother/label_info.dart';
 import 'package:another_brother/printer_info.dart';
@@ -36,8 +36,15 @@ class BrotherPrinterService {
 
       await printer.setPrinterInfo(printInfo);
 
+      // Create Paragraph for printing
+      final paragraphBuilder = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: ui.TextAlign.left, fontSize: 12.0))
+        ..pushStyle(ui.TextStyle(color: const ui.Color(0xFF000000), fontSize: 12.0))
+        ..addText(text);
+
+      final paragraph = paragraphBuilder.build()..layout(const ui.ParagraphConstraints(width: 300));
+
       // Print text
-      var result = await printer.printText(text as Paragraph);
+      var result = await printer.printText(paragraph);
       return PrinterResult(
         success: result.errorCode == ErrorCode.ERROR_NONE,
         errorCode: result.errorCode,
@@ -73,8 +80,12 @@ class BrotherPrinterService {
 
       await printer.setPrinterInfo(printInfo);
 
-      // Print image
-      var result = await printer.printImage(imageBytes as Image);
+      // Print image - Convert Uint8List to ui.Image
+      final codec = await ui.instantiateImageCodec(imageBytes);
+      final frame = await codec.getNextFrame();
+      final uiImage = frame.image;
+
+      var result = await printer.printImage(uiImage);
       return PrinterResult(
         success: result.errorCode == ErrorCode.ERROR_NONE,
         errorCode: result.errorCode,
@@ -106,8 +117,14 @@ class BrotherPrinterService {
 
       await printer.setPrinterInfo(printInfo);
 
-      // Print receipt
-      var result = await printer.printText(text as Paragraph);
+      // Print receipt - Create Paragraph for printing
+      final paragraphBuilder = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: ui.TextAlign.left, fontSize: 12.0))
+        ..pushStyle(ui.TextStyle(color: const ui.Color(0xFF000000), fontSize: 12.0))
+        ..addText(text);
+
+      final paragraph = paragraphBuilder.build()..layout(const ui.ParagraphConstraints(width: 300));
+
+      var result = await printer.printText(paragraph);
       return PrinterResult(
         success: result.errorCode == ErrorCode.ERROR_NONE,
         errorCode: result.errorCode,
