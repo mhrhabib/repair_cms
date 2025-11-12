@@ -138,7 +138,7 @@ class MoreSettingsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'A4 Printer Settings',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
+                // Navigator.of(context).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
               },
             ),
 

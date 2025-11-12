@@ -61,7 +61,6 @@ dependencies:
   printing: ^5.11.1
   # For Dymo printers
   escp_printer: ^1.0.2
-  another_brother: ^2.2.4
   # For Brother printers
 
 dev_dependencies:

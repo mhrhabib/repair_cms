@@ -96,7 +96,7 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
 
     try {
       // Use ModelsCubit to create the model
-      await context.read<ModelsCubit>().createModel(name: modelName.trim(), userId: _userId, brandId: _brandId);
+      await context.read<ModelsCubit>().createModel(name: modelName.trim(), userId: _userId, brandId: widget.brandId);
 
       // Wait a bit for the state to update
       await Future.delayed(Duration(milliseconds: 300));
