@@ -134,7 +134,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: Colors.white,
+              activeThumbColor: Colors.white,
               activeTrackColor: const Color(0xFF4A90E2),
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: Colors.grey[300],

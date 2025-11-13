@@ -1,12 +1,10 @@
-import 'dart:ui' as ui;
-
-import 'package:another_brother/label_info.dart';
-import 'package:another_brother/printer_info.dart';
 import 'package:flutter/material.dart';
-import 'package:repair_cms/core/constants/app_colors.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/helpers/show_toast.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
+import '../widgets/wifi_printer_scanner.dart';
 
 class LabelPrinterScreen extends StatefulWidget {
   const LabelPrinterScreen({super.key});
@@ -16,14 +14,26 @@ class LabelPrinterScreen extends StatefulWidget {
 }
 
 class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
-  String? selectedPrinter;
-  final TextEditingController ipController = TextEditingController(text: '192.169.5.1');
-  String selectedProtocol = 'Brother QL';
-  bool isPrinting = false;
-  bool isDefault = false;
+  final PrinterSettingsService _settingsService = PrinterSettingsService();
 
-  final List<String> protocols = ['Brother QL', 'Brother TD', 'Brother PT'];
-  final _printerSettingsService = PrinterSettingsService();
+  // Supported label printer brands
+  final List<String> _supportedBrands = ['Brother', 'Xprinter', 'Dymo'];
+
+  String _selectedBrand = 'Brother';
+  String? _selectedModel;
+  final TextEditingController _ipController = TextEditingController();
+  final TextEditingController _portController = TextEditingController(text: '9100');
+  String _selectedProtocol = 'TCP';
+  bool _setAsDefault = false;
+  bool _isTesting = false;
+  bool _isSaving = false;
+
+  // Models for each brand
+  final Map<String, List<String>> _brandModels = {
+    'Brother': ['QL-820NWB', 'QL-1110NWB', 'PT-P750W', 'PT-P300BT', 'QL-700', 'QL-800'],
+    'Xprinter': ['XP-420B', 'XP-470B', 'XP-DT425B'],
+    'Dymo': ['LabelWriter 450', 'LabelWriter 4XL', 'LabelWriter 550'],
+  };
 
   @override
   void initState() {
@@ -31,360 +41,305 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
     _loadSavedSettings();
   }
 
-  /// Load saved printer settings
   void _loadSavedSettings() {
-    final savedConfig = _printerSettingsService.getLabelPrinter();
-    if (savedConfig != null) {
+    final defaultPrinter = _settingsService.getDefaultPrinter('label');
+    if (defaultPrinter != null) {
       setState(() {
-        selectedPrinter = savedConfig.printerModel;
-        ipController.text = savedConfig.ipAddress ?? '192.169.5.1';
-        selectedProtocol = savedConfig.protocol ?? 'Brother QL';
-        isDefault = savedConfig.isDefault;
+        _selectedBrand = defaultPrinter.printerBrand;
+        _selectedModel = defaultPrinter.printerModel;
+        _ipController.text = defaultPrinter.ipAddress;
+        _portController.text = defaultPrinter.port?.toString() ?? '9100';
+        _selectedProtocol = defaultPrinter.protocol;
+        _setAsDefault = defaultPrinter.isDefault;
       });
+      debugPrint('📊 Loaded label printer settings: $_selectedBrand');
     }
-  }
-
-  /// Save printer settings
-  Future<void> _saveSettings() async {
-    if (ipController.text.isEmpty) {
-      showCustomToast('Please enter printer IP address', isError: true);
-      return;
-    }
-
-    final config = PrinterConfigModel(
-      printerType: 'label',
-      printerModel: selectedPrinter,
-      ipAddress: ipController.text,
-      protocol: selectedProtocol,
-      isDefault: isDefault,
-      lastUpdated: DateTime.now(),
-    );
-
-    try {
-      await _printerSettingsService.saveLabelPrinter(config);
-
-      if (isDefault) {
-        await _printerSettingsService.setDefaultPrinterType('label');
-      }
-
-      if (mounted) {
-        showCustomToast('Label printer settings saved!', isError: false);
-      }
-    } catch (e) {
-      if (mounted) {
-        showCustomToast('Failed to save settings: $e', isError: true);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    ipController.dispose();
-    super.dispose();
   }
 
   Future<void> _testPrint() async {
-    if (ipController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter printer IP address')));
+    if (_ipController.text.isEmpty) {
+      showCustomToast('Please enter IP address', isError: true);
       return;
     }
 
-    setState(() {
-      isPrinting = true;
-    });
+    setState(() => _isTesting = true);
+
+    final config = PrinterConfigModel(
+      printerType: 'label',
+      printerBrand: _selectedBrand,
+      printerModel: _selectedModel,
+      ipAddress: _ipController.text.trim(),
+      protocol: _selectedProtocol,
+      port: int.tryParse(_portController.text),
+      isDefault: _setAsDefault,
+    );
+
+    // Log test print attempt
+    debugPrint('\n${'=' * 60}');
+    debugPrint('🧪 TEST PRINT - LABEL PRINTER');
+    debugPrint('=' * 60);
+    debugPrint('\n📋 WHAT SHOULD HAPPEN:');
+    debugPrint('  1. Connect to label printer at ${config.ipAddress}:${config.port ?? 9100}');
+    debugPrint('  2. Configure label size and settings');
+    debugPrint('  3. Print test label with printer info');
+    debugPrint('  4. Auto-cut label if supported');
+
+    debugPrint('\n🔧 CONFIGURATION:');
+    debugPrint('  • Brand: $_selectedBrand');
+    debugPrint('  • Model: ${_selectedModel ?? 'Not selected'}');
+    debugPrint('  • IP Address: ${_ipController.text.trim()}');
+    debugPrint('  • Port: ${_portController.text}');
+    debugPrint('  • Protocol: $_selectedProtocol');
+
+    debugPrint('\n⚠️  CURRENT STATUS:');
+    debugPrint('  • Test print functionality: NOT IMPLEMENTED YET');
+    debugPrint('  • Reason: Requires brand-specific label configuration');
+    debugPrint('  • Workaround: Save settings and test from receipt screen');
+
+    debugPrint('\n💡 SUPPORTED LABEL SIZES ($_selectedBrand):');
+    if (_selectedBrand == 'Brother') {
+      debugPrint('  • 62mm × 100mm (W62)');
+      debugPrint('  • 102mm × 152mm (W102)');
+      debugPrint('  • Continuous tape');
+    } else if (_selectedBrand == 'Dymo') {
+      debugPrint('  • 54mm × 101mm (1744907)');
+      debugPrint('  • 102mm × 159mm (4XL)');
+    } else {
+      debugPrint('  • 80mm × 80mm (standard)');
+      debugPrint('  • Custom sizes supported');
+    }
+
+    debugPrint('\n💡 NEXT STEPS:');
+    debugPrint('  1. Save these settings using the Save button');
+    debugPrint('  2. Go to any job details screen');
+    debugPrint('  3. Click Print Receipt to test actual label printing');
+    debugPrint('${'=' * 60}\n');
+
+    // Show user-friendly message
+    showCustomToast('Test print not available yet. Please save and test from receipt screen.', isError: false);
+    setState(() => _isTesting = false);
+  }
+
+  Future<void> _saveSettings() async {
+    if (_ipController.text.isEmpty) {
+      showCustomToast('Please enter IP address', isError: true);
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    final config = PrinterConfigModel(
+      printerType: 'label',
+      printerBrand: _selectedBrand,
+      printerModel: _selectedModel,
+      ipAddress: _ipController.text.trim(),
+      protocol: _selectedProtocol,
+      port: int.tryParse(_portController.text),
+      isDefault: _setAsDefault,
+    );
 
     try {
-      // Configure Brother label printer
-      var printer = Printer();
-      var printInfo = PrinterInfo();
-
-      // Set printer model for Brother label printer
-      printInfo.printerModel = Model.TD_4550DNWB; // Brother label printer model
-      printInfo.port = Port.NET;
-      printInfo.ipAddress = ipController.text;
-
-      // Configure label info
-      var labelInfo = LabelInfo();
-      labelInfo.labelNameIndex = QL700.ordinalFromID(QL700.W62.getId());
-      labelInfo.isAutoCut = true;
-      labelInfo.isEndCut = true;
-      printInfo.labelNameIndex = labelInfo.labelType;
-
-      await printer.setPrinterInfo(printInfo);
-
-      // Create Paragraph for printing
-      final labelText =
-          '╔════════════════════╗\n'
-          '║   TEST LABEL      ║\n'
-          '║                   ║\n'
-          '║  Label Printer    ║\n'
-          '║  Configuration    ║\n'
-          '║                   ║\n'
-          '╚════════════════════╝\n';
-
-      final paragraphBuilder = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: TextAlign.left, fontSize: 12.0))
-        ..pushStyle(ui.TextStyle(color: const Color(0xFF000000), fontSize: 12.0))
-        ..addText(labelText);
-
-      final paragraph = paragraphBuilder.build()..layout(const ui.ParagraphConstraints(width: 300));
-
-      // Send test label print
-      var printResult = await printer.printText(paragraph);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              printResult.errorCode == ErrorCode.ERROR_NONE
-                  ? 'Test label printed successfully!'
-                  : 'Print failed: ${printResult.errorCode}',
-            ),
-            backgroundColor: printResult.errorCode == ErrorCode.ERROR_NONE ? Colors.green : Colors.red,
-          ),
-        );
-      }
+      await _settingsService.savePrinterConfig(config);
+      showCustomToast('✅ Settings saved successfully!', isError: false);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
-      }
+      showCustomToast('❌ Failed to save settings', isError: true);
     } finally {
-      if (mounted) {
-        setState(() {
-          isPrinting = false;
-        });
-      }
+      setState(() => _isSaving = false);
     }
+  }
+
+  /// Show WiFi printer scanner dialog
+  void _showWiFiScanner() {
+    showDialog(
+      context: context,
+      builder: (context) => WiFiPrinterScanner(
+        onPrinterSelected: (ipAddress, port) {
+          setState(() {
+            _ipController.text = ipAddress;
+            _portController.text = port.toString();
+          });
+          showCustomToast('✅ Printer selected: $ipAddress:$port', isError: false);
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Label Printer',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
-                  ],
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Printer Configuration',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Network Printer Dropdown
-                    const Text(
-                      'Network Printer',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: selectedPrinter,
-                          hint: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Select Network Printer', style: TextStyle(color: Colors.black87)),
-                          ),
-                          icon: const Padding(
-                            padding: EdgeInsets.only(right: 16),
-                            child: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
-                          ),
-                          items: ['Brother TD-4550DNWB', 'Brother QL-820NWB', 'Brother PT-P750W'].map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(value)),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedPrinter = newValue;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // IP Address Field
-                    const Text(
-                      'IP Address',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: ipController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: '192.169.5.1',
-                        hintStyle: const TextStyle(color: Colors.black87),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.blue),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Printer Protocol Dropdown
-                    const Text(
-                      'Printer Protocol',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: selectedProtocol,
-                          icon: const Padding(
-                            padding: EdgeInsets.only(right: 16),
-                            child: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
-                          ),
-                          items: protocols.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(value)),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedProtocol = newValue!;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Set as default checkbox
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        'Set as default receipt printer',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: const Text(
-                        'Use this printer for all receipts by default',
-                        style: TextStyle(fontSize: 12, color: Colors.black54),
-                      ),
-                      value: isDefault,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          isDefault = value ?? false;
-                        });
-                      },
-                      activeColor: Colors.blue,
-                    ),
-                  ],
-                ),
-              ),
+      appBar: AppBar(title: const Text('Label Printer'), backgroundColor: AppColors.primary),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Brand Selection
+            Text(
+              'Printer Brand',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
             ),
-          ),
+            SizedBox(height: 8.h),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedBrand,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              ),
+              items: _supportedBrands.map((brand) {
+                return DropdownMenuItem(value: brand, child: Text(brand));
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedBrand = value!;
+                  _selectedModel = null;
+                });
+              },
+            ),
+            SizedBox(height: 16.h),
 
-          // Action Buttons
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2)),
+            // Model Selection
+            Text(
+              'Printer Model',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedModel,
+              hint: const Text('Select Model'),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              ),
+              items: _brandModels[_selectedBrand]?.map((model) {
+                return DropdownMenuItem(value: model, child: Text(model));
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedModel = value),
+            ),
+            SizedBox(height: 16.h),
+
+            // IP Address with WiFi scan button
+            Row(
+              children: [
+                Text(
+                  'IP Address',
+                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => _showWiFiScanner(),
+                  icon: Icon(Icons.wifi_find, size: 18.sp),
+                  label: const Text('Scan WiFi'),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                ),
               ],
             ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Save Settings Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _saveSettings,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            SizedBox(height: 8.h),
+            TextField(
+              controller: _ipController,
+              decoration: InputDecoration(
+                hintText: 'e.g., 192.168.1.100',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                suffixIcon: Icon(Icons.router, color: Colors.grey.shade400),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 16.h),
+
+            // Port
+            Text(
+              'Port',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            TextField(
+              controller: _portController,
+              decoration: InputDecoration(
+                hintText: 'Default: 9100',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 16.h),
+
+            // Protocol
+            Text(
+              'Protocol',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedProtocol,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              ),
+              items: ['TCP', 'USB'].map((protocol) {
+                return DropdownMenuItem(value: protocol, child: Text(protocol));
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedProtocol = value!),
+            ),
+            SizedBox(height: 16.h),
+
+            // Set as Default
+            CheckboxListTile(
+              title: const Text('Set as default label printer'),
+              value: _setAsDefault,
+              onChanged: (value) => setState(() => _setAsDefault = value!),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
+            SizedBox(height: 24.h),
+
+            // Save Button
+            SizedBox(
+              width: double.infinity,
+              height: 48.h,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _saveSettings,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                ),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        'Save Settings',
+                        style: TextStyle(fontSize: 16.sp, color: Colors.white),
                       ),
-                      child: const Text('Save Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Test Print Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: isPrinting ? null : _testPrint,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        disabledBackgroundColor: Colors.grey.shade300,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: isPrinting
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text('Test Print', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                ],
               ),
             ),
-          ),
-        ],
+            SizedBox(height: 12.h),
+
+            // Test Print Button
+            SizedBox(
+              width: double.infinity,
+              height: 48.h,
+              child: ElevatedButton(
+                onPressed: _isTesting ? null : _testPrint,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                ),
+                child: _isTesting
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        'Test Print',
+                        style: TextStyle(fontSize: 16.sp, color: Colors.white),
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _ipController.dispose();
+    _portController.dispose();
+    super.dispose();
   }
 }

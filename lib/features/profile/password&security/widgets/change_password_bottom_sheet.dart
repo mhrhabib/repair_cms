@@ -12,10 +12,7 @@ class ChangePasswordBottomSheet extends StatefulWidget {
   static void show(BuildContext context) {
     showCupertinoSheet(
       context: context,
-      // isScrollControlled: true,
-
-      // backgroundColor: Colors.transparent,
-      pageBuilder: (context) =>
+      builder: (context) =>
           BlocProvider.value(value: BlocProvider.of<ProfileCubit>(context), child: const ChangePasswordBottomSheet()),
     );
   }

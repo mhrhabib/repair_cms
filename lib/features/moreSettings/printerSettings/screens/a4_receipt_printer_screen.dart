@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:repair_cms/core/constants/app_colors.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/helpers/show_toast.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
+import '../widgets/wifi_printer_scanner.dart';
 
-class A4ReceiptPrinterScreen extends StatefulWidget {
-  const A4ReceiptPrinterScreen({super.key});
+class A4PrinterScreen extends StatefulWidget {
+  const A4PrinterScreen({super.key});
 
   @override
-  State<A4ReceiptPrinterScreen> createState() => _A4ReceiptPrinterScreenState();
+  State<A4PrinterScreen> createState() => _A4PrinterScreenState();
 }
 
-class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
-  String? selectedPrinter;
-  final TextEditingController ipController = TextEditingController(text: '192.169.5.1');
-  String selectedProtocol = 'IPP';
-  bool isDefault = false;
+class _A4PrinterScreenState extends State<A4PrinterScreen> {
+  final PrinterSettingsService _settingsService = PrinterSettingsService();
 
-  final List<String> protocols = ['IPP', 'LPD', 'RAW'];
-  final _printerSettingsService = PrinterSettingsService();
+  final TextEditingController _printerNameController = TextEditingController();
+  final TextEditingController _ipController = TextEditingController();
+  final TextEditingController _portController = TextEditingController(text: '9100');
+  String _selectedProtocol = 'TCP';
+  bool _setAsDefault = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -26,281 +29,227 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
     _loadSavedSettings();
   }
 
-  /// Load saved printer settings
   void _loadSavedSettings() {
-    final savedConfig = _printerSettingsService.getA4Printer();
-    if (savedConfig != null) {
+    final defaultPrinter = _settingsService.getDefaultPrinter('a4');
+    if (defaultPrinter != null) {
       setState(() {
-        selectedPrinter = savedConfig.printerModel;
-        ipController.text = savedConfig.ipAddress ?? '192.169.5.1';
-        selectedProtocol = savedConfig.protocol ?? 'IPP';
-        isDefault = savedConfig.isDefault;
+        _printerNameController.text = defaultPrinter.printerModel ?? '';
+        _ipController.text = defaultPrinter.ipAddress;
+        _portController.text = defaultPrinter.port?.toString() ?? '9100';
+        _selectedProtocol = defaultPrinter.protocol;
+        _setAsDefault = defaultPrinter.isDefault;
       });
+      debugPrint('📊 Loaded A4 printer settings');
     }
   }
 
-  /// Save printer settings
+  Future<void> _scanForPrinters() async {
+    debugPrint('🔍 Opening WiFi printer scanner for A4 printer');
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => WiFiPrinterScanner(
+        onPrinterSelected: (String ipAddress, int port) {
+          Navigator.pop(context, {'ip': ipAddress, 'port': port});
+        },
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _ipController.text = result['ip'] as String;
+        _portController.text = (result['port'] as int).toString();
+      });
+      debugPrint('✅ Selected printer: ${result['ip']}:${result['port']}');
+      showCustomToast('Printer selected: ${result['ip']}', isError: false);
+    }
+  }
+
   Future<void> _saveSettings() async {
-    if (ipController.text.isEmpty) {
-      showCustomToast('Please enter printer IP address', isError: true);
+    if (_ipController.text.isEmpty && _selectedProtocol == 'TCP') {
+      showCustomToast('Please enter IP address', isError: true);
       return;
     }
 
+    setState(() => _isSaving = true);
+
     final config = PrinterConfigModel(
       printerType: 'a4',
-      printerModel: selectedPrinter,
-      ipAddress: ipController.text,
-      protocol: selectedProtocol,
-      isDefault: isDefault,
-      lastUpdated: DateTime.now(),
+      printerBrand: 'Generic',
+      printerModel: _printerNameController.text.trim().isEmpty
+          ? 'Generic A4 Printer'
+          : _printerNameController.text.trim(),
+      ipAddress: _ipController.text.trim(),
+      protocol: _selectedProtocol,
+      port: int.tryParse(_portController.text),
+      isDefault: _setAsDefault,
     );
 
     try {
-      await _printerSettingsService.saveA4Printer(config);
-
-      if (isDefault) {
-        await _printerSettingsService.setDefaultPrinterType('a4');
-      }
-
-      if (mounted) {
-        showCustomToast('A4 printer settings saved!', isError: false);
-      }
+      await _settingsService.savePrinterConfig(config);
+      debugPrint('✅ A4 printer config saved: ${config.ipAddress}');
+      showCustomToast('✅ Settings saved successfully!', isError: false);
     } catch (e) {
-      if (mounted) {
-        showCustomToast('Failed to save settings: $e', isError: true);
-      }
+      debugPrint('❌ Failed to save A4 printer config: $e');
+      showCustomToast('❌ Failed to save settings', isError: true);
+    } finally {
+      setState(() => _isSaving = false);
     }
-  }
-
-  @override
-  void dispose() {
-    ipController.dispose();
-    super.dispose();
-  }
-
-  void _testPrint() {
-    // Implement A4 printer test print logic
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Sending test print to A4 Receipt Printer...')));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'A4 Receipt Printer',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
-                  ],
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Printer Configuration',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Network Printer Dropdown
-                    const Text(
-                      'Network Printer',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: selectedPrinter,
-                          hint: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Select Network Printer', style: TextStyle(color: Colors.black87)),
-                          ),
-                          icon: const Padding(
-                            padding: EdgeInsets.only(right: 16),
-                            child: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
-                          ),
-                          items: ['Printer 1', 'Printer 2', 'Printer 3'].map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(value)),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedPrinter = newValue;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // IP Address Field
-                    const Text(
-                      'IP Address',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: ipController,
-                      decoration: InputDecoration(
-                        hintText: '192.169.5.1',
-                        hintStyle: const TextStyle(color: Colors.black87),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.blue),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Printer Protocol Dropdown
-                    const Text(
-                      'Printer Protocol',
-                      style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: selectedProtocol,
-                          icon: const Padding(
-                            padding: EdgeInsets.only(right: 16),
-                            child: Icon(Icons.keyboard_arrow_down, color: Colors.blue),
-                          ),
-                          items: protocols.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(value)),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedProtocol = newValue!;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Set as default checkbox
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        'Set as default receipt printer',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: const Text(
-                        'Use this printer for all receipts by default',
-                        style: TextStyle(fontSize: 12, color: Colors.black54),
-                      ),
-                      value: isDefault,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          isDefault = value ?? false;
-                        });
-                      },
-                      activeColor: Colors.blue,
-                    ),
-                  ],
-                ),
+      appBar: AppBar(title: const Text('A4 Printer'), backgroundColor: AppColors.primary),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Info Card
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: Colors.blue.shade200),
               ),
-            ),
-          ),
-
-          // Action Buttons
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2)),
-              ],
-            ),
-            child: SafeArea(
-              child: Column(
+              child: Row(
                 children: [
-                  // Save Settings Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _saveSettings,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Save Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Test Print Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _testPrint,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Test Print', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Icon(Icons.info_outline, color: Colors.blue.shade700),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Text(
+                      'A4 printers use the system print dialog. Configure network settings below.',
+                      style: TextStyle(fontSize: 14.sp, color: Colors.blue.shade900),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            SizedBox(height: 24.h),
+
+            // Printer Name
+            Text(
+              'Printer Name (Optional)',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            TextField(
+              controller: _printerNameController,
+              decoration: InputDecoration(
+                hintText: 'e.g., Office HP Printer',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              ),
+            ),
+            SizedBox(height: 16.h),
+
+            // IP Address with Scan WiFi button
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'IP Address',
+                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _scanForPrinters,
+                  icon: Icon(Icons.wifi_find, size: 18.sp),
+                  label: Text('Scan WiFi', style: TextStyle(fontSize: 14.sp)),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            TextField(
+              controller: _ipController,
+              decoration: InputDecoration(
+                hintText: 'e.g., 192.168.1.100',
+                prefixIcon: const Icon(Icons.router),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 16.h),
+
+            // Port
+            Text(
+              'Port',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            TextField(
+              controller: _portController,
+              decoration: InputDecoration(
+                hintText: 'Default: 9100',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 16.h),
+
+            // Protocol
+            Text(
+              'Protocol',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            DropdownButtonFormField<String>(
+              value: _selectedProtocol,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              ),
+              items: ['TCP', 'USB', 'System Default'].map((protocol) {
+                return DropdownMenuItem(value: protocol, child: Text(protocol));
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedProtocol = value!),
+            ),
+            SizedBox(height: 16.h),
+
+            // Set as Default
+            CheckboxListTile(
+              title: const Text('Set as default A4 printer'),
+              value: _setAsDefault,
+              onChanged: (value) => setState(() => _setAsDefault = value!),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
+            SizedBox(height: 24.h),
+
+            // Save Button
+            SizedBox(
+              width: double.infinity,
+              height: 48.h,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _saveSettings,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                ),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        'Save Settings',
+                        style: TextStyle(fontSize: 16.sp, color: Colors.white),
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _printerNameController.dispose();
+    _ipController.dispose();
+    _portController.dispose();
+    super.dispose();
   }
 }

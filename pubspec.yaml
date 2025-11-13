@@ -63,12 +63,12 @@ dependencies:
   escp_printer: ^1.0.2
   another_brother: ^2.2.4
   # For Brother printers
+  esc_pos_utils_plus: ^2.0.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  flutter_flavorizr: ^2.4.1
   flutter_launcher_icons: ^0.14.4
 
 flutter:
