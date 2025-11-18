@@ -49,15 +49,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         if (state is JobError) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${state.message}'), backgroundColor: Colors.red));
+          // Show top overlay snackbar for errors
+          SnackbarDemo(message: 'Error: ${state.message}').showCustomSnackbar(context);
         }
 
         if (state is JobStatusUpdated) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Job status updated successfully'), backgroundColor: Colors.green),
-          );
+          // Centralized success notification (use top overlay)
+          SnackbarDemo(message: 'Job status updated successfully').showCustomSnackbar(context);
         }
 
         if (state is JobDetailSuccess) {
@@ -76,23 +74,26 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           backgroundColor: AppColors.scaffoldBackgroundColor,
           body: BlocBuilder<JobCubit, JobStates>(
             builder: (context, state) {
-              // If we have a cached job, show it regardless of loading states
-              if (_currentJob != null &&
-                  (state is AssignUserListLoading || state is AssignUserListSuccess || state is AssignUserListError)) {
+              // If we already have a cached job, always render the UI using it.
+              // This prevents unrelated JobCubit states (like AssignUserListError)
+              // from replacing the entire Job Details view with a loading/error screen.
+              if (_currentJob != null) {
                 return _buildCurrentScreen(_currentJob!);
               }
 
+              // No cached job available: reflect the actual JobCubit state.
               if (state is JobLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is JobDetailSuccess) {
+                // Cache job for subsequent renders so tab-specific states won't hide it
+                _currentJob = state.job;
                 return _buildCurrentScreen(state.job);
               } else if (state is JobError) {
-                return Center(child: Text('Error: ${state.message}'));
+                return Center(child: Text('Error loading job: ${state.message}'));
               }
 
+              // Default fallback (should be rare) - show loader while awaiting JobDetailSuccess
               return const Center(child: CircularProgressIndicator());
-
-              // Fallback
             },
           ),
 
@@ -244,7 +245,6 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
 
         // Pass the ID to the API
         context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, userName);
-        SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
       } else {
         debugPrint('❌ User not found with ID: $newUserId');
         debugPrint('Available user IDs: ${_availableUsers.map((u) => u.id).join(", ")}');
@@ -258,6 +258,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         // Pass the ID to the API even if user not found locally
         context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, 'Unknown User');
 
+        // Keep inline notification for fallback assignment behavior
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Assigned to user ID: $newUserId'), backgroundColor: Colors.orange));
@@ -351,9 +352,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
             _initializeJobStatus();
           });
         }
-        if (state is JobStatusUpdated) {
-          SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
-        }
+        // JobStatusUpdated handled by the parent listener to avoid duplicate notifications
         if (state is AssignUserListSuccess) {
           setState(() {
             _availableUsers = state.users;
@@ -686,8 +685,6 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         setState(() {
           isJobComplete = true;
         });
-
-        SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
       },
     );
   }
@@ -706,8 +703,6 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     setState(() {
       returnDevice = true;
     });
-
-    SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
   }
 
   void _setDeviceAsNotReturned() {
@@ -724,8 +719,6 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     setState(() {
       returnDevice = false;
     });
-
-    SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
   }
 
   void _showReturnDeviceConfirmationDialog() {
@@ -826,9 +819,6 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                 setState(() {
                   isJobComplete = false;
                 });
-
-                SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
-
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
@@ -1134,8 +1124,6 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       setState(() {
         selectedDueDate = "${picked.day}. ${_getMonthName(picked.month)} ${picked.year}";
       });
-
-      SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
     }
   }
 
@@ -1168,8 +1156,6 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       final priorityValue = newValue.toLowerCase();
 
       context.read<JobCubit>().updateJobPriority(widget.job.data!.sId!, priorityValue);
-
-      SnackbarDemo(message: 'Job Updated Successfully').showCustomSnackbar(context);
     }
   }
 
