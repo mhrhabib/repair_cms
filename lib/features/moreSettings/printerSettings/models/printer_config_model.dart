@@ -1,63 +1,69 @@
-/// Printer configuration model for storing printer settings
 class PrinterConfigModel {
   final String printerType; // 'thermal', 'label', 'a4'
+  final String printerBrand; // 'Brother', 'Epson', 'Star', 'Xprinter', 'Dymo', 'Generic'
   final String? printerModel;
-  final String? ipAddress;
-  final String? protocol;
+  final String ipAddress;
+  final String protocol; // 'TCP', 'USB'
   final bool isDefault;
-  final DateTime? lastUpdated;
+  final int? port; // Optional port number
+  final String? usbDeviceId; // For USB printers
 
   PrinterConfigModel({
     required this.printerType,
+    required this.printerBrand,
     this.printerModel,
-    this.ipAddress,
-    this.protocol,
+    required this.ipAddress,
+    required this.protocol,
     this.isDefault = false,
-    this.lastUpdated,
+    this.port,
+    this.usbDeviceId,
   });
 
-  // Convert to JSON for storage
+  factory PrinterConfigModel.fromJson(Map<String, dynamic> json) {
+    return PrinterConfigModel(
+      printerType: json['printerType'] ?? '',
+      printerBrand: json['printerBrand'] ?? '',
+      printerModel: json['printerModel'],
+      ipAddress: json['ipAddress'] ?? '',
+      protocol: json['protocol'] ?? 'TCP',
+      isDefault: json['isDefault'] ?? false,
+      port: json['port'],
+      usbDeviceId: json['usbDeviceId'],
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'printerType': printerType,
+      'printerBrand': printerBrand,
       'printerModel': printerModel,
       'ipAddress': ipAddress,
       'protocol': protocol,
       'isDefault': isDefault,
-      'lastUpdated': lastUpdated?.toIso8601String(),
+      'port': port,
+      'usbDeviceId': usbDeviceId,
     };
   }
 
-  // Create from JSON
-  factory PrinterConfigModel.fromJson(Map<String, dynamic> json) {
-    return PrinterConfigModel(
-      printerType: json['printerType'] as String,
-      printerModel: json['printerModel'] as String?,
-      ipAddress: json['ipAddress'] as String?,
-      protocol: json['protocol'] as String?,
-      isDefault: json['isDefault'] as bool? ?? false,
-      lastUpdated: json['lastUpdated'] != null ? DateTime.parse(json['lastUpdated'] as String) : null,
-    );
-  }
-
-  // Copy with method for updating fields
   PrinterConfigModel copyWith({
     String? printerType,
+    String? printerBrand,
     String? printerModel,
     String? ipAddress,
     String? protocol,
     bool? isDefault,
-    DateTime? lastUpdated,
+    int? port,
+    String? usbDeviceId,
   }) {
     return PrinterConfigModel(
       printerType: printerType ?? this.printerType,
+      printerBrand: printerBrand ?? this.printerBrand,
       printerModel: printerModel ?? this.printerModel,
       ipAddress: ipAddress ?? this.ipAddress,
       protocol: protocol ?? this.protocol,
       isDefault: isDefault ?? this.isDefault,
-      lastUpdated: lastUpdated ?? this.lastUpdated,
+      port: port ?? this.port,
+      usbDeviceId: usbDeviceId ?? this.usbDeviceId,
     );
   }
-
-  bool get isConfigured => ipAddress != null && ipAddress!.isNotEmpty && printerModel != null;
 }
