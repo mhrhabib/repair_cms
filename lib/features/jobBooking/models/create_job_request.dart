@@ -1,6 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:repair_cms/core/helpers/storage.dart';
 
+import '../../myJobs/models/single_job_model.dart';
+
 // Helper function to validate MongoDB ObjectId
 bool _isValidObjectId(String? id) {
   if (id == null || id.isEmpty) return false;
@@ -750,7 +752,7 @@ class JobData {
   final List<String>? assignedItemsIds;
   final String? physicalLocation;
   final bool? emailConfirmation;
-  final List<String>? files;
+  final List<File>? files;
   final String? signatureFilePath;
   final String? printOption;
   final bool? printDeviceLabel;
@@ -806,7 +808,7 @@ class JobData {
       assignedItemsIds: json['assignedItemsIds'] != null ? List<String>.from(json['assignedItemsIds']) : null,
       physicalLocation: json['physicalLocation'],
       emailConfirmation: json['emailConfirmation'],
-      files: json['files'] != null ? List<String>.from(json['files']) : null,
+      files: json['files'] != null ? (json['files'] as List).map((file) => File.fromJson(file)).toList() : null,
       signatureFilePath: json['signatureFilePath'],
       printOption: json['printOption'],
       printDeviceLabel: json['printDeviceLabel'],

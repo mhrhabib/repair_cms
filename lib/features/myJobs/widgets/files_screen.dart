@@ -485,8 +485,7 @@ class _FilesScreenState extends State<FilesScreen> {
   Widget _buildFileCard(File file) {
     final fileName = file.fileName ?? 'Unknown';
     final fileSize = file.size ?? 0;
-    final fileUrl = file.file;
-    final isImage = ['jpg', 'jpeg', 'png'].contains(_getFileExtension(fileName));
+    final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(_getFileExtension(fileName));
 
     return Container(
       decoration: BoxDecoration(
@@ -507,31 +506,68 @@ class _FilesScreenState extends State<FilesScreen> {
                     color: Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                   ),
-                  child: isImage && fileUrl != null
+                  child: isImage && file.imageUrl != null && file.imageUrl!.isNotEmpty
                       ? ClipRRect(
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                           child: Image.network(
-                            fileUrl,
+                            file.imageUrl!, // Using the imageUrl getter which constructs the full URL
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
+                              debugPrint('🖼️ Error loading image from: ${file.imageUrl}');
+                              debugPrint('❌ Error: $error');
                               return Center(
-                                child: Icon(_getFileIcon(fileName), size: 48, color: const Color(0xFF8E8E93)),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(_getFileIcon(fileName), size: 48, color: const Color(0xFF8E8E93)),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Image not found',
+                                      style: TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
+                                    ),
+                                  ],
+                                ),
                               );
                             },
                             loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
+                              if (loadingProgress == null) {
+                                debugPrint('✅ Image loaded successfully from: ${file.imageUrl}');
+                                return child;
+                              }
+                              final progress = loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                  : null;
                               return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  color: const Color(0xFF007AFF),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(value: progress, color: const Color(0xFF007AFF)),
+                                    if (progress != null) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        '${(progress * 100).toInt()}%',
+                                        style: const TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               );
                             },
                           ),
                         )
-                      : Center(child: Icon(_getFileIcon(fileName), size: 48, color: const Color(0xFF8E8E93))),
+                      : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(_getFileIcon(fileName), size: 48, color: const Color(0xFF8E8E93)),
+                              const SizedBox(height: 4),
+                              Text(
+                                _getFileExtension(fileName).toUpperCase(),
+                                style: const TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
+                              ),
+                            ],
+                          ),
+                        ),
                 ),
                 // Delete button
                 Positioned(

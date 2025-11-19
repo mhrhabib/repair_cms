@@ -1,8 +1,8 @@
 // repositories/job_repository.dart
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'package:dio/dio.dart' as dio;
+import 'package:http_parser/http_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io' as io;
 import 'package:flutter/cupertino.dart';
@@ -789,23 +789,12 @@ class JobRepository {
       final actualFileSize = await file.length();
       debugPrint('   📊 Actual file size: ${actualFileSize ~/ 1024}KB');
 
-      // Read and encode file
-      final bytes = await file.readAsBytes();
-      final base64File = base64Encode(bytes);
+      // Get MIME type
       final mimeType = _getMimeType(fileName);
-
       debugPrint('   🖼️ MIME type: $mimeType');
-      debugPrint('   🔤 Base64 length: ${base64File.length}');
-
-      final base64String = 'data:$mimeType;base64,$base64File';
 
       // Generate unique ID for the file
       final fileId = const Uuid().v4();
-
-      // Create payload
-      final Map<String, dynamic> payload = {"file": base64String, "id": fileId, "fileName": fileName, "size": fileSize};
-
-      debugPrint('📤 [JobRepository] Sending request with authentication... $payload');
 
       // Get authentication token from storage
       final token = storage.read('token'); // Adjust this based on your storage key
@@ -819,15 +808,10 @@ class JobRepository {
 
       // Configure Dio with authentication headers
       dioInstance.options = dio.BaseOptions(
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
-        sendTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-          // Add any other headers your API requires
-        },
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 60),
+        headers: {'Accept': 'application/json', if (token != null) 'Authorization': 'Bearer $token'},
       );
 
       // Add interceptors for better debugging
@@ -851,14 +835,51 @@ class JobRepository {
         ),
       );
 
-      final response = await dioInstance.post(url, data: payload);
+      // Create FormData for multipart upload (more efficient than base64)
+      final formData = dio.FormData.fromMap({
+        'file': await dio.MultipartFile.fromFile(filePath, filename: fileName, contentType: MediaType.parse(mimeType)),
+        'id': fileId,
+        'fileName': fileName,
+        'size': fileSize.toString(),
+      });
+
+      debugPrint('📤 [JobRepository] Sending multipart/form-data request...');
+      debugPrint('   📎 File: $fileName');
+      debugPrint('   🆔 ID: $fileId');
+      debugPrint('   📏 Size: $fileSize bytes');
+
+      final response = await dioInstance.post(url, data: formData);
 
       debugPrint('✅ [JobRepository] Response received');
       debugPrint('   📊 Status Code: ${response.statusCode}');
       debugPrint('   📄 Response Data: ${response.data}');
+      debugPrint('   📄 Response Data Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         debugPrint('   🎉 File uploaded successfully!');
+
+        // Extract the file path from response
+        String? uploadedFilePath;
+        if (response.data != null) {
+          if (response.data is String) {
+            uploadedFilePath = response.data as String;
+            debugPrint('   📁 Uploaded file path: $uploadedFilePath');
+          } else if (response.data is Map) {
+            // Handle if response is a map with file path
+            uploadedFilePath = response.data['file'] ?? response.data['path'] ?? response.data['filePath'];
+            debugPrint('   📁 Uploaded file path from map: $uploadedFilePath');
+          }
+
+          // Construct the full image URL
+          if (uploadedFilePath != null && uploadedFilePath.isNotEmpty) {
+            const baseImageUrl = '${ApiEndpoints.baseUrl}/file-upload/images?imagePath=';
+            final fullImageUrl = baseImageUrl + uploadedFilePath;
+            debugPrint('   🖼️ Full image URL: $fullImageUrl');
+
+            // Store the image URL for later use if needed
+            // You can return this URL or store it in the job model
+          }
+        }
 
         // After successful upload, get the updated job to include the new file
         return await getJobById(jobId);

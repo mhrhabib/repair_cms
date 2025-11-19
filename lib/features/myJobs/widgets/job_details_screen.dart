@@ -56,6 +56,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         if (state is JobStatusUpdated) {
           // Centralized success notification (use top overlay)
           SnackbarDemo(message: 'Job status updated successfully').showCustomSnackbar(context);
+
+          // Update the cached job data immediately
+          setState(() {
+            _currentJob = state.job;
+          });
         }
 
         if (state is JobDetailSuccess) {
@@ -335,8 +340,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   @override
   void didUpdateWidget(JobDetailsContent oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update when job prop changes
-    if (oldWidget.job.data!.sId != widget.job.data!.sId) {
+    // Update when job prop changes or job data is updated
+    if (oldWidget.job.data!.sId != widget.job.data!.sId ||
+        oldWidget.job.data!.isJobCompleted != widget.job.data!.isJobCompleted ||
+        oldWidget.job.data!.isDeviceReturned != widget.job.data!.isDeviceReturned) {
       _initializeJobStatus();
     }
   }
@@ -348,6 +355,12 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         if (state is JobDetailSuccess) {
+          setState(() {
+            _initializeJobStatus();
+          });
+        }
+        if (state is JobStatusUpdated) {
+          // Immediately update local state when job status is updated
           setState(() {
             _initializeJobStatus();
           });

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:image_picker/image_picker.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -17,6 +18,7 @@ class JobBookingFileUploadScreen extends StatefulWidget {
 class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
+  final Random _random = Random();
 
   @override
   Widget build(BuildContext context) {
@@ -537,11 +539,21 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
       // Upload files to server if there are any
       if (state.job.files != null && state.job.files!.isNotEmpty) {
         final userId = storage.read('userId') ?? '';
-        final fileData = state.job.files!.map((f) => f.toJson()).toList();
+
+        // Add random IDs to each file before uploading
+        final fileData = state.job.files!.map((f) {
+          final fileJson = f.toJson();
+          // Generate random ID if not already present
+          if (fileJson['id'] == null || fileJson['id'].toString().isEmpty) {
+            fileJson['id'] = _generateRandomId();
+          }
+          return fileJson;
+        }).toList();
 
         debugPrint('📤 [FileUploadScreen] Uploading ${state.job.files!.length} files to server');
         debugPrint('🆔 [FileUploadScreen] Job ID: $jobId');
         debugPrint('👤 [FileUploadScreen] User ID: $userId');
+        debugPrint('📋 [FileUploadScreen] File data with IDs: $fileData');
 
         // Upload files using JobFileUploadCubit
         context.read<JobFileUploadCubit>().uploadFiles(userId: userId, jobId: jobId, fileData: fileData);
@@ -555,6 +567,12 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
         Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()));
       }
     }
+  }
+
+  /// Generate a random ID for file uploads
+  String _generateRandomId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    return List.generate(10, (index) => chars[_random.nextInt(chars.length)]).join();
   }
 
   void _showErrorSnackBar(String message) {

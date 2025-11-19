@@ -8,6 +8,7 @@ import 'package:repair_cms/core/helpers/show_toast.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 
 class ReceiptScreen extends StatelessWidget {
   ReceiptScreen({super.key, required this.job});
@@ -656,7 +657,7 @@ class ReceiptScreen extends StatelessWidget {
                 BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 5)),
               ],
             ),
-            child: JobReceiptWidget(jobData: job),
+            child: JobReceiptWidgetNew(jobData: job),
           ),
         ),
       ),

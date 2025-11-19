@@ -287,6 +287,19 @@ class File {
     data['size'] = size;
     return data;
   }
+
+  // Getter to construct full image URL
+  String? get imageUrl {
+    if (file == null) return null;
+
+    // If the file path is already a complete URL, return it as is
+    if (file!.startsWith('http://') || file!.startsWith('https://')) {
+      return file;
+    }
+
+    // Otherwise, construct the full URL using the staging API endpoint
+    return 'https://staging-api.repaircms.com/file-upload/images?imagePath=$file';
+  }
 }
 
 class JobStatus {

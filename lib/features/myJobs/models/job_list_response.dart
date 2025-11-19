@@ -308,6 +308,21 @@ class JobFile {
   Map<String, dynamic> toJson() {
     return {'file': file, 'id': id, 'fileName': fileName, 'size': size};
   }
+
+  /// Get the full image URL for displaying the file
+  /// Constructs URL: https://staging-api.repaircms.com/file-upload/images?imagePath={file}
+  String get imageUrl {
+    if (file == null || file.toString().isEmpty) return '';
+
+    // If file already contains full URL, return it
+    if (file.toString().startsWith('http://') || file.toString().startsWith('https://')) {
+      return file.toString();
+    }
+
+    // Otherwise, construct the full URL
+    const baseImageUrl = 'https://staging-api.repaircms.com/file-upload/images?imagePath=';
+    return baseImageUrl + file.toString();
+  }
 }
 
 class JobStatus {

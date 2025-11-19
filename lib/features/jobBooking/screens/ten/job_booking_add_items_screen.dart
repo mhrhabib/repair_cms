@@ -17,12 +17,22 @@ class JobBookingAddItemsScreen extends StatefulWidget {
 class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
   final TextEditingController _itemController = TextEditingController();
   final FocusNode _itemFocusNode = FocusNode();
+  final Map<String, Item> _selectedItems = {}; // Store selected items with details
 
   @override
   void initState() {
     super.initState();
-
     _itemController.text = '';
+
+    // Initialize selected items from JobBookingCubit state if available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final jobBookingState = context.read<JobBookingCubit>().state;
+      if (jobBookingState is JobBookingData && jobBookingState.job.assignedItemsIds.isNotEmpty) {
+        // Note: In a real app, you might want to fetch item details for already assigned items
+        // For now, we'll rely on items being added through the search functionality
+        debugPrint('📦 Found ${jobBookingState.job.assignedItemsIds.length} pre-assigned items');
+      }
+    });
   }
 
   void _onSearchChanged(String query) {
@@ -43,6 +53,10 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
     // Check if item is already assigned
     if (!cubit.isItemAssigned(item.sId!)) {
       cubit.addItem(item.sId!);
+      // Store the item details for display
+      setState(() {
+        _selectedItems[item.sId!] = item;
+      });
     }
 
     // Clear search and hide keyboard
@@ -53,6 +67,10 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
 
   void _removeItem(String itemId) {
     context.read<JobBookingCubit>().removeItem(itemId);
+    // Remove from local storage
+    setState(() {
+      _selectedItems.remove(itemId);
+    });
   }
 
   Widget _buildHighlightedText(String text, String query) {
@@ -111,24 +129,24 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
   void _createJobAndUploadFiles() {
     debugPrint('🚀 Creating job and preparing to upload files...');
 
+    // Check if we have at least basic job information
+    final jobBookingState = context.read<JobBookingCubit>().state;
+    if (jobBookingState is! JobBookingData) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please complete the job information first'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     // Get the complete job request from JobBookingCubit
     final jobRequest = context.read<JobBookingCubit>().getCreateJobRequest();
 
     // Create the job using JobCreateCubit
     context.read<JobCreateCubit>().createJob(request: jobRequest);
-  }
-
-  void _showSuccessAndNavigate() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Job created successfully!'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    // Navigate back to home/dashboard
-    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   @override
@@ -144,29 +162,26 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
               final jobId = state.response.data?.sId;
               if (jobId != null) {
                 context.read<JobBookingCubit>().setJobId(jobId);
+                debugPrint('📤 Navigating to file upload screen with jobId: $jobId');
 
-                // Navigate to file upload screen to handle file upload
-                final jobBookingState = context.read<JobBookingCubit>().state;
-                if (jobBookingState is JobBookingData &&
-                    jobBookingState.job.files != null &&
-                    jobBookingState.job.files!.isNotEmpty) {
-                  debugPrint('📤 Navigating to file upload screen with jobId: $jobId');
-                  // Navigate to file upload screen with jobId to upload files
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => JobBookingFileUploadScreen(jobId: jobId)),
-                  );
-                } else {
-                  // No files to upload, show success and navigate home
-                  _showSuccessAndNavigate();
-                }
+                // Use post frame callback to ensure navigation happens after build completes
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => JobBookingFileUploadScreen(jobId: jobId)),
+                    );
+                  }
+                });
               }
             } else if (state is JobCreateError) {
+              debugPrint('❌ Job creation failed: ${state.message}');
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Failed to create job: ${state.message}'),
                   backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
+                  duration: const Duration(seconds: 4),
+                  action: SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _createJobAndUploadFiles),
                 ),
               );
             }
@@ -354,7 +369,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                                           width: 40.w,
                                           height: 40.h,
                                           decoration: BoxDecoration(
-                                            color: Colors.blue.withOpacity(0.1),
+                                            color: Colors.blue.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(8.r),
                                           ),
                                           child: Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 20.sp),
@@ -507,7 +522,8 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: state.job.assignedItemsIds
-                                    .map((itemId) => _buildSelectedItemCard(itemId))
+                                    .where((itemId) => _selectedItems.containsKey(itemId))
+                                    .map((itemId) => _buildSelectedItemCard(_selectedItems[itemId]!))
                                     .toList(),
                               ),
                               const SizedBox(height: 32),
@@ -548,31 +564,49 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
     );
   }
 
-  Widget _buildSelectedItemCard(String itemId) {
-    // In a real app, you'd want to fetch item details for display
-    // For now, we'll just show the item ID
+  Widget _buildSelectedItemCard(Item item) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.blue, width: 1),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 16),
+              ),
+              const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Item ID: $itemId',
+                    item.productName ?? 'Unnamed Item',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.blue),
                   ),
-                  const SizedBox(height: 4),
-                  Text('Tap to see details', style: const TextStyle(fontSize: 12, color: Colors.blue)),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${item.salePriceIncVat?.toStringAsFixed(2) ?? '0.00'} €',
+                    style: const TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
+                  if (item.itemNumber != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Item #: ${item.itemNumber}',
+                      style: TextStyle(fontSize: 10, color: Colors.blue.withValues(alpha: 0.7)),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -582,7 +616,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
           top: -8,
           right: -8,
           child: GestureDetector(
-            onTap: () => _removeItem(itemId),
+            onTap: () => _removeItem(item.sId!),
             child: Container(
               width: 24,
               height: 24,
