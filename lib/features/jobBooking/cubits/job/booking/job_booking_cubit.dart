@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:mime/mime.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/contact_data_helper.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -11,6 +10,13 @@ part 'job_booking_state.dart';
 
 class JobBookingCubit extends Cubit<JobBookingState> {
   JobBookingCubit() : super(JobBookingInitial());
+
+  // Helper method to validate MongoDB ObjectId
+  bool _isValidObjectId(String? id) {
+    if (id == null || id.isEmpty) return false;
+    final objectIdRegex = RegExp(r'^[0-9a-fA-F]{24}$');
+    return objectIdRegex.hasMatch(id);
+  }
 
   // Add this method to your JobBookingCubit
   void updateCustomerSignature(String signatureBase64) {
@@ -22,6 +28,30 @@ class JobBookingCubit extends Cubit<JobBookingState> {
 
   // Initialize with empty data
   void initializeJob() {
+    // Get valid ObjectIds from storage
+    final storedUserId = storage.read('userId');
+    final storedLocationId = storage.read('locationId');
+
+    // Get receipt data from storage
+    final receiptDataJson = storage.read('jobReceiptData');
+    String salutationHTMLmarkup = '';
+    String termsAndConditionsHTMLmarkup = '';
+
+    if (receiptDataJson != null) {
+      try {
+        final receiptData = jsonDecode(receiptDataJson);
+        salutationHTMLmarkup = receiptData['salutation'] ?? '';
+        termsAndConditionsHTMLmarkup = receiptData['termsAndConditions'] ?? '';
+        debugPrint('✅ [JobBookingCubit] Loaded receipt data from storage');
+        debugPrint('📄 [JobBookingCubit] Salutation length: ${salutationHTMLmarkup.length}');
+        debugPrint('📄 [JobBookingCubit] Terms length: ${termsAndConditionsHTMLmarkup.length}');
+      } catch (e) {
+        debugPrint('❌ [JobBookingCubit] Error parsing receipt data: $e');
+      }
+    } else {
+      debugPrint('⚠️ [JobBookingCubit] No receipt data found in storage');
+    }
+
     emit(
       JobBookingData(
         job: Job(
@@ -30,8 +60,8 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           model: "",
           servicesIds: [],
           assignedItemsIds: [],
-          userId: "", // Will be set from user data
-          loggedUserId: "", // Will be set from user data
+          userId: _isValidObjectId(storedUserId) ? storedUserId : "", // Set from storage if valid
+          loggedUserId: _isValidObjectId(storedUserId) ? storedUserId : "", // Set from storage if valid
           jobStatus: [],
           status: "draft",
           discount: 0,
@@ -59,11 +89,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             reverseCharge: false,
           ),
           files: [],
-          location: "", // Will be set from user data
+          location: _isValidObjectId(storedLocationId) ? storedLocationId : "", // Set from storage if valid
           physicalLocation: "",
           signatureFilePath: "",
-          salutationHTMLmarkup: "",
-          termsAndConditionsHTMLmarkup: "",
+          salutationHTMLmarkup: salutationHTMLmarkup, // From receipt data
+          termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup, // From receipt data
           receiptFooter: ReceiptFooter(
             companyLogo: "",
             companyLogoURL: "",
@@ -135,6 +165,14 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           ),
         ),
       );
+    }
+  }
+
+  // Store job ID after creation
+  void setJobId(String jobId) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      emit(state.copyWith(jobId: jobId));
     }
   }
 
@@ -311,7 +349,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     if (state is JobBookingData) {
       emit(
         state.copyWith(
-          job: state.job.copyWith(userId: userId, loggedUserId: loggedUserId, location: location),
+          job: state.job.copyWith(
+            userId: _isValidObjectId(userId) ? userId : state.job.userId,
+            loggedUserId: _isValidObjectId(loggedUserId) ? loggedUserId : state.job.loggedUserId,
+            location: _isValidObjectId(location) ? location : state.job.location,
+          ),
         ),
       );
     }
@@ -321,9 +363,20 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void generateJobStatus(String userName) {
     final state = this.state;
     if (state is JobBookingData) {
+      // Get valid userId for job status
+      final storedUserId = storage.read('userId');
+      final validUserId = _isValidObjectId(state.job.userId)
+          ? state.job.userId!
+          : (_isValidObjectId(storedUserId) ? storedUserId : '');
+
+      if (validUserId.isEmpty) {
+        debugPrint('❌ [JobBookingCubit] No valid userId available for job status');
+        return;
+      }
+
       final jobStatus = JobStatus(
         title: "draft",
-        userId: state.job.userId,
+        userId: validUserId,
         colorCode: "#2589F6",
         userName: userName,
         createAtStatus: DateTime.now().millisecondsSinceEpoch,
@@ -332,6 +385,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       );
 
       emit(state.copyWith(job: state.job.copyWith(jobStatus: [jobStatus])));
+      debugPrint('✅ [JobBookingCubit] Generated job status with userId: $validUserId');
     }
   }
 
@@ -493,9 +547,9 @@ class JobBookingCubit extends Cubit<JobBookingState> {
         state.copyWith(
           job: state.job.copyWith(
             physicalLocation: location,
-            location: storage.read("locationId"),
-            loggedUserId: storage.read("userId"),
-            userId: storage.read("userId"),
+            location: _isValidObjectId(storage.read("locationId")) ? storage.read("locationId") : state.job.location,
+            loggedUserId: _isValidObjectId(storage.read("userId")) ? storage.read("userId") : state.job.loggedUserId,
+            userId: _isValidObjectId(storage.read("userId")) ? storage.read("userId") : state.job.userId,
           ),
         ),
       );
@@ -566,7 +620,35 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     }
   }
 
-  // Update file processing method
+  // Update receipt data from storage (call this when receipt data changes)
+  void updateReceiptData() {
+    final receiptDataJson = storage.read('jobReceiptData');
+    if (receiptDataJson != null && state is JobBookingData) {
+      try {
+        final receiptData = jsonDecode(receiptDataJson);
+        final salutationHTMLmarkup = receiptData['salutation'] ?? '';
+        final termsAndConditionsHTMLmarkup = receiptData['termsAndConditions'] ?? '';
+
+        final currentState = state as JobBookingData;
+        emit(
+          currentState.copyWith(
+            job: currentState.job.copyWith(
+              salutationHTMLmarkup: salutationHTMLmarkup,
+              termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup,
+            ),
+          ),
+        );
+
+        debugPrint('✅ [JobBookingCubit] Updated receipt data in job');
+        debugPrint('📄 [JobBookingCubit] Salutation length: ${salutationHTMLmarkup.length}');
+        debugPrint('📄 [JobBookingCubit] Terms length: ${termsAndConditionsHTMLmarkup.length}');
+      } catch (e) {
+        debugPrint('❌ [JobBookingCubit] Error updating receipt data: $e');
+      }
+    }
+  }
+
+  // Process and add file (for file upload functionality)
   Future<void> processAndAddFile(String filePath) async {
     final state = this.state;
     if (state is! JobBookingData) return;
@@ -577,13 +659,13 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       // Read file and convert to base64
       final localFile = File(filePath);
       if (!await localFile.exists()) {
-        throw Exception('File does not exist: $filePath');
+        throw Exception("File does not exist: $filePath");
       }
 
       final bytes = await localFile.readAsBytes();
       final base64Image = base64Encode(bytes);
-      final mimeType = lookupMimeType(filePath) ?? 'application/octet-stream';
-      final base64String = 'data:$mimeType;base64,$base64Image';
+      final mimeType = "image/jpeg"; // Default MIME type for images
+      final base64String = "data:$mimeType;base64,$base64Image";
 
       // Create AvatarFile with base64 data
       final avatarFile = AvatarFile(file: base64String);

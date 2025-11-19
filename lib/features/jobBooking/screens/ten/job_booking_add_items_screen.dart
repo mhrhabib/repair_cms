@@ -1,5 +1,6 @@
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/jobItem/job_item_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/job_item_model.dart';
 import 'package:repair_cms/features/jobBooking/screens/eleven/job_booking_file_upload_screen.dart';
@@ -107,372 +108,441 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
     return RichText(text: TextSpan(children: spans));
   }
 
+  void _createJobAndUploadFiles() {
+    debugPrint('🚀 Creating job and preparing to upload files...');
+
+    // Get the complete job request from JobBookingCubit
+    final jobRequest = context.read<JobBookingCubit>().getCreateJobRequest();
+
+    // Create the job using JobCreateCubit
+    context.read<JobCreateCubit>().createJob(request: jobRequest);
+  }
+
+  void _showSuccessAndNavigate() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Job created successfully!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // Navigate back to home/dashboard
+    Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocListener<JobItemCubit, JobItemState>(
-      listener: (context, state) {
-        // TODO: implement listener
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<JobCreateCubit, JobCreateState>(
+          listener: (context, state) {
+            if (state is JobCreateCreated) {
+              debugPrint('✅ Job created successfully with ID: ${state.response.data?.sId}');
 
-      child: Scaffold(
-        backgroundColor: Colors.grey[50],
-        body: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // Progress bar
-              SliverToBoxAdapter(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Container(
-                    height: 12.h,
-                    width: MediaQuery.of(context).size.width * .071 * 10,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+              // Store job ID in JobBookingCubit for later use
+              final jobId = state.response.data?.sId;
+              if (jobId != null) {
+                context.read<JobBookingCubit>().setJobId(jobId);
+
+                // Navigate to file upload screen to handle file upload
+                final jobBookingState = context.read<JobBookingCubit>().state;
+                if (jobBookingState is JobBookingData &&
+                    jobBookingState.job.files != null &&
+                    jobBookingState.job.files!.isNotEmpty) {
+                  debugPrint('📤 Navigating to file upload screen with jobId: $jobId');
+                  // Navigate to file upload screen with jobId to upload files
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => JobBookingFileUploadScreen(jobId: jobId)),
+                  );
+                } else {
+                  // No files to upload, show success and navigate home
+                  _showSuccessAndNavigate();
+                }
+              }
+            } else if (state is JobCreateError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to create job: ${state.message}'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+          },
+        ),
+      ],
+      child: BlocListener<JobItemCubit, JobItemState>(
+        listener: (context, state) {
+          // TODO: implement listener
+        },
+        child: Scaffold(
+          backgroundColor: Colors.grey[50],
+          body: SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                // Progress bar
+                SliverToBoxAdapter(
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Container(
+                      height: 12.h,
+                      width: MediaQuery.of(context).size.width * .071 * 10,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(6),
+                          topRight: Radius.circular(0),
+                        ),
+                        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              // Header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                // Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.close, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Step indicator
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                      child: const Center(
+                        child: Text(
+                          '10',
+                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
+                    ),
+                  ),
+                ),
+
+                SliverToBoxAdapter(child: const SizedBox(height: 24)),
+
+                // Title and subtitle
+                SliverToBoxAdapter(
+                  child: const Column(
+                    children: [
+                      Text(
+                        'Add Items',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                      ),
+                      SizedBox(height: 8),
+                      Text('(Protection case, Insurance...)', style: TextStyle(fontSize: 14, color: Colors.grey)),
                     ],
                   ),
                 ),
-              ),
 
-              // Step indicator
-              SliverToBoxAdapter(
-                child: Center(
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                    child: const Center(
-                      child: Text(
-                        '10',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+                SliverToBoxAdapter(child: const SizedBox(height: 32)),
 
-              SliverToBoxAdapter(child: const SizedBox(height: 24)),
-
-              // Title and subtitle
-              SliverToBoxAdapter(
-                child: const Column(
-                  children: [
-                    Text(
-                      'Add Items',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
-                    ),
-                    SizedBox(height: 8),
-                    Text('(Protection case, Insurance...)', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                  ],
-                ),
-              ),
-
-              SliverToBoxAdapter(child: const SizedBox(height: 32)),
-
-              // Item Search
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Search Items',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 48.h,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(color: Colors.grey.shade300),
+                // Item Search
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Search Items',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
                         ),
-                        child: Row(
-                          children: [
-                            SizedBox(width: 16.w),
-                            Icon(Icons.search, color: Colors.grey.shade400, size: 20.sp),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: TextField(
-                                controller: _itemController,
-                                focusNode: _itemFocusNode,
-                                onChanged: _onSearchChanged,
-                                decoration: InputDecoration(
-                                  hintText: 'Search items by name...',
-                                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 16),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                            ),
-                            if (_itemController.text.isNotEmpty)
-                              GestureDetector(
-                                onTap: () {
-                                  _itemController.clear();
-                                  context.read<JobItemCubit>().clearSearch();
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.only(right: 16.w),
-                                  child: Icon(Icons.close, color: Colors.grey.shade400, size: 20.sp),
-                                ),
-                              )
-                            else
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 48.h,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8.r),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            children: [
                               SizedBox(width: 16.w),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Search Results from API
-              BlocBuilder<JobItemCubit, JobItemState>(
-                builder: (context, state) {
-                  if (state is JobItemLoading) {
-                    return SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.w),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    );
-                  }
-
-                  if (state is JobItemLoaded) {
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final item = state.itemsResponse.items![index];
-
-                        return BlocBuilder<JobBookingCubit, JobBookingState>(
-                          builder: (context, bookingState) {
-                            final isAlreadySelected = bookingState is JobBookingData
-                                ? bookingState.job.assignedItemsIds.contains(item.sId)
-                                : false;
-
-                            return GestureDetector(
-                              onTap: () => _addItem(item),
-                              child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12.r),
-                                  border: Border.all(color: Colors.grey.shade200),
-                                ),
-                                child: Container(
-                                  padding: EdgeInsets.all(16.w),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 40.w,
-                                        height: 40.h,
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8.r),
-                                        ),
-                                        child: Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 20.sp),
-                                      ),
-                                      SizedBox(width: 12.w),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            _buildHighlightedText(
-                                              item.productName ?? 'Unnamed Item',
-                                              state.searchQuery,
-                                            ),
-                                            SizedBox(height: 4.h),
-                                            if (item.itemNumber != null) ...[
-                                              Text(
-                                                'Item #: ${item.itemNumber}',
-                                                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
-                                              ),
-                                              SizedBox(height: 2.h),
-                                            ],
-                                            if (item.manufacturer != null) ...[
-                                              Text(
-                                                'Manufacturer: ${item.manufacturer}',
-                                                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
-                                              ),
-                                              SizedBox(height: 2.h),
-                                            ],
-                                            if (item.stockValue != null) ...[
-                                              Text(
-                                                'Stock: ${item.stockValue} ${item.stockUnit ?? 'units'}',
-                                                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(width: 12.w),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            '${item.salePriceIncVat?.toStringAsFixed(2) ?? '0.00'} €',
-                                            style: TextStyle(
-                                              fontSize: 16.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.blue,
-                                            ),
-                                          ),
-                                          SizedBox(height: 2.h),
-                                          Text(
-                                            'excl. VAT',
-                                            style: TextStyle(fontSize: 10.sp, color: Colors.grey.shade500),
-                                          ),
-                                        ],
-                                      ),
-                                      if (isAlreadySelected) ...[
-                                        SizedBox(width: 8.w),
-                                        Icon(Icons.check_circle, color: Colors.green, size: 20.sp),
-                                      ],
-                                    ],
+                              Icon(Icons.search, color: Colors.grey.shade400, size: 20.sp),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: TextField(
+                                  controller: _itemController,
+                                  focusNode: _itemFocusNode,
+                                  onChanged: _onSearchChanged,
+                                  decoration: InputDecoration(
+                                    hintText: 'Search items by name...',
+                                    hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.zero,
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                        );
-                      }, childCount: state.itemsResponse.items!.length),
-                    );
-                  }
-
-                  if (state is JobItemNoResults) {
-                    return SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        child: Container(
-                          padding: EdgeInsets.all(16.w),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20.r),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: Text(
-                            'No items found for "${state.searchQuery}"',
-                            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade500),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  if (state is JobItemError) {
-                    return SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        child: Container(
-                          padding: EdgeInsets.all(16.w),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20.r),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Error: ${state.message}',
-                                style: TextStyle(fontSize: 14.sp, color: Colors.red),
-                              ),
-                              SizedBox(height: 8.h),
-                              ElevatedButton(
-                                onPressed: () {
-                                  final userId = storage.read('userId');
-                                  if (userId != null) {
-                                    context.read<JobItemCubit>().refreshSearch(userId: userId);
-                                  }
-                                },
-                                child: Text('Retry'),
-                              ),
+                              if (_itemController.text.isNotEmpty)
+                                GestureDetector(
+                                  onTap: () {
+                                    _itemController.clear();
+                                    context.read<JobItemCubit>().clearSearch();
+                                  },
+                                  child: Padding(
+                                    padding: EdgeInsets.only(right: 16.w),
+                                    child: Icon(Icons.close, color: Colors.grey.shade400, size: 20.sp),
+                                  ),
+                                )
+                              else
+                                SizedBox(width: 16.w),
                             ],
                           ),
                         ),
-                      ),
-                    );
-                  }
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
 
-                  return SliverToBoxAdapter(child: SizedBox.shrink());
-                },
-              ),
-
-              // Selected Items from JobBookingCubit
-              BlocBuilder<JobBookingCubit, JobBookingState>(
-                builder: (context, state) {
-                  if (state is JobBookingData &&
-                      state.job.assignedItemsIds.isNotEmpty &&
-                      _itemController.text.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Selected Items',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
-                            ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: state.job.assignedItemsIds
-                                  .map((itemId) => _buildSelectedItemCard(itemId))
-                                  .toList(),
-                            ),
-                            const SizedBox(height: 32),
-                          ],
+                // Search Results from API
+                BlocBuilder<JobItemCubit, JobItemState>(
+                  builder: (context, state) {
+                    if (state is JobItemLoading) {
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.w),
+                          child: Center(child: CircularProgressIndicator()),
                         ),
-                      ),
-                    );
-                  }
+                      );
+                    }
 
-                  return SliverToBoxAdapter(child: SizedBox.shrink());
-                },
-              ),
+                    if (state is JobItemLoaded) {
+                      return SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = state.itemsResponse.items![index];
 
-              // Add extra space at the bottom for the button
-              SliverToBoxAdapter(child: const SizedBox(height: 100)),
-            ],
+                          return BlocBuilder<JobBookingCubit, JobBookingState>(
+                            builder: (context, bookingState) {
+                              final isAlreadySelected = bookingState is JobBookingData
+                                  ? bookingState.job.assignedItemsIds.contains(item.sId)
+                                  : false;
+
+                              return GestureDetector(
+                                onTap: () => _addItem(item),
+                                child: Container(
+                                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.all(16.w),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 40.w,
+                                          height: 40.h,
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8.r),
+                                          ),
+                                          child: Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 20.sp),
+                                        ),
+                                        SizedBox(width: 12.w),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              _buildHighlightedText(
+                                                item.productName ?? 'Unnamed Item',
+                                                state.searchQuery,
+                                              ),
+                                              SizedBox(height: 4.h),
+                                              if (item.itemNumber != null) ...[
+                                                Text(
+                                                  'Item #: ${item.itemNumber}',
+                                                  style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                                                ),
+                                                SizedBox(height: 2.h),
+                                              ],
+                                              if (item.manufacturer != null) ...[
+                                                Text(
+                                                  'Manufacturer: ${item.manufacturer}',
+                                                  style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                                                ),
+                                                SizedBox(height: 2.h),
+                                              ],
+                                              if (item.stockValue != null) ...[
+                                                Text(
+                                                  'Stock: ${item.stockValue} ${item.stockUnit ?? 'units'}',
+                                                  style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(width: 12.w),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              '${item.salePriceIncVat?.toStringAsFixed(2) ?? '0.00'} €',
+                                              style: TextStyle(
+                                                fontSize: 16.sp,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            SizedBox(height: 2.h),
+                                            Text(
+                                              'excl. VAT',
+                                              style: TextStyle(fontSize: 10.sp, color: Colors.grey.shade500),
+                                            ),
+                                          ],
+                                        ),
+                                        if (isAlreadySelected) ...[
+                                          SizedBox(width: 8.w),
+                                          Icon(Icons.check_circle, color: Colors.green, size: 20.sp),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }, childCount: state.itemsResponse.items!.length),
+                      );
+                    }
+
+                    if (state is JobItemNoResults) {
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                          child: Container(
+                            padding: EdgeInsets.all(16.w),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20.r),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Text(
+                              'No items found for "${state.searchQuery}"',
+                              style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade500),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (state is JobItemError) {
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                          child: Container(
+                            padding: EdgeInsets.all(16.w),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20.r),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Error: ${state.message}',
+                                  style: TextStyle(fontSize: 14.sp, color: Colors.red),
+                                ),
+                                SizedBox(height: 8.h),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    final userId = storage.read('userId');
+                                    if (userId != null) {
+                                      context.read<JobItemCubit>().refreshSearch(userId: userId);
+                                    }
+                                  },
+                                  child: Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return SliverToBoxAdapter(child: SizedBox.shrink());
+                  },
+                ),
+
+                // Selected Items from JobBookingCubit
+                BlocBuilder<JobBookingCubit, JobBookingState>(
+                  builder: (context, state) {
+                    if (state is JobBookingData &&
+                        state.job.assignedItemsIds.isNotEmpty &&
+                        _itemController.text.isEmpty) {
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Selected Items',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: state.job.assignedItemsIds
+                                    .map((itemId) => _buildSelectedItemCard(itemId))
+                                    .toList(),
+                              ),
+                              const SizedBox(height: 32),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return SliverToBoxAdapter(child: SizedBox.shrink());
+                  },
+                ),
+
+                // Add extra space at the bottom for the button
+                SliverToBoxAdapter(child: const SizedBox(height: 100)),
+              ],
+            ),
           ),
-        ),
-        bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
-          builder: (context, state) {
-            // final hasItems = state is JobBookingData && state.job.assignedItemsIds.isNotEmpty;
+          bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
+            builder: (context, state) {
+              return BlocBuilder<JobCreateCubit, JobCreateState>(
+                builder: (context, createState) {
+                  final isCreating = createState is JobCreateLoading;
 
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
-              child: BottomButtonsGroup(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingFileUploadScreen()));
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
+                    child: BottomButtonsGroup(
+                      okButtonText: isCreating ? 'Creating...' : 'Create Job',
+                      onPressed: isCreating ? null : _createJobAndUploadFiles,
+                    ),
+                  );
                 },
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

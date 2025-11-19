@@ -107,6 +107,8 @@ class Location {
   final String city;
   final String country;
   final bool isDefault;
+  final String? companyId;
+  final String? userId;
 
   Location({
     required this.id,
@@ -115,6 +117,8 @@ class Location {
     required this.city,
     required this.country,
     required this.isDefault,
+    this.companyId,
+    this.userId,
   });
 
   factory Location.fromJson(Map<String, dynamic> json) {
@@ -125,6 +129,8 @@ class Location {
       city: json['city'] ?? '',
       country: json['country'] ?? '',
       isDefault: json['default'] ?? false,
+      companyId: json['companyId'],
+      userId: json['userId'],
     );
   }
 
@@ -136,6 +142,8 @@ class Location {
       'city': city,
       'country': country,
       'default': isDefault,
+      'companyId': companyId,
+      'userId': userId,
     };
   }
 }

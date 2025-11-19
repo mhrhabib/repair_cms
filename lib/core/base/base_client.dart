@@ -2,7 +2,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:repair_cms/core/app_exports.dart';
 
 class BaseClient {
@@ -27,27 +26,12 @@ class BaseClient {
     return options;
   }
 
-  static Dio _getDioWithLogger() {
-    return Dio()
-      ..interceptors.add(
-        PrettyDioLogger(
-          requestHeader: true,
-          requestBody: true,
-          responseBody: true,
-          responseHeader: false,
-          error: true,
-          compact: true,
-          maxWidth: 90,
-        ),
-      );
-  }
-
   static Future<dynamic> get({required String url, dynamic payload}) async {
     final storage = GetStorage();
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = _getDioWithLogger();
+    var dio = Dio();
 
     // Apply base options
     final baseOptions = await getBaseOptions();
@@ -80,7 +64,7 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = _getDioWithLogger();
+    var dio = Dio();
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 
@@ -107,7 +91,7 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = _getDioWithLogger();
+    var dio = Dio();
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 
@@ -134,7 +118,7 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = _getDioWithLogger();
+    var dio = Dio();
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 
@@ -161,7 +145,7 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = _getDioWithLogger();
+    var dio = Dio();
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 

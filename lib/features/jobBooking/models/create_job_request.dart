@@ -1,6 +1,14 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:repair_cms/core/helpers/storage.dart';
 
+// Helper function to validate MongoDB ObjectId
+bool _isValidObjectId(String? id) {
+  if (id == null || id.isEmpty) return false;
+  // MongoDB ObjectId is a 24-character hexadecimal string
+  final objectIdRegex = RegExp(r'^[0-9a-fA-F]{24}$');
+  return objectIdRegex.hasMatch(id);
+}
+
 class CreateJobRequest {
   final Job job;
   final Defect defect;
@@ -20,8 +28,8 @@ class Job {
   final String model;
   final List<String> servicesIds;
   final List<String> assignedItemsIds;
-  final String userId;
-  final String loggedUserId;
+  final String? userId;
+  final String? loggedUserId;
   final List<JobStatus> jobStatus;
   final String status;
   final double discount;
@@ -68,15 +76,31 @@ class Job {
   });
 
   Map<String, dynamic> toJson() {
+    // Get values from storage with validation
+    final storedUserId = storage.read('userId');
+    final storedLocationId = storage.read('locationId');
+
+    // Only include valid MongoDB ObjectIds
+    final validUserId = _isValidObjectId(userId) ? userId : (_isValidObjectId(storedUserId) ? storedUserId : null);
+    final validLoggedUserId = _isValidObjectId(loggedUserId)
+        ? loggedUserId
+        : (_isValidObjectId(storedUserId) ? storedUserId : null);
+    final validLocation = _isValidObjectId(location)
+        ? location
+        : (_isValidObjectId(storedLocationId) ? storedLocationId : null);
+
     return {
       'jobType': jobType,
       'jobTypes': jobTypes,
       'model': model,
       'servicesIds': servicesIds,
       'assignedItemsIds': assignedItemsIds,
-      'userId': userId,
-      'loggedUserId': loggedUserId,
-      'jobStatus': jobStatus.map((status) => status.toJson()).toList(),
+      if (validUserId != null) 'userId': validUserId,
+      if (validLoggedUserId != null) 'loggedUserId': validLoggedUserId,
+      'jobStatus': jobStatus
+          .where((status) => _isValidObjectId(status.userId))
+          .map((status) => status.toJson())
+          .toList(),
       'status': status,
       'discount': discount,
       'vat': vat,
@@ -86,7 +110,7 @@ class Job {
       'customerId': customerId,
       'customerDetails': customerDetails.toJson(),
       'files': files?.map((file) => file.toJson()).toList(),
-      'location': location ?? storage.read('locationId'),
+      if (validLocation != null) 'location': validLocation,
       'physicalLocation': physicalLocation,
       'signatureFilePath': signatureFilePath,
       'salutationHTMLmarkup': salutationHTMLmarkup,
@@ -211,6 +235,18 @@ class JobStatus {
     required this.notifications,
     required this.notes,
   });
+
+  factory JobStatus.fromJson(Map<String, dynamic> json) {
+    return JobStatus(
+      title: json['title'] ?? '',
+      userId: json['userId'] ?? '',
+      colorCode: json['colorCode'] ?? '',
+      userName: json['userName'] ?? '',
+      createAtStatus: json['createAtStatus'] ?? 0,
+      notifications: json['notifications'] ?? false,
+      notes: json['notes'] ?? '',
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -516,6 +552,10 @@ class DefectItem {
     return {'value': value, 'id': id};
   }
 
+  factory DefectItem.fromJson(Map<String, dynamic> json) {
+    return DefectItem(value: json['value'] ?? '', id: json['id'] ?? '');
+  }
+
   DefectItem copyWith({String? value, String? id}) {
     return DefectItem(value: value ?? this.value, id: id ?? this.id);
   }
@@ -573,6 +613,10 @@ class ConditionItem {
   final String id;
 
   ConditionItem({required this.value, required this.id});
+
+  factory ConditionItem.fromJson(Map<String, dynamic> json) {
+    return ConditionItem(value: json['value'] ?? '', id: json['id'] ?? '');
+  }
 
   Map<String, dynamic> toJson() {
     return {'value': value, 'id': id};
@@ -682,31 +726,403 @@ class Contact {
 
 class CreateJobResponse {
   final bool success;
-  final String message;
   final JobData? data;
 
-  CreateJobResponse({required this.success, required this.message, this.data});
+  CreateJobResponse({required this.success, this.data});
 
   factory CreateJobResponse.fromJson(Map<String, dynamic> json) {
     return CreateJobResponse(
       success: json['success'] ?? false,
-      message: json['message'] ?? '',
       data: json['data'] != null ? JobData.fromJson(json['data']) : null,
     );
   }
 }
 
 class JobData {
-  final String id;
-  final String jobNo;
+  final String? sId;
+  final String? jobType;
+  final String? deviceType;
+  final String? model;
+  final List<String>? servicesIds;
+  final String? deviceId;
+  final String? jobContactId;
+  final String? defectId;
+  final List<String>? assignedItemsIds;
+  final String? physicalLocation;
+  final bool? emailConfirmation;
+  final List<String>? files;
+  final String? signatureFilePath;
+  final String? printOption;
+  final bool? printDeviceLabel;
+  final List<JobStatus>? jobStatus;
+  final String? userId;
+  final String? createdAt;
+  final String? updatedAt;
+  final int? v;
+  final List<ServiceData>? services;
+  final List<AssignedItemData>? assignedItems;
+  final List<DeviceData>? device;
+  final List<ContactData>? contact;
+  final List<DefectData>? defect;
 
-  JobData({required this.id, required this.jobNo});
+  JobData({
+    this.sId,
+    this.jobType,
+    this.deviceType,
+    this.model,
+    this.servicesIds,
+    this.deviceId,
+    this.jobContactId,
+    this.defectId,
+    this.assignedItemsIds,
+    this.physicalLocation,
+    this.emailConfirmation,
+    this.files,
+    this.signatureFilePath,
+    this.printOption,
+    this.printDeviceLabel,
+    this.jobStatus,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.services,
+    this.assignedItems,
+    this.device,
+    this.contact,
+    this.defect,
+  });
 
   factory JobData.fromJson(Map<String, dynamic> json) {
-    return JobData(id: json['_id'] ?? json['id'] ?? '', jobNo: json['jobNo'] ?? '');
+    return JobData(
+      sId: json['_id'],
+      jobType: json['jobType'],
+      deviceType: json['deviceType'],
+      model: json['model'],
+      servicesIds: json['servicesIds'] != null ? List<String>.from(json['servicesIds']) : null,
+      deviceId: json['deviceId'],
+      jobContactId: json['jobContactId'],
+      defectId: json['defectId'],
+      assignedItemsIds: json['assignedItemsIds'] != null ? List<String>.from(json['assignedItemsIds']) : null,
+      physicalLocation: json['physicalLocation'],
+      emailConfirmation: json['emailConfirmation'],
+      files: json['files'] != null ? List<String>.from(json['files']) : null,
+      signatureFilePath: json['signatureFilePath'],
+      printOption: json['printOption'],
+      printDeviceLabel: json['printDeviceLabel'],
+      jobStatus: json['jobStatus'] != null
+          ? (json['jobStatus'] as List).map((status) => JobStatus.fromJson(status)).toList()
+          : null,
+      userId: json['userId'],
+      createdAt: json['createdAt'],
+      updatedAt: json['updatedAt'],
+      v: json['__v'],
+      services: json['services'] != null
+          ? (json['services'] as List).map((service) => ServiceData.fromJson(service)).toList()
+          : null,
+      assignedItems: json['assignedItems'] != null
+          ? (json['assignedItems'] as List).map((item) => AssignedItemData.fromJson(item)).toList()
+          : null,
+      device: json['device'] != null
+          ? (json['device'] as List).map((device) => DeviceData.fromJson(device)).toList()
+          : null,
+      contact: json['contact'] != null
+          ? (json['contact'] as List).map((contact) => ContactData.fromJson(contact)).toList()
+          : null,
+      defect: json['defect'] != null
+          ? (json['defect'] as List).map((defect) => DefectData.fromJson(defect)).toList()
+          : null,
+    );
   }
+}
 
-  JobData copyWith({String? id, String? jobNo}) {
-    return JobData(id: id ?? this.id, jobNo: jobNo ?? this.jobNo);
+class ServiceData {
+  final String? sId;
+  final String? name;
+  final String? serviceId;
+  final String? description;
+  final String? manufacturer;
+  final String? model;
+  final List<String>? tags;
+  final List<ServiceImage>? images;
+  final List<dynamic>? assignedItems;
+  final String? userId;
+  final String? createdAt;
+  final String? updatedAt;
+  final int? v;
+  final String? category;
+  final dynamic priceExclVat;
+  final dynamic priceInclVat;
+  final dynamic vat;
+
+  ServiceData({
+    this.sId,
+    this.name,
+    this.serviceId,
+    this.description,
+    this.manufacturer,
+    this.model,
+    this.tags,
+    this.images,
+    this.assignedItems,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.category,
+    this.priceExclVat,
+    this.priceInclVat,
+    this.vat,
+  });
+
+  factory ServiceData.fromJson(Map<String, dynamic> json) {
+    return ServiceData(
+      sId: json['_id'],
+      name: json['name'],
+      serviceId: json['serviceId'],
+      description: json['description'],
+      manufacturer: json['manufacturer'],
+      model: json['model'],
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
+      images: json['images'] != null
+          ? (json['images'] as List).map((image) => ServiceImage.fromJson(image)).toList()
+          : null,
+      assignedItems: json['assignedItems'],
+      userId: json['userId'],
+      createdAt: json['createdAt'],
+      updatedAt: json['updatedAt'],
+      v: json['__v'],
+      category: json['category'],
+      priceExclVat: json['price_excl_vat'],
+      priceInclVat: json['price_incl_vat'],
+      vat: json['vat'],
+    );
+  }
+}
+
+class ServiceImage {
+  final String? path;
+  final bool? favourite;
+
+  ServiceImage({this.path, this.favourite});
+
+  factory ServiceImage.fromJson(Map<String, dynamic> json) {
+    return ServiceImage(path: json['path'], favourite: json['favourite']);
+  }
+}
+
+class AssignedItemData {
+  final String? sId;
+  final String? productName;
+  final String? itemNumber;
+  final int? stockValue;
+  final String? stockUnit;
+  final String? manufacturer;
+  final String? category;
+  final String? manufacturerNumber;
+  final String? physicalLocation;
+  final String? color;
+  final List<ConditionItem>? condition;
+  final dynamic vatPercent;
+  final dynamic profitMarkup;
+  final String? description;
+  final dynamic purchasePriceExlVat;
+  final dynamic purchasePriceIncVat;
+  final dynamic salePriceExlVat;
+  final dynamic salePriceIncVat;
+  final int? v;
+  final String? updatedAt;
+  final String? userId;
+
+  AssignedItemData({
+    this.sId,
+    this.productName,
+    this.itemNumber,
+    this.stockValue,
+    this.stockUnit,
+    this.manufacturer,
+    this.category,
+    this.manufacturerNumber,
+    this.physicalLocation,
+    this.color,
+    this.condition,
+    this.vatPercent,
+    this.profitMarkup,
+    this.description,
+    this.purchasePriceExlVat,
+    this.purchasePriceIncVat,
+    this.salePriceExlVat,
+    this.salePriceIncVat,
+    this.v,
+    this.updatedAt,
+    this.userId,
+  });
+
+  factory AssignedItemData.fromJson(Map<String, dynamic> json) {
+    return AssignedItemData(
+      sId: json['_id'],
+      productName: json['productName'],
+      itemNumber: json['itemNumber'],
+      stockValue: json['stockValue'],
+      stockUnit: json['stockUnit'],
+      manufacturer: json['manufacturer'],
+      category: json['category'],
+      manufacturerNumber: json['manufacturerNumber'],
+      physicalLocation: json['physicalLocation'],
+      color: json['color'],
+      condition: json['condition'] != null
+          ? json['condition'] is List
+                ? (json['condition'] as List).map((item) => ConditionItem.fromJson(item)).toList()
+                : [ConditionItem(value: json['condition'].toString(), id: '')]
+          : null,
+      vatPercent: json['vatPercent'],
+      profitMarkup: json['profitMarkup'],
+      description: json['description'],
+      purchasePriceExlVat: json['purchasePriceExlVat'],
+      purchasePriceIncVat: json['purchasePriceIncVat'],
+      salePriceExlVat: json['salePriceExlVat'],
+      salePriceIncVat: json['salePriceIncVat'],
+      v: json['__v'],
+      updatedAt: json['updatedAt'],
+      userId: json['userId'],
+    );
+  }
+}
+
+class DeviceData {
+  final String? sId;
+  final String? brand;
+  final String? model;
+  final String? imei;
+  final List<ConditionItem>? condition;
+  final String? deviceSecurity;
+  final String? createdAt;
+  final String? updatedAt;
+  final int? v;
+
+  DeviceData({
+    this.sId,
+    this.brand,
+    this.model,
+    this.imei,
+    this.condition,
+    this.deviceSecurity,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+  });
+
+  factory DeviceData.fromJson(Map<String, dynamic> json) {
+    return DeviceData(
+      sId: json['_id'],
+      brand: json['brand'],
+      model: json['model'],
+      imei: json['imei'],
+      condition: json['condition'] != null
+          ? (json['condition'] as List).map((item) => ConditionItem.fromJson(item)).toList()
+          : null,
+      deviceSecurity: json['deviceSecurity'],
+      createdAt: json['createdAt'],
+      updatedAt: json['updatedAt'],
+      v: json['__v'],
+    );
+  }
+}
+
+class ContactData {
+  final String? sId;
+  final String? type;
+  final String? salutation;
+  final String? title;
+  final String? firstName;
+  final String? lastName;
+  final String? telephone;
+  final String? email;
+  final String? street;
+  final String? streetNum;
+  final String? zip;
+  final String? city;
+  final String? country;
+  final String? createdAt;
+  final String? updatedAt;
+  final int? v;
+
+  ContactData({
+    this.sId,
+    this.type,
+    this.salutation,
+    this.title,
+    this.firstName,
+    this.lastName,
+    this.telephone,
+    this.email,
+    this.street,
+    this.streetNum,
+    this.zip,
+    this.city,
+    this.country,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+  });
+
+  factory ContactData.fromJson(Map<String, dynamic> json) {
+    return ContactData(
+      sId: json['_id'],
+      type: json['type'],
+      salutation: json['salutation'],
+      title: json['title'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      telephone: json['telephone'],
+      email: json['email'],
+      street: json['street'],
+      streetNum: json['streetNum'],
+      zip: json['zip'],
+      city: json['city'],
+      country: json['country'],
+      createdAt: json['createdAt'],
+      updatedAt: json['updatedAt'],
+      v: json['__v'],
+    );
+  }
+}
+
+class DefectData {
+  final String? sId;
+  final List<DefectItem>? defect;
+  final String? description;
+  final List<dynamic>? internalNote;
+  final List<String>? assignItems;
+  final String? createdAt;
+  final String? updatedAt;
+  final int? v;
+
+  DefectData({
+    this.sId,
+    this.defect,
+    this.description,
+    this.internalNote,
+    this.assignItems,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+  });
+
+  factory DefectData.fromJson(Map<String, dynamic> json) {
+    return DefectData(
+      sId: json['_id'],
+      defect: json['defect'] != null
+          ? json['defect'] is List
+                ? (json['defect'] as List).map((item) => DefectItem.fromJson(item)).toList()
+                : [DefectItem(value: json['defect'].toString(), id: '')]
+          : null,
+      description: json['description'],
+      internalNote: json['internalNote'] != null ? List<dynamic>.from(json['internalNote']) : null,
+      assignItems: json['assignItems'] != null ? List<String>.from(json['assignItems']) : null,
+      createdAt: json['createdAt'],
+      updatedAt: json['updatedAt'],
+      v: json['__v'],
+    );
   }
 }

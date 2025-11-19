@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/jobBooking/cubits/fileUpload/job_file_upload_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/twelve/job_booking_physical_locaiton_screen.dart';
 
 class JobBookingFileUploadScreen extends StatefulWidget {
-  const JobBookingFileUploadScreen({super.key});
+  final String? jobId;
+  const JobBookingFileUploadScreen({super.key, this.jobId});
 
   @override
   State<JobBookingFileUploadScreen> createState() => _JobBookingFileUploadScreenState();
@@ -17,225 +20,276 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<JobBookingCubit, JobBookingState>(
-      listener: (context, state) {
-        if (state is JobBookingData) {
-          if (state.isUploading != _isUploading) {
-            setState(() {
-              _isUploading = state.isUploading;
-            });
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<JobFileUploadCubit, JobFileUploadState>(
+          listener: (context, state) {
+            if (state is JobFileUploadSuccess) {
+              debugPrint('✅ Files uploaded successfully to server');
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Files uploaded successfully'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+              // Navigate to next screen after successful upload
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()),
+              );
+            } else if (state is JobFileUploadError) {
+              debugPrint('❌ File upload failed: ${state.message}');
+              _showErrorSnackBar('Upload failed: ${state.message}');
+              // Still allow navigation even if upload fails
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Continue without uploading files?'),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 5),
+                  action: SnackBarAction(
+                    label: 'Continue',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()),
+                      );
+                    },
+                  ),
+                ),
+              );
+            }
+          },
+        ),
+      ],
+      child: BlocConsumer<JobBookingCubit, JobBookingState>(
+        listener: (context, state) {
+          if (state is JobBookingData) {
+            if (state.isUploading != _isUploading) {
+              setState(() {
+                _isUploading = state.isUploading;
+              });
+            }
           }
-        }
-      },
-      builder: (context, state) {
-        if (state is! JobBookingData) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
+        },
+        builder: (context, state) {
+          if (state is! JobBookingData) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
 
-        final uploadedFiles = state.localFiles;
-        final isUploading = state.isUploading;
+          final uploadedFiles = state.localFiles;
+          final isUploading = state.isUploading;
 
-        return Scaffold(
-          backgroundColor: Colors.grey[50],
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Progress bar
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Container(
-                    height: 12.h,
-                    width: MediaQuery.of(context).size.width * .071 * 11,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+          return Scaffold(
+            backgroundColor: Colors.grey[50],
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Progress bar
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Container(
+                      height: 12.h,
+                      width: MediaQuery.of(context).size.width * .071 * 11,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(6),
+                          topRight: Radius.circular(0),
+                        ),
+                        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                      ),
                     ),
                   ),
-                ),
 
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.close, color: Colors.white, size: 20),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Step indicator
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                  child: const Center(
-                    child: Text(
-                      '11',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Title and subtitle
-                const Text(
-                  'File Upload',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text('(.doc, .xls, .jpg, .png, .mp4)', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-
-                const SizedBox(height: 32),
-
-                // Upload options
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildUploadOption(
-                          icon: Icons.camera_alt_outlined,
-                          label: 'Camera',
-                          onTap: _handleCameraUpload,
-                          disabled: isUploading,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildUploadOption(
-                          icon: Icons.folder_outlined,
-                          label: 'Gallery',
-                          onTap: _handleGalleryUpload,
-                          disabled: isUploading,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Uploaded files grid
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Uploaded Files (${uploadedFiles!.length})',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
-                            ),
-                            if (isUploading) ...[
-                              const SizedBox(width: 8),
-                              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                            ],
-                            const Spacer(),
-                            if (uploadedFiles.isNotEmpty)
-                              TextButton(
-                                onPressed: isUploading ? null : _clearAllFiles,
-                                child: Text(
-                                  'Clear All',
-                                  style: TextStyle(color: isUploading ? Colors.grey : Colors.red, fontSize: 14),
-                                ),
-                              ),
-                          ],
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.close, color: Colors.white, size: 20),
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: uploadedFiles.isEmpty
-                              ? _buildEmptyState()
-                              : GridView.builder(
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    childAspectRatio: 1,
-                                  ),
-                                  itemCount: uploadedFiles.length,
-                                  itemBuilder: (context, index) {
-                                    return _buildFilePreview(uploadedFiles[index], index);
-                                  },
-                                ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Navigation buttons
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: isUploading ? null : () => Navigator.pop(context),
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: isUploading ? Colors.grey[100] : Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Icon(
-                                  Icons.chevron_left,
-                                  color: isUploading ? Colors.grey[400] : Colors.grey,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.6,
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: (uploadedFiles.isNotEmpty && !isUploading) ? _saveAndNavigate : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: (uploadedFiles.isNotEmpty && !isUploading)
-                                      ? Colors.blue
-                                      : Colors.grey,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                  elevation: 0,
-                                ),
-                                child: isUploading
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      )
-                                    : const Text(
-                                        'Continue',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
-                ),
-              ],
+
+                  // Step indicator
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                    child: const Center(
+                      child: Text(
+                        '11',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Title and subtitle
+                  const Text(
+                    'File Upload',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text('(.doc, .xls, .jpg, .png, .mp4)', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+
+                  const SizedBox(height: 32),
+
+                  // Upload options
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildUploadOption(
+                            icon: Icons.camera_alt_outlined,
+                            label: 'Camera',
+                            onTap: _handleCameraUpload,
+                            disabled: isUploading,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildUploadOption(
+                            icon: Icons.folder_outlined,
+                            label: 'Gallery',
+                            onTap: _handleGalleryUpload,
+                            disabled: isUploading,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Uploaded files grid
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Uploaded Files (${uploadedFiles!.length})',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              if (isUploading) ...[
+                                const SizedBox(width: 8),
+                                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                              ],
+                              const Spacer(),
+                              if (uploadedFiles.isNotEmpty)
+                                TextButton(
+                                  onPressed: isUploading ? null : _clearAllFiles,
+                                  child: Text(
+                                    'Clear All',
+                                    style: TextStyle(color: isUploading ? Colors.grey : Colors.red, fontSize: 14),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: uploadedFiles.isEmpty
+                                ? _buildEmptyState()
+                                : GridView.builder(
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 1,
+                                    ),
+                                    itemCount: uploadedFiles.length,
+                                    itemBuilder: (context, index) {
+                                      return _buildFilePreview(uploadedFiles[index], index);
+                                    },
+                                  ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Navigation buttons
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: isUploading ? null : () => Navigator.pop(context),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: isUploading ? Colors.grey[100] : Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Icon(
+                                    Icons.chevron_left,
+                                    color: isUploading ? Colors.grey[400] : Colors.grey,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width * 0.6,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: (uploadedFiles.isNotEmpty && !isUploading) ? _saveAndNavigate : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: (uploadedFiles.isNotEmpty && !isUploading)
+                                        ? Colors.blue
+                                        : Colors.grey,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                    elevation: 0,
+                                  ),
+                                  child: isUploading
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Continue',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -324,7 +378,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
             ),
             child: Text(
@@ -345,7 +399,10 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
             child: Container(
               width: 24,
               height: 24,
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(Icons.close, color: _isUploading ? Colors.grey[400] : Colors.white, size: 16),
             ),
           ),
@@ -464,8 +521,40 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
   void _saveAndNavigate() {
     if (_isUploading) return;
 
-    // Files are already stored in cubit, just navigate
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()));
+    final state = context.read<JobBookingCubit>().state;
+
+    if (state is JobBookingData) {
+      // Check if job has been created and we have jobId (from widget parameter or state)
+      final jobId = widget.jobId ?? state.jobId;
+
+      if (jobId == null || jobId.isEmpty) {
+        debugPrint('⚠️ [FileUploadScreen] No jobId found - job must be created first');
+        // Just navigate to next screen without uploading
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()));
+        return;
+      }
+
+      // Upload files to server if there are any
+      if (state.job.files != null && state.job.files!.isNotEmpty) {
+        final userId = storage.read('userId') ?? '';
+        final fileData = state.job.files!.map((f) => f.toJson()).toList();
+
+        debugPrint('📤 [FileUploadScreen] Uploading ${state.job.files!.length} files to server');
+        debugPrint('🆔 [FileUploadScreen] Job ID: $jobId');
+        debugPrint('👤 [FileUploadScreen] User ID: $userId');
+
+        // Upload files using JobFileUploadCubit
+        context.read<JobFileUploadCubit>().uploadFiles(userId: userId, jobId: jobId, fileData: fileData);
+
+        // Listen for upload result in the MultiBlocListener above
+        // Success: will navigate via listener
+        // Error: will show error via listener
+      } else {
+        debugPrint('ℹ️ [FileUploadScreen] No files to upload');
+        // No files, just navigate
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()));
+      }
+    }
   }
 
   void _showErrorSnackBar(String message) {

@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
+import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
+import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/screens/quick_task_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -34,11 +37,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAllDashboardData();
       context.read<QuickTaskCubit>().getTodos();
+      _fetchAndStoreCompanyAndReceiptData();
     });
 
-    // Initialize cubit
-
     super.initState();
+  }
+
+  void _fetchAndStoreCompanyAndReceiptData() {
+    final userId = storage.read('userId');
+    final companyId = storage.read('companyId');
+
+    debugPrint('🚀 [DashboardScreen] Fetching company and receipt data');
+    debugPrint('👤 [DashboardScreen] User ID: $userId');
+    debugPrint('🏢 [DashboardScreen] Company ID: $companyId');
+
+    // Fetch company info if companyId exists
+    if (companyId != null && companyId.isNotEmpty) {
+      context.read<CompanyCubit>().getCompanyInfo(companyId: companyId);
+    } else {
+      debugPrint('⚠️ [DashboardScreen] No companyId found in storage');
+    }
+
+    // Fetch job receipt if userId exists
+    if (userId != null && userId.isNotEmpty) {
+      context.read<JobReceiptCubit>().getJobReceipt(userId: userId);
+    } else {
+      debugPrint('⚠️ [DashboardScreen] No userId found in storage');
+    }
   }
 
   void _loadAllDashboardData() {
@@ -197,64 +222,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<DashboardCubit>(
-      create: (context) => context.read<DashboardCubit>(),
-      child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  SizedBox(height: 28.h),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 12.h),
-                          // Greeting Section
-                          _buildGreetingSection(),
-                          SizedBox(height: 12.h),
+    return MultiBlocListener(
+      listeners: [
+        // Listen to company cubit and store data
+        BlocListener<CompanyCubit, CompanyState>(
+          listener: (context, state) {
+            if (state is CompanyLoaded) {
+              debugPrint('✅ [DashboardScreen] Company data loaded, storing in GetStorage');
+              // Store company data as JSON string
+              storage.write('companyData', jsonEncode(state.company.toJson()));
+              debugPrint('📦 [DashboardScreen] Company name: ${state.company.name}');
+            } else if (state is CompanyError) {
+              debugPrint('❌ [DashboardScreen] Company error: ${state.message}');
+            }
+          },
+        ),
+        // Listen to job receipt cubit and store data
+        BlocListener<JobReceiptCubit, JobReceiptState>(
+          listener: (context, state) {
+            if (state is JobReceiptLoaded) {
+              debugPrint('✅ [DashboardScreen] Job receipt data loaded, storing in GetStorage');
+              // Store receipt data as JSON string
+              storage.write('jobReceiptData', jsonEncode(state.receipt.toJson()));
+              debugPrint('📦 [DashboardScreen] QR Code Enabled: ${state.receipt.qrCodeEnabled}');
+            } else if (state is JobReceiptError) {
+              debugPrint('❌ [DashboardScreen] Job receipt error: ${state.message}');
+            }
+          },
+        ),
+      ],
+      child: BlocProvider<DashboardCubit>(
+        create: (context) => context.read<DashboardCubit>(),
+        child: Scaffold(
+          backgroundColor: AppColors.scaffoldBackgroundColor,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    SizedBox(height: 28.h),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 12.h),
+                            // Greeting Section
+                            _buildGreetingSection(),
+                            SizedBox(height: 12.h),
 
-                          // Incomplete To-Do's Card
-                          _buildIncompleteToDoCard(context),
-                          SizedBox(height: 12.h),
+                            // Incomplete To-Do's Card
+                            _buildIncompleteToDoCard(context),
+                            SizedBox(height: 12.h),
 
-                          // Completed Jobs Card
-                          _buildCompletedJobsCard(),
-                          SizedBox(height: 16.h),
+                            // Completed Jobs Card
+                            _buildCompletedJobsCard(),
+                            SizedBox(height: 16.h),
 
-                          // Job Progress Card - Using the new widget
-                          const JobProgressWidget(),
+                            // Job Progress Card - Using the new widget
+                            const JobProgressWidget(),
 
-                          // Add bottom padding for FAB
-                          SizedBox(height: 100.h),
-                        ],
+                            // Add bottom padding for FAB
+                            SizedBox(height: 100.h),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-
-              // Enhanced Search Widget positioned at top
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: EnhancedSearchWidget(
-                  onSearchChanged: (query) {
-                    // Handle search query changes
-                    print('Search query: $query');
-                  },
-                  onQRScanPressed: () {
-                    // Handle QR scan button press
-                    _showQRScanDialog();
-                  },
+                  ],
                 ),
-              ),
-            ],
+
+                // Enhanced Search Widget positioned at top
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: EnhancedSearchWidget(
+                    onSearchChanged: (query) {
+                      // Handle search query changes
+                      print('Search query: $query');
+                    },
+                    onQRScanPressed: () {
+                      // Handle QR scan button press
+                      _showQRScanDialog();
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

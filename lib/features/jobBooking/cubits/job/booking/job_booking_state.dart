@@ -13,6 +13,7 @@ class JobBookingData extends JobBookingState {
   final Contact contact;
   final bool isUploading;
   final int currentStep;
+  final String? jobId; // Store job ID after creation
   List<File>? localFiles;
 
   JobBookingData({
@@ -22,6 +23,7 @@ class JobBookingData extends JobBookingState {
     required this.contact,
     this.isUploading = false,
     required this.currentStep,
+    this.jobId,
     this.localFiles = const [],
   });
 
@@ -32,6 +34,7 @@ class JobBookingData extends JobBookingState {
     Contact? contact,
     bool? isUploading,
     int? currentStep,
+    String? jobId,
     List<File>? localFiles,
   }) {
     return JobBookingData(
@@ -41,6 +44,7 @@ class JobBookingData extends JobBookingState {
       contact: contact ?? this.contact,
       isUploading: isUploading ?? this.isUploading,
       currentStep: currentStep ?? this.currentStep,
+      jobId: jobId ?? this.jobId,
       localFiles: localFiles ?? this.localFiles,
     );
   }

@@ -1,4 +1,6 @@
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/jobBooking/cubits/fileUpload/job_file_upload_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
@@ -32,6 +34,19 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
     }
   }
 
+  void _showSuccessAndNavigate() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Job created successfully!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // Navigate to success screen or back to home
+    Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
@@ -40,16 +55,28 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
           listener: (context, state) {
             if (state is JobCreateCreated) {
               // Job created successfully
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Job created successfully!'),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              debugPrint('✅ Job created successfully with ID: ${state.response.data?.sId}');
 
-              // Navigate to success screen or back to home
-              Navigator.popUntil(context, (route) => route.isFirst);
+              // Upload files to server if there are any
+              final jobBookingState = context.read<JobBookingCubit>().state;
+              if (jobBookingState is JobBookingData &&
+                  jobBookingState.job.files != null &&
+                  jobBookingState.job.files!.isNotEmpty &&
+                  state.response.data?.sId != null) {
+                final storage = GetStorage();
+                final userId = storage.read('userId') ?? '';
+                final jobId = state.response.data!.sId;
+
+                debugPrint('📤 Uploading ${jobBookingState.job.files!.length} files to server...');
+
+                // Prepare file data for upload (array of objects with 'file' key)
+                final fileData = jobBookingState.job.files!.map((f) => f.toJson()).toList();
+
+                context.read<JobFileUploadCubit>().uploadFiles(userId: userId, jobId: jobId!, fileData: fileData);
+              } else {
+                // No files to upload, show success and navigate
+                _showSuccessAndNavigate();
+              }
             } else if (state is JobCreateError) {
               // Show error message
               ScaffoldMessenger.of(context).showSnackBar(
@@ -59,6 +86,25 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                   duration: const Duration(seconds: 3),
                 ),
               );
+            }
+          },
+        ),
+        BlocListener<JobFileUploadCubit, JobFileUploadState>(
+          listener: (context, state) {
+            if (state is JobFileUploadSuccess) {
+              debugPrint('✅ Files uploaded successfully');
+              _showSuccessAndNavigate();
+            } else if (state is JobFileUploadError) {
+              debugPrint('⚠️ File upload failed: ${state.message}');
+              // Job was created but file upload failed - still show success but with warning
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Job created but file upload failed: ${state.message}'),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+              Navigator.popUntil(context, (route) => route.isFirst);
             }
           },
         ),
