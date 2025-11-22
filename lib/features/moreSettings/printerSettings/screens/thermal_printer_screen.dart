@@ -21,6 +21,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
 
   String _selectedBrand = 'Epson';
   String? _selectedModel;
+  int _paperWidth = 80; // Default 80mm
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _portController = TextEditingController(text: '9100');
   String _selectedProtocol = 'TCP';
@@ -48,6 +49,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
       setState(() {
         _selectedBrand = defaultPrinter.printerBrand;
         _selectedModel = defaultPrinter.printerModel;
+        _paperWidth = defaultPrinter.paperWidth ?? 80;
         _ipController.text = defaultPrinter.ipAddress;
         _portController.text = defaultPrinter.port?.toString() ?? '9100';
         _selectedProtocol = defaultPrinter.protocol;
@@ -124,6 +126,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
       protocol: _selectedProtocol,
       port: int.tryParse(_portController.text),
       isDefault: _setAsDefault,
+      paperWidth: _paperWidth,
     );
 
     try {
@@ -155,7 +158,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Thermal Printer (80mm)'), backgroundColor: AppColors.primary),
+      appBar: AppBar(title: const Text('Thermal Printer (80mm)'), backgroundColor: AppColors.scaffoldBackgroundColor),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.w),
         child: Column(
@@ -202,6 +205,29 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                 return DropdownMenuItem(value: model, child: Text(model));
               }).toList(),
               onChanged: (value) => setState(() => _selectedModel = value),
+            ),
+            SizedBox(height: 16.h),
+
+            // Paper Width Selection
+            Text(
+              'Paper Width',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            DropdownButtonFormField<int>(
+              value: _paperWidth,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                prefixIcon: Icon(Icons.straighten, color: AppColors.primary),
+              ),
+              items: [80, 58].map((width) {
+                return DropdownMenuItem(
+                  value: width,
+                  child: Text('${width}mm ${width == 80 ? '(Standard)' : '(Compact)'}'),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _paperWidth = value!),
             ),
             SizedBox(height: 16.h),
 

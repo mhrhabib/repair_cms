@@ -1,6 +1,9 @@
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:feather_icons/feather_icons.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_card_widget.dart';
+import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 
 class MyJobsScreen extends StatefulWidget {
@@ -12,6 +15,7 @@ class MyJobsScreen extends StatefulWidget {
 
 class _MyJobsScreenState extends State<MyJobsScreen> {
   int _selectedTabIndex = 0;
+  bool _showSearchOverlay = false;
 
   // Updated tab configuration with all status filters
   final List<TabConfig> _tabs = [
@@ -49,130 +53,307 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          // App Bar
-          SliverAppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: const Icon(Icons.search, color: Colors.black87),
-            title: const Text(
-              'My Jobs',
-              style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-            centerTitle: true,
-            actions: [
-              IconButton(
-                onPressed: () {
-                  _showFilterBottomSheet(context);
-                },
-                icon: const Icon(Icons.filter_list, color: Colors.black87),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              // App Bar
+              SliverAppBar(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                leading: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _showSearchOverlay = true;
+                    });
+                  },
+                  icon: const Icon(Icons.search, color: Colors.black87),
+                ),
+                title: const Text(
+                  'My Jobs',
+                  style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                centerTitle: true,
+                actions: [
+                  IconButton(
+                    onPressed: () {
+                      _showFilterBottomSheet(context);
+                    },
+                    icon: const Icon(Icons.filter_list, color: Colors.black87),
+                  ),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.menu, color: Colors.black87),
+                  ),
+                ],
+                pinned: true,
+                floating: false,
+                snap: false,
               ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.menu, color: Colors.black87),
-              ),
-            ],
-            pinned: true,
-            floating: false,
-            snap: false,
-          ),
 
-          // Custom Tab Bar
-          SliverToBoxAdapter(
-            child: Container(
-              color: const Color(0xFFD9E1EA),
-              height: 70.h,
-              padding: EdgeInsets.only(left: 12.w),
-              child: BlocBuilder<JobCubit, JobStates>(
-                builder: (context, state) {
-                  // Calculate counts for each tab
-                  final counts = _calculateTabCounts(state);
+              // Custom Tab Bar
+              SliverToBoxAdapter(
+                child: Container(
+                  color: const Color(0xFFD9E1EA),
+                  height: 70.h,
+                  padding: EdgeInsets.only(left: 12.w),
+                  child: BlocBuilder<JobCubit, JobStates>(
+                    builder: (context, state) {
+                      // Calculate counts for each tab
+                      final counts = _calculateTabCounts(state);
 
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _tabs.length,
-                    separatorBuilder: (context, index) => Container(
-                      width: 2.w,
-                      height: 40.h,
-                      color: Colors.grey.withValues(alpha: 0.3),
-                      margin: EdgeInsets.symmetric(vertical: 12.h),
-                    ),
-                    itemBuilder: (context, index) {
-                      final isSelected = _selectedTabIndex == index;
-                      final tab = _tabs[index];
-                      final count = counts[index];
-
-                      return GestureDetector(
-                        onTap: () => _onTabChanged(index),
-                        child: Container(
-                          margin: EdgeInsets.only(top: 1.h, bottom: 1.h, left: 4.w, right: 4.w),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(2, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                height: 40.h,
-                                width: 40.w,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(shape: BoxShape.circle, color: tab.color),
-                                child: Text(
-                                  count.toString(),
-                                  style: GoogleFonts.roboto(
-                                    color: Colors.white,
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 4.w),
-                              SizedBox(
-                                width: 60.w,
-                                child: Text(
-                                  tab.title,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 14.sp,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                    color: Colors.black87,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
+                      return ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _tabs.length,
+                        separatorBuilder: (context, index) => Container(
+                          width: 2.w,
+                          height: 40.h,
+                          color: Colors.grey.withValues(alpha: 0.3),
+                          margin: EdgeInsets.symmetric(vertical: 12.h),
                         ),
+                        itemBuilder: (context, index) {
+                          final isSelected = _selectedTabIndex == index;
+                          final tab = _tabs[index];
+                          final count = counts[index];
+
+                          return GestureDetector(
+                            onTap: () => _onTabChanged(index),
+                            child: Container(
+                              margin: EdgeInsets.only(top: 1.h, bottom: 1.h, left: 4.w, right: 4.w),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.white : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(2, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                    height: 40.h,
+                                    width: 40.w,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(shape: BoxShape.circle, color: tab.color),
+                                    child: Text(
+                                      count.toString(),
+                                      style: GoogleFonts.roboto(
+                                        color: Colors.white,
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  SizedBox(
+                                    width: 60.w,
+                                    child: Text(
+                                      tab.title,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 14.sp,
+                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
+
+              // Job List
+              _buildJobListSliver(),
+            ],
           ),
 
-          // Job List
-          _buildJobListSliver(),
+          // Search Overlay
+          if (_showSearchOverlay)
+            Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // Search Header
+                    Container(
+                      color: const Color(0xFF4A5568),
+                      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
+                      child: Row(
+                        children: [
+                          // Search Field
+                          Expanded(
+                            child: Container(
+                              height: 40.h,
+                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8.r)),
+                              child: TextField(
+                                autofocus: true,
+                                textAlignVertical: TextAlignVertical.center,
+                                decoration: InputDecoration(
+                                  hintText: 'Search job',
+                                  hintStyle: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                                  prefixIcon: Icon(FeatherIcons.search, color: Colors.black, size: 22.sp),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  isDense: true,
+                                ),
+                                onChanged: (query) {
+                                  debugPrint('🔍 [MyJobsScreen] Search query: $query');
+                                  if (query.isNotEmpty) {
+                                    context.read<JobCubit>().searchJobs(query);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          // Cancel Button
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _showSearchOverlay = false;
+                              });
+                            },
+                            child: Text(
+                              'Cancel',
+                              style: AppTypography.fontSize16.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Search Results
+                    Expanded(
+                      child: BlocBuilder<JobCubit, JobStates>(
+                        builder: (context, state) {
+                          if (state is JobLoading || state is JobActionLoading) {
+                            return Container(
+                              color: Colors.white,
+                              child: Center(child: CircularProgressIndicator(color: AppColors.fontMainColor)),
+                            );
+                          }
+
+                          if (state is JobSuccess) {
+                            final jobs = state.jobs;
+                            if (jobs.isEmpty) {
+                              return Container(
+                                color: Colors.white,
+                                child: Center(
+                                  child: Text(
+                                    'No jobs found',
+                                    style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                                  ),
+                                ),
+                              );
+                            }
+                            return Container(
+                              color: Colors.white,
+                              child: ListView.builder(
+                                itemCount: jobs.length,
+                                itemBuilder: (context, index) {
+                                  final job = jobs[index];
+                                  final formattedDate = intl.DateFormat('dd.MM.yyyy').format(job.createdAt);
+                                  final customerName =
+                                      '${job.customerDetails.firstName} ${job.customerDetails.lastName}'.trim();
+                                  final deviceBrand = job.deviceData.brand ?? '';
+                                  final deviceModel = job.deviceData.model ?? '';
+                                  final deviceInfo = '$deviceBrand $deviceModel'.trim();
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      debugPrint('🔍 [MyJobsScreen] Navigating to job: ${job.id}');
+                                      setState(() {
+                                        _showSearchOverlay = false;
+                                      });
+                                      Navigator.of(
+                                        context,
+                                      ).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                      decoration: BoxDecoration(
+                                        border: Border(bottom: BorderSide(color: const Color(0xFFDEE3E8), width: 1)),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                job.jobNo,
+                                                style: AppTypography.fontSize16.copyWith(
+                                                  fontWeight: FontWeight.w500,
+                                                  color: AppColors.fontMainColor,
+                                                ),
+                                              ),
+                                              if (customerName.isNotEmpty)
+                                                Text(
+                                                  ' | $customerName',
+                                                  style: AppTypography.fontSize16.copyWith(
+                                                    fontWeight: FontWeight.w500,
+                                                    color: AppColors.fontMainColor,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 2.h),
+                                          Text(
+                                            '$formattedDate${deviceInfo.isNotEmpty ? ' | $deviceInfo' : ''}',
+                                            style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          }
+
+                          if (state is JobError) {
+                            return Container(
+                              color: Colors.white,
+                              child: Center(
+                                child: Text(
+                                  'Error: ${state.message}',
+                                  style: AppTypography.fontSize14.copyWith(color: Colors.red),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

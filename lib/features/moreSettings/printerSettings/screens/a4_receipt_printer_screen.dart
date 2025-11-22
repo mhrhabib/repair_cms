@@ -100,7 +100,7 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('A4 Printer'), backgroundColor: AppColors.primary),
+      appBar: AppBar(title: const Text('A4 Printer'), backgroundColor: AppColors.scaffoldBackgroundColor),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.w),
         child: Column(

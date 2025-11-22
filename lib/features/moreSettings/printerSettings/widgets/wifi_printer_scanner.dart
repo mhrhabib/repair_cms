@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -35,7 +36,13 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
   bool _isScanning = false;
   double _scanProgress = 0.0;
   String _scanStatus = 'Ready to scan';
-  List<DiscoveredPrinter> _discoveredPrinters = [];
+  final List<DiscoveredPrinter> _discoveredPrinters = [];
+
+  // Performance optimizations
+  static const int _maxConcurrentScans = 50; // Scan up to 50 IPs concurrently
+  static const int _socketTimeoutMs = 150; // Reduced from 500ms to 150ms
+  static const int _batchSize = 10; // Process IPs in batches of 10
+  static const Duration _scanTimeout = Duration(seconds: 30); // Max scan time
 
   /// Get local IP address
   Future<String?> _getLocalIp() async {
@@ -48,7 +55,7 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
     }
   }
 
-  /// Scan network for printers
+  /// Scan network for printers (optimized concurrent version)
   Future<void> _scanNetwork() async {
     if (_isScanning) return;
 
@@ -89,36 +96,16 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
         _scanStatus = 'Scanning $networkPrefix.x ...';
       });
 
-      // Scan IP range (1-254)
-      final int totalHosts = 254;
-      int scannedHosts = 0;
+      // Create prioritized list of IPs to scan (common addresses first)
+      final prioritizedIps = _createPrioritizedIpList(networkPrefix);
 
-      for (int i = 1; i <= 254; i++) {
-        if (!_isScanning) break; // Allow cancellation
-
-        final ip = '$networkPrefix.$i';
-
-        // Update progress
-        scannedHosts++;
-        setState(() {
-          _scanProgress = scannedHosts / totalHosts;
-          _scanStatus = 'Scanning $ip ... (${scannedHosts}/$totalHosts)';
-        });
-
-        // Check each port for this IP
-        for (int port in widget.portsToScan) {
-          final isReachable = await _checkPort(ip, port);
-          if (isReachable) {
-            final printer = DiscoveredPrinter(ipAddress: ip, port: port, isReachable: true);
-
-            setState(() {
-              _discoveredPrinters.add(printer);
-            });
-
-            debugPrint('✅ Found printer at $ip:$port');
-          }
-        }
-      }
+      // Scan with timeout
+      await _scanInConcurrentBatches(prioritizedIps).timeout(
+        _scanTimeout,
+        onTimeout: () {
+          debugPrint('⏰ Scan timed out after ${_scanTimeout.inSeconds} seconds');
+        },
+      );
 
       setState(() {
         _isScanning = false;
@@ -134,10 +121,89 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
     }
   }
 
-  /// Check if a port is open on given IP
-  Future<bool> _checkPort(String ip, int port) async {
+  /// Scan IPs in concurrent batches for maximum speed
+  Future<void> _scanInConcurrentBatches(List<String> allIps) async {
+    final totalHosts = allIps.length;
+    int scannedHosts = 0;
+    final semaphore = _Semaphore(_maxConcurrentScans); // Limit concurrent operations
+
+    // Process IPs in batches
+    for (int batchStart = 0; batchStart < totalHosts; batchStart += _batchSize) {
+      if (!_isScanning) break; // Allow cancellation
+
+      final batchEnd = min(batchStart + _batchSize, totalHosts);
+      final batchIps = allIps.sublist(batchStart, batchEnd);
+
+      // Scan this batch concurrently
+      final batchFutures = batchIps.map((ip) => _scanSingleIpConcurrent(ip, semaphore));
+
+      // Wait for all IPs in this batch to complete
+      await Future.wait(batchFutures);
+
+      // Update progress
+      scannedHosts += batchIps.length;
+      setState(() {
+        _scanProgress = scannedHosts / totalHosts;
+        _scanStatus = 'Scanning... $scannedHosts/$totalHosts IPs ($_discoveredPrinters.length printers found)';
+      });
+    }
+  }
+
+  /// Scan a single IP address for all ports concurrently
+  Future<void> _scanSingleIpConcurrent(String ip, _Semaphore semaphore) async {
+    await semaphore.acquire();
+
     try {
-      final socket = await Socket.connect(ip, port, timeout: const Duration(milliseconds: 500));
+      // Check all ports for this IP concurrently
+      final portFutures = widget.portsToScan.map((port) => _checkPortFast(ip, port));
+
+      // Wait for all port checks to complete
+      final results = await Future.wait(portFutures);
+
+      // Add any discovered printers
+      for (int i = 0; i < results.length; i++) {
+        if (results[i] && _isScanning) {
+          final printer = DiscoveredPrinter(ipAddress: ip, port: widget.portsToScan[i], isReachable: true);
+
+          if (mounted) {
+            setState(() {
+              _discoveredPrinters.add(printer);
+            });
+          }
+
+          debugPrint('✅ Found printer at $ip:${widget.portsToScan[i]}');
+        }
+      }
+    } finally {
+      semaphore.release();
+    }
+  }
+
+  /// Create prioritized list of IPs (common addresses first for faster discovery)
+  List<String> _createPrioritizedIpList(String networkPrefix) {
+    final commonIps = <String>[];
+    final otherIps = <String>[];
+
+    // Common IP addresses that often have printers/network devices
+    final priorityAddresses = [1, 10, 20, 50, 100, 150, 200, 254];
+
+    for (int i = 1; i <= 254; i++) {
+      final ip = '$networkPrefix.$i';
+      if (priorityAddresses.contains(i)) {
+        commonIps.add(ip);
+      } else {
+        otherIps.add(ip);
+      }
+    }
+
+    // Return common IPs first, then the rest
+    return [...commonIps, ...otherIps];
+  }
+
+  /// Check if a port is open on given IP (optimized with shorter timeout)
+  Future<bool> _checkPortFast(String ip, int port) async {
+    try {
+      final socket = await Socket.connect(ip, port, timeout: const Duration(milliseconds: _socketTimeoutMs));
       socket.destroy();
       return true;
     } catch (e) {
@@ -322,5 +388,34 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
   void dispose() {
     _isScanning = false;
     super.dispose();
+  }
+}
+
+/// Simple semaphore implementation for limiting concurrent operations
+class _Semaphore {
+  final int _maxCount;
+  int _currentCount = 0;
+  final List<Completer<void>> _waitQueue = [];
+
+  _Semaphore(this._maxCount);
+
+  Future<void> acquire() async {
+    if (_currentCount < _maxCount) {
+      _currentCount++;
+      return;
+    }
+
+    final completer = Completer<void>();
+    _waitQueue.add(completer);
+    await completer.future;
+  }
+
+  void release() {
+    if (_waitQueue.isNotEmpty) {
+      final completer = _waitQueue.removeAt(0);
+      completer.complete();
+    } else {
+      _currentCount = max(0, _currentCount - 1);
+    }
   }
 }

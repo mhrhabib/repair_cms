@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:another_brother/label_info.dart';
 import 'package:another_brother/printer_info.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 
 /// Service class to handle Brother printer operations
 class BrotherPrinterService {
@@ -238,9 +238,9 @@ class PrinterExamples {
     );
 
     if (result.success) {
-      print('Label printed successfully');
+      debugPrint('✅ Label printed successfully');
     } else {
-      print('Print failed: ${result.message}');
+      debugPrint('❌ Print failed: ${result.message}');
     }
   }
 
@@ -253,9 +253,9 @@ class PrinterExamples {
     );
 
     if (result.success) {
-      print('Receipt printed successfully');
+      debugPrint('✅ Receipt printed successfully');
     } else {
-      print('Print failed: ${result.message}');
+      debugPrint('❌ Print failed: ${result.message}');
     }
   }
 
@@ -264,10 +264,10 @@ class PrinterExamples {
     final status = await _printerService.getPrinterStatus(ipAddress: ipAddress, printerModel: Model.TD_4550DNWB);
 
     if (status.isConnected) {
-      print('Printer is ready');
+      debugPrint('✅ Printer is ready');
       return true;
     } else {
-      print('Printer not ready: ${status.message}');
+      debugPrint('❌ Printer not ready: ${status.message}');
       return false;
     }
   }
@@ -283,9 +283,9 @@ class PrinterExamples {
     );
 
     if (result.success) {
-      print('Image label printed successfully');
+      debugPrint('✅ Image label printed successfully');
     } else {
-      print('Print failed: ${result.message}');
+      debugPrint('❌ Print failed: ${result.message}');
     }
   }
 }

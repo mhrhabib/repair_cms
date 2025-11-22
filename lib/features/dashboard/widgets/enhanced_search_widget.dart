@@ -1,10 +1,15 @@
 import 'dart:ui';
+import 'dart:async';
 
 import 'package:feather_icons/feather_icons.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/notifications/notifications_screen.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/profile_options_screen.dart';
+import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
+import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
+import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 
 class EnhancedSearchWidget extends StatefulWidget {
   final Function(String)? onSearchChanged;
@@ -20,29 +25,7 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
   bool _isSearchActive = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  List<JobSearchResult> _searchResults = [];
-
-  // Sample data - replace with your actual data source
-  final List<JobSearchResult> _allJobs = [
-    JobSearchResult(
-      jobId: "JOB-ID:120820084",
-      customerName: "Zafer Gürsoy",
-      date: "10.03.2024",
-      device: "iPhone 13 Pro Max",
-    ),
-    JobSearchResult(
-      jobId: "JOB-ID:120820085",
-      customerName: "Zafer Gürsoy",
-      date: "10.03.2024",
-      device: "iPhone 13 Pro Max",
-    ),
-    JobSearchResult(
-      jobId: "JOB-ID:120820086",
-      customerName: "Zafer Gürsoy",
-      date: "10.03.2024",
-      device: "iPhone 13 Pro Max",
-    ),
-  ];
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -59,25 +42,28 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _searchResults = [];
-      } else {
-        _searchResults = _allJobs
-            .where(
-              (job) =>
-                  job.jobId.toLowerCase().contains(query) ||
-                  job.customerName.toLowerCase().contains(query) ||
-                  job.device.toLowerCase().contains(query),
-            )
-            .toList();
+    debugPrint('🔍 [EnhancedSearchWidget] Search text changed: ${_searchController.text}');
+
+    // Cancel previous debounce timer
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    final query = _searchController.text.trim();
+
+    // Debounce API calls by 500ms
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      debugPrint('🌐 [EnhancedSearchWidget] Triggering search API for: $query');
+
+      if (query.isNotEmpty) {
+        // Call JobCubit to search jobs via API
+        debugPrint('👤 [EnhancedSearchWidget] Searching jobs with keyword: $query');
+        context.read<JobCubit>().searchJobs(query);
       }
     });
 
@@ -96,7 +82,6 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
   void _deactivateSearch() {
     setState(() {
       _isSearchActive = false;
-      _searchResults = [];
     });
     _searchController.clear();
     _searchFocusNode.unfocus();
@@ -258,6 +243,7 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                     child: TextField(
                       controller: _searchController,
                       focusNode: _searchFocusNode,
+                      textAlignVertical: TextAlignVertical.center,
                       decoration: InputDecoration(
                         hintText: 'Search job',
                         hintStyle: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
@@ -271,7 +257,8 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                               )
                             : null,
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8.h),
+                        contentPadding: EdgeInsets.zero,
+                        isDense: true,
                       ),
                     ),
                   ),
@@ -291,65 +278,119 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
           ),
         ),
 
-        // Search Results
-        if (_searchResults.isNotEmpty) _buildSearchResults(),
+        // Search Results - using BlocBuilder to listen to JobCubit state
+        BlocBuilder<JobCubit, JobStates>(
+          builder: (context, state) {
+            if (state is JobLoading || state is JobActionLoading) {
+              return Container(
+                color: Colors.white,
+                padding: EdgeInsets.all(24.h),
+                child: Center(child: CircularProgressIndicator(color: AppColors.fontMainColor)),
+              );
+            }
+
+            if (state is JobSuccess && _searchController.text.isNotEmpty) {
+              final jobs = state.jobs;
+              if (jobs.isEmpty) {
+                return Container(
+                  color: Colors.white,
+                  padding: EdgeInsets.all(24.h),
+                  child: Center(
+                    child: Text(
+                      'No jobs found',
+                      style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                    ),
+                  ),
+                );
+              }
+              return _buildSearchResults(jobs);
+            }
+
+            if (state is JobError) {
+              return Container(
+                color: Colors.white,
+                padding: EdgeInsets.all(24.h),
+                child: Center(
+                  child: Text('Error: ${state.message}', style: AppTypography.fontSize14.copyWith(color: Colors.red)),
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(List<Job> jobs) {
     return Container(
       color: Colors.white,
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
       child: ListView.builder(
         shrinkWrap: true,
-        itemCount: _searchResults.length,
+        itemCount: jobs.length,
         itemBuilder: (context, index) {
-          final job = _searchResults[index];
+          final job = jobs[index];
           return _buildSearchResultItem(job);
         },
       ),
     );
   }
 
-  Widget _buildSearchResultItem(JobSearchResult job) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: const Color(0xFFDEE3E8), width: 1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                job.jobId,
-                style: AppTypography.fontSize16.copyWith(fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
-              ),
-              Text(
-                ' | ${job.customerName}',
-                style: AppTypography.fontSize16.copyWith(fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
-              ),
-            ],
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            '${job.date} | ${job.device}',
-            style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
-          ),
-          SizedBox(height: 2.h),
-        ],
+  Widget _buildSearchResultItem(Job job) {
+    // Format date
+    final formattedDate = intl.DateFormat('dd.MM.yyyy').format(job.createdAt);
+
+    // Get customer name
+    final customerName = '${job.customerDetails.firstName} ${job.customerDetails.lastName}'.trim();
+
+    // Get device info
+    final deviceBrand = job.deviceData.brand ?? '';
+    final deviceModel = job.deviceData.model ?? '';
+    final deviceInfo = '$deviceBrand $deviceModel'.trim();
+
+    return GestureDetector(
+      onTap: () {
+        debugPrint('🔍 [EnhancedSearchWidget] Navigating to job details: ${job.id}');
+        // Close search overlay
+        _deactivateSearch();
+        // Navigate to JobDetailsScreen
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: const Color(0xFFDEE3E8), width: 1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  job.jobNo,
+                  style: AppTypography.fontSize16.copyWith(fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
+                ),
+                if (customerName.isNotEmpty)
+                  Text(
+                    ' | $customerName',
+                    style: AppTypography.fontSize16.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.fontMainColor,
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              '$formattedDate${deviceInfo.isNotEmpty ? ' | $deviceInfo' : ''}',
+              style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
+            ),
+            SizedBox(height: 2.h),
+          ],
+        ),
       ),
     );
   }
-}
-
-class JobSearchResult {
-  final String jobId;
-  final String customerName;
-  final String date;
-  final String device;
-
-  JobSearchResult({required this.jobId, required this.customerName, required this.date, required this.device});
 }

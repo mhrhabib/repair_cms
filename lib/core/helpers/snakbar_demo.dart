@@ -20,7 +20,6 @@ class SnackbarDemo extends StatelessWidget {
 
     overlay.insert(overlayEntry);
 
-    // Auto dismiss after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (overlayEntry.mounted) {
         overlayEntry.remove();
@@ -84,14 +83,14 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
+      top: 12,
+      left: 12,
+      right: 12,
       child: SlideTransition(
         position: _slideAnimation,
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Material(
               elevation: 6,
               borderRadius: BorderRadius.circular(30),
@@ -104,9 +103,10 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                     BoxShadow(color: Colors.blue, blurRadius: 1, offset: Offset(2, 4), spreadRadius: 1),
                   ],
                 ),
-                padding: const EdgeInsets.all(30),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [

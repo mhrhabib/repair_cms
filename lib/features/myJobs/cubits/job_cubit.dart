@@ -529,7 +529,6 @@ class JobCubit extends Cubit<JobStates> {
         emit(JobNoteUpdateSuccess(job: updatedJob));
         // Don't call getJobById here - let the BlocListener handle it
       }
-      emit(JobNoteUpdateSuccess(job: updatedJob));
       await getJobById(jobId);
     } catch (e) {
       if (!isClosed) {

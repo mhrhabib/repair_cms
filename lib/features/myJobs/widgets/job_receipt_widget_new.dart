@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart';
@@ -24,49 +25,64 @@ class JobReceiptWidgetNew extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 800),
-        padding: const EdgeInsets.all(48.0), // 2cm padding like PDF
+        constraints: const BoxConstraints(maxWidth: 365),
+        padding: const EdgeInsets.all(20.0), // 2cm padding like PDF
         color: Colors.white,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty)
+              Align(
+                alignment: Alignment.centerRight,
+                child: Image.network(
+                  receiptFooter.companyLogoURL!,
+                  // width: 100,//
+                  height: 60,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => _buildPlaceholderLogo(),
+                ),
+              )
+            else
+              Align(alignment: Alignment.centerRight, child: _buildPlaceholderLogo()),
+            SizedBox(height: 8.h),
+
             // Header Section
-            _buildHeader(receiptFooter, customer),
-            const SizedBox(height: 16),
+            Align(alignment: Alignment.centerLeft, child: _buildHeader(receiptFooter, customer)),
+            SizedBox(height: 16.h),
 
             // Job Info and Barcode Section
             _buildJobInfoSection(),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
 
             // Barcode
             _buildBarcode(),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
 
             // Job Receipt Title
             const Text('Job Receipt', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
+            SizedBox(height: 2.h),
 
             // Salutation HTML
             if (data?.salutationHTMLmarkup != null && data!.salutationHTMLmarkup!.isNotEmpty)
               _buildHtmlContent(data.salutationHTMLmarkup!)
             else
               _buildDefaultSalutation(),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
 
             // Device Details Section
             _buildDeviceDetails(deviceData, device, defect),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
 
             // Items/Services Section
             if (assignedItems.isNotEmpty) _buildItemsSection(assignedItems),
-            const SizedBox(height: 10),
+            SizedBox(height: 10.h),
 
             // Terms and Conditions HTML
             if (data?.termsAndConditionsHTMLmarkup != null && data!.termsAndConditionsHTMLmarkup!.isNotEmpty)
               _buildHtmlContent(data.termsAndConditionsHTMLmarkup!)
             else
               _buildDefaultTerms(),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
 
             // QR Code and Signature Section
             _buildQRAndSignature(),
@@ -90,63 +106,52 @@ class JobReceiptWidgetNew extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Left: Customer Details
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Company info line (small gray text)
-              Text(companyInfo, style: const TextStyle(fontSize: 8, color: Color(0xFF444444))),
-              const SizedBox(height: 10),
-              // Customer organization or name
-              if (customer?.organization != null && customer!.organization!.isNotEmpty)
-                Text(customer.organization!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400))
-              else if (customer != null)
-                Text(_formatCustomerName(customer), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-              // Customer address
-              if (customer?.billingAddress != null) ...[
-                const SizedBox(height: 2),
-                if (customer!.billingAddress!.street != null)
-                  Text(
-                    customer.billingAddress!.street!,
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
-                  ),
-                if (customer.billingAddress!.state != null)
-                  Text(customer.billingAddress!.state!, style: const TextStyle(fontSize: 10)),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Company info line (small gray text)
+            SizedBox(
+              width: 120.w,
+              child: Text(companyInfo, style: const TextStyle(fontSize: 8, color: Color(0xFF444444))),
+            ),
+            SizedBox(height: 10.h),
+            // Customer organization or name
+            if (customer?.organization != null && customer!.organization!.isNotEmpty)
+              Text(customer.organization!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400))
+            else if (customer != null)
+              Text(_formatCustomerName(customer), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+            // Customer address
+            if (customer?.billingAddress != null) ...[
+              const SizedBox(height: 2),
+              if (customer!.billingAddress!.street != null)
                 Text(
-                  '${customer.billingAddress!.zip ?? ''} ${customer.billingAddress!.city ?? ''}'.trim(),
+                  customer.billingAddress!.street!,
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
                 ),
-                if (customer.billingAddress!.country != null)
-                  Text(customer.billingAddress!.country!, style: const TextStyle(fontSize: 10)),
-              ],
-              if (customer?.telephone != null)
-                Text(
-                  '${customer!.telephonePrefix ?? ''} ${customer.telephone}'.trim(),
-                  style: const TextStyle(fontSize: 10),
-                ),
+              if (customer.billingAddress!.state != null)
+                Text(customer.billingAddress!.state!, style: const TextStyle(fontSize: 10)),
+              Text(
+                '${customer.billingAddress!.zip ?? ''} ${customer.billingAddress!.city ?? ''}'.trim(),
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
+              ),
+              if (customer.billingAddress!.country != null)
+                Text(customer.billingAddress!.country!, style: const TextStyle(fontSize: 10)),
             ],
-          ),
+            if (customer?.telephone != null)
+              Text(
+                '${customer!.telephonePrefix ?? ''} ${customer.telephone}'.trim(),
+                style: const TextStyle(fontSize: 10),
+              ),
+          ],
         ),
-        const SizedBox(width: 16),
-        // Right: Company Logo
-        if (footer?.companyLogoURL != null && footer!.companyLogoURL!.isNotEmpty)
-          Image.network(
-            footer.companyLogoURL!,
-            width: 180,
-            height: 80,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => _buildPlaceholderLogo(),
-          )
-        else
-          _buildPlaceholderLogo(),
       ],
     );
   }
 
   Widget _buildPlaceholderLogo() {
     return Container(
-      width: 180,
-      height: 80,
+      width: 100,
+      height: 60,
       color: Colors.grey[200],
       child: const Center(
         child: Text('LOGO', style: TextStyle(fontSize: 24, color: Colors.grey)),
@@ -242,7 +247,7 @@ class JobReceiptWidgetNew extends StatelessWidget {
           children: [
             // Left column (labels) - Dark gray background
             Container(
-              width: 180,
+              width: 100,
               padding: const EdgeInsets.all(5),
               color: const Color(0xFFCBCBCB),
               child: Column(
@@ -363,8 +368,8 @@ class JobReceiptWidgetNew extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 5),
           decoration: const BoxDecoration(
             border: Border(
-              top: BorderSide(color: Color(0xFF808080), width: 2),
-              bottom: BorderSide(color: Color(0xFF808080), width: 2),
+              top: BorderSide(color: Color(0xFF808080), width: 1),
+              bottom: BorderSide(color: Color(0xFF808080), width: 1),
             ),
           ),
           child: const Row(
@@ -447,56 +452,59 @@ class JobReceiptWidgetNew extends StatelessWidget {
     final trackingUrl =
         '$trackingDomain/${data?.jobTrackingNumber ?? ''}/order-tracking/${data?.sId ?? ''}?email=${data?.customerDetails?.email ?? ''}';
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // QR Code
-        if (data?.jobTrackingNumber != null)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Repair Tracking', style: TextStyle(fontSize: 9, color: Color(0xFF2589F6))),
-              const SizedBox(height: 4),
-              QrImageView(data: trackingUrl, version: QrVersions.auto, size: 70),
-              const SizedBox(height: 2),
-              Text(data!.jobTrackingNumber!, style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w500)),
-            ],
-          )
-        else
-          const SizedBox.shrink(),
+    return FittedBox(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // QR Code
+          if (data?.jobTrackingNumber != null)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Repair Tracking', style: TextStyle(fontSize: 9, color: Color(0xFF2589F6))),
+                const SizedBox(height: 4),
+                QrImageView(data: trackingUrl, version: QrVersions.auto, size: 70),
+                const SizedBox(height: 2),
+                Text(data!.jobTrackingNumber!, style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w500)),
+              ],
+            )
+          else
+            const SizedBox.shrink(),
 
-        // Signature
-        if (data?.signatureFilePath != null)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                children: [
-                  const Text('I agree to the terms and conditions:', style: TextStyle(fontSize: 10)),
-                  const SizedBox(width: 10),
-                  Image.network(
-                    '$baseUrl/file-upload/download/new?imagePath=${data!.signatureFilePath}',
-                    height: 60,
-                    width: 100,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-                  ),
-                ],
-              ),
-              Container(
-                width: 150,
-                decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0xFF808080))),
+          // Signature
+          if (data?.signatureFilePath != null)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  children: [
+                    const Text('I agree to the terms and conditions:', style: TextStyle(fontSize: 10)),
+                    // const SizedBox(width: 10),
+                    Image.network(
+                      '$baseUrl/file-upload/download/new?imagePath=${data!.signatureFilePath}',
+                      height: 60,
+                      width: 100,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                    ),
+                  ],
                 ),
-                padding: const EdgeInsets.only(top: 5),
-                child: const Text('Date, Signature Client', style: TextStyle(fontSize: 10)),
-              ),
-            ],
-          )
-        else
-          const SizedBox.shrink(),
-      ],
+                Container(
+                  width: 150.w,
+                  alignment: Alignment.centerRight,
+                  decoration: const BoxDecoration(
+                    border: Border(top: BorderSide(color: Color(0xFF808080))),
+                  ),
+                  padding: const EdgeInsets.only(top: 5),
+                  child: const Text('Date, Signature Client', style: TextStyle(fontSize: 10)),
+                ),
+              ],
+            )
+          else
+            const SizedBox.shrink(),
+        ],
+      ),
     );
   }
 
@@ -504,37 +512,32 @@ class JobReceiptWidgetNew extends StatelessWidget {
   Widget _buildFooter(ReceiptFooter? footer) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Company Address
-        Expanded(
-          child: _buildFooterColumn([
-            if (footer?.address?.companyName != null) footer!.address!.companyName!,
-            if (footer?.address?.street != null) '${footer!.address!.street} ${footer.address!.num ?? ''}'.trim(),
-            if (footer?.address?.zip != null) '${footer!.address!.zip} ${footer.address!.city ?? ''}'.trim(),
-            if (footer?.address?.country != null) footer!.address!.country!,
-          ]),
-        ),
-        const SizedBox(width: 8),
+        _buildFooterColumn([
+          if (footer?.address?.companyName != null) footer!.address!.companyName!,
+          if (footer?.address?.street != null) '${footer!.address!.street} ${footer.address!.num ?? ''}'.trim(),
+          if (footer?.address?.zip != null) '${footer!.address!.zip} ${footer.address!.city ?? ''}'.trim(),
+          if (footer?.address?.country != null) footer!.address!.country!,
+        ]),
+        SizedBox(width: 8.w),
 
         // Contact Information
-        Expanded(
-          child: _buildFooterColumn([
-            if (footer?.contact?.ceo != null) 'CEO: ${footer!.contact!.ceo}',
-            if (footer?.contact?.telephone != null) 'Tel: ${footer!.contact!.telephone}',
-            if (footer?.contact?.email != null) 'Email: ${footer!.contact!.email}',
-            if (footer?.contact?.website != null) 'Web: ${footer!.contact!.website}',
-          ]),
-        ),
-        const SizedBox(width: 8),
+        _buildFooterColumn([
+          if (footer?.contact?.ceo != null) 'CEO: ${footer!.contact!.ceo}',
+          if (footer?.contact?.telephone != null) 'Tel: ${footer!.contact!.telephone}',
+          if (footer?.contact?.email != null) 'Email: ${footer!.contact!.email}',
+          if (footer?.contact?.website != null) 'Web: ${footer!.contact!.website}',
+        ]),
+        SizedBox(width: 8.w),
 
         // Bank Information
-        Expanded(
-          child: _buildFooterColumn([
-            if (footer?.bank?.bankName != null) footer!.bank!.bankName!,
-            if (footer?.bank?.iban != null) 'IBAN: ${footer!.bank!.iban}',
-            if (footer?.bank?.bic != null) 'BIC: ${footer!.bank!.bic}',
-          ]),
-        ),
+        _buildFooterColumn([
+          if (footer?.bank?.bankName != null) footer!.bank!.bankName!,
+          if (footer?.bank?.iban != null) 'IBAN: ${footer!.bank!.iban}',
+          if (footer?.bank?.bic != null) 'BIC: ${footer!.bank!.bic}',
+        ]),
       ],
     );
   }
@@ -548,7 +551,7 @@ class JobReceiptWidgetNew extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 2),
               child: Text(
                 item,
-                style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w400),
+                style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w400),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),

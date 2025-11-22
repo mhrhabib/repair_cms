@@ -21,6 +21,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
 
   String _selectedBrand = 'Brother';
   String? _selectedModel;
+  LabelSize? _selectedLabelSize;
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _portController = TextEditingController(text: '9100');
   String _selectedProtocol = 'TCP';
@@ -47,6 +48,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       setState(() {
         _selectedBrand = defaultPrinter.printerBrand;
         _selectedModel = defaultPrinter.printerModel;
+        _selectedLabelSize = defaultPrinter.labelSize;
         _ipController.text = defaultPrinter.ipAddress;
         _portController.text = defaultPrinter.port?.toString() ?? '9100';
         _selectedProtocol = defaultPrinter.protocol;
@@ -126,6 +128,11 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       return;
     }
 
+    if (_selectedLabelSize == null) {
+      showCustomToast('Please select label size', isError: true);
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     final config = PrinterConfigModel(
@@ -136,6 +143,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       protocol: _selectedProtocol,
       port: int.tryParse(_portController.text),
       isDefault: _setAsDefault,
+      labelSize: _selectedLabelSize,
     );
 
     try {
@@ -167,7 +175,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Label Printer'), backgroundColor: AppColors.primary),
+      appBar: AppBar(title: const Text('Label Printer'), backgroundColor: AppColors.scaffoldBackgroundColor),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.w),
         child: Column(
@@ -192,6 +200,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 setState(() {
                   _selectedBrand = value!;
                   _selectedModel = null;
+                  _selectedLabelSize = null; // Reset label size when brand changes
                 });
               },
             ),
@@ -215,6 +224,48 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               }).toList(),
               onChanged: (value) => setState(() => _selectedModel = value),
             ),
+            SizedBox(height: 16.h),
+
+            // Label Size Selection
+            Text(
+              'Label Size',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            DropdownButtonFormField<LabelSize>(
+              value: _selectedLabelSize,
+              hint: const Text('Select Label Size'),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                prefixIcon: Icon(Icons.aspect_ratio, color: AppColors.primary),
+              ),
+              items: _getLabelSizesForBrand().map((size) {
+                return DropdownMenuItem(value: size, child: Text('${size.name} (${size.width}×${size.height} mm)'));
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedLabelSize = value),
+            ),
+            if (_selectedLabelSize != null) ...[
+              SizedBox(height: 8.h),
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green.shade700, size: 20.sp),
+                    SizedBox(width: 8.w),
+                    Text(
+                      'Selected: ${_selectedLabelSize!.width}mm × ${_selectedLabelSize!.height}mm',
+                      style: TextStyle(fontSize: 13.sp, color: Colors.green.shade900, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             SizedBox(height: 16.h),
 
             // IP Address with WiFi scan button
@@ -334,6 +385,20 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
         ),
       ),
     );
+  }
+
+  /// Get label sizes based on selected brand
+  List<LabelSize> _getLabelSizesForBrand() {
+    switch (_selectedBrand) {
+      case 'Brother':
+        return LabelSize.getBrotherSizes();
+      case 'Dymo':
+        return LabelSize.getDymoSizes();
+      case 'Xprinter':
+        return LabelSize.getXprinterSizes();
+      default:
+        return LabelSize.getBrotherSizes();
+    }
   }
 
   @override

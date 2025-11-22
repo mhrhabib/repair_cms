@@ -4,6 +4,8 @@ import 'package:repair_cms/features/jobBooking/cubits/fileUpload/job_file_upload
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:repair_cms/features/jobBooking/screens/job_receipt_preview_screen.dart';
+import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
 
 class JobBookingSelectPrinterScreen extends StatefulWidget {
   const JobBookingSelectPrinterScreen({super.key});
@@ -35,16 +37,39 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
   }
 
   void _showSuccessAndNavigate() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Job created successfully!'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    // Navigate to success screen or back to home
-    Navigator.popUntil(context, (route) => route.isFirst);
+    // Navigate to appropriate screen based on printer type selection
+    final jobCreateState = context.read<JobCreateCubit>().state;
+    if (jobCreateState is JobCreateCreated && jobCreateState.response.data != null) {
+      if (_selectedPrinterType == 'Device Label') {
+        // Navigate to device label screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                JobDeviceLabelScreen(jobResponse: jobCreateState.response, printOption: _selectedPrinterType),
+          ),
+        );
+      } else {
+        // Navigate to receipt preview screen for A4 and Thermal receipts
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                JobReceiptPreviewScreen(jobResponse: jobCreateState.response, printOption: _selectedPrinterType),
+          ),
+        );
+      }
+    } else {
+      // Fallback: show snackbar and go home
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Job created successfully!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      Navigator.popUntil(context, (route) => route.isFirst);
+    }
   }
 
   @override
@@ -277,6 +302,54 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                         ],
                       ),
 
+                      SizedBox(height: 16.h),
+
+                      // Device Label option (full width)
+                      GestureDetector(
+                        onTap: () => _selectPrinterType('Device Label'),
+                        child: Container(
+                          height: 120.h,
+                          padding: EdgeInsets.all(16.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.whiteColor,
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color: _selectedPrinterType == 'Device Label' ? AppColors.primary : Colors.grey.shade300,
+                              width: _selectedPrinterType == 'Device Label' ? 2 : 1,
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.label, size: 32.sp, color: Colors.grey.shade700),
+                                  SizedBox(height: 8.h),
+                                  Text(
+                                    'Device Label',
+                                    style: AppTypography.fontSize14.copyWith(
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                              if (_selectedPrinterType == 'Device Label')
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: 20.w,
+                                    height: 20.h,
+                                    decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                                    child: Icon(Icons.check, color: Colors.white, size: 12.sp),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
                       const Spacer(),
 
                       // Loading state

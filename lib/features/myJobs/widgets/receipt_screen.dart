@@ -640,11 +640,8 @@ class ReceiptScreen extends StatelessWidget {
       backgroundColor: Colors.grey[300],
       appBar: AppBar(
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        title: const Text('Preview'),
-        actions: [
-          IconButton(icon: const Icon(Icons.cloud_download_outlined), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.print_outlined), onPressed: () => _showPrinterSelection(context)),
-        ],
+        title: const Text('Job Receipt'),
+        actions: [IconButton(icon: const Icon(Icons.print_outlined), onPressed: () => _showPrinterSelection(context))],
       ),
       body: SingleChildScrollView(
         child: Center(

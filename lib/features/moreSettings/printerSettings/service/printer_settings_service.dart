@@ -113,7 +113,41 @@ class PrinterSettingsService {
     return {'thermal': getPrinters('thermal'), 'label': getPrinters('label'), 'a4': getPrinters('a4')};
   }
 
-  // Helper methods
+  // Get thermal printer paper width for receipt printing
+  int getThermalPaperWidth() {
+    final printer = getDefaultPrinter('thermal');
+    return printer?.paperWidth ?? 80; // Default to 80mm
+  }
+
+  // Get label printer dimensions for label printing
+  LabelSize? getLabelSize() {
+    final printer = getDefaultPrinter('label');
+    return printer?.labelSize;
+  }
+
+  // Check if printer is configured
+  bool isPrinterConfigured(String printerType) {
+    return getDefaultPrinter(printerType) != null;
+  }
+
+  // Get printer config summary for display
+  String getPrinterSummary(String printerType) {
+    final printer = getDefaultPrinter(printerType);
+    if (printer == null) return 'Not configured';
+
+    String summary = printer.printerBrand;
+    if (printer.printerModel != null) summary += ' ${printer.printerModel}';
+    summary += ' @ ${printer.ipAddress}';
+
+    if (printerType == 'thermal' && printer.paperWidth != null) {
+      summary += ' (${printer.paperWidth}mm)';
+    } else if (printerType == 'label' && printer.labelSize != null) {
+      summary += ' (${printer.labelSize!.name})';
+    }
+
+    return summary;
+  } // Helper methods
+
   String _getStorageKey(String printerType) {
     switch (printerType.toLowerCase()) {
       case 'thermal':

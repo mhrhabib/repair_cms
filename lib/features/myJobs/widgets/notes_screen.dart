@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
@@ -72,17 +73,15 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   void _navigateToAddNote(BuildContext context, SingleJobModel job) async {
-    final result = await _showNoteBottomSheet(context, job, null);
-    if (result == true && _isMounted) {
-      _showSuccessDialog(context);
-    }
+    await _showNoteBottomSheet(context, job, null);
+    // Success handling is performed by the BlocListener (JobNoteUpdateSuccess),
+    // so avoid showing a duplicate snackbar here. The bottom sheet still
+    // notifies the parent via `onNoteSaved` to refresh local state.
   }
 
   void _navigateToEditNote(BuildContext context, SingleJobModel job, InternalNote note) async {
-    final result = await _showNoteBottomSheet(context, job, note);
-    if (result == true && _isMounted) {
-      _showSuccessDialog(context, message: 'Note updated successfully');
-    }
+    await _showNoteBottomSheet(context, job, note);
+    // Success snackbar is handled centrally by BlocListener to avoid duplicates.
   }
 
   void _deleteNote(InternalNote note) {
@@ -112,79 +111,12 @@ class _NotesScreenState extends State<NotesScreen> {
     final userName = storage.read('fullName');
 
     if (userId == null || userName == null) {
-      _showSnackBar('User information not found', isError: true);
+      SnackbarDemo(message: 'User information not found').showCustomSnackbar(context);
       return;
     }
 
     jobCubit.deleteJobNote(jobId: widget.job.data?.sId ?? '', noteId: note.id ?? '');
     Navigator.pop(context);
-  }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    if (!_isMounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  void _showSuccessDialog(BuildContext context, {String message = 'New note successfully added'}) {
-    if (!_isMounted) return;
-
-    Dialog? dialog;
-    dialog = Dialog(
-      alignment: Alignment.topCenter,
-      insetPadding: EdgeInsets.only(top: 50.h, left: 16.w, right: 16.w),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
-      child: Padding(
-        padding: EdgeInsets.all(16.r),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.check_circle, color: figmaBlue, size: 24.r),
-                SizedBox(width: 12.w),
-                Text(
-                  message,
-                  style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: () {
-                  if (_isMounted && Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: Text('Dismiss', style: TextStyle(color: figmaBlue)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        Future.delayed(const Duration(seconds: 3), () {
-          if (_isMounted && Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
-        });
-        return dialog!;
-      },
-    );
   }
 
   @override
@@ -194,10 +126,19 @@ class _NotesScreenState extends State<NotesScreen> {
         if (!_isMounted) return;
 
         if (state is JobNoteUpdateSuccess) {
-          _loadNotes();
-          _showSnackBar('Operation completed successfully');
+          // Prefer the updated job returned by the cubit instead of relying on the
+          // parent widget's `job` prop. This ensures the list updates immediately
+          // after add/update/delete operations.
+          final updatedJob = state.job;
+          setState(() {
+            _internalNotes = updatedJob.data!.defect!.isNotEmpty
+                ? updatedJob.data!.defect!.first.internalNote ?? <InternalNote>[]
+                : <InternalNote>[];
+          });
+
+          SnackbarDemo(message: 'Operation completed successfully').showCustomSnackbar(context);
         } else if (state is JobActionError) {
-          _showSnackBar(state.message, isError: true);
+          SnackbarDemo(message: state.message).showCustomSnackbar(context);
         }
       },
       child: Scaffold(
@@ -373,7 +314,7 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
   void _saveNote() {
     final noteText = _controller.text.trim();
     if (noteText.isEmpty) {
-      _showSnackBar('Note cannot be empty', isError: true);
+      SnackbarDemo(message: 'Note cannot be empty').showCustomSnackbar(context);
       return;
     }
 
@@ -389,7 +330,7 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
     final userName = storage.read('fullName');
 
     if (userId == null || userName == null) {
-      _showSnackBar('User information not found', isError: true);
+      SnackbarDemo(message: 'User information not found').showCustomSnackbar(context);
       if (_isMounted) {
         setState(() {
           _isLoading = false;
@@ -432,21 +373,9 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
             setState(() {
               _isLoading = false;
             });
-            _showSnackBar('Failed to save note: $error', isError: true);
+            SnackbarDemo(message: 'Failed to save note: $error').showCustomSnackbar(context);
           }
         });
-  }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    if (!_isMounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 
   @override
