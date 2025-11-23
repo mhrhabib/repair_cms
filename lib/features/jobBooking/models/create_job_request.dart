@@ -49,6 +49,8 @@ class Job {
   final String termsAndConditionsHTMLmarkup;
   final ReceiptFooter receiptFooter;
   final String printOption;
+  final bool emailConfirmation;
+  final bool printDeviceLabel;
 
   Job({
     required this.jobType,
@@ -75,6 +77,8 @@ class Job {
     required this.termsAndConditionsHTMLmarkup,
     required this.receiptFooter,
     required this.printOption,
+    required this.emailConfirmation,
+    required this.printDeviceLabel,
   });
 
   Map<String, dynamic> toJson() {
@@ -119,6 +123,8 @@ class Job {
       'termsAndConditionsHTMLmarkup': termsAndConditionsHTMLmarkup,
       'receiptFooter': receiptFooter.toJson(),
       'printOption': printOption,
+      'emailConfirmation': emailConfirmation,
+      'printDeviceLabel': printDeviceLabel,
     };
   }
 
@@ -147,6 +153,8 @@ class Job {
     String? termsAndConditionsHTMLmarkup,
     ReceiptFooter? receiptFooter,
     String? printOption,
+    bool? emailConfirmation,
+    bool? printDeviceLabel,
   }) {
     return Job(
       jobType: jobType ?? this.jobType,
@@ -173,6 +181,8 @@ class Job {
       termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup ?? this.termsAndConditionsHTMLmarkup,
       receiptFooter: receiptFooter ?? this.receiptFooter,
       printOption: printOption ?? this.printOption,
+      emailConfirmation: emailConfirmation ?? this.emailConfirmation,
+      printDeviceLabel: printDeviceLabel ?? this.printDeviceLabel,
     );
   }
 }
@@ -227,6 +237,7 @@ class JobStatus {
   final int createAtStatus;
   final bool notifications;
   final String notes;
+  final String? email;
 
   JobStatus({
     required this.title,
@@ -236,6 +247,7 @@ class JobStatus {
     required this.createAtStatus,
     required this.notifications,
     required this.notes,
+    this.email,
   });
 
   factory JobStatus.fromJson(Map<String, dynamic> json) {
@@ -247,6 +259,7 @@ class JobStatus {
       createAtStatus: json['createAtStatus'] ?? 0,
       notifications: json['notifications'] ?? false,
       notes: json['notes'] ?? '',
+      email: json['email'],
     );
   }
 
@@ -259,6 +272,7 @@ class JobStatus {
       'createAtStatus': createAtStatus,
       'notifications': notifications,
       'notes': notes,
+      if (email != null) 'email': email,
     };
   }
 }
@@ -742,6 +756,7 @@ class CreateJobResponse {
 
 class JobData {
   final String? sId;
+  final String? jobNo;
   final String? jobType;
   final String? deviceType;
   final String? model;
@@ -769,6 +784,7 @@ class JobData {
 
   JobData({
     this.sId,
+    this.jobNo,
     this.jobType,
     this.deviceType,
     this.model,
@@ -798,6 +814,7 @@ class JobData {
   factory JobData.fromJson(Map<String, dynamic> json) {
     return JobData(
       sId: json['_id'],
+      jobNo: json['jobNo'],
       jobType: json['jobType'],
       deviceType: json['deviceType'],
       model: json['model'],

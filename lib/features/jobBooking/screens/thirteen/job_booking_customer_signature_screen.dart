@@ -8,7 +8,8 @@ import 'package:repair_cms/features/jobBooking/screens/fourteen/job_booking_sele
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 
 class JobBookingCustomerSignatureScreen extends StatefulWidget {
-  const JobBookingCustomerSignatureScreen({super.key});
+  final String jobId;
+  const JobBookingCustomerSignatureScreen({super.key, required this.jobId});
 
   @override
   State<JobBookingCustomerSignatureScreen> createState() => _JobBookingCustomerSignatureScreenState();
@@ -86,7 +87,10 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
 
           // Navigate to next screen
           if (mounted) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingSelectPrinterScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => JobBookingSelectPrinterScreen(jobId: widget.jobId)),
+            );
           }
         }
       } catch (e) {

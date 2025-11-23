@@ -5,7 +5,6 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/contact_data_helper.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 part 'job_booking_state.dart';
 
 class JobBookingCubit extends Cubit<JobBookingState> {
@@ -102,6 +101,8 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             bank: BankDetails(bankName: "", iban: "", bic: ""),
           ),
           printOption: "A4 Receipt",
+          emailConfirmation: true,
+          printDeviceLabel: false,
         ),
         defect: Defect(jobType: "", defect: [], internalNote: []),
         device: Device(category: "", brand: "", model: "", imei: "", condition: [], deviceSecurity: "no security"),
@@ -384,8 +385,61 @@ class JobBookingCubit extends Cubit<JobBookingState> {
         notes: "new_job_in_draft",
       );
 
-      emit(state.copyWith(job: state.job.copyWith(jobStatus: [jobStatus])));
-      debugPrint('✅ [JobBookingCubit] Generated job status with userId: $validUserId');
+      emit(
+        state.copyWith(
+          job: state.job.copyWith(status: 'draft', jobStatus: [jobStatus]),
+        ),
+      );
+      debugPrint('✅ [JobBookingCubit] Generated draft job status with userId: $validUserId');
+    }
+  }
+
+  // Update job status to booked
+  void updateJobStatusToBooked({required String userId, required String userName, required String email}) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      // Get valid userId for job status
+      final validUserId = _isValidObjectId(userId) ? userId : '';
+
+      if (validUserId.isEmpty) {
+        debugPrint('❌ [JobBookingCubit] No valid userId available for booked job status');
+        return;
+      }
+
+      final bookedJobStatus = JobStatus(
+        title: "booked",
+        userId: validUserId,
+        colorCode: "#2589F6",
+        userName: userName,
+        createAtStatus: DateTime.now().millisecondsSinceEpoch,
+        notifications: true,
+        email: email,
+        notes: "new_job_created",
+      );
+
+      emit(
+        state.copyWith(
+          job: state.job.copyWith(status: 'booked', jobStatus: [bookedJobStatus]),
+        ),
+      );
+      debugPrint('✅ [JobBookingCubit] Updated to booked status with userId: $validUserId');
+    }
+  }
+
+  // Update job with data from created job response
+  void updateJobFromResponse(JobData createdJobData) {
+    final state = this.state;
+    if (state is JobBookingData) {
+      emit(
+        state.copyWith(
+          job: state.job.copyWith(
+            jobNo: createdJobData.jobNo ?? state.job.jobNo,
+            customerId: createdJobData.jobContactId ?? state.job.customerId,
+            // Keep other fields from the response that might be important
+          ),
+        ),
+      );
+      debugPrint('✅ [JobBookingCubit] Updated job with jobNo: ${createdJobData.jobNo}');
     }
   }
 
@@ -560,7 +614,13 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void updatePrintOption(String printOption) {
     final state = this.state;
     if (state is JobBookingData) {
-      emit(state.copyWith(job: state.job.copyWith(printOption: printOption)));
+      // Set printDeviceLabel to true only for "Device Label" option
+      final isPrintDeviceLabel = printOption == "Device Label";
+      emit(
+        state.copyWith(
+          job: state.job.copyWith(printOption: printOption, printDeviceLabel: isPrintDeviceLabel),
+        ),
+      );
     }
   }
 
@@ -645,6 +705,98 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       } catch (e) {
         debugPrint('❌ [JobBookingCubit] Error updating receipt data: $e');
       }
+    }
+  }
+
+  // Update receipt footer with company information
+  void updateReceiptFooterFromCompany(dynamic companyModel) {
+    final currentState = state;
+    if (currentState is! JobBookingData) {
+      debugPrint('⚠️ [JobBookingCubit] Cannot update receipt footer - state is not JobBookingData');
+      return;
+    }
+
+    try {
+      debugPrint('🏢 [JobBookingCubit] Starting receipt footer update from company data');
+      debugPrint('📊 [JobBookingCubit] Company name: ${companyModel.companyName}');
+
+      // Extract company logo
+      final companyLogoURL = companyModel.companyLogo != null && companyModel.companyLogo!.isNotEmpty
+          ? companyModel.companyLogo![0].image ?? ''
+          : '';
+      debugPrint('🖼️ [JobBookingCubit] Logo URL: $companyLogoURL');
+
+      // Extract company address
+      final companyAddress = companyModel.companyAddress != null && companyModel.companyAddress!.isNotEmpty
+          ? companyModel.companyAddress![0]
+          : null;
+
+      final address = CompanyAddress(
+        companyName: companyModel.companyName ?? '',
+        street: companyAddress?.street ?? '',
+        num: companyAddress?.num ?? '',
+        zip: companyAddress?.zip ?? '',
+        city: companyAddress?.city ?? '',
+        country: companyAddress?.country ?? '',
+      );
+      debugPrint(
+        '📍 [JobBookingCubit] Address: ${address.street} ${address.num}, ${address.zip} ${address.city}, ${address.country}',
+      );
+
+      // Extract company contact details
+      final companyContact = companyModel.companyContactDetail != null && companyModel.companyContactDetail!.isNotEmpty
+          ? companyModel.companyContactDetail![0]
+          : null;
+
+      // Extract company tax details (for CEO name)
+      final companyTax = companyModel.companyTaxDetail != null && companyModel.companyTaxDetail!.isNotEmpty
+          ? companyModel.companyTaxDetail![0]
+          : null;
+
+      final contact = CompanyContact(
+        ceo: companyTax?.ceo ?? '',
+        telephone: companyContact?.telephone ?? companyModel.telephone ?? '',
+        email: companyContact?.email ?? companyModel.companyEmail ?? '',
+        website: companyContact?.website ?? '',
+      );
+      debugPrint(
+        '📞 [JobBookingCubit] Contact - CEO: ${contact.ceo}, Tel: ${contact.telephone}, Email: ${contact.email}, Web: ${contact.website}',
+      );
+
+      // Extract bank details
+      final companyBank = companyModel.companyBankDetail != null && companyModel.companyBankDetail!.isNotEmpty
+          ? companyModel.companyBankDetail![0]
+          : null;
+
+      final bank = BankDetails(
+        bankName: companyBank?.bankName ?? '',
+        iban: companyBank?.iban ?? '',
+        bic: companyBank?.bic ?? '',
+      );
+      debugPrint('🏦 [JobBookingCubit] Bank - Name: ${bank.bankName}, IBAN: ${bank.iban}, BIC: ${bank.bic}');
+
+      // Create updated receipt footer
+      final updatedReceiptFooter = ReceiptFooter(
+        companyLogo: '', // Empty as it's stored in URL
+        companyLogoURL: companyLogoURL,
+        address: address,
+        contact: contact,
+        bank: bank,
+      );
+
+      // Update job with new receipt footer
+      emit(currentState.copyWith(job: currentState.job.copyWith(receiptFooter: updatedReceiptFooter)));
+
+      debugPrint('✅ [JobBookingCubit] Receipt footer updated successfully');
+      debugPrint('📋 [JobBookingCubit] Summary:');
+      debugPrint('   - Company: ${companyModel.companyName}');
+      debugPrint('   - Logo: ${companyLogoURL.isNotEmpty ? "✓" : "✗"}');
+      debugPrint('   - Address: ${address.city.isNotEmpty ? "✓" : "✗"}');
+      debugPrint('   - Contact: ${contact.telephone.isNotEmpty ? "✓" : "✗"}');
+      debugPrint('   - Bank: ${bank.iban.isNotEmpty ? "✓" : "✗"}');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [JobBookingCubit] Error updating receipt footer: $e');
+      debugPrint('📋 [JobBookingCubit] Stack trace: $stackTrace');
     }
   }
 

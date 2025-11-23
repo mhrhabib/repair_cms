@@ -3,7 +3,8 @@ import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cu
 import 'package:repair_cms/features/jobBooking/screens/thirteen/job_booking_customer_signature_screen.dart';
 
 class JobBookingPhysicalLocationScreen extends StatefulWidget {
-  const JobBookingPhysicalLocationScreen({super.key});
+  final String jobId;
+  const JobBookingPhysicalLocationScreen({super.key, required this.jobId});
 
   @override
   State<JobBookingPhysicalLocationScreen> createState() => _JobBookingPhysicalLocationScreenState();
@@ -25,7 +26,10 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
       context.read<JobBookingCubit>().updatePhysicalLocation(_locationController.text.trim());
 
       // Navigate to next screen
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingCustomerSignatureScreen()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => JobBookingCustomerSignatureScreen(jobId: widget.jobId)),
+      );
     } else {
       ScaffoldMessenger.of(
         context,

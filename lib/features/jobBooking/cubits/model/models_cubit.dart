@@ -31,7 +31,7 @@ class ModelsCubit extends Cubit<ModelsState> {
   Future<void> createModel({required String name, required String userId, required String brandId}) async {
     try {
       debugPrint('🚀 [ModelsCubit] Creating new model: $name');
-      final newModel = await modelsRepository.createModel(name: name, userId: userId, brandId: brandId);
+      await modelsRepository.createModel(name: name, userId: userId, brandId: brandId);
 
       debugPrint('✅ [ModelsCubit] Model created successfully');
 

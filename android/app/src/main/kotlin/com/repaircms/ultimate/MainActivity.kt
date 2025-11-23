@@ -1,4 +1,4 @@
-package com.example.repair_cms
+package com.repaircms.ultimate
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

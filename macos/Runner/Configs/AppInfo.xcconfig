@@ -8,7 +8,7 @@
 PRODUCT_NAME = repair_cms
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.repairCms
+PRODUCT_BUNDLE_IDENTIFIER = com.repaircms.ultimate
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 com.repaircms. All rights reserved.

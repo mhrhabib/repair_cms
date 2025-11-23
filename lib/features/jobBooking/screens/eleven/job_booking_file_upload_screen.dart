@@ -38,7 +38,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
               // Navigate to next screen after successful upload
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()),
+                MaterialPageRoute(builder: (context) => JobBookingPhysicalLocationScreen(jobId: widget.jobId!)),
               );
             } else if (state is JobFileUploadError) {
               debugPrint('❌ File upload failed: ${state.message}');
@@ -55,7 +55,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()),
+                        MaterialPageRoute(builder: (context) => JobBookingPhysicalLocationScreen(jobId: widget.jobId!)),
                       );
                     },
                   ),
@@ -532,7 +532,10 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
       if (jobId == null || jobId.isEmpty) {
         debugPrint('⚠️ [FileUploadScreen] No jobId found - job must be created first');
         // Just navigate to next screen without uploading
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => JobBookingPhysicalLocationScreen(jobId: widget.jobId!)),
+        );
         return;
       }
 
@@ -564,7 +567,10 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
       } else {
         debugPrint('ℹ️ [FileUploadScreen] No files to upload');
         // No files, just navigate
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingPhysicalLocationScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => JobBookingPhysicalLocationScreen(jobId: widget.jobId!)),
+        );
       }
     }
   }

@@ -1,5 +1,7 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/company/cubits/company_cubit.dart';
+import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/fileUpload/job_file_upload_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
@@ -8,7 +10,8 @@ import 'package:repair_cms/features/jobBooking/screens/job_receipt_preview_scree
 import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
 
 class JobBookingSelectPrinterScreen extends StatefulWidget {
-  const JobBookingSelectPrinterScreen({super.key});
+  final String jobId;
+  const JobBookingSelectPrinterScreen({super.key, required this.jobId});
 
   @override
   State<JobBookingSelectPrinterScreen> createState() => _JobBookingSelectPrinterScreenState();
@@ -16,6 +19,33 @@ class JobBookingSelectPrinterScreen extends StatefulWidget {
 
 class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterScreen> {
   String _selectedPrinterType = 'A4 Receipt'; // Default value
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch company info and job receipt when screen loads
+    _fetchCompanyInfoAndReceipt();
+  }
+
+  void _fetchCompanyInfoAndReceipt() {
+    final storage = GetStorage();
+    final companyId = storage.read('companyId');
+    final userId = storage.read('userId');
+
+    if (companyId != null && companyId.isNotEmpty) {
+      debugPrint('🏢 [SelectPrinter] Fetching company info for ID: $companyId');
+      context.read<CompanyCubit>().getCompanyInfo(companyId: companyId);
+    } else {
+      debugPrint('⚠️ [SelectPrinter] No company ID found in storage');
+    }
+
+    if (userId != null && userId.isNotEmpty) {
+      debugPrint('📄 [SelectPrinter] Fetching job receipt for user ID: $userId');
+      context.read<JobReceiptCubit>().getJobReceipt(userId: userId);
+    } else {
+      debugPrint('⚠️ [SelectPrinter] No user ID found in storage');
+    }
+  }
 
   void _selectPrinterType(String printerTypeId) {
     setState(() {
@@ -28,11 +58,87 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
       // Update print option in JobBookingCubit
       context.read<JobBookingCubit>().updatePrintOption(_selectedPrinterType);
 
-      // Get the complete job request
+      // Get user data for job status
+      final storage = GetStorage();
+      final userId = storage.read('userId') ?? '';
+      final userName = storage.read('fullName') ?? 'User';
+      final jobBookingState = context.read<JobBookingCubit>().state;
+
+      if (jobBookingState is JobBookingData) {
+        // Get contact email for notifications
+        final contactEmail = jobBookingState.contact.email;
+
+        // Update receipt footer with company info
+        final companyState = context.read<CompanyCubit>().state;
+        if (companyState is CompanyLoaded) {
+          debugPrint('🏢 [CreateJob] Company state loaded, updating receipt footer');
+          debugPrint('📊 [CreateJob] Company name: ${companyState.company.companyName}');
+          debugPrint('📍 [CreateJob] Address available: ${companyState.company.companyAddress?.isNotEmpty ?? false}');
+          debugPrint(
+            '📞 [CreateJob] Contact available: ${companyState.company.companyContactDetail?.isNotEmpty ?? false}',
+          );
+          debugPrint('🏦 [CreateJob] Bank available: ${companyState.company.companyBankDetail?.isNotEmpty ?? false}');
+
+          context.read<JobBookingCubit>().updateReceiptFooterFromCompany(companyState.company);
+        } else {
+          debugPrint('⚠️ [CreateJob] Company info not loaded, proceeding without receipt footer update');
+          debugPrint('📊 [CreateJob] Current company state: ${companyState.runtimeType}');
+        }
+
+        // Update receipt data (salutation and terms) from JobReceiptCubit
+        final jobReceiptState = context.read<JobReceiptCubit>().state;
+        if (jobReceiptState is JobReceiptLoaded) {
+          debugPrint('📄 [CreateJob] Updating receipt data (salutation & terms)');
+          // Store receipt data temporarily
+          final storage = GetStorage();
+          storage.write('jobReceiptData', {
+            'salutation': jobReceiptState.receipt.salutation,
+            'termsAndConditions': jobReceiptState.receipt.termsAndConditions,
+          });
+          // Update the job with receipt data
+          context.read<JobBookingCubit>().updateReceiptData();
+        } else {
+          debugPrint('⚠️ [CreateJob] Job receipt not loaded, proceeding without receipt data');
+        }
+
+        // Update job status to "booked"
+        context.read<JobBookingCubit>().updateJobStatusToBooked(
+          userId: userId,
+          userName: userName,
+          email: contactEmail,
+        );
+      }
+
+      // Get the complete job request with updated status, receipt footer, and receipt data
       final jobRequest = context.read<JobBookingCubit>().getCreateJobRequest();
 
-      // Create the job using JobCreateCubit
-      context.read<JobCreateCubit>().createJob(request: jobRequest);
+      debugPrint('📋 [UpdateJob] ========== JOB UPDATE PAYLOAD ==========');
+      debugPrint('📋 [UpdateJob] Job status: ${jobRequest.job.status}');
+      debugPrint('📋 [UpdateJob] Job status array: ${jobRequest.job.jobStatus.length} items');
+      debugPrint('📋 [UpdateJob] ========== RECEIPT FOOTER DATA ==========');
+      debugPrint('📋 [UpdateJob] Logo URL: ${jobRequest.job.receiptFooter.companyLogoURL}');
+      debugPrint('📋 [UpdateJob] Company Name: ${jobRequest.job.receiptFooter.address.companyName}');
+      debugPrint(
+        '📋 [UpdateJob] Street: ${jobRequest.job.receiptFooter.address.street} ${jobRequest.job.receiptFooter.address.num}',
+      );
+      debugPrint(
+        '📋 [UpdateJob] City: ${jobRequest.job.receiptFooter.address.zip} ${jobRequest.job.receiptFooter.address.city}',
+      );
+      debugPrint('📋 [UpdateJob] Country: ${jobRequest.job.receiptFooter.address.country}');
+      debugPrint('📋 [UpdateJob] CEO: ${jobRequest.job.receiptFooter.contact.ceo}');
+      debugPrint('📋 [UpdateJob] Telephone: ${jobRequest.job.receiptFooter.contact.telephone}');
+      debugPrint('📋 [UpdateJob] Email: ${jobRequest.job.receiptFooter.contact.email}');
+      debugPrint('📋 [UpdateJob] Website: ${jobRequest.job.receiptFooter.contact.website}');
+      debugPrint('📋 [UpdateJob] Bank Name: ${jobRequest.job.receiptFooter.bank.bankName}');
+      debugPrint('📋 [UpdateJob] IBAN: ${jobRequest.job.receiptFooter.bank.iban}');
+      debugPrint('📋 [UpdateJob] BIC: ${jobRequest.job.receiptFooter.bank.bic}');
+      debugPrint('📋 [UpdateJob] ========== RECEIPT HTML DATA ==========');
+      debugPrint('📋 [UpdateJob] Salutation length: ${jobRequest.job.salutationHTMLmarkup.length}');
+      debugPrint('📋 [UpdateJob] Terms length: ${jobRequest.job.termsAndConditionsHTMLmarkup.length}');
+      debugPrint('📋 [UpdateJob] =====================================');
+
+      // Update the job using JobCreateCubit
+      context.read<JobCreateCubit>().updateJob(request: jobRequest, jobId: widget.jobId);
     }
   }
 
@@ -51,6 +157,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
         );
       } else {
         // Navigate to receipt preview screen for A4 and Thermal receipts
+        debugPrint('📄 [SelectPrinter] Navigating to receipt preview with complete job data');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -76,6 +183,28 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
+        BlocListener<CompanyCubit, CompanyState>(
+          listener: (context, state) {
+            if (state is CompanyLoaded) {
+              debugPrint('✅ [SelectPrinter] Company info loaded: ${state.company.companyName}');
+            } else if (state is CompanyError) {
+              debugPrint('❌ [SelectPrinter] Failed to load company info: ${state.message}');
+              // Don't block the flow, just log the error
+            }
+          },
+        ),
+        BlocListener<JobReceiptCubit, JobReceiptState>(
+          listener: (context, state) {
+            if (state is JobReceiptLoaded) {
+              debugPrint('✅ [SelectPrinter] Job receipt loaded');
+              debugPrint('📄 [SelectPrinter] Salutation length: ${state.receipt.salutation.length}');
+              debugPrint('📄 [SelectPrinter] Terms length: ${state.receipt.termsAndConditions.length}');
+            } else if (state is JobReceiptError) {
+              debugPrint('❌ [SelectPrinter] Failed to load job receipt: ${state.message}');
+              // Don't block the flow, just log the error
+            }
+          },
+        ),
         BlocListener<JobCreateCubit, JobCreateState>(
           listener: (context, state) {
             if (state is JobCreateCreated) {

@@ -142,8 +142,15 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
       return;
     }
 
-    // Get the complete job request from JobBookingCubit
+    // Generate draft job status before creating the job
+    final userName = storage.read('fullName') ?? 'User';
+    context.read<JobBookingCubit>().generateJobStatus(userName);
+
+    // Get the complete job request from JobBookingCubit (with draft status)
     final jobRequest = context.read<JobBookingCubit>().getCreateJobRequest();
+
+    debugPrint('📋 [CreateJob] Job status: ${jobRequest.job.status}');
+    debugPrint('📋 [CreateJob] Job status array: ${jobRequest.job.jobStatus.length} items');
 
     // Create the job using JobCreateCubit
     context.read<JobCreateCubit>().createJob(request: jobRequest);
@@ -158,10 +165,12 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
             if (state is JobCreateCreated) {
               debugPrint('✅ Job created successfully with ID: ${state.response.data?.sId}');
 
-              // Store job ID in JobBookingCubit for later use
+              // Store job ID and job data in JobBookingCubit for later use
               final jobId = state.response.data?.sId;
-              if (jobId != null) {
+              if (jobId != null && state.response.data != null) {
                 context.read<JobBookingCubit>().setJobId(jobId);
+                // Update job with response data (includes jobNo and other server-generated fields)
+                context.read<JobBookingCubit>().updateJobFromResponse(state.response.data!);
                 debugPrint('📤 Navigating to file upload screen with jobId: $jobId');
 
                 // Use post frame callback to ensure navigation happens after build completes
