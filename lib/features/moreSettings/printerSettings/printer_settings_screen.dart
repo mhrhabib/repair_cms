@@ -21,7 +21,6 @@ class PrinterSettingsScreen extends StatelessWidget {
           style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
-        leading: Container(), // Empty container to hide back button
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),

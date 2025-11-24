@@ -34,6 +34,8 @@ import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
+import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
+import 'package:repair_cms/features/notifications/repository/notification_repo.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
@@ -77,6 +79,9 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => JobTypeCubit(jobTypeRepository: SetUpDI.getIt<JobTypeRepository>())),
         BlocProvider(create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>())),
         BlocProvider(create: (context) => JobReceiptCubit(jobReceiptRepository: SetUpDI.getIt<JobReceiptRepository>())),
+        BlocProvider(
+          create: (context) => NotificationCubit(notificationRepository: SetUpDI.getIt<NotificationRepository>()),
+        ),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),

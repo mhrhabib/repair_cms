@@ -127,11 +127,15 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
   }
 
   void _createJobAndUploadFiles() {
+    debugPrint('🚀 [AddItems] Create job button pressed');
     debugPrint('🚀 Creating job and preparing to upload files...');
 
     // Check if we have at least basic job information
     final jobBookingState = context.read<JobBookingCubit>().state;
+    debugPrint('📋 [AddItems] Current JobBooking state: ${jobBookingState.runtimeType}');
+
     if (jobBookingState is! JobBookingData) {
+      debugPrint('❌ [AddItems] State is not JobBookingData, aborting');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please complete the job information first'),
@@ -142,18 +146,36 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
       return;
     }
 
+    debugPrint('✅ [AddItems] JobBookingData found, proceeding with job creation');
+
     // Generate draft job status before creating the job
     final userName = storage.read('fullName') ?? 'User';
+    debugPrint('👤 [AddItems] User name from storage: $userName');
     context.read<JobBookingCubit>().generateJobStatus(userName);
 
     // Get the complete job request from JobBookingCubit (with draft status)
-    final jobRequest = context.read<JobBookingCubit>().getCreateJobRequest();
+    try {
+      final jobRequest = context.read<JobBookingCubit>().getCreateJobRequest();
+      debugPrint('📋 [CreateJob] Job request created successfully');
+      debugPrint('📋 [CreateJob] Job status: ${jobRequest.job.status}');
+      debugPrint('📋 [CreateJob] Job status array: ${jobRequest.job.jobStatus.length} items');
+      debugPrint('📋 [CreateJob] Assigned items: ${jobRequest.job.assignedItemsIds.length} items');
+      debugPrint('📋 [CreateJob] Services: ${jobRequest.job.servicesIds.length} services');
 
-    debugPrint('📋 [CreateJob] Job status: ${jobRequest.job.status}');
-    debugPrint('📋 [CreateJob] Job status array: ${jobRequest.job.jobStatus.length} items');
-
-    // Create the job using JobCreateCubit
-    context.read<JobCreateCubit>().createJob(request: jobRequest);
+      // Create the job using JobCreateCubit
+      debugPrint('🚀 [AddItems] Calling JobCreateCubit.createJob()');
+      context.read<JobCreateCubit>().createJob(request: jobRequest);
+    } catch (e, stackTrace) {
+      debugPrint('💥 [AddItems] Error creating job request: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error preparing job: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   @override

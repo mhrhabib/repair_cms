@@ -32,6 +32,8 @@ import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
+import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
+import 'package:repair_cms/features/notifications/repository/notification_repo.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 
@@ -115,6 +117,12 @@ class SetUpDI {
     _getIt.registerLazySingleton<JobReceiptRepository>(() => JobReceiptRepositoryImpl());
     _getIt.registerFactory<JobReceiptCubit>(
       () => JobReceiptCubit(jobReceiptRepository: _getIt<JobReceiptRepository>()),
+    );
+
+    // notification repository and cubit
+    _getIt.registerLazySingleton<NotificationRepository>(() => NotificationRepositoryImpl());
+    _getIt.registerFactory<NotificationCubit>(
+      () => NotificationCubit(notificationRepository: _getIt<NotificationRepository>()),
     );
   }
 }

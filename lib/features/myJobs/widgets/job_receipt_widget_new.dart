@@ -8,10 +8,11 @@ import 'package:flutter_html/flutter_html.dart';
 /// Professional Job Receipt Widget matching the React PDF design
 class JobReceiptWidgetNew extends StatelessWidget {
   final SingleJobModel jobData;
+  final bool isPreview; // when true, render full-size (no internal scrolling) for print preview
   static const String baseUrl = 'https://staging-api.repaircms.com';
   static const String trackingDomain = 'https://tracking.repaircms.com';
 
-  const JobReceiptWidgetNew({super.key, required this.jobData});
+  const JobReceiptWidgetNew({super.key, required this.jobData, this.isPreview = false});
 
   @override
   Widget build(BuildContext context) {
@@ -23,77 +24,99 @@ class JobReceiptWidgetNew extends StatelessWidget {
     final receiptFooter = data?.receiptFooter;
     final assignedItems = data?.assignedItems ?? [];
 
-    return SingleChildScrollView(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 365),
-        padding: const EdgeInsets.all(20.0), // 2cm padding like PDF
-        color: Colors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty)
-              Align(
-                alignment: Alignment.centerRight,
-                child: Image.network(
-                  receiptFooter.companyLogoURL!,
-                  // width: 100,//
-                  height: 60,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => _buildPlaceholderLogo(),
-                ),
-              )
-            else
-              Align(alignment: Alignment.centerRight, child: _buildPlaceholderLogo()),
-            SizedBox(height: 8.h),
+    final content = Container(
+      // For print preview render full A4 width; otherwise constrain for small previews
+      constraints: isPreview ? null : const BoxConstraints(maxWidth: 365),
+      width: isPreview ? 595.0 : null,
+      height: isPreview ? 650.0 : null,
+      padding: const EdgeInsets.all(20.0), // 2cm padding like PDF
+      color: Colors.white,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        alignment: Alignment.topCenter,
+        child: SizedBox(
+          width: 595.0,
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Image.network(
+                        receiptFooter.companyLogoURL!,
+                        // width: 100,//
+                        height: 60,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => _buildPlaceholderLogo(),
+                      ),
+                    )
+                  else
+                    Align(alignment: Alignment.centerRight, child: _buildPlaceholderLogo()),
+                  SizedBox(height: 8.h),
 
-            // Header Section
-            Align(alignment: Alignment.centerLeft, child: _buildHeader(receiptFooter, customer)),
-            SizedBox(height: 16.h),
+                  // Header Section
+                  Align(alignment: Alignment.centerLeft, child: _buildHeader(receiptFooter, customer)),
+                  SizedBox(height: 16.h),
 
-            // Job Info and Barcode Section
-            _buildJobInfoSection(),
-            SizedBox(height: 8.h),
+                  // Job Info and Barcode Section
+                  _buildJobInfoSection(),
+                  SizedBox(height: 8.h),
 
-            // Barcode
-            _buildBarcode(),
-            SizedBox(height: 16.h),
+                  // Barcode
+                  _buildBarcode(),
+                  SizedBox(height: 4.h),
 
-            // Job Receipt Title
-            const Text('Job Receipt', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            SizedBox(height: 2.h),
+                  // Job Receipt Title
+                  const Text('Job Receipt', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 2.h),
 
-            // Salutation HTML
-            if (data?.salutationHTMLmarkup != null && data!.salutationHTMLmarkup!.isNotEmpty)
-              _buildHtmlContent(data.salutationHTMLmarkup!)
-            else
-              _buildDefaultSalutation(),
-            SizedBox(height: 10.h),
+                  // Salutation HTML
+                  if (data?.salutationHTMLmarkup != null && data!.salutationHTMLmarkup!.isNotEmpty)
+                    _buildHtmlContent(data.salutationHTMLmarkup!)
+                  else
+                    _buildDefaultSalutation(),
+                  SizedBox(height: 6.h),
 
-            // Device Details Section
-            _buildDeviceDetails(deviceData, device, defect),
-            SizedBox(height: 10.h),
+                  // Device Details Section
+                  _buildDeviceDetails(deviceData, device, defect),
+                  SizedBox(height: 6.h),
+                  // Items/Services Section
+                  if (assignedItems.isNotEmpty) _buildItemsSection(assignedItems),
+                  SizedBox(height: 10.h),
 
-            // Items/Services Section
-            if (assignedItems.isNotEmpty) _buildItemsSection(assignedItems),
-            SizedBox(height: 10.h),
+                  // Terms and Conditions HTML
+                  if (data?.termsAndConditionsHTMLmarkup != null && data!.termsAndConditionsHTMLmarkup!.isNotEmpty)
+                    _buildHtmlContent(data.termsAndConditionsHTMLmarkup!)
+                  else
+                    _buildDefaultTerms(),
+                  SizedBox(height: 24.h),
 
-            // Terms and Conditions HTML
-            if (data?.termsAndConditionsHTMLmarkup != null && data!.termsAndConditionsHTMLmarkup!.isNotEmpty)
-              _buildHtmlContent(data.termsAndConditionsHTMLmarkup!)
-            else
-              _buildDefaultTerms(),
-            SizedBox(height: 24.h),
+                  // QR Code and Signature Section
+                  _buildQRAndSignature(),
+                  const SizedBox(height: 40),
 
-            // QR Code and Signature Section
-            _buildQRAndSignature(),
-            const SizedBox(height: 40),
-
-            // Footer Section
-            _buildFooter(receiptFooter),
-          ],
+                  // Footer Section
+                  _buildFooter(receiptFooter),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
+
+    if (isPreview) {
+      // Return the content as-is (no scrolling) so it can be scaled by the preview container
+      return content;
+    }
+
+    // Default in-app rendering: allow scrolling for long receipts
+    return SingleChildScrollView(child: content);
   }
 
   /// Header with company info and logo
@@ -110,11 +133,8 @@ class JobReceiptWidgetNew extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Company info line (small gray text)
-            SizedBox(
-              width: 120.w,
-              child: Text(companyInfo, style: const TextStyle(fontSize: 8, color: Color(0xFF444444))),
-            ),
-            SizedBox(height: 10.h),
+            Text(companyInfo, style: const TextStyle(fontSize: 8, color: Color(0xFF444444))),
+            SizedBox(height: 6.h),
             // Customer organization or name
             if (customer?.organization != null && customer!.organization!.isNotEmpty)
               Text(customer.organization!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400))
@@ -185,7 +205,7 @@ class JobReceiptWidgetNew extends StatelessWidget {
                 const Text('Agent:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
             ],
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 8.w),
           // Values
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -452,29 +472,30 @@ class JobReceiptWidgetNew extends StatelessWidget {
     final trackingUrl =
         '$trackingDomain/${data?.jobTrackingNumber ?? ''}/order-tracking/${data?.sId ?? ''}?email=${data?.customerDetails?.email ?? ''}';
 
-    return FittedBox(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          // QR Code
-          if (data?.jobTrackingNumber != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Repair Tracking', style: TextStyle(fontSize: 9, color: Color(0xFF2589F6))),
-                const SizedBox(height: 4),
-                QrImageView(data: trackingUrl, version: QrVersions.auto, size: 70),
-                const SizedBox(height: 2),
-                Text(data!.jobTrackingNumber!, style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w500)),
-              ],
-            )
-          else
-            const SizedBox.shrink(),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // QR Code
+        if (data?.jobTrackingNumber != null)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Repair Tracking', style: TextStyle(fontSize: 9, color: Color(0xFF2589F6))),
+              const SizedBox(height: 4),
+              QrImageView(data: trackingUrl, version: QrVersions.auto, size: 70),
+              const SizedBox(height: 2),
+              Text(data!.jobTrackingNumber!, style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w500)),
+            ],
+          )
+        else
+          const SizedBox.shrink(),
 
-          // Signature
-          if (data?.signatureFilePath != null)
-            Column(
+        // Signature
+        if (data?.signatureFilePath != null)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Row(
@@ -500,11 +521,11 @@ class JobReceiptWidgetNew extends StatelessWidget {
                   child: const Text('Date, Signature Client', style: TextStyle(fontSize: 10)),
                 ),
               ],
-            )
-          else
-            const SizedBox.shrink(),
-        ],
-      ),
+            ),
+          )
+        else
+          const SizedBox.shrink(),
+      ],
     );
   }
 
@@ -563,8 +584,14 @@ class JobReceiptWidgetNew extends StatelessWidget {
 
   /// HTML content renderer
   Widget _buildHtmlContent(String htmlContent) {
+    // Remove placeholder variables like {salutation}, {contact_firstname}, {companyname}
+    String cleanedContent = htmlContent
+        .replaceAll(RegExp(r'\{salutation\},?\s*'), '')
+        .replaceAll(RegExp(r'\{contact_firstname\}\s*'), '')
+        .replaceAll(RegExp(r'\{companyname\}\s*'), '');
+
     return Html(
-      data: htmlContent,
+      data: cleanedContent,
       style: {
         "body": Style(fontSize: FontSize(8), margin: Margins.zero, padding: HtmlPaddings.zero),
         "p": Style(fontSize: FontSize(8), margin: Margins.zero),

@@ -52,4 +52,7 @@ class ApiEndpoints {
   static const String itemsListUrl = '$baseUrl/auth/item/user/<id>';
 
   static const String fileUplaodUrl = '$baseUrl/file-upload/';
+
+  //notifications
+  static const String getAllNotifications = '$baseUrl/notification/user/<id>';
 }

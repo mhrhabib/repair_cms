@@ -1,7 +1,10 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
+import 'package:repair_cms/features/company/cubits/company_cubit.dart';
+import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/model/models_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/models_model.dart';
@@ -32,7 +35,28 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ModelsCubit>().getModels(brandId: widget.brandId);
+      _fetchCompanyInfoAndReceipt();
     });
+  }
+
+  void _fetchCompanyInfoAndReceipt() {
+    final storage = GetStorage();
+    final companyId = storage.read('companyId');
+    final userId = storage.read('userId');
+
+    if (companyId != null && companyId.isNotEmpty) {
+      debugPrint('🏢 [DeviceModel] Fetching company info for ID: $companyId');
+      context.read<CompanyCubit>().getCompanyInfo(companyId: companyId);
+    } else {
+      debugPrint('⚠️ [DeviceModel] No company ID found in storage');
+    }
+
+    if (userId != null && userId.isNotEmpty) {
+      debugPrint('📄 [DeviceModel] Fetching job receipt for user ID: $userId');
+      context.read<JobReceiptCubit>().getJobReceipt(userId: userId);
+    } else {
+      debugPrint('⚠️ [DeviceModel] No user ID found in storage');
+    }
   }
 
   String _getUserId() {
@@ -48,6 +72,25 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
       _searchController.text = modelName;
     });
     context.read<JobBookingCubit>().updateDeviceInfo(model: modelName);
+
+    // Update receipt footer with company info when model is selected
+    final companyState = context.read<CompanyCubit>().state;
+    if (companyState is CompanyLoaded) {
+      debugPrint('🏢 [DeviceModel] Company loaded, updating receipt footer');
+      context.read<JobBookingCubit>().updateReceiptFooterFromCompany(companyState.company);
+    }
+
+    // Update receipt data (salutation and terms)
+    final jobReceiptState = context.read<JobReceiptCubit>().state;
+    if (jobReceiptState is JobReceiptLoaded) {
+      debugPrint('📄 [DeviceModel] Job receipt loaded, updating receipt data');
+      final storage = GetStorage();
+      storage.write('jobReceiptData', {
+        'salutation': jobReceiptState.receipt.salutation,
+        'termsAndConditions': jobReceiptState.receipt.termsAndConditions,
+      });
+      context.read<JobBookingCubit>().updateReceiptData();
+    }
   }
 
   Future<void> _addNewModel(String modelName) async {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/models/business_model.dart';
@@ -108,6 +109,7 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
         "position": position ?? "Customer",
         "userId": userId,
         "location": location,
+        "customerNumber": Random().nextInt(9000000).toString().padLeft(7, '0'), // Random 7-digit number,
       },
       "customerContactDetail": {},
       "customerBillingAddress": billingAddresses ?? [],

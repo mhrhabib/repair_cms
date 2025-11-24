@@ -314,6 +314,31 @@ class CustomerDetails {
     required this.reverseCharge,
   });
 
+  factory CustomerDetails.fromJson(Map<String, dynamic> json) {
+    return CustomerDetails(
+      customerId: json['customerId'] ?? '',
+      type: json['type'] ?? 'Personal',
+      type2: json['type2'] ?? 'personal',
+      organization: json['organization'] ?? '',
+      customerNo: json['customerNo'] ?? '',
+      email: json['email'] ?? '',
+      telephone: json['telephone'] ?? '',
+      telephonePrefix: json['telephone_prefix'] ?? '+1',
+      shippingAddress: json['shipping_address'] != null
+          ? CustomerAddress.fromJson(json['shipping_address'])
+          : CustomerAddress(street: '', no: '', zip: '', city: '', state: '', country: ''),
+      billingAddress: json['billing_address'] != null
+          ? CustomerAddress.fromJson(json['billing_address'])
+          : CustomerAddress(street: '', no: '', zip: '', city: '', state: '', country: ''),
+      salutation: json['salutation'] ?? '',
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      position: json['position'] ?? '',
+      vatNo: json['vatNo'] ?? '',
+      reverseCharge: json['reverseCharge'] ?? false,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'customerId': customerId,
@@ -385,6 +410,18 @@ class CustomerAddress {
 
   CustomerAddress({this.id, this.street, this.no, this.zip, this.city, this.state, this.country});
 
+  factory CustomerAddress.fromJson(Map<String, dynamic> json) {
+    return CustomerAddress(
+      id: json['_id'],
+      street: json['street'] ?? '',
+      no: json['no'] ?? '',
+      zip: json['zip'] ?? '',
+      city: json['city'] ?? '',
+      state: json['state'] ?? '',
+      country: json['country'] ?? '',
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       if (id != null) '_id': id,
@@ -433,6 +470,20 @@ class ReceiptFooter {
     required this.bank,
   });
 
+  factory ReceiptFooter.fromJson(Map<String, dynamic> json) {
+    return ReceiptFooter(
+      companyLogo: json['companyLogo'] ?? '',
+      companyLogoURL: json['companyLogoURL'] ?? '',
+      address: json['address'] != null
+          ? CompanyAddress.fromJson(json['address'])
+          : CompanyAddress(companyName: '', street: '', num: '', zip: '', city: '', country: ''),
+      contact: json['contact'] != null
+          ? CompanyContact.fromJson(json['contact'])
+          : CompanyContact(ceo: '', telephone: '', email: '', website: ''),
+      bank: json['bank'] != null ? BankDetails.fromJson(json['bank']) : BankDetails(bankName: '', iban: '', bic: ''),
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'companyLogo': companyLogo,
@@ -477,6 +528,17 @@ class CompanyAddress {
     required this.country,
   });
 
+  factory CompanyAddress.fromJson(Map<String, dynamic> json) {
+    return CompanyAddress(
+      companyName: json['companyName'] ?? '',
+      street: json['street'] ?? '',
+      num: json['num'] ?? '',
+      zip: json['zip'] ?? '',
+      city: json['city'] ?? '',
+      country: json['country'] ?? '',
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {'companyName': companyName, 'street': street, 'num': num, 'zip': zip, 'city': city, 'country': country};
   }
@@ -508,6 +570,15 @@ class CompanyContact {
 
   CompanyContact({required this.ceo, required this.telephone, required this.email, required this.website});
 
+  factory CompanyContact.fromJson(Map<String, dynamic> json) {
+    return CompanyContact(
+      ceo: json['ceo'] ?? '',
+      telephone: json['telephone'] ?? '',
+      email: json['email'] ?? '',
+      website: json['website'] ?? '',
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {'ceo': ceo, 'telephone': telephone, 'email': email, 'website': website};
   }
@@ -528,6 +599,10 @@ class BankDetails {
   final String bic;
 
   BankDetails({required this.bankName, required this.iban, required this.bic});
+
+  factory BankDetails.fromJson(Map<String, dynamic> json) {
+    return BankDetails(bankName: json['bankName'] ?? '', iban: json['iban'] ?? '', bic: json['bic'] ?? '');
+  }
 
   Map<String, dynamic> toJson() {
     return {'bankName': bankName, 'iban': iban, 'bic': bic};
@@ -781,6 +856,11 @@ class JobData {
   final List<DeviceData>? device;
   final List<ContactData>? contact;
   final List<DefectData>? defect;
+  final ReceiptFooter? receiptFooter;
+  final CustomerDetails? customerDetails;
+  final String? jobTrackingNumber;
+  final String? salutationHTMLmarkup;
+  final String? termsAndConditionsHTMLmarkup;
 
   JobData({
     this.sId,
@@ -809,6 +889,11 @@ class JobData {
     this.device,
     this.contact,
     this.defect,
+    this.receiptFooter,
+    this.customerDetails,
+    this.jobTrackingNumber,
+    this.salutationHTMLmarkup,
+    this.termsAndConditionsHTMLmarkup,
   });
 
   factory JobData.fromJson(Map<String, dynamic> json) {
@@ -851,6 +936,13 @@ class JobData {
       defect: json['defect'] != null
           ? (json['defect'] as List).map((defect) => DefectData.fromJson(defect)).toList()
           : null,
+      receiptFooter: json['receiptFooter'] != null || json['receipt_footer'] != null
+          ? ReceiptFooter.fromJson(json['receiptFooter'] ?? json['receipt_footer'])
+          : null,
+      customerDetails: json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null,
+      jobTrackingNumber: json['jobTrackingNumber'],
+      salutationHTMLmarkup: json['salutationHTMLmarkup'],
+      termsAndConditionsHTMLmarkup: json['termsAndConditionsHTMLmarkup'],
     );
   }
 }
