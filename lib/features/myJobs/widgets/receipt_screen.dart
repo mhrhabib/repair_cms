@@ -135,8 +135,6 @@ class ReceiptScreen extends StatelessWidget {
   }
 
   /// Print to A4 printer using system print dialog
-  /// Print to A4 printer using system print dialog
-  /// Print to A4 printer using system print dialog
   Future<bool> _printA4Receipt(BuildContext context) async {
     try {
       debugPrint('📄 Generating PDF for A4 receipt');
@@ -555,11 +553,21 @@ class ReceiptScreen extends StatelessWidget {
 
       debugPrint('✅ PDF generated, opening system print dialog');
 
-      // Show system print dialog
-      await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+      // Show system print dialog and wait for result
+      final printResult = await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: 'Job_Receipt_${job.data?.jobNo ?? "unknown"}.pdf',
+        format: PdfPageFormat.a4,
+      );
 
-      debugPrint('✅ System print dialog shown');
-      return true;
+      // layoutPdf returns true if user printed, false if cancelled
+      if (printResult) {
+        debugPrint('✅ User completed printing from system dialog');
+      } else {
+        debugPrint('⚠️ User cancelled print dialog');
+      }
+
+      return printResult;
     } catch (e) {
       debugPrint('❌ A4 print error: $e');
       return false;

@@ -99,13 +99,13 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
     if (jobCreateState is JobCreateCreated && jobCreateState.response.data != null) {
       if (_selectedPrinterType == 'Device Label') {
         // Navigate to device label screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                JobDeviceLabelScreen(jobResponse: jobCreateState.response, printOption: _selectedPrinterType),
-          ),
-        );
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) =>
+        //         JobDeviceLabelScreen(jobResponse: jobCreateState.response, printOption: _selectedPrinterType),
+        //   ),
+        // );
       } else {
         // Navigate to receipt preview screen for A4 and Thermal receipts
         debugPrint('📄 [SelectPrinter] Navigating to receipt preview with complete job data');

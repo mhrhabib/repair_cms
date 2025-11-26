@@ -814,13 +814,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       ),
     );
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            JobDeviceLabelScreen(jobResponse: jobResponse, printOption: 'Device Label', jobNo: job.data?.jobNo),
-      ),
-    );
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) =>
+    //         JobDeviceLabelScreen(jobResponse: jobResponse, printOption: 'Device Label', jobNo: job.data?.jobNo),
+    //   ),
+    // );
   }
 
   void _showCompleteConfirmationBottomSheet() {

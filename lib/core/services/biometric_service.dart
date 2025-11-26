@@ -57,7 +57,7 @@ class BiometricService {
       // This should show the system biometric prompt
       final bool didAuthenticate = await _localAuth.authenticate(
         localizedReason: reason ?? 'Scan your fingerprint or face to continue',
-        options: const AuthenticationOptions(stickyAuth: true, biometricOnly: true),
+        // options: const AuthenticationOptions(stickyAuth: true, biometricOnly: true),
       );
 
       debugPrint('✅ Authentication result: $didAuthenticate');

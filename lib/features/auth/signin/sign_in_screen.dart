@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/services/biometric_storage_service.dart';
 import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
@@ -285,7 +286,7 @@ class _SignInScreenState extends State<SignInScreen> {
       // Call authenticate - THIS should show the system bottom sheet
       final bool didAuthenticate = await auth.authenticate(
         localizedReason: 'Scan your fingerprint or face to continue',
-        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
+        // options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
       );
 
       debugPrint('✅ Authentication completed: $didAuthenticate');
