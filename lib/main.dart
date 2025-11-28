@@ -36,6 +36,8 @@ import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
 import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
 import 'package:repair_cms/features/notifications/repository/notification_repo.dart';
+import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
+import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
@@ -82,6 +84,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => NotificationCubit(notificationRepository: SetUpDI.getIt<NotificationRepository>()),
         ),
+        BlocProvider(create: (context) => MessageCubit(socketService: SetUpDI.getIt<SocketService>())),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),

@@ -5,8 +5,10 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
 import 'package:repair_cms/features/messeges/messges_screen.dart';
+import 'package:repair_cms/features/messeges/screens/socket_test_screen.dart';
 import 'package:repair_cms/features/moreSettings/more_settings_screen.dart';
 import 'package:repair_cms/features/myJobs/my_jobs_screen.dart';
+import 'package:repair_cms/features/scanner/job_scanner_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     const DashboardScreen(),
     const MyJobsScreen(),
     const MessagesScreen(),
-    const MoreSettingsScreen(),
+    const SocketTestScreen(),
   ];
 
   bool _isExpanded = false;
@@ -231,22 +233,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         label: 'Barcode Scanner',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
-                          // Handle Barcode Scanner action
-                          debugPrint('Barcode Scanner tapped');
                           _toggleExpansion();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const JobScannerScreen(isBarcodeMode: true)),
+                          );
                         },
                       ),
                       SizedBox(height: 16.h),
 
-                      // New Job Button
+                      // QR Scanner Button
                       _buildExpandableButton(
                         icon: SolarIconsBold.qrCode,
                         label: 'QR Scanner',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
-                          // Handle QR Scanner action
-                          debugPrint('QR Scanner tapped');
                           _toggleExpansion();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const JobScannerScreen(isBarcodeMode: false)),
+                          );
                         },
                       ),
                       SizedBox(height: 20.h),

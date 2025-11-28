@@ -1,6 +1,7 @@
 // repositories/signin_repository.dart
 import 'dart:async';
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter/material.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 
@@ -16,6 +17,7 @@ class SignInRepository {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        debugPrint('✅ [SignInRepository] User found for email: ${response.data}');
         return FindUserResponseModel.fromJson(response.data);
       } else {
         throw Exception('Failed to find user: ${response.statusCode}');

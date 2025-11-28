@@ -34,6 +34,8 @@ import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
 import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
 import 'package:repair_cms/features/notifications/repository/notification_repo.dart';
+import 'package:repair_cms/core/services/socket_service.dart';
+import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 
@@ -124,5 +126,11 @@ class SetUpDI {
     _getIt.registerFactory<NotificationCubit>(
       () => NotificationCubit(notificationRepository: _getIt<NotificationRepository>()),
     );
+
+    // Socket service (singleton)
+    _getIt.registerLazySingleton<SocketService>(() => socketService);
+
+    // Message cubit (factory - new instance for each use)
+    _getIt.registerFactory<MessageCubit>(() => MessageCubit(socketService: _getIt<SocketService>()));
   }
 }

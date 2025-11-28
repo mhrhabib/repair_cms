@@ -7,6 +7,7 @@ import 'package:repair_cms/features/notifications/models/notificaiton_model.dart
 
 abstract class NotificationRepository {
   Future<List<Notifications>> getNotifications({required String userId});
+  Future<void> deleteNotification({required String notificationId});
 }
 
 class NotificationRepositoryImpl implements NotificationRepository {
@@ -57,6 +58,43 @@ class NotificationRepositoryImpl implements NotificationRepository {
       throw NotificationException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
     } catch (e, stackTrace) {
       debugPrint('💥 [NotificationRepository] Unexpected error:');
+      debugPrint('   💥 Error: $e');
+      debugPrint('   📋 Stack: $stackTrace');
+      throw NotificationException(message: 'Unexpected error: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteNotification({required String notificationId}) async {
+    try {
+      debugPrint('🚀 [NotificationRepository] Deleting notification');
+      debugPrint('   📍 URL: ${ApiEndpoints.deleteNotification.replaceAll('<id>', notificationId)}');
+      debugPrint('   🗑️ Notification ID: $notificationId');
+
+      dio.Response response = await BaseClient.delete(
+        url: ApiEndpoints.deleteNotification.replaceAll('<id>', notificationId),
+      );
+
+      debugPrint('✅ [NotificationRepository] Delete notification response received:');
+      debugPrint('   📊 Status Code: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint('   ✅ Notification deleted successfully');
+        return;
+      } else {
+        throw NotificationException(
+          message: 'Failed to delete notification: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('🌐 [NotificationRepository] DioException during delete:');
+      debugPrint('   💥 Error: ${e.message}');
+      debugPrint('   📍 Type: ${e.type}');
+      debugPrint('   🔧 Response: ${e.response?.data}');
+      throw NotificationException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+    } catch (e, stackTrace) {
+      debugPrint('💥 [NotificationRepository] Unexpected error during delete:');
       debugPrint('   💥 Error: $e');
       debugPrint('   📋 Stack: $stackTrace');
       throw NotificationException(message: 'Unexpected error: $e');

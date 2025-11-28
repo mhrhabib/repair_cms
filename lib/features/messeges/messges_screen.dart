@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
+import 'package:repair_cms/features/messeges/models/message_model.dart';
+import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -9,25 +14,17 @@ class MessagesScreen extends StatefulWidget {
 
 class _MessagesScreenState extends State<MessagesScreen> {
   bool isSelectionMode = false;
-  Set<String> selectedMessages = {};
+  Set<String> selectedConversations = {};
+  List<ConversationModel> _conversations = [];
 
-  // Sample messages data - set to empty list to show empty state
-  List<MessageItem> messages = [
-    MessageItem(
-      id: '1',
-      senderName: 'Joe Doe',
-      message: 'Hi Tom, What is about my device?',
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      avatar: 'JD',
-    ),
-    MessageItem(
-      id: '2',
-      senderName: 'Mark Wilson',
-      message: 'Hello Tom, How are you?',
-      timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-      avatar: 'MW',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Load conversations when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MessageCubit>().loadConversations();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +43,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (!isSelectionMode && messages.isNotEmpty)
+          if (!isSelectionMode && _conversations.isNotEmpty)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.black),
               onSelected: (value) {
@@ -60,11 +57,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
             ),
           if (isSelectionMode) ...[
             TextButton(
-              onPressed: selectedMessages.isEmpty ? null : _removeSelectedMessages,
+              onPressed: selectedConversations.isEmpty ? null : _removeSelectedMessages,
               child: Text(
                 'Remove',
                 style: TextStyle(
-                  color: selectedMessages.isEmpty ? Colors.grey : const Color(0xFF4A90E2),
+                  color: selectedConversations.isEmpty ? Colors.grey : const Color(0xFF4A90E2),
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -73,7 +70,27 @@ class _MessagesScreenState extends State<MessagesScreen> {
           ],
         ],
       ),
-      body: messages.isEmpty ? _buildEmptyState() : _buildMessagesList(),
+      body: BlocConsumer<MessageCubit, MessageState>(
+        listener: (context, state) {
+          if (state is ConversationsLoaded) {
+            setState(() {
+              _conversations = state.conversations;
+            });
+          }
+          if (state is MessageError) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: Colors.red));
+          }
+        },
+        builder: (context, state) {
+          if (state is MessageLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return _conversations.isEmpty ? _buildEmptyState() : _buildMessagesList();
+        },
+      ),
     );
   }
 
@@ -131,7 +148,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   onPressed: () {
                     setState(() {
                       isSelectionMode = false;
-                      selectedMessages.clear();
+                      selectedConversations.clear();
                     });
                   },
                   child: const Text('Cancel', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
@@ -142,9 +159,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: messages.length,
+            itemCount: _conversations.length,
             itemBuilder: (context, index) {
-              return _buildMessageItem(messages[index]);
+              return _buildMessageItem(_conversations[index]);
             },
           ),
         ),
@@ -152,21 +169,22 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  Widget _buildMessageItem(MessageItem message) {
-    final isSelected = selectedMessages.contains(message.id);
+  Widget _buildMessageItem(ConversationModel conversation) {
+    final isSelected = selectedConversations.contains(conversation.conversationId);
 
     return GestureDetector(
       onTap: () {
         if (isSelectionMode) {
           setState(() {
+            final convId = conversation.conversationId ?? '';
             if (isSelected) {
-              selectedMessages.remove(message.id);
+              selectedConversations.remove(convId);
             } else {
-              selectedMessages.add(message.id);
+              selectedConversations.add(convId);
             }
           });
         } else {
-          _openChatDetail(message);
+          _openChatDetail(conversation);
         }
       },
       child: Container(
@@ -189,13 +207,30 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   size: 24,
                 ),
               ),
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: const Color(0xFF4A90E2),
-              child: Text(
-                message.avatar,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
-              ),
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: const Color(0xFF4A90E2),
+                  child: Text(
+                    conversation.otherParticipant?.name?.substring(0, 2).toUpperCase() ?? '??',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                ),
+                if (conversation.unreadCount > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      child: Text(
+                        conversation.unreadCount > 9 ? '9+' : '${conversation.unreadCount}',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -206,15 +241,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        message.senderName,
+                        conversation.otherParticipant?.name ?? 'Unknown User',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
                       ),
-                      Text(_formatTime(message.timestamp), style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                      Text(
+                        _formatTime(conversation.lastMessageTime),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    message.message,
+                    conversation.lastMessage?.message?.message ?? '',
                     style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.3),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -228,14 +266,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  void _openChatDetail(MessageItem message) {
-    // Navigate to chat detail screen
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Chat with ${message.senderName}'),
-        content: Text('Opening chat detail for: ${message.message}'),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+  void _openChatDetail(ConversationModel conversation) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: SetUpDI.getIt<MessageCubit>(),
+          child: ChatConversationScreen(conversation: conversation),
+        ),
       ),
     );
   }
@@ -247,7 +285,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Text('Remove Messages', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         content: Text(
-          'Are you sure you want to remove ${selectedMessages.length} selected message${selectedMessages.length > 1 ? 's' : ''}?',
+          'Are you sure you want to remove ${selectedConversations.length} selected message${selectedConversations.length > 1 ? 's' : ''}?',
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
@@ -259,8 +297,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                messages.removeWhere((message) => selectedMessages.contains(message.id));
-                selectedMessages.clear();
+                _conversations.removeWhere((conv) => selectedConversations.contains(conv.conversationId));
+                selectedConversations.clear();
                 isSelectionMode = false;
               });
               ScaffoldMessenger.of(
@@ -279,7 +317,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  String _formatTime(DateTime timestamp) {
+  String _formatTime(DateTime? timestamp) {
+    if (timestamp == null) return '';
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
@@ -293,20 +332,4 @@ class _MessagesScreenState extends State<MessagesScreen> {
       return 'Just now';
     }
   }
-}
-
-class MessageItem {
-  final String id;
-  final String senderName;
-  final String message;
-  final DateTime timestamp;
-  final String avatar;
-
-  MessageItem({
-    required this.id,
-    required this.senderName,
-    required this.message,
-    required this.timestamp,
-    required this.avatar,
-  });
 }

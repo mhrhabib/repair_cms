@@ -213,9 +213,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             icon: Icon(Icons.more_horiz, color: Colors.grey[400], size: 20),
             onSelected: (value) {
               if (value == 'delete') {
-                setState(() {
-                  _notifications.remove(notification);
-                });
+                _deleteNotification(notification);
               } else if (value == 'mark_read') {
                 setState(() {
                   notification.isRead = true;
@@ -256,6 +254,50 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     } catch (e) {
       return dateString;
     }
+  }
+
+  void _deleteNotification(Notifications notification) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Delete Notification', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: const Text('Are you sure you want to delete this notification?', style: TextStyle(fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              final userId = storage.read('userId') ?? '';
+              final notificationId = notification.sId ?? '';
+
+              if (notificationId.isNotEmpty && userId.toString().isNotEmpty) {
+                context.read<NotificationCubit>().deleteNotification(
+                  notificationId: notificationId,
+                  userId: userId.toString(),
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Notification deleted'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Delete', style: TextStyle(fontSize: 16)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showNotificationSettings() {
