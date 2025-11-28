@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:another_brother/printer_info.dart' hide Align;
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/brother_printer_service.dart';
@@ -94,7 +93,6 @@ class ReceiptScreen extends StatelessWidget {
         final result = await _brotherPrinterService.printThermalReceipt(
           ipAddress: printer.ipAddress,
           text: receiptText,
-          printerModel: Model.QL_820NWB,
         );
         success = result.success;
         errorMessage = result.message;

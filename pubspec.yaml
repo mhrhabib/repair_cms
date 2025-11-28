@@ -63,8 +63,7 @@ dependencies:
   flutter_html: ^3.0.0-beta.2
   # For Dymo printers
   escp_printer: ^1.0.2
-  another_brother: ^2.2.4
-  # For Brother printers
+  # Network ESC/POS printing packages were removed; using raw TCP printing instead
 
 
 dev_dependencies:
