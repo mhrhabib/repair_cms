@@ -61,11 +61,11 @@ class JobReceiptWidgetNew extends StatelessWidget {
 
                   // Header Section
                   Align(alignment: Alignment.centerLeft, child: _buildHeader(receiptFooter, customer)),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 8.h),
 
                   // Job Info and Barcode Section
                   _buildJobInfoSection(),
-                  SizedBox(height: 8.h),
+                  SizedBox(height: 2.h),
 
                   // Barcode
                   _buildBarcode(),
@@ -123,6 +123,8 @@ class JobReceiptWidgetNew extends StatelessWidget {
   Widget _buildHeader(ReceiptFooter? footer, CustomerDetails? customer) {
     final address = footer?.address;
     final companyInfo = _formatCompanyInfo(address);
+    final billing = customer?.billingAddress;
+    final zipCity = billing != null ? '${billing.zip ?? ''} ${billing.city ?? ''}'.trim() : '';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,34 +136,25 @@ class JobReceiptWidgetNew extends StatelessWidget {
           children: [
             // Company info line (small gray text)
             Text(companyInfo, style: const TextStyle(fontSize: 8, color: Color(0xFF444444))),
-            SizedBox(height: 6.h),
+            // SizedBox(height: 6.h),
             // Customer organization or name
             if (customer?.organization != null && customer!.organization!.isNotEmpty)
               Text(customer.organization!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400))
             else if (customer != null)
               Text(_formatCustomerName(customer), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
             // Customer address
-            if (customer?.billingAddress != null) ...[
-              const SizedBox(height: 2),
-              if (customer!.billingAddress!.street != null)
-                Text(
-                  customer.billingAddress!.street!,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
-                ),
-              if (customer.billingAddress!.state != null)
-                Text(customer.billingAddress!.state!, style: const TextStyle(fontSize: 10)),
-              Text(
-                '${customer.billingAddress!.zip ?? ''} ${customer.billingAddress!.city ?? ''}'.trim(),
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
-              ),
-              if (customer.billingAddress!.country != null)
-                Text(customer.billingAddress!.country!, style: const TextStyle(fontSize: 10)),
+            if (billing != null) ...[
+              if (billing.street != null)
+                Text(billing.street!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+              if (billing.state != null) Text(billing.state!, style: const TextStyle(fontSize: 10)),
+              if (zipCity.isNotEmpty) Text(zipCity, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+              if (billing.country != null) Text(billing.country!, style: const TextStyle(fontSize: 10)),
             ],
-            if (customer?.telephone != null)
-              Text(
-                '${customer!.telephonePrefix ?? ''} ${customer.telephone}'.trim(),
-                style: const TextStyle(fontSize: 10),
-              ),
+            // if (customer?.telephone != null)
+            //   Text(
+            //     '${customer!.telephonePrefix ?? ''} ${customer.telephone}'.trim(),
+            //     style: const TextStyle(fontSize: 10),
+            //   ),
           ],
         ),
       ],
@@ -170,8 +163,8 @@ class JobReceiptWidgetNew extends StatelessWidget {
 
   Widget _buildPlaceholderLogo() {
     return Container(
-      width: 100,
-      height: 60,
+      width: 100.w,
+      height: 60.h,
       color: Colors.grey[200],
       child: const Center(
         child: Text('LOGO', style: TextStyle(fontSize: 24, color: Colors.grey)),
@@ -235,12 +228,12 @@ class JobReceiptWidgetNew extends StatelessWidget {
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: EdgeInsets.symmetric(vertical: 2.h),
         child: BarcodeWidget(
           barcode: Barcode.code128(),
           data: jobNo,
-          width: 100,
-          height: 40,
+          width: 100.w,
+          height: 50.h,
           drawText: true,
           style: const TextStyle(fontSize: 8),
         ),
@@ -475,18 +468,31 @@ class JobReceiptWidgetNew extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
+
       children: [
         // QR Code
         if (data?.jobTrackingNumber != null)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Repair Tracking', style: TextStyle(fontSize: 9, color: Color(0xFF2589F6))),
-              const SizedBox(height: 4),
-              QrImageView(data: trackingUrl, version: QrVersions.auto, size: 70),
-              const SizedBox(height: 2),
-              Text(data!.jobTrackingNumber!, style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w500)),
-            ],
+          SizedBox(
+            width: 80.w,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text('Repair Tracking', style: TextStyle(fontSize: 8, color: Color(0xFF2589F6))),
+                SizedBox(height: 8.h),
+                // Ensure the QR is aligned to the left edge of the column
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: QrImageView(padding: EdgeInsets.zero, data: trackingUrl, version: QrVersions.auto, size: 75.w),
+                ),
+                SizedBox(height: 8.h),
+                // Job tracking text left aligned to match QR and label
+                Text(
+                  data!.jobTrackingNumber!,
+                  textAlign: TextAlign.left,
+                  style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
           )
         else
           const SizedBox.shrink(),

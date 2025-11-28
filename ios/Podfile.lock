@@ -116,18 +116,18 @@ SPEC CHECKSUMS:
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_blue_plus_darwin: 20a08bfeaa0f7804d524858d3d8744bcc1b6dbc3
   flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
-  image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
+  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   local_auth_ios: f7a1841beef3151d140a967c2e46f30637cdf451
-  network_info_plus: b6c3b27559bf719cc53ef571a947b3ac4629754c
-  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
-  pointer_interceptor_ios: ec847ef8b0915778bed2b2cef636f4d177fa8eed
+  network_info_plus: cf61925ab5205dce05a4f0895989afdb6aade5fc
+  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
+  pointer_interceptor_ios: da06a662d5bfd329602b45b2ab41bc0fb5fdb0f0
   printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
   SDWebImage: 16309af6d214ba3f77a7c6f6fdda888cb313a50a
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
 
-PODFILE CHECKSUM: 1d36c0dbf362e3a791487663b67b8dfcc76d0c08
+PODFILE CHECKSUM: ebf2e0724a64c9e92c7e90270838ea2b2a9a8a3b
 
 COCOAPODS: 1.16.2
