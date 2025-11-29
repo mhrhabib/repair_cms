@@ -144,7 +144,14 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
 
-                          SizedBox(height: screenHeight * 0.02),
+                          // Responsive spacing: smaller when keyboard is visible
+                          // Use keyboard visibility only so auto-focus doesn't force small gap when idle
+                          SizedBox(
+                            height: (MediaQuery.of(context).viewInsets.bottom > 0)
+                                ? screenHeight *
+                                      0.02 // small gap when keyboard shown
+                                : screenHeight * 0.12, // reasonable large gap when idle
+                          ),
 
                           // Email Input
                           Container(
@@ -159,9 +166,11 @@ class _SignInScreenState extends State<SignInScreen> {
                                     controller: _emailController,
                                     focusNode: _emailFocusNode,
                                     style: AppTypography.sfProHintTextStyle17,
+                                    autovalidateMode: AutovalidateMode.onUserInteraction,
                                     decoration: InputDecoration(
                                       hintText: 'your@business.com',
                                       hintStyle: AppTypography.sfProHintTextStyle17,
+
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide.none,
@@ -189,7 +198,12 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
 
-                          SizedBox(height: screenHeight * 0.18),
+                          // Responsive spacing based on keyboard visibility
+                          SizedBox(
+                            height: (MediaQuery.of(context).viewInsets.bottom > 0)
+                                ? screenHeight * 0.05
+                                : screenHeight * 0.18,
+                          ),
 
                           // Progress Indicator
                         ],

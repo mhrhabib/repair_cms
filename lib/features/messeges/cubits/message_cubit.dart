@@ -34,6 +34,10 @@ class MessageCubit extends Cubit<MessageState> {
       debugPrint('👁️ [MessageCubit] Message seen: $data');
       _handleMessageSeen(data);
     });
+    socketService.on('receiveMessage', (data) {
+      debugPrint('👁️ [MessageCubit] Message seen: $data');
+      // _handleMessageSeen(data);
+    });
 
     // Listen for internal comment updates
     socketService.on('updateInternalComment', (data) {
