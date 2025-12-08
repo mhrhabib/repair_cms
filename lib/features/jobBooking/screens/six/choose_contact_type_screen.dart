@@ -409,7 +409,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -794,7 +794,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.grey.shade100,
+                color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: isSelected ? Colors.blue : Colors.grey.shade600, size: 24),

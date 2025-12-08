@@ -9,7 +9,7 @@ import 'package:flutter_html/flutter_html.dart';
 class JobReceiptWidgetNew extends StatelessWidget {
   final SingleJobModel jobData;
   final bool isPreview; // when true, render full-size (no internal scrolling) for print preview
-  static const String baseUrl = 'https://staging-api.repaircms.com';
+  static const String baseUrl = 'https://api.repaircms.com';
   static const String trackingDomain = 'https://tracking.repaircms.com';
 
   const JobReceiptWidgetNew({super.key, required this.jobData, this.isPreview = false});

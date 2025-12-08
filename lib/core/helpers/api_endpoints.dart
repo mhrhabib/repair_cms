@@ -56,4 +56,8 @@ class ApiEndpoints {
   //notifications
   static const String getAllNotifications = '$baseUrl/notification/user/<id>';
   static const String deleteNotification = '$baseUrl/notification/<id>';
+
+  //messages
+
+  static const String getConversation = '$baseUrl/message/<conversationId>';
 }

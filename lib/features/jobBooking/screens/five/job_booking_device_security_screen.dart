@@ -323,7 +323,7 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
                   Text(
                     subtitle,
                     style: AppTypography.fontSize12.copyWith(
-                      color: isSelected ? AppColors.primary.withOpacity(0.8) : Colors.grey.shade600,
+                      color: isSelected ? AppColors.primary.withValues(alpha: 0.8) : Colors.grey.shade600,
                     ),
                   ),
                 ],

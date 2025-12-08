@@ -21,7 +21,6 @@ class JobBookingDeviceModelScreen extends StatefulWidget {
 
 class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScreen> {
   String _selectedModel = '';
-  String? _selectedModelId;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   late String _userId;
@@ -68,7 +67,6 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
   void _selectModel(String modelName, String modelId) {
     setState(() {
       _selectedModel = modelName;
-      _selectedModelId = modelId;
       _searchController.text = modelName;
     });
     context.read<JobBookingCubit>().updateDeviceInfo(model: modelName);
@@ -121,7 +119,6 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
     if (!mounted) return;
     setState(() {
       _selectedModel = '';
-      _selectedModelId = null;
       _isAddingModel = false;
       _searchController.clear();
     });
@@ -414,7 +411,6 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                 onTap: () {
                                   setState(() {
                                     _selectedModel = '';
-                                    _selectedModelId = null;
                                     _searchController.clear();
                                   });
                                   context.read<JobBookingCubit>().updateDeviceInfo(model: '');

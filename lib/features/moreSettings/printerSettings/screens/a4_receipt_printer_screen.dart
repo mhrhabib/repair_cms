@@ -199,7 +199,7 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedProtocol,
+              initialValue: _selectedProtocol,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),

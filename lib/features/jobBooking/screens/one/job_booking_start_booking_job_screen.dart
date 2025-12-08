@@ -57,9 +57,9 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
     final state = context.read<BrandCubit>().state;
     if (state is BrandAdded) {
       _selectBrand(brandName);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Brand "${brandName}" added successfully!'), backgroundColor: Colors.green),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Brand "$brandName" added successfully!'), backgroundColor: Colors.green));
     } else if (state is BrandAddError) {
       ScaffoldMessenger.of(
         context,
@@ -307,7 +307,7 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                             );
 
                             if (!exactMatch && pattern.isNotEmpty) {
-                              filteredBrands.insert(0, BrandModel(id: null, name: 'Add "${pattern}" as new brand'));
+                              filteredBrands.insert(0, BrandModel(id: null, name: 'Add "$pattern" as new brand'));
                             }
 
                             return filteredBrands;

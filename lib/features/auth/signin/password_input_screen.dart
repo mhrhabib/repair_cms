@@ -1,8 +1,11 @@
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/services/biometric_storage_service.dart';
+import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/features/auth/signin/models/login_response_model.dart';
 import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 class PasswordInputScreen extends StatefulWidget {
   const PasswordInputScreen({super.key, required this.email});
@@ -41,6 +44,17 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   }
 
   void _navigateToHome(User user) {
+    // Initialize socket connection
+    final storage = GetStorage();
+    final userId = storage.read('userId');
+
+    if (userId != null) {
+      SetUpDI.getIt<SocketService>().connect(
+        baseUrl: 'wss://api.repaircms.com', // or 'https://api.repaircms.com'
+        userId: userId,
+      );
+    }
+
     context.pushReplacement(RouteNames.home);
   }
 
@@ -103,7 +117,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   }
 
   void _onForgotPassword() {
-    context.push(RouteNames.passwordForgotten);
+    context.push(RouteNames.passwordForgotten, extra: widget.email);
   }
 
   @override

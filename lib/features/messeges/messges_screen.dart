@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
-import 'package:repair_cms/features/messeges/models/message_model.dart';
+import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
 import 'package:repair_cms/set_up_di.dart';
 
@@ -15,7 +15,7 @@ class MessagesScreen extends StatefulWidget {
 class _MessagesScreenState extends State<MessagesScreen> {
   bool isSelectionMode = false;
   Set<String> selectedConversations = {};
-  List<ConversationModel> _conversations = [];
+  List<Conversation> _conversations = [];
 
   @override
   void initState() {
@@ -106,7 +106,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [const Color(0xFF4A90E2).withOpacity(0.3), const Color(0xFF4A90E2)],
+                colors: [const Color(0xFF4A90E2).withValues(alpha: 0.3), const Color(0xFF4A90E2)],
               ),
               borderRadius: BorderRadius.circular(60),
             ),
@@ -169,7 +169,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  Widget _buildMessageItem(ConversationModel conversation) {
+  Widget _buildMessageItem(Conversation conversation) {
     final isSelected = selectedConversations.contains(conversation.conversationId);
 
     return GestureDetector(
@@ -194,7 +194,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
           color: isSelected ? Colors.blue[50] : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: isSelected ? Border.all(color: const Color(0xFF4A90E2), width: 2) : null,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+          ],
         ),
         child: Row(
           children: [
@@ -213,21 +215,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   radius: 24,
                   backgroundColor: const Color(0xFF4A90E2),
                   child: Text(
-                    conversation.otherParticipant?.name?.substring(0, 2).toUpperCase() ?? '??',
+                    (conversation.sender?.name ?? conversation.receiver?.name ?? 'U').substring(0, 2).toUpperCase(),
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
                   ),
                 ),
-                if (conversation.unreadCount > 0)
+                if (conversation.seen == false)
                   Positioned(
                     top: 0,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
+                      width: 12,
+                      height: 12,
                       decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                      child: Text(
-                        conversation.unreadCount > 9 ? '9+' : '${conversation.unreadCount}',
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
                     ),
                   ),
               ],
@@ -241,18 +240,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        conversation.otherParticipant?.name ?? 'Unknown User',
+                        conversation.sender?.name ?? conversation.receiver?.name ?? 'Unknown User',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
                       ),
                       Text(
-                        _formatTime(conversation.lastMessageTime),
+                        _formatTime(_parseDateTime(conversation.createdAt)),
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    conversation.lastMessage?.message?.message ?? '',
+                    conversation.message?.message ?? '',
                     style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.3),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -266,13 +265,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  void _openChatDetail(ConversationModel conversation) {
+  void _openChatDetail(Conversation conversation) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => BlocProvider.value(
           value: SetUpDI.getIt<MessageCubit>(),
-          child: ChatConversationScreen(conversation: conversation),
+          child: ChatConversationScreen(conversationId: conversation.conversationId ?? ''),
         ),
       ),
     );
@@ -330,6 +329,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
       return '${difference.inMinutes}m ago';
     } else {
       return 'Just now';
+    }
+  }
+
+  DateTime? _parseDateTime(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return null;
+    try {
+      return DateTime.parse(dateString);
+    } catch (e) {
+      debugPrint('❌ Error parsing date: $dateString');
+      return null;
     }
   }
 }

@@ -1,3 +1,5 @@
+import 'package:repair_cms/core/app_exports.dart';
+
 class JobListResponse {
   final bool success;
   final List<Job> jobs;
@@ -293,8 +295,9 @@ class JobFile {
   final String id;
   final String fileName;
   final int size;
+  final String? url;
 
-  JobFile({required this.file, required this.id, required this.fileName, required this.size});
+  JobFile({required this.file, required this.id, required this.fileName, required this.size, this.url});
 
   factory JobFile.fromJson(Map<String, dynamic> json) {
     return JobFile(
@@ -302,25 +305,32 @@ class JobFile {
       id: json['id'] ?? '',
       fileName: json['fileName'] ?? '',
       size: json['size'] ?? 0,
+      url: json['url'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'file': file, 'id': id, 'fileName': fileName, 'size': size};
+    return {'file': file, 'id': id, 'fileName': fileName, 'size': size, 'url': url};
   }
 
   /// Get the full image URL for displaying the file
-  /// Constructs URL: https://staging-api.repaircms.com/file-upload/images?imagePath={file}
+  /// Priority: S3 signed URL > file path > constructed API URL
   String get imageUrl {
+    // Priority 1: Use the S3 signed URL if available
+    if (url != null && url!.isNotEmpty) {
+      return url!;
+    }
+
+    // Priority 2: If file is null or empty, return empty string
     if (file == null || file.toString().isEmpty) return '';
 
-    // If file already contains full URL, return it
+    // Priority 3: If file already contains full URL, return it
     if (file.toString().startsWith('http://') || file.toString().startsWith('https://')) {
       return file.toString();
     }
 
-    // Otherwise, construct the full URL
-    const baseImageUrl = 'https://staging-api.repaircms.com/file-upload/images?imagePath=';
+    // Priority 4: Construct the API URL to get signed URL
+    const baseImageUrl = 'https://api.repaircms.com/file-upload/images?imagePath=';
     return baseImageUrl + file.toString();
   }
 }
@@ -1443,7 +1453,7 @@ class Defect {
   final String jobType;
   final String reference;
   final String description;
-  final List<InternalNote> internalNote;
+  List<InternalNote>? internalNote;
   final List<dynamic> assignItems;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -1455,7 +1465,7 @@ class Defect {
     required this.jobType,
     required this.reference,
     required this.description,
-    required this.internalNote,
+    this.internalNote,
     required this.assignItems,
     required this.createdAt,
     required this.updatedAt,
@@ -1469,7 +1479,9 @@ class Defect {
       jobType: json['jobType'] ?? '',
       reference: json['reference'] ?? '',
       description: json['description'] ?? '',
-      internalNote: (json['internalNote'] as List<dynamic>?)?.map((note) => InternalNote.fromJson(note)).toList() ?? [],
+      // internalNote: json['internalNote'] is List
+      //     ? (json['internalNote'] as List<dynamic>?)?.map((note) => InternalNote.fromJson(note)).toList() ?? []
+      //     : [],
       assignItems: json['assignItems'] ?? [],
       createdAt: DateTime.parse(json['createdAt'] ?? '2023-01-01T00:00:00.000Z'),
       updatedAt: DateTime.parse(json['updatedAt'] ?? '2023-01-01T00:00:00.000Z'),
@@ -1482,11 +1494,11 @@ class Defect {
       '_id': id,
       'defect': defect.map((defect) => defect.toJson()).toList(),
       'jobType': jobType,
+      'jobType': jobType,
       'reference': reference,
       'description': description,
-      'internalNote': internalNote.map((note) => note.toJson()).toList(),
+      'internalNote': internalNote?.map((note) => note.toJson()).toList(),
       'assignItems': assignItems,
-      'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       '__v': version,
     };
@@ -1606,7 +1618,7 @@ class InternalNote {
       // Fallback to current time
       return DateTime.now();
     } catch (e) {
-      print('⚠️ Error parsing DateTime: $dateTimeValue, error: $e');
+      debugPrint('⚠️ Error parsing DateTime: $dateTimeValue, error: $e');
       return DateTime.now(); // Fallback to current time
     }
   }

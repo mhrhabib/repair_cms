@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
+import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
 
 class ChatConversationScreen extends StatefulWidget {
-  final ConversationModel conversation;
+  final String conversationId;
 
-  const ChatConversationScreen({super.key, required this.conversation});
+  const ChatConversationScreen({super.key, required this.conversationId});
 
   @override
   State<ChatConversationScreen> createState() => _ChatConversationScreenState();
@@ -17,18 +18,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final storage = GetStorage();
-  List<MessageModel> _messages = [];
-  String? _loggedUserId;
+  List<Conversation> _messages = [];
+  String? _loggedUserEmail;
 
   @override
   void initState() {
     super.initState();
-    _loggedUserId = storage.read('userId');
-    debugPrint('🚀 [ChatConversationScreen] Loading messages for conversation: ${widget.conversation.conversationId}');
+    _loggedUserEmail = storage.read('email');
+    debugPrint('🚀 [ChatConversationScreen] Loading messages for conversation: ${widget.conversationId}');
 
     // Load messages for this conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MessageCubit>().loadMessages(widget.conversation.conversationId ?? '');
+      context.read<MessageCubit>().loadConversation(conversationId: widget.conversationId);
     });
   }
 
@@ -60,9 +61,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final userId = storage.read('userId') ?? '';
 
     context.read<MessageCubit>().sendMessage(
-      conversationId: widget.conversation.conversationId ?? '',
+      conversationId: widget.conversationId,
       sender: SenderReceiver(email: userEmail, name: userName),
-      receiver: widget.conversation.otherParticipant ?? SenderReceiver(email: '', name: ''),
+      receiver: SenderReceiver(email: '', name: ''),
       messageText: messageText,
       messageType: 'standard',
       userId: userId,
@@ -90,11 +91,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.conversation.otherParticipant?.name ?? 'Unknown User',
+              'Conversation',
               style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
             ),
             Text(
-              'Online',
+              'Chat',
               style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w400),
             ),
           ],
@@ -125,7 +126,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
             // Mark unread messages as read
             for (var message in state.messages) {
-              if (message.seen == false && message.receiver?.email == _loggedUserId) {
+              if (message.seen == false && message.receiver?.email == _loggedUserEmail) {
                 context.read<MessageCubit>().markAsRead(message);
               }
             }
@@ -133,7 +134,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
           if (state is MessageReceived) {
             // New message received via socket
-            if (state.message.conversationId == (widget.conversation.conversationId ?? '')) {
+            if (state.message.conversationId == widget.conversationId) {
               debugPrint('✅ [ChatConversationScreen] New message received via socket');
               // The cubit already handles updating the messages list
               Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
@@ -167,7 +168,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final message = _messages[index];
-                          final isMe = message.sender?.email == _loggedUserId;
+                          final isMe = message.sender?.email == _loggedUserEmail;
 
                           return _buildMessageBubble(message, isMe);
                         },
@@ -215,10 +216,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
-  Widget _buildMessageBubble(MessageModel message, bool isMe) {
+  Widget _buildMessageBubble(Conversation message, bool isMe) {
     final messageText = message.message?.message ?? '';
     final messageType = message.message?.messageType ?? 'standard';
-    final hasAttachments = message.attachments?.isNotEmpty ?? false;
+    final hasAttachments = false; // Conversation model doesn't have attachments field
     final hasQuotation = messageType == 'quotation' && message.message?.quotation != null;
 
     return Padding(
@@ -226,59 +227,65 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       child: Column(
         crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!isMe) ...[
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: const Color(0xFF4A90E2),
-                  child: Text(
-                    message.sender?.name?.substring(0, 1).toUpperCase() ?? '?',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Column(
-                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  if (!isMe)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        message.sender?.name ?? 'Unknown',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
-                      ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isMe) ...[
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: const Color(0xFF4A90E2),
+                    child: Text(
+                      message.sender?.name?.substring(0, 1).toUpperCase() ?? '?',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                     ),
-                  if (hasQuotation)
-                    _buildQuotationCard(message.message!.quotation!, isMe)
-                  else
-                    _buildStandardMessage(messageText, messageType, hasAttachments, message, isMe),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        messageText.isNotEmpty || hasQuotation ? (messageText.isNotEmpty ? 'Today' : 'Today') : '',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(_formatTimeOnly(message.createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 11)),
-                      if (isMe) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          message.seen == true ? Icons.done_all : Icons.done,
-                          size: 12,
-                          color: message.seen == true ? const Color(0xFF4A90E2) : Colors.grey[400],
-                        ),
-                      ],
-                    ],
                   ),
+                  const SizedBox(width: 8),
                 ],
-              ),
-            ],
+                Column(
+                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    if (!isMe)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          message.sender?.name ?? 'Unknown',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+                        ),
+                      ),
+                    if (hasQuotation)
+                      _buildQuotationCard(message.message!.quotation!, isMe)
+                    else
+                      _buildStandardMessage(messageText, messageType, hasAttachments, message, isMe),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          messageText.isNotEmpty || hasQuotation ? (messageText.isNotEmpty ? 'Today' : 'Today') : '',
+                          style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatTimeOnly(_parseDateTime(message.createdAt)),
+                          style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                        ),
+                        if (isMe) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            message.seen == true ? Icons.done_all : Icons.done,
+                            size: 12,
+                            color: message.seen == true ? const Color(0xFF4A90E2) : Colors.grey[400],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -289,7 +296,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     String messageText,
     String messageType,
     bool hasAttachments,
-    MessageModel message,
+    Conversation message,
     bool isMe,
   ) {
     return ConstrainedBox(
@@ -323,7 +330,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ),
                 ),
               ),
-            if (hasAttachments) ...message.attachments!.map((attachment) => _buildAttachment(attachment, isMe)),
+            // Attachments removed - not supported in Conversation model
             if (messageText.isNotEmpty)
               Text(
                 messageText,
@@ -335,7 +342,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
-  Widget _buildQuotationCard(QuotationModel quotation, bool isMe) {
+  Widget _buildQuotationCard(Quotation quotation, bool isMe) {
     return Container(
       width: MediaQuery.of(context).size.width * 0.85,
       padding: const EdgeInsets.all(16),
@@ -355,7 +362,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800]),
               ),
               const Spacer(),
-              Text(_formatTimeOnly(quotation.timestamp), style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+              Text(
+                _formatTimeOnly(_parseDateTime(quotation.createdAt)),
+                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -398,13 +408,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      quotation.service ?? 'Service',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+                      quotation.quotationName ?? 'Service',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                     ),
-                    if (quotation.description != null)
+                    if (quotation.text != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(quotation.description!, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(quotation.text!, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
                       ),
                   ],
                 ),
@@ -412,7 +422,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               Expanded(
                 flex: 1,
                 child: Text(
-                  '${quotation.unit ?? 1}',
+                  '${quotation.serviceItemList?.length ?? 0} items',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 13, color: Colors.black87),
                 ),
@@ -420,7 +430,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               Expanded(
                 flex: 1,
                 child: Text(
-                  '${quotation.price?.toStringAsFixed(2) ?? '0.00'} EUR',
+                  '€${((quotation.subTotal ?? 0) / 100).toStringAsFixed(2)}',
                   textAlign: TextAlign.right,
                   style: const TextStyle(fontSize: 13, color: Colors.black87),
                 ),
@@ -436,7 +446,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             children: [
               const Text('Subtotal excl. VAT', style: TextStyle(fontSize: 12, color: Colors.black54)),
               Text(
-                '${quotation.subtotal?.toStringAsFixed(2) ?? '0.00'} EUR',
+                '€${((quotation.subTotal ?? 0) / 100).toStringAsFixed(2)}',
                 style: const TextStyle(fontSize: 12, color: Colors.black87),
               ),
             ],
@@ -445,12 +455,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Text('VAT', style: const TextStyle(fontSize: 12, color: Colors.black54)),
               Text(
-                '${quotation.vatPercent?.toStringAsFixed(0) ?? '20'}% VAT',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
-              ),
-              Text(
-                '${quotation.vatAmount?.toStringAsFixed(2) ?? '0.00'} EUR',
+                '€${((quotation.vat?.toInt() ?? 0) / 100).toStringAsFixed(2)}',
                 style: const TextStyle(fontSize: 12, color: Colors.black87),
               ),
             ],
@@ -465,7 +472,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
               ),
               Text(
-                '${quotation.totalAmount?.toStringAsFixed(2) ?? '0.00'} EUR',
+                '€${((quotation.total?.toInt() ?? 0) / 100).toStringAsFixed(2)}',
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
               ),
             ],
@@ -484,10 +491,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     'Quotation Accepted',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32)),
                   ),
-                  if (quotation.acceptedAt != null) ...[
-                    const SizedBox(width: 4),
-                    Text(quotation.acceptedAt!, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                  ],
+                  // Acceptance date removed - not in Quotation model
                 ],
               ),
             ),
@@ -534,64 +538,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
-  Widget _buildAttachment(AttachmentModel attachment, bool isMe) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: isMe ? Colors.white.withValues(alpha: 0.2) : Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_getFileIcon(attachment.type), size: 24, color: isMe ? Colors.white : const Color(0xFF4A90E2)),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  attachment.name ?? 'Attachment',
-                  style: TextStyle(
-                    color: isMe ? Colors.white : Colors.black87,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (attachment.size != null)
-                  Text(
-                    _formatFileSize(attachment.size!),
-                    style: TextStyle(
-                      color: isMe ? Colors.white.withValues(alpha: 0.7) : Colors.grey[600],
-                      fontSize: 11,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Note: Attachments removed as Conversation model doesn't have attachments field
+  // If attachments are needed, they should be added to the Conversation model
 
-  IconData _getFileIcon(String? type) {
-    if (type == null) return Icons.attach_file;
-
-    if (type.contains('image')) return Icons.image;
-    if (type.contains('pdf')) return Icons.picture_as_pdf;
-    if (type.contains('video')) return Icons.video_file;
-    if (type.contains('audio')) return Icons.audio_file;
-    return Icons.insert_drive_file;
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
+  // File helper methods removed - attachments not supported in Conversation model
 
   Widget _buildMessageInput() {
     return Container(
@@ -762,5 +712,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final hour = timestamp.hour.toString().padLeft(2, '0');
     final minute = timestamp.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  DateTime? _parseDateTime(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return null;
+    try {
+      return DateTime.parse(dateString);
+    } catch (e) {
+      debugPrint('❌ Error parsing date: $dateString');
+      return null;
+    }
   }
 }

@@ -362,7 +362,7 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
                   child: Container(
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: AppColors.primary),
                     ),

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../../core/base/base_client.dart';
 import '../../../core/helpers/api_endpoints.dart';
@@ -39,15 +40,18 @@ class CompanyRepositoryImpl implements CompanyRepository {
       if (response.statusCode == 200) {
         debugPrint('✅ [CompanyRepository] Company info fetched successfully');
 
-        if (response.data is Map<String, dynamic>) {
-          final company = CompanyModel.fromJson(response.data as Map<String, dynamic>);
+        // Parse JSON string to Map if needed
+        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+
+        if (responseData is Map<String, dynamic>) {
+          final company = CompanyModel.fromJson(responseData);
           debugPrint('📦 [CompanyRepository] Company: ${company.companyName}');
           debugPrint('📧 [CompanyRepository] Email: ${company.companyEmail}');
           return company;
         } else {
           debugPrint('⚠️ [CompanyRepository] Unexpected response format');
           throw CompanyException(
-            message: 'Unexpected response format. Expected Map but got ${response.data.runtimeType}',
+            message: 'Unexpected response format. Expected Map but got ${responseData.runtimeType}',
             statusCode: response.statusCode,
           );
         }

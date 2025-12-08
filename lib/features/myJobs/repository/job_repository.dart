@@ -1,11 +1,11 @@
 // repositories/job_repository.dart
 import 'dart:async';
-import 'dart:math';
+import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
-import 'package:http_parser/http_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io' as io;
 import 'package:flutter/cupertino.dart';
+import 'package:mime/mime.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -44,19 +44,27 @@ class JobRepository {
         queryParams['status'] = status;
       }
 
+      debugPrint('🚀 [JobRepository] Fetching jobs:');
+      debugPrint('   📍 User ID: $userID');
+      debugPrint('   📍 Status Filter: $status');
+      debugPrint('   📍 Page: $page');
+      debugPrint('   📍 Query Params: $queryParams');
+
       dio.Response response = await BaseClient.get(
         url: '${ApiEndpoints.getAllJobs}/user/$userID',
         payload: queryParams,
       );
-      final responseData = response.data;
 
       if (response.statusCode == 200) {
+        // Parse JSON string to Map if needed
+        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+
         // 🔍 DEBUG: Print field types before parsing
         _debugResponseFields(responseData);
 
         return JobListResponse.fromJson(responseData);
       } else {
-        throw Exception('Failed to fetch jobs: ${response.statusCode} - $responseData');
+        throw Exception('Failed to fetch jobs: ${response.statusCode} - ${response.data}');
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ Dio Error: ${e.message}');
@@ -112,9 +120,11 @@ class JobRepository {
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
       dio.Response response = await BaseClient.get(url: url);
-      final responseData = response.data;
 
       if (response.statusCode == 200) {
+        // Parse JSON string to Map if needed
+        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+
         debugPrint('🔍 DEBUG - Single Job Response:');
         _debugSingleJobFields(responseData);
 
@@ -457,10 +467,13 @@ class JobRepository {
       dio.Response response = await BaseClient.get(url: url);
 
       if (response.statusCode == 200) {
-        debugPrint('✅ Assign user list fetched successfully');
-        debugPrint('✅ Total users: ${response.data['data']?.length ?? 0}');
+        // Parse JSON string to Map if needed
+        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
 
-        return AssignUserListModel.fromJson(response.data);
+        debugPrint('✅ Assign user list fetched successfully');
+        debugPrint('✅ Total users: ${responseData['data']?.length ?? 0}');
+
+        return AssignUserListModel.fromJson(responseData);
       } else {
         throw Exception('Failed to fetch assign user list: ${response.statusCode}');
       }
@@ -770,15 +783,11 @@ class JobRepository {
     required int fileSize,
   }) async {
     try {
-      final url = '${ApiEndpoints.fileUplaodUrl}${storage.read('userId')}/job/$jobNo';
+      final userId = storage.read('userId');
+      final uploadUrl = '${ApiEndpoints.fileUplaodUrl}$userId/job/$jobNo';
+      final patchUrl = '${ApiEndpoints.baseUrl}/job/$jobId';
 
-      debugPrint('🚀 [JobRepository] Starting file upload...');
-      debugPrint('   👤 User ID: ${storage.read('userId')}');
-      debugPrint('   📋 Job ID: $jobNo');
-      debugPrint('   📁 File path: $filePath');
-      debugPrint('   📄 File name: $fileName');
-      debugPrint('   📏 File size: $fileSize bytes');
-      debugPrint('   🌐 URL: $url');
+      debugPrint('🚀 Step 1: Upload file to S3...');
 
       // Validate file
       final file = io.File(filePath);
@@ -786,130 +795,148 @@ class JobRepository {
         throw Exception('File does not exist: $filePath');
       }
 
-      final actualFileSize = await file.length();
-      debugPrint('   📊 Actual file size: ${actualFileSize ~/ 1024}KB');
-
-      // Get MIME type
-      final mimeType = _getMimeType(fileName);
-      debugPrint('   🖼️ MIME type: $mimeType');
-
-      // Generate unique ID for the file
+      // Read and encode file as base64
+      final bytes = await file.readAsBytes();
+      final base64File = base64Encode(bytes);
+      final mimeType = lookupMimeType(fileName) ?? 'application/octet-stream';
       final fileId = const Uuid().v4();
 
-      // Get authentication token from storage
-      final token = storage.read('token'); // Adjust this based on your storage key
-      debugPrint('   🔑 Token available: ${token != null}');
-      debugPrint(
-        '   🔑 Token starts with: ${token != null ? token.substring(0, min(20, token.length)) : 'NO TOKEN'}...',
-      );
+      debugPrint('   🖼️ MIME type: $mimeType');
+      debugPrint('   📊 Base64 length: ${base64File.length}');
 
-      // Use Dio directly with authentication
-      final dio.Dio dioInstance = dio.Dio();
+      final base64String = 'data:$mimeType;base64,$base64File';
 
-      // Configure Dio with authentication headers
-      dioInstance.options = dio.BaseOptions(
-        connectTimeout: const Duration(seconds: 60),
-        receiveTimeout: const Duration(seconds: 60),
-        sendTimeout: const Duration(seconds: 60),
-        headers: {'Accept': 'application/json', if (token != null) 'Authorization': 'Bearer $token'},
-      );
+      // Step 1: POST file as base64 to get file path
+      final uploadPayload = {'file': base64String, 'id': fileId, 'fileName': fileName, 'size': fileSize};
 
-      // Add interceptors for better debugging
-      dioInstance.interceptors.add(
-        dio.InterceptorsWrapper(
-          onRequest: (options, handler) {
-            debugPrint('🚀 [Dio] Request: ${options.method} ${options.uri}');
-            debugPrint('📦 [Dio] Headers: ${options.headers}');
-            return handler.next(options);
-          },
-          onResponse: (response, handler) {
-            debugPrint('✅ [Dio] Response: ${response.statusCode}');
-            return handler.next(response);
-          },
-          onError: (error, handler) {
-            debugPrint('❌ [Dio] Error: ${error.type}');
-            debugPrint('❌ [Dio] Error message: ${error.message}');
-            debugPrint('❌ [Dio] Response status: ${error.response?.statusCode}');
-            return handler.next(error);
-          },
-        ),
-      );
+      debugPrint('📦 Uploading to: $uploadUrl');
+      final uploadResponse = await BaseClient.post(url: uploadUrl, payload: uploadPayload);
 
-      // Create FormData for multipart upload (more efficient than base64)
-      final formData = dio.FormData.fromMap({
-        'file': await dio.MultipartFile.fromFile(filePath, filename: fileName, contentType: MediaType.parse(mimeType)),
-        'id': fileId,
-        'fileName': fileName,
-        'size': fileSize.toString(),
-      });
+      if (uploadResponse.statusCode != 201 && uploadResponse.statusCode != 200) {
+        throw Exception('File upload failed: ${uploadResponse.statusCode}');
+      }
 
-      debugPrint('📤 [JobRepository] Sending multipart/form-data request...');
-      debugPrint('   📎 File: $fileName');
-      debugPrint('   🆔 ID: $fileId');
-      debugPrint('   📏 Size: $fileSize bytes');
+      // Response is a plain string with the file path
+      final uploadedFilePath = uploadResponse.data is String ? uploadResponse.data as String : null;
 
-      final response = await dioInstance.post(url, data: formData);
+      if (uploadedFilePath == null || uploadedFilePath.isEmpty) {
+        throw Exception('No file path returned from upload');
+      }
 
-      debugPrint('✅ [JobRepository] Response received');
-      debugPrint('   📊 Status Code: ${response.statusCode}');
-      debugPrint('   📄 Response Data: ${response.data}');
-      debugPrint('   📄 Response Data Type: ${response.data.runtimeType}');
+      debugPrint('✅ File uploaded: $uploadedFilePath');
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        debugPrint('   🎉 File uploaded successfully!');
+      // Step 2: Get signed URL for display
+      debugPrint('🚀 Step 2: Getting signed URL...');
 
-        // Extract the file path from response
-        String? uploadedFilePath;
-        if (response.data != null) {
-          if (response.data is String) {
-            uploadedFilePath = response.data as String;
-            debugPrint('   📁 Uploaded file path: $uploadedFilePath');
-          } else if (response.data is Map) {
-            // Handle if response is a map with file path
-            uploadedFilePath = response.data['file'] ?? response.data['path'] ?? response.data['filePath'];
-            debugPrint('   📁 Uploaded file path from map: $uploadedFilePath');
-          }
+      String? signedUrl;
+      try {
+        final imageUrl = '${ApiEndpoints.fileUplaodUrl}images?imagePath=$uploadedFilePath';
+        debugPrint('📥 Fetching signed URL: $imageUrl');
 
-          // Construct the full image URL
-          if (uploadedFilePath != null && uploadedFilePath.isNotEmpty) {
-            const baseImageUrl = '${ApiEndpoints.baseUrl}/file-upload/images?imagePath=';
-            final fullImageUrl = baseImageUrl + uploadedFilePath;
-            debugPrint('   🖼️ Full image URL: $fullImageUrl');
+        final urlResponse = await BaseClient.get(url: imageUrl);
 
-            // Store the image URL for later use if needed
-            // You can return this URL or store it in the job model
+        if (urlResponse.statusCode == 200 && urlResponse.data is String) {
+          signedUrl = urlResponse.data as String;
+          debugPrint('✅ Got signed URL');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Could not get signed URL: $e');
+      }
+
+      // Step 3: PATCH job with file metadata
+      debugPrint('🚀 Step 3: Patching job...');
+
+      // First, get existing files from the job
+      debugPrint('📋 Fetching existing files...');
+      final existingJob = await getJobById(jobId);
+      final existingFiles =
+          existingJob.data?.files
+              ?.map(
+                (f) => {
+                  'file': f.file,
+                  'id': f.id,
+                  'fileName': f.fileName,
+                  'size': f.size,
+                  if (f.url != null) 'url': f.url,
+                },
+              )
+              .toList() ??
+          [];
+
+      debugPrint('📊 Found ${existingFiles.length} existing files');
+
+      final fileMetadata = {'file': uploadedFilePath, 'id': fileId, 'fileName': fileName, 'size': fileSize};
+
+      // Add signed URL if we got it
+      if (signedUrl != null && signedUrl.isNotEmpty) {
+        fileMetadata['url'] = signedUrl;
+      }
+
+      // Append new file to existing files
+      final allFiles = [...existingFiles, fileMetadata];
+      debugPrint('📊 Total files after upload: ${allFiles.length}');
+
+      final patchPayload = {
+        'job': {
+          'files': allFiles, // Send all files (existing + new)
+        },
+      };
+
+      debugPrint('📦 Patching: $patchUrl');
+      final patchResponse = await BaseClient.patch(url: patchUrl, payload: patchPayload);
+
+      if (patchResponse.statusCode != 200 && patchResponse.statusCode != 201) {
+        throw Exception('Job patch failed: ${patchResponse.statusCode}');
+      }
+
+      debugPrint('✅ Job patched successfully');
+
+      // Parse the response (now it's plain text, so we need to parse it)
+      final responseData = patchResponse.data is String ? jsonDecode(patchResponse.data) : patchResponse.data;
+
+      // The response should contain the updated job with files
+      if (responseData is Map && responseData['data'] != null) {
+        final jobData = responseData['data'];
+
+        // Fetch signed URLs for any files that don't have them yet
+        if (jobData is Map && jobData['files'] != null && jobData['files'] is List) {
+          final files = jobData['files'] as List;
+
+          for (var fileData in files) {
+            if (fileData is Map && fileData['file'] != null && fileData['url'] == null) {
+              final filePath = fileData['file'] as String;
+
+              try {
+                // Get signed URL
+                final imageUrl = '${ApiEndpoints.fileUplaodUrl}images?imagePath=$filePath';
+                debugPrint('📥 Fetching signed URL: $imageUrl');
+
+                final urlResponse = await BaseClient.get(url: imageUrl);
+
+                if (urlResponse.statusCode == 200 && urlResponse.data is String) {
+                  fileData['url'] = urlResponse.data as String;
+                  debugPrint('✅ Got signed URL for: ${fileData['fileName']}');
+                }
+              } catch (e) {
+                debugPrint('⚠️ Could not get signed URL for ${fileData['fileName']}: $e');
+              }
+            }
           }
         }
 
-        // After successful upload, get the updated job to include the new file
-        return await getJobById(jobId);
+        return SingleJobModel.fromJson(Map<String, dynamic>.from(responseData));
+      } else if (responseData is Map && responseData['job'] != null) {
+        return SingleJobModel.fromJson({'success': true, 'data': Map<String, dynamic>.from(responseData['job'])});
       } else {
-        debugPrint('❌ Upload failed with status: ${response.statusCode}');
-        debugPrint('❌ Response data: ${response.data}');
-        throw Exception('Failed to upload file: ${response.statusCode} - ${response.data}');
+        // Fallback: fetch the updated job
+        return await getJobById(jobId);
       }
-    } on dio.DioException catch (e, stackTrace) {
-      debugPrint('❌ [JobRepository] DIO ERROR DETAILS:');
-      debugPrint('   🚨 Error Type: ${e.type}');
-      debugPrint('   📝 Error Message: ${e.message}');
-      debugPrint('   📝 Error Message: $stackTrace');
-      debugPrint('   🔗 Request URL: ${e.requestOptions.uri}');
-      debugPrint('   📦 Request Headers: ${e.requestOptions.headers}');
-
-      if (e.response != null) {
-        debugPrint('   📊 Response Status: ${e.response?.statusCode}');
-        debugPrint('   📄 Response Data: ${e.response?.data}');
-      }
-
+    } on dio.DioException catch (e) {
       if (e.response?.statusCode == 401) {
         throw Exception('Authentication failed. Please log in again.');
       }
-
       throw Exception('Upload failed: ${e.message}');
-    } catch (e, stackTrace) {
-      debugPrint('💥 [JobRepository] UNEXPECTED ERROR:');
-      debugPrint('   📝 Error: $e');
-      debugPrint('   📜 Stack Trace: $stackTrace');
+    } catch (e) {
       throw Exception('File upload failed: ${e.toString()}');
     }
   }

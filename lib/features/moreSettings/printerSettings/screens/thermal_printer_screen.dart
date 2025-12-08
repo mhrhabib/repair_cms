@@ -171,7 +171,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedBrand,
+              initialValue: _selectedBrand,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
@@ -195,7 +195,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedModel,
+              initialValue: _selectedModel,
               hint: const Text('Select Model (Optional)'),
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
@@ -215,7 +215,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<int>(
-              value: _paperWidth,
+              initialValue: _paperWidth,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
@@ -284,7 +284,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedProtocol,
+              initialValue: _selectedProtocol,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),

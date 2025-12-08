@@ -192,42 +192,5 @@ class QuotationModel {
   }
 }
 
-class ConversationModel {
-  final String? conversationId;
-  final String? participants;
-  final MessageModel? lastMessage;
-  final int unreadCount;
-  final SenderReceiver? otherParticipant;
-  final DateTime? lastMessageTime;
-
-  ConversationModel({
-    this.conversationId,
-    this.participants,
-    this.lastMessage,
-    this.unreadCount = 0,
-    this.otherParticipant,
-    this.lastMessageTime,
-  });
-
-  factory ConversationModel.fromJson(Map<String, dynamic> json) {
-    return ConversationModel(
-      conversationId: json['conversationId'],
-      participants: json['participants'],
-      lastMessage: json['lastMessage'] != null ? MessageModel.fromJson(json['lastMessage']) : null,
-      unreadCount: json['unreadCount'] ?? 0,
-      otherParticipant: json['otherParticipant'] != null ? SenderReceiver.fromJson(json['otherParticipant']) : null,
-      lastMessageTime: json['lastMessageTime'] != null ? DateTime.tryParse(json['lastMessageTime']) : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      if (conversationId != null) 'conversationId': conversationId,
-      if (participants != null) 'participants': participants,
-      if (lastMessage != null) 'lastMessage': lastMessage!.toJson(),
-      'unreadCount': unreadCount,
-      if (otherParticipant != null) 'otherParticipant': otherParticipant!.toJson(),
-      if (lastMessageTime != null) 'lastMessageTime': lastMessageTime!.toIso8601String(),
-    };
-  }
-}
+// ConversationModel removed - use conversation_model.dart for receiving messages
+// This file is only for sending messages using MessageModel

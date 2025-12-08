@@ -27,7 +27,7 @@ void showCustomToast(String message, {bool isError = true}) {
         ],
       ),
     ),
-    position: ToastPosition.bottom,
+    position: ToastPosition.top,
     duration: const Duration(seconds: 3),
   );
 }

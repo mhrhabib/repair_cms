@@ -188,7 +188,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedBrand,
+              initialValue: _selectedBrand,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
@@ -213,7 +213,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedModel,
+              initialValue: _selectedModel,
               hint: const Text('Select Model'),
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
@@ -233,7 +233,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<LabelSize>(
-              value: _selectedLabelSize,
+              initialValue: _selectedLabelSize,
               hint: const Text('Select Label Size'),
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
@@ -321,7 +321,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedProtocol,
+              initialValue: _selectedProtocol,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),

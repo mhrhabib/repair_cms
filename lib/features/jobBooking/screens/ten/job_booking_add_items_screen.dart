@@ -220,9 +220,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
         ),
       ],
       child: BlocListener<JobItemCubit, JobItemState>(
-        listener: (context, state) {
-          // TODO: implement listener
-        },
+        listener: (context, state) {},
         child: Scaffold(
           backgroundColor: Colors.grey[50],
           body: SafeArea(

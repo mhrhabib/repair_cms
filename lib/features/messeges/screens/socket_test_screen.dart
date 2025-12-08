@@ -34,8 +34,6 @@ class _SocketTestScreenState extends State<SocketTestScreen> {
 
   bool _isConnected = false;
   String? _socketId;
-  int _messagesReceived = 0;
-  int _messagesSent = 0;
 
   @override
   void initState() {
@@ -78,9 +76,6 @@ class _SocketTestScreenState extends State<SocketTestScreen> {
 
     // Listen to message events (custom events for your app)
     _socketService.on('onUpdateMessage', (data) {
-      setState(() {
-        _messagesReceived++;
-      });
       _addLog(
         '📩 Received Message: ${data.toString().substring(0, data.toString().length > 100 ? 100 : data.toString().length)}...',
       );
@@ -96,9 +91,6 @@ class _SocketTestScreenState extends State<SocketTestScreen> {
 
     // Listen to common demo server events
     _socketService.on('new message', (data) {
-      setState(() {
-        _messagesReceived++;
-      });
       _addLog('📩 New Message (demo): $data');
     });
 
@@ -120,9 +112,6 @@ class _SocketTestScreenState extends State<SocketTestScreen> {
 
     // Generic message listener for any event
     _socketService.on('message', (data) {
-      setState(() {
-        _messagesReceived++;
-      });
       _addLog('📩 Generic Message: $data');
     });
   }
@@ -181,9 +170,6 @@ class _SocketTestScreenState extends State<SocketTestScreen> {
       _addLog('📤 Sent production message: $message');
     }
 
-    setState(() {
-      _messagesSent++;
-    });
     _messageController.clear();
   }
 

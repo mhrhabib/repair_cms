@@ -5,7 +5,6 @@ import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cu
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_receipt_preview_screen.dart';
-import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
 
 class JobBookingSelectPrinterScreen extends StatefulWidget {
   final String jobId;

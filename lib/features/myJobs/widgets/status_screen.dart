@@ -353,7 +353,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: DropdownButtonFormField<String>(
-                                  value: selectedStatus,
+                                  initialValue: selectedStatus,
                                   decoration: InputDecoration(
                                     contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                                     border: InputBorder.none,
@@ -411,7 +411,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: DropdownButtonFormField<String>(
-                                  value: selectedNotification,
+                                  initialValue: selectedNotification,
                                   decoration: InputDecoration(
                                     contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                                     border: InputBorder.none,

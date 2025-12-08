@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
 
 /// Job Scanner Screen - Scans QR/Barcode for Job IDs
 class JobScannerScreen extends StatefulWidget {
@@ -70,7 +68,6 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
     Navigator.pop(context); // Close scanner
 
     // Show success message with job ID
-    // TODO: Navigate to job details screen when route is available
     // Example: context.go('/job-details/$code');
     showCustomToast('Job ID scanned: $code\nNavigate to job details manually');
   }
@@ -153,7 +150,7 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
             // Processing Overlay
             if (isProcessing)
               Container(
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
                 child: Center(child: ProcessingLoader(isBarcodeMode: widget.isBarcodeMode)),
               ),
           ],
@@ -187,7 +184,6 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
               final jobId = controller.text.trim();
               if (jobId.isNotEmpty) {
                 Navigator.pop(context);
-                // TODO: Navigate to job details when route is available
                 // Example: context.go('/job-details/$jobId');
                 showCustomToast('Job ID entered: $jobId\nNavigate to job details manually');
               }
@@ -338,7 +334,7 @@ class ScannerWidget extends StatelessWidget {
             ),
             if (isProcessing)
               Container(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -413,7 +409,7 @@ class ScannerOverlayPainter extends CustomPainter {
     // Scan line
     if (!isProcessing) {
       final scanLinePaint = Paint()
-        ..color = Colors.white.withOpacity(0.8)
+        ..color = Colors.white.withValues(alpha: 0.8)
         ..strokeWidth = isBarcodeMode ? 3 : 2;
 
       if (isBarcodeMode) {

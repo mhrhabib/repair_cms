@@ -4,9 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
-import 'package:repair_cms/features/messeges/demo_conversation_screen.dart';
 import 'package:repair_cms/features/messeges/messges_screen.dart';
-import 'package:repair_cms/features/messeges/screens/socket_test_screen.dart';
 import 'package:repair_cms/features/moreSettings/more_settings_screen.dart';
 import 'package:repair_cms/features/myJobs/my_jobs_screen.dart';
 import 'package:repair_cms/features/scanner/job_scanner_screen.dart';
@@ -26,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     const DashboardScreen(),
     const MyJobsScreen(),
     const MessagesScreen(),
-    const SocketTestScreen(),
+    const MoreSettingsScreen(),
   ];
 
   bool _isExpanded = false;
@@ -259,18 +257,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       SizedBox(height: 16.h),
 
                       // Demo Conversation Button
-                      _buildExpandableButton(
-                        icon: SolarIconsBold.chatRoundDots,
-                        label: 'Demo Chat',
-                        backgroundColor: const Color(0xFF10B981),
-                        onTap: () {
-                          _toggleExpansion();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const DemoConversationScreen()),
-                          );
-                        },
-                      ),
                       SizedBox(height: 20.h),
                     ],
                   ),

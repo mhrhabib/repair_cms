@@ -31,8 +31,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void initState() {
-    print(context.read<SignInCubit>().userType);
-    print(context.read<SignInCubit>().userId);
+    debugPrint(context.read<SignInCubit>().userType);
+    debugPrint(context.read<SignInCubit>().userId);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAllDashboardData();
@@ -300,7 +300,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: EnhancedSearchWidget(
                     onSearchChanged: (query) {
                       // Handle search query changes
-                      print('Search query: $query');
+                      debugPrint('Search query: $query');
                     },
                     onQRScanPressed: () {
                       // Handle QR scan button press

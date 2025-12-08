@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/job_details_navbar_screen.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
@@ -16,6 +17,7 @@ import 'package:repair_cms/features/myJobs/widgets/receipt_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/status_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart' as job_booking;
+import 'package:solar_icons/solar_icons.dart';
 
 class JobDetailsScreen extends StatefulWidget {
   final String jobId;
@@ -352,12 +354,12 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       selectedAssignee = 'Susan Lemmes';
     }
 
-    print('Job ID in JobDetails: ${jobData.sId}');
-    print('Job Complete Status: $isJobComplete');
-    print('Return Device Status: $returnDevice');
-    print('Job Priority: ${jobData.jobPriority}');
-    print('Due Date: ${jobData.dueDate}');
-    print('Assign User: ${jobData.assignUser}');
+    debugPrint('Job ID in JobDetails: ${jobData.sId}');
+    debugPrint('Job Complete Status: $isJobComplete');
+    debugPrint('Return Device Status: $returnDevice');
+    debugPrint('Job Priority: ${jobData.jobPriority}');
+    debugPrint('Due Date: ${jobData.dueDate}');
+    debugPrint('Assign User: ${jobData.assignUser}');
   }
 
   String _capitalizeFirstLetter(String text) {
@@ -378,7 +380,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
 
   @override
   Widget build(BuildContext context) {
-    print('Building JobDetails with Job ID: ${widget.job.data!.sId}');
+    debugPrint('Building JobDetails with Job ID: ${widget.job.data!.sId}');
 
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
@@ -453,8 +455,16 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           Stack(
             children: [
               IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatConversationScreen(conversationId: widget.job.data!.sId ?? ''),
+                      fullscreenDialog: true,
+                    ),
+                  );
+                },
+                icon: Icon(SolarIconsOutline.dialog2, color: Colors.black87),
               ),
               Positioned(
                 right: 8,
@@ -473,7 +483,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   }
 
   Widget _buildJobDetailsScreen(SingleJobModel job) {
-    print('Building JobDetailsScreen for Job ID: ${job.data!.sId}');
+    debugPrint('Building JobDetailsScreen for Job ID: ${job.data!.sId}');
     return SafeArea(
       child: Column(
         children: [
@@ -814,13 +824,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       ),
     );
 
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) =>
-    //         JobDeviceLabelScreen(jobResponse: jobResponse, printOption: 'Device Label', jobNo: job.data?.jobNo),
-    //   ),
-    // );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            JobDeviceLabelScreen(jobResponse: jobResponse, printOption: 'Device Label', jobNo: job.data?.jobNo),
+      ),
+    );
   }
 
   void _showCompleteConfirmationBottomSheet() {

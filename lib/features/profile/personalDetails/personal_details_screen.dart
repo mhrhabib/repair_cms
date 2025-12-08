@@ -76,11 +76,19 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     // Fetch the actual avatar URL if user has an avatar path
     if (user.avatar != null && user.avatar!.isNotEmpty) {
       debugPrint('🔍 Fetching avatar URL for path: ${user.avatar}');
-      //_fetchAvatarUrl(user.avatar!);
+      _fetchAvatarUrl(user.avatar!);
     }
   }
 
   Future<void> _fetchAvatarUrl(String avatarPath) async {
+    // Skip if it's already a full S3 signed URL (from recent upload)
+    if (avatarPath.startsWith('http')) {
+      setState(() {
+        _avatarUrl = avatarPath;
+      });
+      return;
+    }
+
     if (_avatarUrl != null) return; // Already fetched
 
     setState(() {
@@ -179,15 +187,25 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       }
 
       // Upload avatar only using the separate method
-      await profileCubit.updateUserAvatar(userId, _selectedImage!.path);
+      final newImageUrl = await profileCubit.updateUserAvatar(userId, _selectedImage!.path);
 
-      // Clear selected image after successful upload
+      // Clear selected image after successful upload and set the new avatar URL
       if (mounted) {
         setState(() {
           _selectedImage = null;
-          // Clear cached avatar URL to force refresh
-          _avatarUrl = null;
+          // Set the fresh avatar URL from upload response
+          _avatarUrl = newImageUrl;
+          _isUploadingAvatar = false; // Reset upload state
         });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Avatar uploaded successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     } catch (error) {
       setState(() {
@@ -687,14 +705,17 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   // Rest of your UI methods remain the same...
   ImageProvider _getProfileImage(String? avatarPath) {
-    // First priority: Use the newly uploaded avatar URL
+    // Only use _avatarUrl (the signed URL), not the S3 path directly
     if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
       return NetworkImage(_avatarUrl!);
     }
 
-    // Second priority: Use the fetched avatar URL from user data
-    if (avatarPath != null && avatarPath.isNotEmpty) {
-      return NetworkImage(avatarPath);
+    // Show loading indicator while fetching signed URL
+    if (_isLoadingAvatarUrl) {
+      // Return a placeholder while loading
+      return const NetworkImage(
+        'https://images.unsplash.com/photo-1626808642875-0aa545482dfb?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      );
     }
 
     // Fallback: Default image

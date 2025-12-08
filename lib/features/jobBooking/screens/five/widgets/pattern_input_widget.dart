@@ -7,10 +7,10 @@ class PatternInputWidget extends StatefulWidget {
   const PatternInputWidget({super.key, required this.onPatternChanged, this.initialPattern = const []});
 
   @override
-  _PatternInputWidgetState createState() => _PatternInputWidgetState();
+  PatternInputWidgetState createState() => PatternInputWidgetState();
 }
 
-class _PatternInputWidgetState extends State<PatternInputWidget> {
+class PatternInputWidgetState extends State<PatternInputWidget> {
   List<int> connectedDots = [];
   bool isDrawing = false;
   final List<Offset> dotPositions = const [
@@ -119,7 +119,7 @@ class PatternPainter extends CustomPainter {
     // Draw grid dots
     for (int i = 0; i < dotPositions.length; i++) {
       final pos = Offset((dotPositions[i].dx + 0.5) * spacing, (dotPositions[i].dy + 0.5) * spacing);
-      dotPaint.color = connectedDots.contains(i) ? AppColors.primary.withOpacity(0.3) : Colors.grey.shade400;
+      dotPaint.color = connectedDots.contains(i) ? AppColors.primary.withValues(alpha: 0.3) : Colors.grey.shade400;
       canvas.drawCircle(pos, dotRadius, dotPaint);
       if (connectedDots.contains(i)) {
         canvas.drawCircle(pos, dotRadius * 0.5, connectedDotPaint);

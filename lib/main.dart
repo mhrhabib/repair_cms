@@ -30,6 +30,7 @@ import 'package:repair_cms/features/jobBooking/repository/models_repository.dart
 import 'package:repair_cms/features/jobBooking/repository/service_repository.dart';
 import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
 import 'package:repair_cms/features/jobReceipt/repo/job_receipt_repo.dart';
+import 'package:repair_cms/features/messeges/repository/message_repository.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
@@ -84,7 +85,12 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => NotificationCubit(notificationRepository: SetUpDI.getIt<NotificationRepository>()),
         ),
-        BlocProvider(create: (context) => MessageCubit(socketService: SetUpDI.getIt<SocketService>())),
+        BlocProvider(
+          create: (context) => MessageCubit(
+            socketService: SetUpDI.getIt<SocketService>(),
+            messageRepository: SetUpDI.getIt<MessageRepository>(),
+          ),
+        ),
       ],
       child: ScreenUtilInit(
         designSize: const Size(375, 812),

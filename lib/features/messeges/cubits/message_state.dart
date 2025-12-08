@@ -7,20 +7,20 @@ class MessageInitial extends MessageState {}
 class MessageLoading extends MessageState {}
 
 class ConversationsLoaded extends MessageState {
-  final List<ConversationModel> conversations;
+  final List<Conversation> conversations;
 
   ConversationsLoaded({required this.conversations});
 }
 
 class MessagesLoaded extends MessageState {
-  final List<MessageModel> messages;
+  final List<Conversation> messages;
   final String conversationId;
 
   MessagesLoaded({required this.messages, required this.conversationId});
 }
 
 class MessageSent extends MessageState {
-  final MessageModel message;
+  final Conversation message;
 
   MessageSent({required this.message});
 }
@@ -32,7 +32,7 @@ class MessageError extends MessageState {
 }
 
 class MessageReceived extends MessageState {
-  final MessageModel message;
+  final Conversation message;
 
   MessageReceived({required this.message});
 }
