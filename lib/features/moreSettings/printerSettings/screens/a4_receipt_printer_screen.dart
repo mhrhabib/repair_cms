@@ -171,7 +171,7 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
             ),
             SizedBox(height: 16.h),
 
