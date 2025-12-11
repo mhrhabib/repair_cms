@@ -76,16 +76,23 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
     // Validation check
     if ((selectedOption == 'password' && _passwordController.text.isEmpty) ||
         (selectedOption == 'pattern' && connectedDots.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please enter the $selectedOption or select "No Security".'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      showCustomToast('Please enter the $selectedOption or select "No Security".', isError: true);
       return;
     }
 
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ChooseContactTypeScreen()));
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const ChooseContactTypeScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var offsetAnimation = animation.drive(tween);
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+      ),
+    );
   }
 
   // Shows the pattern drawing bottom sheet and awaits the result
@@ -116,16 +123,25 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
           slivers: [
             // Top Progress Bar
             SliverToBoxAdapter(
-              child: Container(
-                height: 12.h,
-                width: MediaQuery.of(context).size.width * .071 * 5,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(6)),
-                  boxShadow: [
-                    BoxShadow(color: const Color.fromARGB(255, 75, 41, 41), blurRadius: 1, blurStyle: BlurStyle.outer),
-                  ],
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 12.h,
+                    width: MediaQuery.of(context).size.width * .071 * 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(255, 75, 41, 41),
+                          blurRadius: 1,
+                          blurStyle: BlurStyle.outer,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
             // Header

@@ -28,43 +28,51 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
           listener: (context, state) {
             if (state is JobFileUploadSuccess) {
               debugPrint('✅ Files uploaded successfully to server');
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Files uploaded successfully'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                ),
-              );
+              showCustomToast('Files uploaded successfully', isError: false);
               // Navigate to next screen after successful upload
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => JobBookingPhysicalLocationScreen(jobId: widget.jobId!)),
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      JobBookingPhysicalLocationScreen(jobId: widget.jobId!),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    const begin = Offset(0.0, 1.0);
+                    const end = Offset.zero;
+                    const curve = Curves.easeInOut;
+                    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                    var offsetAnimation = animation.drive(tween);
+                    return SlideTransition(position: offsetAnimation, child: child);
+                  },
+                ),
               );
             } else if (state is JobFileUploadError) {
               debugPrint('❌ File upload failed: ${state.message}');
-              _showErrorSnackBar('Upload failed: ${state.message}');
+              showCustomToast('Upload failed: ${state.message}', isError: true);
               // Still allow navigation even if upload fails
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Continue without uploading files?'),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 5),
-                  action: SnackBarAction(
-                    label: 'Continue',
-                    textColor: Colors.white,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => JobBookingPhysicalLocationScreen(jobId: widget.jobId!)),
-                      );
+              showCustomToast('Continue without uploading files?', isError: false);
+              // Auto-navigate after showing toast
+              Future.delayed(const Duration(milliseconds: 500), () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        JobBookingPhysicalLocationScreen(jobId: widget.jobId!),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(0.0, 1.0);
+                      const end = Offset.zero;
+                      const curve = Curves.easeInOut;
+                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                      var offsetAnimation = animation.drive(tween);
+                      return SlideTransition(position: offsetAnimation, child: child);
                     },
                   ),
-                ),
-              );
+                );
+              });
             }
           },
         ),
       ],
+
       child: BlocConsumer<JobBookingCubit, JobBookingState>(
         listener: (context, state) {
           if (state is JobBookingData) {
@@ -473,7 +481,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
         await context.read<JobBookingCubit>().processAndAddFile(image.path);
       }
     } catch (e) {
-      _showErrorSnackBar('Error capturing image: $e');
+      showCustomToast('Error capturing image: $e', isError: true);
     }
   }
 
@@ -489,7 +497,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
         }
       }
     } catch (e) {
-      _showErrorSnackBar('Error selecting images: $e');
+      showCustomToast('Error selecting images: $e', isError: true);
     }
   }
 
@@ -534,7 +542,18 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
         // Just navigate to next screen without uploading
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => JobBookingPhysicalLocationScreen(jobId: widget.jobId!)),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                JobBookingPhysicalLocationScreen(jobId: widget.jobId!),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 1.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOut;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
+          ),
         );
         return;
       }
@@ -569,7 +588,18 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
         // No files, just navigate
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => JobBookingPhysicalLocationScreen(jobId: widget.jobId!)),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                JobBookingPhysicalLocationScreen(jobId: widget.jobId!),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 1.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOut;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
+          ),
         );
       }
     }
@@ -579,11 +609,5 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
   String _generateRandomId() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     return List.generate(10, (index) => chars[_random.nextInt(chars.length)]).join();
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 3)));
   }
 }

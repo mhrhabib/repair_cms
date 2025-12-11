@@ -72,13 +72,9 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
       // Select the newly created accessory
       _selectAccessory(accessoryName, ''); // The ID will be available after refresh
 
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: Text('Accessory "$accessoryName" created successfully'), backgroundColor: Colors.green),
-      // );
+      // showCustomToast('Accessory "$accessoryName" created successfully', isError: false);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to create accessory: $e'), backgroundColor: Colors.red));
+      showCustomToast('Failed to create accessory: $e', isError: true);
     } finally {
       setState(() {
         _isCreatingAccessory = false;
@@ -431,7 +427,19 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
         child: BottomButtonsGroup(
           onPressed: _selectedAccessory.isNotEmpty && !_isCreatingAccessory
               ? () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingImeiScreen()));
+                  Navigator.of(context).push(
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => JobBookingImeiScreen(),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        const begin = Offset(0.0, 1.0);
+                        const end = Offset.zero;
+                        const curve = Curves.easeInOut;
+                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                        var offsetAnimation = animation.drive(tween);
+                        return SlideTransition(position: offsetAnimation, child: child);
+                      },
+                    ),
+                  );
                   // ScaffoldMessenger.of(context).showSnackBar(
                   //   SnackBar(
                   //     content: Text('Selected accessory: $_selectedAccessory'),

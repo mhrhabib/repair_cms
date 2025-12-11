@@ -33,14 +33,14 @@ class JobBookingCubit extends Cubit<JobBookingState> {
 
     // Get receipt data from storage
     final receiptDataJson = storage.read('jobReceiptData');
-    String salutationHTMLmarkup = '';
-    String termsAndConditionsHTMLmarkup = '';
+    String salutationHTMLmarkup = '<p>Thank you for choosing our services.</p>';
+    String termsAndConditionsHTMLmarkup = '<p>Standard terms and conditions apply.</p>';
 
     if (receiptDataJson != null) {
       try {
         final receiptData = jsonDecode(receiptDataJson);
-        salutationHTMLmarkup = receiptData['salutation'] ?? '';
-        termsAndConditionsHTMLmarkup = receiptData['termsAndConditions'] ?? '';
+        salutationHTMLmarkup = receiptData['salutation'] ?? salutationHTMLmarkup;
+        termsAndConditionsHTMLmarkup = receiptData['termsAndConditions'] ?? termsAndConditionsHTMLmarkup;
         debugPrint('✅ [JobBookingCubit] Loaded receipt data from storage');
         debugPrint('📄 [JobBookingCubit] Salutation length: ${salutationHTMLmarkup.length}');
         debugPrint('📄 [JobBookingCubit] Terms length: ${termsAndConditionsHTMLmarkup.length}');
@@ -48,7 +48,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
         debugPrint('❌ [JobBookingCubit] Error parsing receipt data: $e');
       }
     } else {
-      debugPrint('⚠️ [JobBookingCubit] No receipt data found in storage');
+      debugPrint('⚠️ [JobBookingCubit] No receipt data found in storage, using defaults');
     }
 
     emit(

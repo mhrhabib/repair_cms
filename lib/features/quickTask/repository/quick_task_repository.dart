@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/rendering.dart';
 import 'package:repair_cms/core/base/base_client.dart';
@@ -9,7 +10,13 @@ class QuickTaskRepository {
     dio.Response response = await BaseClient.get(url: ApiEndpoints.getAllQuickTasks.replaceAll('<id>', userId));
 
     if (response.statusCode == 200) {
-      final data = QuickTask.fromJson(response.data);
+      // Handle JSON string parsing
+      dynamic jsonData = response.data;
+      if (response.data is String) {
+        debugPrint('   🔄 Response is String, parsing JSON...');
+        jsonData = jsonDecode(response.data as String);
+      }
+      final data = QuickTask.fromJson(jsonData);
       return data.data!.map((task) => task).toList();
     } else {
       throw Exception('Failed to load todos');

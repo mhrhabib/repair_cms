@@ -197,7 +197,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
     } catch (e, stackTrace) {
       debugPrint('❌ Error saving address: $e');
       debugPrint('❌ Stack trace: $stackTrace');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving address: ${e.toString()}')));
+      showCustomToast('Error saving address: ${e.toString()}', isError: true);
       setState(() {
         _isLoading = false;
       });
@@ -340,13 +340,13 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
       if (_isFirstPageValid) {
         _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields')));
+        showCustomToast('Please fill all required fields', isError: true);
       }
     } else {
       if (_isSecondPageValid) {
         _saveAddressToCubit();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill postal code')));
+        showCustomToast('Please fill postal code', isError: true);
       }
     }
   }
@@ -355,7 +355,20 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
     setState(() {
       _isLoading = false;
     });
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingJobTypeScreen()));
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const JobBookingJobTypeScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var offsetAnimation = animation.drive(tween);
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+      ),
+    );
   }
 
   @override
@@ -386,8 +399,9 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
           _navigateToNextScreen();
         } else if (state is ContactTypeError) {
           debugPrint('❌ Error ${widget.isNewProfile ? 'creating' : 'updating'} profile: ${state.message}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error ${widget.isNewProfile ? 'creating' : 'updating'} profile: ${state.message}')),
+          showCustomToast(
+            'Error ${widget.isNewProfile ? 'creating' : 'updating'} profile: ${state.message}',
+            isError: true,
           );
           setState(() {
             _isLoading = false;

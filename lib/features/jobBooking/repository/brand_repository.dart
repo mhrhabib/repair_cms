@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -25,12 +26,19 @@ class BrandRepositoryImpl implements BrandRepository {
       debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        if (response.data is List) {
-          final brands = (response.data as List).map((brandJson) => BrandModel.fromJson(brandJson)).toList();
+        // Handle both String and parsed JSON responses
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
+        if (jsonData is List) {
+          final brands = (jsonData).map((brandJson) => BrandModel.fromJson(brandJson)).toList();
           debugPrint('   📦 Parsed ${brands.length} brands');
           return brands;
-        } else if (response.data is Map) {
-          final data = response.data as Map;
+        } else if (jsonData is Map) {
+          final data = jsonData;
           if (data.containsKey('brands') && data['brands'] is List) {
             final brands = (data['brands'] as List).map((brandJson) => BrandModel.fromJson(brandJson)).toList();
             debugPrint('   📦 Parsed ${brands.length} brands from "brands" key');
@@ -42,7 +50,7 @@ class BrandRepositoryImpl implements BrandRepository {
           }
         }
 
-        debugPrint('   ⚠️ Unexpected response format: ${response.data}');
+        debugPrint('   ⚠️ Unexpected response format: $jsonData');
         throw BrandException(message: 'Unexpected response format from server');
       } else {
         throw BrandException(message: 'Failed to load brands: ${response.statusCode}', statusCode: response.statusCode);

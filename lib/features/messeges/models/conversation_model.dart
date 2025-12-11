@@ -6,8 +6,9 @@ class ConversationModel {
   dynamic pages;
   dynamic total;
   String? error;
+  String? message;
 
-  ConversationModel({this.success, this.data, this.pages, this.total, this.error});
+  ConversationModel({this.success, this.data, this.pages, this.total, this.error, this.message});
 
   ConversationModel.fromJson(Map<String, dynamic> json) {
     success = json['success'];
@@ -20,6 +21,7 @@ class ConversationModel {
     pages = json['pages'];
     total = json['total'];
     error = json['error'];
+    message = json['message'];
   }
 
   Map<String, dynamic> toJson() {
@@ -31,6 +33,7 @@ class ConversationModel {
     data['pages'] = pages;
     data['total'] = total;
     data['error'] = error;
+    data['message'] = message;
     return data;
   }
 }

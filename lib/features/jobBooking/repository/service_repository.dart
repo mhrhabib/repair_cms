@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -50,38 +51,47 @@ class ServiceRepositoryImpl implements ServiceRepository {
       debugPrint('   📊 Status Code: ${response.statusCode}');
       debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
-      // Debug the response data structure
-      if (response.data is Map) {
-        final data = response.data as Map;
-        debugPrint('   📊 Response Keys: ${data.keys}');
+      // Handle both String and Map responses
+      Map<String, dynamic> jsonData;
+      if (response.data is String) {
+        debugPrint('   🔄 Response is String, parsing JSON...');
+        jsonData = jsonDecode(response.data as String);
+      } else if (response.data is Map) {
+        jsonData = response.data as Map<String, dynamic>;
+      } else {
+        throw ServiceException(
+          message: 'Unexpected response type: ${response.data.runtimeType}',
+          statusCode: response.statusCode,
+        );
+      }
 
-        // Check critical fields
-        if (data.containsKey('success')) {
-          debugPrint('   ✅ success: ${data['success']} (${data['success'].runtimeType})');
-        }
-        if (data.containsKey('totalServices')) {
-          debugPrint('   ✅ totalServices: ${data['totalServices']} (${data['totalServices'].runtimeType})');
-        }
-        if (data.containsKey('services')) {
-          debugPrint('   ✅ services: ${data['services']} (${data['services'].runtimeType})');
-          if (data['services'] is List) {
-            debugPrint('   📋 services list length: ${(data['services'] as List).length}');
-            if ((data['services'] as List).isNotEmpty) {
-              final firstService = (data['services'] as List).first;
-              if (firstService is Map) {
-                debugPrint('   🔍 First service keys: ${(firstService).keys}');
-              }
+      // Debug the response data structure
+      debugPrint('   📊 Response Keys: ${jsonData.keys}');
+
+      // Check critical fields
+      if (jsonData.containsKey('success')) {
+        debugPrint('   ✅ success: ${jsonData['success']} (${jsonData['success'].runtimeType})');
+      }
+      if (jsonData.containsKey('totalServices')) {
+        debugPrint('   ✅ totalServices: ${jsonData['totalServices']} (${jsonData['totalServices'].runtimeType})');
+      }
+      if (jsonData.containsKey('services')) {
+        debugPrint('   ✅ services: ${jsonData['services']} (${jsonData['services'].runtimeType})');
+        if (jsonData['services'] is List) {
+          debugPrint('   📋 services list length: ${(jsonData['services'] as List).length}');
+          if ((jsonData['services'] as List).isNotEmpty) {
+            final firstService = (jsonData['services'] as List).first;
+            if (firstService is Map) {
+              debugPrint('   🔍 First service keys: ${(firstService).keys}');
             }
           }
         }
-      } else {
-        debugPrint('   ⚠️ Response data is not a Map: ${response.data}');
       }
 
       if (response.statusCode == 200) {
         debugPrint('🔄 [ServiceRepository] Parsing response with ServiceResponseModel.fromJson');
         try {
-          final result = ServiceResponseModel.fromJson(response.data);
+          final result = ServiceResponseModel.fromJson(jsonData);
           debugPrint('✅ [ServiceRepository] Successfully parsed response');
           return result;
         } catch (parseError, parseStack) {

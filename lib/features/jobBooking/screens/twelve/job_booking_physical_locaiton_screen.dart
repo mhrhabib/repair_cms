@@ -28,12 +28,21 @@ class _JobBookingPhysicalLocationScreenState extends State<JobBookingPhysicalLoc
       // Navigate to next screen
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => JobBookingCustomerSignatureScreen(jobId: widget.jobId)),
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              JobBookingCustomerSignatureScreen(jobId: widget.jobId),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOut;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
+            return SlideTransition(position: offsetAnimation, child: child);
+          },
+        ),
       );
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please specify a storage location'), backgroundColor: Colors.red));
+      showCustomToast('Please specify a storage location', isError: true);
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/base/base_client.dart';
@@ -22,9 +23,23 @@ class MessageRepositoryImpl implements MessageRepository {
       debugPrint('📊 [MessageRepository] Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = response.data;
+        // Handle JSON string parsing
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+        final data = jsonData;
 
         debugPrint('📦 [MessageRepository] Response data type: ${data.runtimeType}');
+        debugPrint('📦 [MessageRepository] Response data keys: ${data is Map ? (data as Map).keys.toList() : "N/A"}');
+        if (data is Map && data.containsKey('success')) {
+          debugPrint('📦 [MessageRepository] Success value: ${data['success']}');
+        }
+        if (data is Map && data.containsKey('data')) {
+          debugPrint('📦 [MessageRepository] Data field type: ${data['data'].runtimeType}');
+          debugPrint('📦 [MessageRepository] Data field value: ${data['data']}');
+        }
 
         // Handle different response structures
         if (data is List) {
@@ -40,6 +55,8 @@ class MessageRepositoryImpl implements MessageRepository {
           // Parse the entire response as ConversationModel
           debugPrint('✅ [MessageRepository] Parsing response as ConversationModel');
           final model = ConversationModel.fromJson(data);
+          debugPrint('📋 [MessageRepository] Model success: ${model.success}');
+          debugPrint('📋 [MessageRepository] Model error: ${model.error}');
           debugPrint('📋 [MessageRepository] Model data type: ${model.data.runtimeType}');
           debugPrint('📋 [MessageRepository] Model data length: ${model.data?.length}');
           if (model.data != null && model.data!.isNotEmpty) {

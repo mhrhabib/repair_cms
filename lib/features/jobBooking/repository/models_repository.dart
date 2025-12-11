@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -24,13 +25,19 @@ class ModelsRepositoryImpl implements ModelsRepository {
       debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        if (response.data is List) {
-          final models = (response.data as List).map((modelJson) => ModelsModel.fromJson(modelJson)).toList();
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
+        if (jsonData is List) {
+          final models = (jsonData).map((modelJson) => ModelsModel.fromJson(modelJson)).toList();
           debugPrint('   📦 Parsed ${models.length} models');
           return models;
-        } else if (response.data is Map) {
+        } else if (jsonData is Map) {
           // Handle case where API returns wrapped in a map
-          final data = response.data as Map;
+          final data = jsonData;
           if (data.containsKey('models') && data['models'] is List) {
             final models = (data['models'] as List).map((modelJson) => ModelsModel.fromJson(modelJson)).toList();
             debugPrint('   📦 Parsed ${models.length} models from "models" key');
@@ -42,7 +49,7 @@ class ModelsRepositoryImpl implements ModelsRepository {
           }
         }
 
-        debugPrint('   ⚠️ Unexpected response format: ${response.data}');
+        debugPrint('   ⚠️ Unexpected response format: $jsonData');
         throw ModelsException(message: 'Unexpected response format from server');
       } else {
         throw ModelsException(

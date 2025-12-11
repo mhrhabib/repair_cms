@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/core/helpers/show_toast.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
@@ -78,9 +79,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             });
           }
           if (state is MessageError) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: Colors.red));
+            showCustomToast(state.message, isError: true);
           }
         },
         builder: (context, state) {
@@ -300,9 +299,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 selectedConversations.clear();
                 isSelectionMode = false;
               });
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Selected messages removed'), backgroundColor: Colors.red));
+              showCustomToast('Selected messages removed', isError: false);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

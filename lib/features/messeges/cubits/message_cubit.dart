@@ -27,16 +27,18 @@ class MessageCubit extends Cubit<MessageState> {
       _currentConversationId = conversationId;
       final conversationModel = await messageRepository.getConversation(conversationId: conversationId);
 
-      if (conversationModel.success == true && conversationModel.data != null) {
+      if (conversationModel.success == true) {
         _conversations.clear();
-        _conversations.addAll(conversationModel.data!);
+        if (conversationModel.data != null) {
+          _conversations.addAll(conversationModel.data!);
+        }
 
         debugPrint(
-          '✅ [MessageCubit] Loaded ${conversationModel.data!.length} messages (Page info: ${conversationModel.pages} pages, ${conversationModel.total} total)',
+          '✅ [MessageCubit] Loaded ${conversationModel.data?.length ?? 0} messages (Page info: ${conversationModel.pages} pages, ${conversationModel.total} total)',
         );
         emit(MessagesLoaded(messages: _conversations, conversationId: conversationId));
       } else {
-        final errorMsg = conversationModel.error ?? 'Failed to load conversation';
+        final errorMsg = conversationModel.message ?? conversationModel.error ?? 'Failed to load conversation';
         debugPrint('❌ [MessageCubit] API returned error: $errorMsg');
         emit(MessageError(message: errorMsg));
       }

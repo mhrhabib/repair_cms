@@ -25,7 +25,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   bool _obscureText = true;
 
   bool _hasStoredCredentials = false;
-  final String _biometricType = 'Biometric';
+  String _biometricType = 'Biometric'; // Default fallback
 
   @override
   void initState() {
@@ -34,6 +34,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     _passwordFocusNode.addListener(() {
       setState(() {});
     });
+    _loadBiometricType();
   }
 
   void _validatePassword() {
@@ -41,6 +42,21 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     setState(() {
       _isPasswordValid = password.isNotEmpty && password.length >= 6;
     });
+  }
+
+  Future<void> _loadBiometricType() async {
+    try {
+      final biometricType = await BiometricStorageService.getBiometricType();
+      final hasStoredCredentials = await BiometricStorageService.hasBiometricCredentials();
+      setState(() {
+        _biometricType = biometricType;
+        _hasStoredCredentials = hasStoredCredentials;
+        debugPrint('Biometric type loaded: $_biometricType');
+      });
+    } catch (e) {
+      debugPrint('Error loading biometric type: $e');
+      // Keep default 'Biometric' if there's an error
+    }
   }
 
   void _navigateToHome(User user) {

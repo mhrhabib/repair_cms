@@ -1,5 +1,6 @@
 // features/jobBooking/repositories/job_item_repository.dart
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -38,7 +39,13 @@ class JobItemRepositoryImpl implements JobItemRepository {
       debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        final itemsModel = JobItemsModel.fromJson(response.data);
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
+        final itemsModel = JobItemsModel.fromJson(jsonData);
 
         if (itemsModel.items != null) {
           debugPrint('   📦 Parsed ${itemsModel.items!.length} items');

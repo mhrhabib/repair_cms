@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -24,7 +25,13 @@ class AccessoriesRepositoryImpl implements AccessoriesRepository {
       debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        final accessoriesModel = AccessoriesModel.fromJson(response.data);
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
+        final accessoriesModel = AccessoriesModel.fromJson(jsonData);
 
         if (accessoriesModel.success == true && accessoriesModel.data != null) {
           debugPrint('   📦 Parsed ${accessoriesModel.data!.length} accessories');

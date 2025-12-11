@@ -218,7 +218,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
                           // Handle New Job action
-                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingFirstScreen()));
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) => JobBookingFirstScreen(),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                const begin = Offset(0.0, 1.0); // Start from bottom
+                                const end = Offset.zero; // End at center
+                                const curve = Curves.easeInOut;
+                                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                var offsetAnimation = animation.drive(tween);
+                                return SlideTransition(position: offsetAnimation, child: child);
+                              },
+                            ),
+                          );
                           debugPrint('New Job tapped');
                           _toggleExpansion();
                         },

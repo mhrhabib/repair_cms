@@ -62,16 +62,23 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
       cubit.updateDefectInfo(internalNote: internalNotes);
 
       // Navigate to next screen
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const JobBookingAddItemsScreen()));
-    } else {
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please describe the problem'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const JobBookingAddItemsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOut;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
+            return SlideTransition(position: offsetAnimation, child: child);
+          },
         ),
       );
+    } else {
+      // Show error message
+      showCustomToast('Please describe the problem', isError: true);
     }
   }
 
@@ -189,7 +196,7 @@ class _JobBookingProblemDescriptionScreenState extends State<JobBookingProblemDe
                             borderSide: const BorderSide(color: Colors.blue, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          errorText: _isProblemDescriptionValid ? null : 'Problem description is required',
+                          //errorText: _isProblemDescriptionValid ? null : 'Problem description is required',
                         ),
                         style: const TextStyle(fontSize: 16),
                         onChanged: (value) => _validateProblemDescription(),

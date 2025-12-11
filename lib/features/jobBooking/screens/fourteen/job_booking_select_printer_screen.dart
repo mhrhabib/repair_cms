@@ -110,21 +110,23 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
         debugPrint('📄 [SelectPrinter] Navigating to receipt preview with complete job data');
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
                 JobReceiptPreviewScreen(jobResponse: jobCreateState.response, printOption: _selectedPrinterType),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 1.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOut;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
           ),
         );
       }
     } else {
-      // Fallback: show snackbar and go home
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Job created successfully!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      // Fallback: show toast and go home
+      showCustomToast('Job created successfully!', isError: false);
       Navigator.popUntil(context, (route) => route.isFirst);
     }
   }
@@ -161,13 +163,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
               }
             } else if (state is JobCreateError) {
               // Show error message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to create job: ${state.message}'),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
+              showCustomToast('Failed to create job: ${state.message}', isError: true);
             }
           },
         ),
@@ -179,13 +175,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
             } else if (state is JobFileUploadError) {
               debugPrint('⚠️ File upload failed: ${state.message}');
               // Job was created but file upload failed - still show success but with warning
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Job created but file upload failed: ${state.message}'),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
+              showCustomToast('Job created but file upload failed: ${state.message}', isError: false);
               Navigator.popUntil(context, (route) => route.isFirst);
             }
           },

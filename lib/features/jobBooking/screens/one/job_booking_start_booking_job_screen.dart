@@ -60,10 +60,8 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Brand "$brandName" added successfully!'), backgroundColor: Colors.green));
-    } else if (state is BrandAddError) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to add brand: ${state.message}'), backgroundColor: Colors.red));
+    } else if (state is BrandError) {
+      showCustomToast('Failed to add brand: ${state.message}', isError: true);
     }
 
     setState(() => _isAddingBrand = false);
@@ -437,8 +435,17 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
                 onPressed: hasSelectedBrand
                     ? () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => JobBookingDeviceModelScreen(brandId: _selectedBrandId!),
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                JobBookingDeviceModelScreen(brandId: _selectedBrandId!),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(0.0, 1.0);
+                              const end = Offset.zero;
+                              const curve = Curves.easeInOut;
+                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                              var offsetAnimation = animation.drive(tween);
+                              return SlideTransition(position: offsetAnimation, child: child);
+                            },
                           ),
                         );
                       }

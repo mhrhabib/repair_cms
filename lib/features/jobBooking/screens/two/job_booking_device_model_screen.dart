@@ -103,13 +103,9 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
         orElse: () => ModelsModel(),
       );
       _selectModel(modelName, newModel.sId ?? '');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Model "$modelName" added successfully!'), backgroundColor: Colors.green));
+      showCustomToast('Model "$modelName" added successfully!', isError: false);
     } else if (state is ModelsError) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to add model: ${state.message}'), backgroundColor: Colors.red));
+      showCustomToast('Failed to add model: ${state.message}', isError: true);
     }
 
     setState(() => _isAddingModel = false);
@@ -477,9 +473,19 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
               child: BottomButtonsGroup(
                 onPressed: hasSelectedModel
                     ? () {
-                        Navigator.of(
-                          context,
-                        ).push(MaterialPageRoute(builder: (context) => JobBookingAccessoriesScreen()));
+                        Navigator.of(context).push(
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => JobBookingAccessoriesScreen(),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(0.0, 1.0);
+                              const end = Offset.zero;
+                              const curve = Curves.easeInOut;
+                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                              var offsetAnimation = animation.drive(tween);
+                              return SlideTransition(position: offsetAnimation, child: child);
+                            },
+                          ),
+                        );
                       }
                     : null,
               ),

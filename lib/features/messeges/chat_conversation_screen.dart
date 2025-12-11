@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:repair_cms/core/helpers/show_toast.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
@@ -147,9 +148,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           }
 
           if (state is MessageError) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: Colors.red));
+            showCustomToast(state.message, isError: true);
           }
         },
         builder: (context, state) {
@@ -649,9 +648,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.purple,
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('Gallery picker coming soon')));
+                    showCustomToast('Gallery picker coming soon', isError: false);
                   },
                 ),
                 _buildAttachmentOption(
@@ -660,7 +657,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.blue,
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera coming soon')));
+                    showCustomToast('Camera coming soon', isError: false);
                   },
                 ),
                 _buildAttachmentOption(
@@ -669,9 +666,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.orange,
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('Document picker coming soon')));
+                    showCustomToast('Document picker coming soon', isError: false);
                   },
                 ),
               ],

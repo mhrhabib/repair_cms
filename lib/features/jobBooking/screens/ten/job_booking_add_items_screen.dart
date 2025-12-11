@@ -136,13 +136,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
 
     if (jobBookingState is! JobBookingData) {
       debugPrint('❌ [AddItems] State is not JobBookingData, aborting');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please complete the job information first'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      showCustomToast('Please complete the job information first', isError: true);
       return;
     }
 
@@ -168,13 +162,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
     } catch (e, stackTrace) {
       debugPrint('💥 [AddItems] Error creating job request: $e');
       debugPrint('📋 Stack trace: $stackTrace');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error preparing job: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      showCustomToast('Error preparing job: $e', isError: true);
     }
   }
 
@@ -185,36 +173,53 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
         BlocListener<JobCreateCubit, JobCreateState>(
           listener: (context, state) {
             if (state is JobCreateCreated) {
-              debugPrint('✅ Job created successfully with ID: ${state.response.data?.sId}');
+              debugPrint('✅ Job created successfully');
+              debugPrint('📊 Response success: ${state.response.success}');
+              debugPrint('📊 Response data: ${state.response.data}');
+              debugPrint('📊 Job ID: ${state.response.data?.sId}');
+              debugPrint('📊 Job No: ${state.response.data?.jobNo}');
 
               // Store job ID and job data in JobBookingCubit for later use
               final jobId = state.response.data?.sId;
-              if (jobId != null && state.response.data != null) {
-                context.read<JobBookingCubit>().setJobId(jobId);
-                // Update job with response data (includes jobNo and other server-generated fields)
+
+              if (state.response.data != null) {
+                // Update job with response data even if ID is null
                 context.read<JobBookingCubit>().updateJobFromResponse(state.response.data!);
-                debugPrint('📤 Navigating to file upload screen with jobId: $jobId');
+
+                if (jobId != null && jobId.isNotEmpty) {
+                  context.read<JobBookingCubit>().setJobId(jobId);
+                  debugPrint('📤 Navigating to file upload screen with jobId: $jobId');
+                } else {
+                  debugPrint('⚠️ Job ID is null or empty, but job was created. Navigating anyway...');
+                }
 
                 // Use post frame callback to ensure navigation happens after build completes
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => JobBookingFileUploadScreen(jobId: jobId)),
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            JobBookingFileUploadScreen(jobId: jobId ?? ''),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          const begin = Offset(0.0, 1.0);
+                          const end = Offset.zero;
+                          const curve = Curves.easeInOut;
+                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                          var offsetAnimation = animation.drive(tween);
+                          return SlideTransition(position: offsetAnimation, child: child);
+                        },
+                      ),
                     );
                   }
                 });
+              } else {
+                debugPrint('❌ Response data is null');
+                showCustomToast('Job created but response data is missing', isError: true);
               }
             } else if (state is JobCreateError) {
               debugPrint('❌ Job creation failed: ${state.message}');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to create job: ${state.message}'),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 4),
-                  action: SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _createJobAndUploadFiles),
-                ),
-              );
+              showCustomToast('Failed to create job: ${state.message}', isError: true);
             }
           },
         ),
@@ -604,41 +609,43 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.blue, width: 1),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
+          child: FittedBox(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 16),
                 ),
-                child: Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 16),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.productName ?? 'Unnamed Item',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.blue),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${item.salePriceIncVat?.toStringAsFixed(2) ?? '0.00'} €',
-                    style: const TextStyle(fontSize: 12, color: Colors.blue),
-                  ),
-                  if (item.itemNumber != null) ...[
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.productName ?? 'Unnamed Item',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.blue),
+                    ),
                     const SizedBox(height: 2),
                     Text(
-                      'Item #: ${item.itemNumber}',
-                      style: TextStyle(fontSize: 10, color: Colors.blue.withValues(alpha: 0.7)),
+                      '${item.salePriceIncVat?.toStringAsFixed(2) ?? '0.00'} €',
+                      style: const TextStyle(fontSize: 12, color: Colors.blue),
                     ),
+                    if (item.itemNumber != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Item #: ${item.itemNumber}',
+                        style: TextStyle(fontSize: 10, color: Colors.blue.withValues(alpha: 0.7)),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
         Positioned(

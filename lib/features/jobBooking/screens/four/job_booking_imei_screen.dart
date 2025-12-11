@@ -269,17 +269,23 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
     // Save the IMEI before navigating
     _updateImeiInCubit();
 
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingDeviceSecurityScreen()));
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => JobBookingDeviceSecurityScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var offsetAnimation = animation.drive(tween);
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+      ),
+    );
 
     final imei = _imeiController.text.trim();
     if (imei.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('IMEI saved: $imei'),
-          backgroundColor: AppColors.primary,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      showCustomToast('IMEI saved: $imei', isError: false);
     }
   }
 

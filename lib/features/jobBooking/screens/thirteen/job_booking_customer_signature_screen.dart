@@ -89,15 +89,24 @@ class _JobBookingCustomerSignatureScreenState extends State<JobBookingCustomerSi
           if (mounted) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => JobBookingSelectPrinterScreen(jobId: widget.jobId)),
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    JobBookingSelectPrinterScreen(jobId: widget.jobId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  const begin = Offset(0.0, 1.0);
+                  const end = Offset.zero;
+                  const curve = Curves.easeInOut;
+                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                  var offsetAnimation = animation.drive(tween);
+                  return SlideTransition(position: offsetAnimation, child: child);
+                },
+              ),
             );
           }
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error saving signature: $e'), backgroundColor: Colors.red));
+          showCustomToast('Error saving signature: $e', isError: true);
         }
       } finally {
         if (mounted) {
