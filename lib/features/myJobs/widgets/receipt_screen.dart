@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
-import 'package:repair_cms/features/moreSettings/printerSettings/service/brother_printer_service.dart';
+import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
@@ -14,7 +14,6 @@ class ReceiptScreen extends StatelessWidget {
   final SingleJobModel job;
 
   final _settingsService = PrinterSettingsService();
-  final _brotherPrinterService = BrotherPrinterService();
 
   /// Show printer selection dialog
   Future<void> _showPrinterSelection(BuildContext context) async {
@@ -86,18 +85,28 @@ class ReceiptScreen extends StatelessWidget {
       if (printer.printerType == 'a4') {
         debugPrint('📄 Printing to A4 printer via system dialog');
         success = await _printA4Receipt(context);
-      } else if (printer.printerBrand.toLowerCase() == 'brother') {
-        debugPrint('🖨️ Printing to Brother ${printer.printerType} printer');
-        final result = await _brotherPrinterService.printThermalReceipt(
-          ipAddress: printer.ipAddress,
-          text: receiptText,
-        );
+      } else if (printer.protocol.toLowerCase() == 'usb') {
+        // USB printers require special handling
+        final usbService = PrinterServiceFactory.getUSBPrinterService();
+        final result = await usbService.printThermalReceipt(ipAddress: printer.ipAddress, text: receiptText);
         success = result.success;
         errorMessage = result.message;
       } else {
-        errorMessage =
-            '${printer.printerBrand} ${printer.printerType} printers not yet supported. Only Brother and A4 (generic) printers are currently supported.';
-        debugPrint('❌ $errorMessage');
+        // Network printers - use factory to get appropriate service
+        debugPrint('🖨️ Printing to ${printer.printerBrand} ${printer.printerType} printer');
+        final printerService = PrinterServiceFactory.getPrinterService(printer.printerBrand);
+
+        if (printer.printerType == 'thermal') {
+          final result = await printerService.printThermalReceipt(ipAddress: printer.ipAddress, text: receiptText);
+          success = result.success;
+          errorMessage = result.message;
+        } else if (printer.printerType == 'label') {
+          final result = await printerService.printLabel(ipAddress: printer.ipAddress, text: receiptText);
+          success = result.success;
+          errorMessage = result.message;
+        } else {
+          errorMessage = 'Unsupported printer type: ${printer.printerType}';
+        }
       }
 
       // Hide loading

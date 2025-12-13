@@ -6,7 +6,7 @@ import 'package:barcode_widget/barcode_widget.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
-import 'package:repair_cms/features/moreSettings/printerSettings/service/brother_printer_service.dart';
+import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
 import 'package:repair_cms/core/helpers/show_toast.dart';
 
@@ -23,7 +23,6 @@ class JobDeviceLabelScreen extends StatefulWidget {
 
 class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   final _settingsService = PrinterSettingsService();
-  final _printerService = BrotherPrinterService();
 
   /// Get the last used or default printer for one-click printing
   PrinterConfigModel? _getDefaultPrinter() {
@@ -62,8 +61,10 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       showCustomToast('Sending to printer...', isError: false);
 
-      // Use centralized printer service
-      final result = await _printerService.printDeviceLabel(
+      // Use printer service factory to get appropriate service
+      final printerService = PrinterServiceFactory.getPrinterService(printer.printerBrand);
+
+      final result = await printerService.printDeviceLabel(
         ipAddress: printer.ipAddress,
         labelData: labelData,
         port: printer.port ?? 9100,
