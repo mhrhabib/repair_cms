@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -52,11 +53,13 @@ class _NotesScreenState extends State<NotesScreen> {
   Future<dynamic> _showNoteBottomSheet(BuildContext context, SingleJobModel job, InternalNote? note) {
     return showCupertinoModalBottomSheet(
       context: context,
-      backgroundColor: figmaYellow,
+      backgroundColor: Colors.transparent,
       expand: true,
       enableDrag: true,
       bounce: true,
       useRootNavigator: true,
+      topRadius: Radius.circular(12.r),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (context) => BlocProvider.value(
         value: BlocProvider.of<JobCubit>(context),
         child: _AddEditNoteSheetContent(
@@ -142,31 +145,37 @@ class _NotesScreenState extends State<NotesScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: AppColors.scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20.r),
+        backgroundColor: AppColors.whiteColor,
+        appBar: CupertinoNavigationBar(
+          backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+          // border: Border(bottom: BorderSide(color: CupertinoColors.separator.resolveFrom(context), width: 0.5)),
+          leading: CupertinoButton(
+            padding: EdgeInsets.zero,
             onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(
-            'Notes',
-            style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
-          ),
-          centerTitle: true,
-          actions: [
-            GestureDetector(
-              onTap: () => _navigateToAddNote(context, widget.job),
-              child: CircleAvatar(
-                radius: 16.r,
-                foregroundColor: Colors.white,
-                backgroundColor: figmaBlue,
-                child: Icon(Icons.add, color: Colors.white, size: 30.r),
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(CupertinoIcons.back, color: figmaBlue, size: 28.r),
+                Text(
+                  'Back',
+                  style: TextStyle(color: figmaBlue, fontSize: 17.sp),
+                ),
+              ],
             ),
-            SizedBox(width: 8.w),
-          ],
+          ),
+          middle: Text(
+            'Notes',
+            style: TextStyle(
+              fontSize: 17.sp,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.label.resolveFrom(context),
+            ),
+          ),
+          trailing: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => _navigateToAddNote(context, widget.job),
+            child: Icon(CupertinoIcons.add_circled_solid, color: figmaBlue, size: 28.r),
+          ),
         ),
         body: Container(
           margin: EdgeInsets.all(8.h),

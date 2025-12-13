@@ -27,20 +27,32 @@ class MessageCubit extends Cubit<MessageState> {
       _currentConversationId = conversationId;
       final conversationModel = await messageRepository.getConversation(conversationId: conversationId);
 
-      if (conversationModel.success == true) {
-        _conversations.clear();
-        if (conversationModel.data != null) {
-          _conversations.addAll(conversationModel.data!);
-        }
+      // Clear existing conversations
+      _conversations.clear();
 
-        debugPrint(
-          '✅ [MessageCubit] Loaded ${conversationModel.data?.length ?? 0} messages (Page info: ${conversationModel.pages} pages, ${conversationModel.total} total)',
-        );
-        emit(MessagesLoaded(messages: _conversations, conversationId: conversationId));
-      } else {
-        final errorMsg = conversationModel.message ?? conversationModel.error ?? 'Failed to load conversation';
-        debugPrint('❌ [MessageCubit] API returned error: $errorMsg');
-        emit(MessageError(message: errorMsg));
+      // Check if we have data (even if success is false, data might be empty list)
+      if (conversationModel.data != null) {
+        _conversations.addAll(conversationModel.data!);
+      }
+
+      final messageCount = conversationModel.data?.length ?? 0;
+      debugPrint(
+        '✅ [MessageCubit] Loaded $messageCount messages (Page info: ${conversationModel.pages} pages, ${conversationModel.total} total)',
+      );
+
+      // Always emit MessagesLoaded, even if empty (let UI show empty state)
+      emit(MessagesLoaded(messages: _conversations, conversationId: conversationId));
+
+      // Only emit error if there's an actual error AND no data was returned
+      if (conversationModel.success == false && messageCount == 0) {
+        final errorMsg = conversationModel.message ?? conversationModel.error ?? '';
+        // Only log as info if it's just "not found" (empty conversation)
+        if (errorMsg.toLowerCase().contains('not found')) {
+          debugPrint('ℹ️ [MessageCubit] Empty conversation: $errorMsg');
+        } else {
+          // Real error - log and potentially show to user
+          debugPrint('❌ [MessageCubit] API error: $errorMsg');
+        }
       }
     } on MessageException catch (e) {
       debugPrint('❌ [MessageCubit] MessageException: ${e.message}');

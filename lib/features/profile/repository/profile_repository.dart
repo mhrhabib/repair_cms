@@ -134,7 +134,7 @@ class ProfileRepository {
       }
 
       throw Exception(errorMessage);
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Upload failed: ${e.toString()}');
     }
   }
@@ -162,7 +162,7 @@ class ProfileRepository {
       }
     } on dio.DioException catch (e) {
       throw Exception('Network error while getting image URL: ${e.message}');
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Unexpected error while getting image URL: $e');
     }
   }

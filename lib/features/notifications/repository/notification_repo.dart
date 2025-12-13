@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -25,12 +26,19 @@ class NotificationRepositoryImpl implements NotificationRepository {
       debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        if (response.data is List) {
-          final notifications = (response.data as List).map((json) => Notifications.fromJson(json)).toList();
+        // Handle String response that needs decoding
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('   📄 Response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+
+        if (responseData is List) {
+          final notifications = (responseData).map((json) => Notifications.fromJson(json)).toList();
           debugPrint('   📦 Parsed ${notifications.length} notifications');
           return notifications;
-        } else if (response.data is Map) {
-          final data = response.data as Map;
+        } else if (responseData is Map) {
+          final data = responseData;
           if (data.containsKey('notifications') && data['notifications'] is List) {
             final notifications = (data['notifications'] as List).map((json) => Notifications.fromJson(json)).toList();
             debugPrint('   📦 Parsed ${notifications.length} notifications from "notifications" key');
@@ -42,7 +50,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           }
         }
 
-        debugPrint('   ⚠️ Unexpected response format: ${response.data}');
+        debugPrint('   ⚠️ Unexpected response format: $responseData');
         throw NotificationException(message: 'Unexpected response format from server');
       } else {
         throw NotificationException(

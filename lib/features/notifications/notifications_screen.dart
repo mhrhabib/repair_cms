@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -31,24 +32,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
+      appBar: CupertinoNavigationBar(
         backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Notifications',
-          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(SolarIconsBold.settings, color: Colors.black),
-            onPressed: _showNotificationSettings,
+        border: null,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(CupertinoIcons.back, size: 28.r, color: AppColors.fontMainColor),
+              SizedBox(width: 4.w),
+              Text(
+                'Back',
+                style: TextStyle(fontSize: 17.sp, color: AppColors.fontMainColor),
+              ),
+            ],
           ),
-        ],
+        ),
+        middle: Text(
+          'Notifications',
+          style: TextStyle(color: AppColors.fontMainColor, fontSize: 17.sp, fontWeight: FontWeight.w600),
+        ),
+        trailing: GestureDetector(
+          onTap: _showNotificationSettings,
+          child: Icon(SolarIconsBold.settings, size: 24.r, color: AppColors.fontMainColor),
+        ),
       ),
       body: BlocConsumer<NotificationCubit, NotificationState>(
         listener: (context, state) {

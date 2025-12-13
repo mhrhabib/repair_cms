@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/brother_printer_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -54,16 +54,14 @@ class ReceiptScreen extends StatelessWidget {
     debugPrint('✅ Default printer type: $defaultPrinterType');
 
     // ignore: use_build_context_synchronously
-    final selectedPrinter = await showDialog<PrinterConfigModel>(
+    await showCupertinoModalPopup<PrinterConfigModel>(
       context: context,
-      builder: (context) =>
-          _PrinterSelectionDialog(printers: configuredPrinters, defaultPrinterType: defaultPrinterType),
+      builder: (context) => _PrinterSelectionDialog(
+        printers: configuredPrinters,
+        defaultPrinterType: defaultPrinterType,
+        onPrint: (printer) => _printReceipt(context, printer),
+      ),
     );
-
-    if (selectedPrinter != null && context.mounted) {
-      debugPrint('🎯 User selected: ${selectedPrinter.printerBrand} ${selectedPrinter.printerType} printer');
-      _printReceipt(context, selectedPrinter);
-    }
   }
 
   /// Print receipt with selected printer
@@ -642,12 +640,39 @@ class ReceiptScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color figmaBlue = const Color(0xFF007AFF);
+
     return Scaffold(
       backgroundColor: Colors.grey[300],
-      appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        title: const Text('Job Receipt'),
-        actions: [IconButton(icon: const Icon(Icons.print_outlined), onPressed: () => _showPrinterSelection(context))],
+      appBar: CupertinoNavigationBar(
+        backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(CupertinoIcons.back, color: figmaBlue, size: 28.r),
+              Text(
+                'Back',
+                style: TextStyle(color: figmaBlue, fontSize: 17.sp),
+              ),
+            ],
+          ),
+        ),
+        middle: Text(
+          'Job Receipt',
+          style: TextStyle(
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w600,
+            color: CupertinoColors.label.resolveFrom(context),
+          ),
+        ),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => _showPrinterSelection(context),
+          child: Icon(CupertinoIcons.printer, color: figmaBlue, size: 24.r),
+        ),
       ),
       body: SingleChildScrollView(
         child: Center(
@@ -1157,12 +1182,39 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final Color figmaBlue = const Color(0xFF007AFF);
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        title: const Text('Print Settings'),
-        actions: [IconButton(icon: const Icon(Icons.more_vert), onPressed: () {})],
+      appBar: CupertinoNavigationBar(
+        backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(CupertinoIcons.back, color: figmaBlue, size: 28.r),
+              Text(
+                'Back',
+                style: TextStyle(color: figmaBlue, fontSize: 17.sp),
+              ),
+            ],
+          ),
+        ),
+        middle: Text(
+          'Print Settings',
+          style: TextStyle(
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w600,
+            color: CupertinoColors.label.resolveFrom(context),
+          ),
+        ),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {},
+          child: Icon(CupertinoIcons.ellipsis, color: figmaBlue, size: 22.r),
+        ),
       ),
       body: Column(
         children: [
@@ -1379,50 +1431,87 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
 class _PrinterSelectionDialog extends StatelessWidget {
   final List<PrinterConfigModel> printers;
   final String? defaultPrinterType;
+  final Future<void> Function(PrinterConfigModel) onPrint;
 
-  const _PrinterSelectionDialog({required this.printers, this.defaultPrinterType});
+  const _PrinterSelectionDialog({required this.printers, this.defaultPrinterType, required this.onPrint});
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Select Printer'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView.separated(
-          shrinkWrap: true,
-          itemCount: printers.length,
-          separatorBuilder: (context, index) => const Divider(),
-          itemBuilder: (context, index) {
-            final printer = printers[index];
-            final isDefault = printer.printerType == defaultPrinterType;
+    return CupertinoActionSheet(
+      title: Text(
+        'Select Printer',
+        style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
+      ),
+      message: Text(
+        'Choose a printer to print the receipt',
+        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+      ),
+      actions: printers.map((printer) {
+        final isDefault = printer.printerType == defaultPrinterType && printer.isDefault;
+        return CupertinoActionSheetAction(
+          onPressed: () async {
+            debugPrint('🎯 User selected: ${printer.printerBrand} ${printer.printerType} printer');
+            // Close dialog first
+            Navigator.of(context).pop();
 
-            return ListTile(
-              leading: Icon(_getPrinterIcon(printer.printerType), color: Colors.blue, size: 32),
-              title: Text(_getPrinterTitle(printer.printerType), style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Column(
+            // Then execute print and wait for result
+            await onPrint(printer);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(_getPrinterIcon(printer.printerType), size: 24.r, color: AppColors.fontMainColor),
+              SizedBox(width: 12.w),
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(printer.printerModel ?? 'Unknown Model'),
-                  Text(printer.ipAddress, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                  if (isDefault)
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
-                      child: const Text(
-                        'DEFAULT',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  Row(
+                    children: [
+                      Text(
+                        '${printer.printerBrand} ${printer.printerModel ?? ""}',
+                        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF007AFF)),
                       ),
-                    ),
+                      if (isDefault) ...[
+                        SizedBox(width: 8.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            'DEFAULT',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    printer.ipAddress,
+                    style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+                  ),
+                  Text(
+                    _getPrinterTitle(printer.printerType),
+                    style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500),
+                  ),
                 ],
               ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Navigator.of(context).pop(printer),
-            );
-          },
-        ),
+            ],
+          ),
+        );
+      }).toList(),
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: () => Navigator.of(context).pop(),
+        isDefaultAction: true,
+        child: const Text('Cancel'),
       ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))],
     );
   }
 

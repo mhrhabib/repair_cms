@@ -237,7 +237,7 @@ class JobRepository {
 
       dio.Response response = await BaseClient.patch(url: url, payload: payload);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('✅ Job completion status updated successfully');
 
         // Send email notification if job is completed and notification is enabled
@@ -245,7 +245,14 @@ class JobRepository {
           await _sendJobCompleteEmail(currentJob, statusConfig['title']);
         }
 
-        return SingleJobModel.fromJson(response.data);
+        // Handle String response that needs decoding
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('📄 Response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to update job status: ${response.statusCode}');
       }
@@ -331,10 +338,18 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job return status updated successfully');
-        debugPrint('✅ Response - is_device_returned: ${response.data['data']?['is_device_returned']}');
-        debugPrint('✅ Response - status: ${response.data['data']?['status']}');
 
-        return SingleJobModel.fromJson(response.data);
+        // Handle String response by decoding it first
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('📄 Response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+
+        debugPrint('✅ Response - is_device_returned: ${responseData['data']?['is_device_returned']}');
+        debugPrint('✅ Response - status: ${responseData['data']?['status']}');
+
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to update job return status: ${response.statusCode}');
       }
@@ -412,9 +427,16 @@ class JobRepository {
 
       dio.Response response = await BaseClient.patch(url: url, payload: payload);
 
+      // Handle string response
+      dynamic responseData = response.data;
+      if (responseData is String) {
+        debugPrint('📄 Response is String, decoding...');
+        responseData = jsonDecode(responseData);
+      }
+
       if (response.statusCode == 200) {
         debugPrint('✅ Job assignee updated successfully');
-        return SingleJobModel.fromJson(response.data);
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to update job assignee: ${response.statusCode}');
       }
@@ -436,12 +458,20 @@ class JobRepository {
       };
 
       dio.Response response = await BaseClient.patch(url: url, payload: payload);
-      debugPrint('🔄 repo: Updated job priority for Job ID: ${response.data['data']?['_id']} to $priority');
+
+      // Handle string response
+      dynamic responseData = response.data;
+      if (responseData is String) {
+        debugPrint('📄 Response is String, decoding...');
+        responseData = jsonDecode(responseData);
+      }
+
+      debugPrint('🔄 repo: Updated job priority for Job ID: ${responseData['data']?['_id']} to $priority');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to update job priority: ${response.statusCode}');
       }
-      return SingleJobModel.fromJson(response.data);
+      return SingleJobModel.fromJson(responseData);
     } on dio.DioException catch (e) {
       if (e.response != null) {
         throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
@@ -503,7 +533,15 @@ class JobRepository {
 
       // First, get the current job to append to existing status
       final currentJobResponse = await BaseClient.get(url: url);
-      final currentJob = SingleJobModel.fromJson(currentJobResponse.data);
+
+      // Handle String response that needs decoding
+      dynamic currentJobData = currentJobResponse.data;
+      if (currentJobData is String) {
+        debugPrint('📄 Current job response is String, decoding...');
+        currentJobData = jsonDecode(currentJobData);
+      }
+
+      final currentJob = SingleJobModel.fromJson(currentJobData);
       final existingStatuses = currentJob.data?.jobStatus ?? [];
 
       // Determine color code if not provided
@@ -543,7 +581,15 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job status added successfully (appended)');
-        return SingleJobModel.fromJson(response.data);
+
+        // Handle String response that needs decoding
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('📄 Response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to add job status: ${response.statusCode}');
       }
@@ -941,23 +987,76 @@ class JobRepository {
     }
   }
 
-  Future<SingleJobModel> deleteJobFile({required String jobId, required String fileId}) async {
+  Future<SingleJobModel> deleteJobFile({required String jobId, required String filePath}) async {
     try {
-      final url = '${ApiEndpoints.fileUplaodUrl}images?/$jobId/$fileId';
-
       debugPrint('🔄 Deleting job file:');
       debugPrint('🔄 Job ID: $jobId');
-      debugPrint('🔄 File ID: $fileId');
+      debugPrint('🔄 File Path: $filePath');
 
-      dio.Response response = await BaseClient.delete(url: url);
+      // Step 1: Get the current job to find the file entry
+      final currentJob = await getJobById(jobId);
+      final currentFiles = currentJob.data?.files ?? [];
 
-      if (response.statusCode == 200) {
-        debugPrint('✅ Job file deleted successfully');
+      debugPrint('📊 Current files count: ${currentFiles.length}');
 
-        // After successful deletion, get the updated job
-        return await getJobById(jobId);
+      // Step 2: Remove the file from S3
+      final deleteUrl = '${ApiEndpoints.fileUplaodUrl}images?imagePath=$filePath';
+      debugPrint('🗑️ Deleting from S3: $deleteUrl');
+
+      try {
+        final deleteResponse = await BaseClient.delete(url: deleteUrl);
+        if (deleteResponse.statusCode == 200) {
+          debugPrint('✅ File deleted from S3');
+        } else {
+          debugPrint('⚠️ S3 delete returned: ${deleteResponse.statusCode}');
+        }
+      } catch (e) {
+        debugPrint('⚠️ S3 delete error (continuing): $e');
+        // Continue even if S3 delete fails - we still want to remove from DB
+      }
+
+      // Step 3: Remove the file entry from the job's files array
+      final updatedFiles = currentFiles.where((file) => file.file != filePath).toList();
+      debugPrint('📊 Updated files count: ${updatedFiles.length}');
+
+      if (updatedFiles.length == currentFiles.length) {
+        debugPrint('⚠️ Warning: File not found in job files list');
+      }
+
+      // Step 4: PATCH the job with the updated files array
+      final patchUrl = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
+      final patchPayload = {
+        'job': {
+          'files': updatedFiles
+              .map(
+                (f) => {
+                  'file': f.file,
+                  'id': f.id,
+                  'fileName': f.fileName,
+                  'size': f.size,
+                  if (f.url != null) 'url': f.url,
+                },
+              )
+              .toList(),
+        },
+      };
+
+      debugPrint('🔄 Patching job to remove file entry');
+      final patchResponse = await BaseClient.patch(url: patchUrl, payload: patchPayload);
+
+      if (patchResponse.statusCode == 200 || patchResponse.statusCode == 201) {
+        debugPrint('✅ Job file list updated successfully');
+
+        // Handle String response that needs decoding
+        dynamic responseData = patchResponse.data;
+        if (responseData is String) {
+          debugPrint('📄 Response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+
+        return SingleJobModel.fromJson(responseData);
       } else {
-        throw Exception('Failed to delete file: ${response.statusCode}');
+        throw Exception('Failed to update job file list: ${patchResponse.statusCode}');
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error in deleteJobFile: $e');
@@ -967,32 +1066,4 @@ class JobRepository {
   }
 
   // Helper method to get MIME type from file extension
-  String _getMimeType(String fileName) {
-    final extension = fileName.split('.').last.toLowerCase();
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      case 'gif':
-        return 'image/gif';
-      case 'pdf':
-        return 'application/pdf';
-      case 'doc':
-        return 'application/msword';
-      case 'docx':
-        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      case 'xls':
-        return 'application/vnd.ms-excel';
-      case 'xlsx':
-        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      case 'mp4':
-        return 'video/mp4';
-      case 'txt':
-        return 'text/plain';
-      default:
-        return 'application/octet-stream';
-    }
-  }
 }

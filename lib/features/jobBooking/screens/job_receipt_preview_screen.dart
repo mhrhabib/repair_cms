@@ -778,7 +778,7 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
 
             // Printer Type
             DropdownButtonFormField<String>(
-              value: _printerType,
+              initialValue: _printerType,
               decoration: const InputDecoration(labelText: 'Printer Type'),
               items: const [
                 DropdownMenuItem(value: 'thermal', child: Text('Thermal Receipt')),
@@ -795,7 +795,7 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
 
             // Printer Brand
             DropdownButtonFormField<String>(
-              value: _printerBrand,
+              initialValue: _printerBrand,
               decoration: const InputDecoration(labelText: 'Printer Brand'),
               items: _printerBrands.map((brand) => DropdownMenuItem(value: brand, child: Text(brand))).toList(),
               onChanged: (value) {
@@ -819,7 +819,7 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
             // Paper Width (for thermal printers)
             if (_printerType == 'thermal') ...[
               DropdownButtonFormField<int>(
-                value: _paperWidth,
+                initialValue: _paperWidth,
                 decoration: const InputDecoration(labelText: 'Paper Width'),
                 items: _paperWidths.map((width) => DropdownMenuItem(value: width, child: Text('${width}mm'))).toList(),
                 onChanged: (value) {
@@ -834,7 +834,7 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
             // Label Size (for label printers)
             if (_printerType == 'label') ...[
               DropdownButtonFormField<LabelSize>(
-                value: _labelSize,
+                initialValue: _labelSize,
                 decoration: const InputDecoration(labelText: 'Label Size'),
                 items: _availableLabelSizes
                     .map((size) => DropdownMenuItem(value: size, child: Text(size.toString())))

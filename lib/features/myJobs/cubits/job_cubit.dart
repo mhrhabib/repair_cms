@@ -575,13 +575,13 @@ class JobCubit extends Cubit<JobStates> {
     }
   }
 
-  Future<void> deleteJobFile({required String jobId, required String fileId}) async {
+  Future<void> deleteJobFile({required String jobId, required String filePath}) async {
     if (isClosed) return;
 
     emit(JobActionLoading());
 
     try {
-      final SingleJobModel updatedJob = await repository.deleteJobFile(jobId: jobId, fileId: fileId);
+      final SingleJobModel updatedJob = await repository.deleteJobFile(jobId: jobId, filePath: filePath);
 
       if (!isClosed) {
         emit(JobFileDeleteSuccess(job: updatedJob));

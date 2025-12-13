@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -5,6 +6,7 @@ import 'package:barcode_widget/barcode_widget.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
+import 'package:repair_cms/features/moreSettings/printerSettings/service/brother_printer_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
 import 'package:repair_cms/core/helpers/show_toast.dart';
 
@@ -21,6 +23,7 @@ class JobDeviceLabelScreen extends StatefulWidget {
 
 class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   final _settingsService = PrinterSettingsService();
+  final _printerService = BrotherPrinterService();
 
   /// Get the last used or default printer for one-click printing
   PrinterConfigModel? _getDefaultPrinter() {
@@ -34,34 +37,44 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
     return labelPrinters.first;
   }
 
-  /// One-click print with default printer
-  Future<void> _printWithDefaultPrinter() async {
-    final printer = _getDefaultPrinter();
-
-    if (printer == null) {
-      showCustomToast('No label printers configured. Please configure a printer first.', isError: true);
-      return;
-    }
-
-    await _printLabel(printer);
-  }
-
-  /// Enhanced print method with actual ESC/POS implementation
+  /// Enhanced print method using centralized printer service
   Future<void> _printLabel(PrinterConfigModel printer) async {
     try {
-      showCustomToast('Printing label...', isError: false);
+      showCustomToast('Preparing label...', isError: false);
 
       debugPrint('🖨️ Printing with ${printer.printerBrand} ${printer.printerType}');
-      debugPrint('📄 Job: ${_getJobNumber()}');
-      debugPrint('👤 Customer: ${_getCustomerName()}');
-      debugPrint('📱 Device: ${_getDeviceName()}');
-      debugPrint('🔢 IMEI: ${_getDeviceIMEI()}');
 
-      // TODO: Implement actual printer communication
-      // This requires proper printer SDK integration
+      // Build label data
+      final labelData = {
+        'jobNumber': _getJobNumber(),
+        'customerName': _getCustomerName(),
+        'deviceName': _getDeviceName(),
+        'imei': _getDeviceIMEI(),
+        'defect': _getDefect(),
+        'location': _getPhysicalLocation(),
+        'jobId': widget.jobResponse.data?.sId ?? 'N/A',
+      };
 
-      await Future.delayed(const Duration(milliseconds: 500));
-      showCustomToast('Label print simulated successfully!', isError: false);
+      debugPrint('📄 Job: ${labelData['jobNumber']}');
+      debugPrint('👤 Customer: ${labelData['customerName']}');
+      debugPrint('📱 Device: ${labelData['deviceName']}');
+      debugPrint('🔢 IMEI: ${labelData['imei']}');
+
+      showCustomToast('Sending to printer...', isError: false);
+
+      // Use centralized printer service
+      final result = await _printerService.printDeviceLabel(
+        ipAddress: printer.ipAddress,
+        labelData: labelData,
+        port: printer.port ?? 9100,
+      );
+
+      if (result.success) {
+        showCustomToast(result.message, isError: false);
+        debugPrint('✅ ${result.message}');
+      } else {
+        throw Exception(result.message);
+      }
     } catch (e) {
       debugPrint('❌ Print error: $e');
       showCustomToast('Print failed: $e', isError: true);
@@ -128,155 +141,127 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       return;
     }
 
-    final selectedPrinter = await showDialog<PrinterConfigModel>(
+    final selectedPrinter = await showCupertinoModalPopup<PrinterConfigModel>(
       context: context,
-      builder: (context) => _PrinterSelectionDialog(printers: labelPrinters),
+      builder: (context) => _PrinterSelectionDialog(printers: labelPrinters, onPrint: _printLabel),
     );
 
-    if (selectedPrinter != null && mounted) {
-      await _printLabel(selectedPrinter);
-    }
+    // Don't need to handle printing here since it's done in dialog
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // Header with close and print buttons
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
-              ),
-              child: Row(
-                children: [
-                  // Close button
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      width: 40.w,
-                      height: 40.h,
-                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8.r)),
-                      child: Icon(Icons.close, color: Colors.grey.shade800, size: 24.sp),
-                    ),
-                  ),
-                  const Spacer(),
-                  // Title
-                  Text(
-                    'Device Label',
-                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
-                  ),
-                  const Spacer(),
-                  // Print button
-                  GestureDetector(
-                    onTap: _showPrinterSelection,
-                    child: Container(
-                      width: 40.w,
-                      height: 40.h,
-                      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(8.r)),
-                      child: Icon(Icons.print, color: Colors.white, size: 24.sp),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Label Preview Content
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: Colors.grey.shade300, width: 2),
-                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, 2))],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Barcode and QR Code row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Barcode section
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              height: 60.h,
-                              child: BarcodeWidget(
-                                barcode: Barcode.code128(),
-                                data: _getBarcodeData(),
-                                drawText: false,
-                                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: Colors.black),
-                              ),
-                            ),
-                            Text(
-                              _getJobNumber(),
-                              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: Colors.black),
-                              textAlign: TextAlign.left,
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: 16.w),
-                      // QR Code section
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              height: 60.h,
-                              child: QrImageView(
-                                data: _getQRCodeData(),
-                                version: QrVersions.auto,
-                                size: 60.w,
-                                backgroundColor: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 4.h),
-                            Text(
-                              widget.jobResponse.data?.sId ?? 'N/A',
-                              style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.w400, color: Colors.black),
-                              textAlign: TextAlign.left,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  // Job information - single line
-                  Text(
-                    '${_getJobNumber()} | ${_getCustomerName()} | ${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
-                    style: TextStyle(fontSize: 8.sp, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
-                    textAlign: TextAlign.left,
-                  ),
-
-                  SizedBox(height: 4.h),
-
-                  // Defect and location - single line
-                  Text(
-                    '${_getDefect()} | BOX: ${_getPhysicalLocation()}',
-                    style: TextStyle(fontSize: 8.sp, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
-                    textAlign: TextAlign.left,
-                  ),
-                ],
-              ),
-            ),
-          ],
+      appBar: CupertinoNavigationBar(
+        backgroundColor: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1)),
+        leading: GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Icon(CupertinoIcons.xmark, size: 24.r, color: Colors.grey.shade800),
         ),
+        middle: Text(
+          'Device Label',
+          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
+        ),
+        trailing: GestureDetector(
+          onTap: _showPrinterSelection,
+          child: Icon(Icons.print, size: 24.r, color: AppColors.primary),
+        ),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          // Label Preview Content
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(color: Colors.grey.shade300, width: 2),
+              boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, 2))],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Barcode and QR Code row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Barcode section
+                    Expanded(
+                      flex: 6,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            height: 60.h,
+                            child: BarcodeWidget(
+                              barcode: Barcode.code128(),
+                              data: _getBarcodeData(),
+                              drawText: false,
+                              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                            ),
+                          ),
+                          Text(
+                            _getJobNumber(),
+                            style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                            textAlign: TextAlign.left,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
+                    // QR Code section
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 60.h,
+                            child: QrImageView(
+                              data: _getQRCodeData(),
+                              version: QrVersions.auto,
+                              size: 60.w,
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            widget.jobResponse.data?.sId ?? 'N/A',
+                            style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                            textAlign: TextAlign.left,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16.h),
+
+                // Job information - single line
+                Text(
+                  '${_getJobNumber()} | ${_getCustomerName()} | ${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
+                  style: TextStyle(fontSize: 8.sp, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
+                  textAlign: TextAlign.left,
+                ),
+
+                SizedBox(height: 4.h),
+
+                // Defect and location - single line
+                Text(
+                  '${_getDefect()} | BOX: ${_getPhysicalLocation()}',
+                  style: TextStyle(fontSize: 8.sp, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
+                  textAlign: TextAlign.left,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -285,44 +270,64 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 /// Printer selection dialog for label printers
 class _PrinterSelectionDialog extends StatelessWidget {
   final List<PrinterConfigModel> printers;
+  final Future<void> Function(PrinterConfigModel) onPrint;
 
-  const _PrinterSelectionDialog({required this.printers});
+  const _PrinterSelectionDialog({required this.printers, required this.onPrint});
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Select Label Printer'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView.separated(
-          shrinkWrap: true,
-          itemCount: printers.length,
-          separatorBuilder: (context, index) => const Divider(),
-          itemBuilder: (context, index) {
-            final printer = printers[index];
+    return CupertinoActionSheet(
+      title: Text(
+        'Select Label Printer',
+        style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
+      ),
+      message: Text(
+        'Choose a printer to print the device label',
+        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+      ),
+      actions: printers.map((printer) {
+        return CupertinoActionSheetAction(
+          onPressed: () async {
+            // Close dialog first
+            Navigator.of(context).pop();
 
-            return ListTile(
-              leading: const Icon(Icons.label, color: Colors.blue, size: 32),
-              title: Text('${printer.printerBrand} Label Printer', style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Column(
+            // Then execute print and wait for result
+            await onPrint(printer);
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(CupertinoIcons.printer, size: 24.r, color: AppColors.fontMainColor),
+              SizedBox(width: 12.w),
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(printer.printerModel ?? 'Unknown Model'),
-                  Text(printer.ipAddress, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  Text(
+                    '${printer.printerBrand} ${printer.printerModel ?? ""}',
+                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF007AFF)),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    printer.ipAddress,
+                    style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+                  ),
                   if (printer.labelSize != null)
                     Text(
                       'Size: ${printer.labelSize!.width}mm × ${printer.labelSize!.height}mm',
-                      style: TextStyle(fontSize: 11, color: Colors.blue[700], fontWeight: FontWeight.w500),
+                      style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500),
                     ),
                 ],
               ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Navigator.of(context).pop(printer),
-            );
-          },
-        ),
+            ],
+          ),
+        );
+      }).toList(),
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: () => Navigator.of(context).pop(),
+        isDefaultAction: true,
+        child: const Text('Cancel'),
       ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))],
     );
   }
 }

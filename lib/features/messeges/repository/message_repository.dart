@@ -32,7 +32,7 @@ class MessageRepositoryImpl implements MessageRepository {
         final data = jsonData;
 
         debugPrint('📦 [MessageRepository] Response data type: ${data.runtimeType}');
-        debugPrint('📦 [MessageRepository] Response data keys: ${data is Map ? (data as Map).keys.toList() : "N/A"}');
+        debugPrint('📦 [MessageRepository] Response data keys: ${data is Map ? (data).keys.toList() : "N/A"}');
         if (data is Map && data.containsKey('success')) {
           debugPrint('📦 [MessageRepository] Success value: ${data['success']}');
         }

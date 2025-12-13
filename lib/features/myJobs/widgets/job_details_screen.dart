@@ -11,7 +11,6 @@ import 'package:repair_cms/features/myJobs/job_details_navbar_screen.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/myJobs/widgets/files_screen.dart';
-import 'package:repair_cms/features/myJobs/widgets/job_complete_bottomsheet.dart';
 import 'package:repair_cms/features/myJobs/widgets/notes_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/receipt_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/status_screen.dart';
@@ -413,48 +412,62 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         }
       },
 
-      child: Scaffold(body: _buildJobDetailsScreen(widget.job)),
+      child: Scaffold(appBar: _buildCustomAppBar(), body: _buildJobDetailsScreen(widget.job)),
     );
   }
 
-  Widget _buildCustomAppBar() {
-    return Container(
-      height: kToolbarHeight,
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-          ),
-          IconButton(
-            onPressed: () => _navigateToDeviceLabel(widget.job),
-            icon: Image.asset('assets/icon/label.png', width: 24.w, height: 24.h),
-            tooltip: 'Device Label',
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.job.data!.contact!.isEmpty
-                      ? 'Job Details'
-                      : widget.job.data!.contact![0].firstName ?? 'Job Details',
-                  style: GoogleFonts.roboto(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  'Auftrag-Nr: ${widget.job.data!.jobNo}',
-                  style: GoogleFonts.roboto(color: Colors.grey.shade600, fontSize: 12.sp, fontWeight: FontWeight.w400),
-                ),
-              ],
+  PreferredSizeWidget _buildCustomAppBar() {
+    final Color figmaBlue = const Color(0xFF007AFF);
+
+    return CupertinoNavigationBar(
+      backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+      leading: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: () => Navigator.of(context).pop(),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(CupertinoIcons.back, color: figmaBlue, size: 28.r),
+            Text(
+              'Back',
+              style: TextStyle(color: figmaBlue, fontSize: 17.sp),
             ),
+          ],
+        ),
+      ),
+      middle: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.job.data!.contact!.isEmpty ? 'Job Details' : widget.job.data!.contact![0].firstName ?? 'Job Details',
+            style: TextStyle(
+              fontSize: 17.sp,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.label.resolveFrom(context),
+            ),
+          ),
+          Text(
+            'Auftrag-Nr: ${widget.job.data!.jobNo}',
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => _navigateToDeviceLabel(widget.job),
+            child: Image.asset('assets/icon/label.png', width: 24.r, height: 24.r),
           ),
           Stack(
             children: [
-              IconButton(
+              CupertinoButton(
+                padding: EdgeInsets.zero,
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -464,11 +477,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                     ),
                   );
                 },
-                icon: Icon(SolarIconsOutline.dialog2, color: Colors.black87),
+                child: Icon(SolarIconsOutline.dialog2, color: figmaBlue, size: 28.r),
               ),
               Positioned(
-                right: 8,
-                top: 8,
+                right: 8.w,
+                top: 8.h,
                 child: Container(
                   width: 8.w,
                   height: 8.h,
@@ -484,202 +497,199 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
 
   Widget _buildJobDetailsScreen(SingleJobModel job) {
     debugPrint('Building JobDetailsScreen for Job ID: ${job.data!.sId}');
-    return SafeArea(
-      child: Column(
-        children: [
-          _buildCustomAppBar(),
-          // Toggle Switches Section
-          Container(
-            color: Colors.white,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+    return Column(
+      children: [
+        // Toggle Switches Section
+        Container(
+          color: Colors.white,
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Set Job Complete',
+                    style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                  ),
+                  CupertinoSwitch(
+                    value: isJobComplete,
+                    onChanged: (value) {
+                      if (value) {
+                        // Setting job to complete - show bottom sheet for confirmation
+                        _showCompleteConfirmationBottomSheet();
+                      } else {
+                        // Setting job to incomplete - update immediately with confirmation dialog
+                        _showIncompleteConfirmationDialog();
+                      }
+                    },
+                    activeTrackColor: Colors.blue,
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Return device',
+                    style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                  ),
+                  CupertinoSwitch(
+                    value: returnDevice,
+                    onChanged: (value) {
+                      if (value) {
+                        // Setting device as returned - show confirmation
+                        _showReturnDeviceConfirmationDialog();
+                      } else {
+                        // Setting device as not returned - update immediately
+                        _setDeviceAsNotReturned();
+                      }
+                    },
+                    activeTrackColor: Colors.blue,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(height: 8.h),
+
+        // Tab Card (redesigned to match image)
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: _buildTabCard(job),
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Content (Job Management etc)
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Job Management Section (All dropdowns together)
+                _buildInfoCard(
+                  title: 'Job Management',
                   children: [
+                    // Job Priority
                     Text(
-                      'Set Job Complete',
-                      style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                      'Job Priority',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
-                    CupertinoSwitch(
-                      value: isJobComplete,
-                      onChanged: (value) {
-                        if (value) {
-                          // Setting job to complete - show bottom sheet for confirmation
-                          _showCompleteConfirmationBottomSheet();
-                        } else {
-                          // Setting job to incomplete - update immediately with confirmation dialog
-                          _showIncompleteConfirmationDialog();
-                        }
-                      },
-                      activeTrackColor: Colors.blue,
+                    SizedBox(height: 8.h),
+
+                    _buildDropdownField(
+                      icon: Icons.flag_outlined,
+                      value: selectedPriority,
+                      items: ['Neutral', 'High', 'Urgent'],
+                      onChanged: _onPrioritySelected,
                     ),
+                    SizedBox(height: 20.h),
+
+                    // Due Date
+                    Text(
+                      'Due Date',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+
+                    GestureDetector(
+                      onTap: _showDatePicker,
+                      child: Container(
+                        height: 40.h,
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.blue, width: 1.5),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_today_outlined, color: Colors.blue, size: 20),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: Text(
+                                selectedDueDate,
+                                style: GoogleFonts.roboto(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.arrow_drop_down, color: Colors.blue),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+
+                    // Assignee
+                    // Replace the assignee section with this:
+                    Text(
+                      'Assignee',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+
+                    _isLoadingUsers
+                        ? Container(
+                            height: 40.h,
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.person_outline, color: Colors.grey, size: 20),
+                                SizedBox(width: 8.w),
+                                Expanded(
+                                  child: Text(
+                                    'Loading users...',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 20.w, height: 20.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                              ],
+                            ),
+                          )
+                        : _buildUserDropdownField(),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Return device',
-                      style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
-                    ),
-                    CupertinoSwitch(
-                      value: returnDevice,
-                      onChanged: (value) {
-                        if (value) {
-                          // Setting device as returned - show confirmation
-                          _showReturnDeviceConfirmationDialog();
-                        } else {
-                          // Setting device as not returned - update immediately
-                          _setDeviceAsNotReturned();
-                        }
-                      },
-                      activeTrackColor: Colors.blue,
-                    ),
-                  ],
-                ),
+
+                // Customer Information
+                SizedBox(height: 16.h),
+                _buildCustomerInfoCard(job),
+
+                // Financial Information
+                SizedBox(height: 16.h),
+                _buildFinancialInfoCard(job),
+
+                SizedBox(height: 24.h),
               ],
             ),
           ),
-
-          SizedBox(height: 8.h),
-
-          // Tab Card (redesigned to match image)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: _buildTabCard(job),
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Content (Job Management etc)
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Job Management Section (All dropdowns together)
-                  _buildInfoCard(
-                    title: 'Job Management',
-                    children: [
-                      // Job Priority
-                      Text(
-                        'Job Priority',
-                        style: GoogleFonts.roboto(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-
-                      _buildDropdownField(
-                        icon: Icons.flag_outlined,
-                        value: selectedPriority,
-                        items: ['Neutral', 'High', 'Urgent'],
-                        onChanged: _onPrioritySelected,
-                      ),
-                      SizedBox(height: 20.h),
-
-                      // Due Date
-                      Text(
-                        'Due Date',
-                        style: GoogleFonts.roboto(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-
-                      GestureDetector(
-                        onTap: _showDatePicker,
-                        child: Container(
-                          height: 40.h,
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.blue, width: 1.5),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.calendar_today_outlined, color: Colors.blue, size: 20),
-                              SizedBox(width: 8.w),
-                              Expanded(
-                                child: Text(
-                                  selectedDueDate,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                              Icon(Icons.arrow_drop_down, color: Colors.blue),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20.h),
-
-                      // Assignee
-                      // Replace the assignee section with this:
-                      Text(
-                        'Assignee',
-                        style: GoogleFonts.roboto(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-
-                      _isLoadingUsers
-                          ? Container(
-                              height: 40.h,
-                              padding: EdgeInsets.symmetric(horizontal: 12.w),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.person_outline, color: Colors.grey, size: 20),
-                                  SizedBox(width: 8.w),
-                                  Expanded(
-                                    child: Text(
-                                      'Loading users...',
-                                      style: GoogleFonts.roboto(
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 20.w, height: 20.h, child: CircularProgressIndicator(strokeWidth: 2)),
-                                ],
-                              ),
-                            )
-                          : _buildUserDropdownField(),
-                    ],
-                  ),
-
-                  // Customer Information
-                  SizedBox(height: 16.h),
-                  _buildCustomerInfoCard(job),
-
-                  // Financial Information
-                  SizedBox(height: 16.h),
-                  _buildFinancialInfoCard(job),
-
-                  SizedBox(height: 24.h),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -834,25 +844,91 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   }
 
   void _showCompleteConfirmationBottomSheet() {
-    showJobCompleteBottomSheet(
-      context,
-      onConfirm: (String notes, bool sendNotification) {
-        // Forward notes and the sendNotification flag from the bottom sheet
-        context.read<JobCubit>().setJobAsComplete(
-          jobId: widget.job.data!.sId!,
-          userId: storage.read('userId'),
-          userName: storage.read('fullName'),
-          email: storage.read('email'),
-          notes: notes,
-          sendNotification: sendNotification,
-          currentJob: widget.job,
-        );
+    final TextEditingController notesController = TextEditingController();
+    bool sendNotification = true;
 
-        // Update local state
-        setState(() {
-          isJobComplete = true;
-        });
-      },
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (context, setState) => CupertinoActionSheet(
+          title: Text(
+            'Set Job Complete',
+            style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
+          ),
+          message: Column(
+            children: [
+              SizedBox(height: 16.h),
+              // Notes input field
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+                decoration: BoxDecoration(color: CupertinoColors.systemGrey6, borderRadius: BorderRadius.circular(8.r)),
+                child: CupertinoTextField(
+                  controller: notesController,
+                  placeholder: 'Add notes about job completion...',
+                  maxLines: 3,
+                  style: TextStyle(fontSize: 15.sp),
+                  padding: EdgeInsets.all(12.r),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              // Send notification toggle
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                decoration: BoxDecoration(color: CupertinoColors.systemGrey6, borderRadius: BorderRadius.circular(8.r)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(CupertinoIcons.mail, size: 18.sp, color: const Color(0xFF007AFF)),
+                        SizedBox(width: 8.w),
+                        Text('Send email to customer', style: TextStyle(fontSize: 15.sp)),
+                      ],
+                    ),
+                    CupertinoSwitch(
+                      value: sendNotification,
+                      onChanged: (value) {
+                        setState(() {
+                          sendNotification = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                // Forward notes and the sendNotification flag
+                this.context.read<JobCubit>().setJobAsComplete(
+                  jobId: widget.job.data!.sId!,
+                  userId: storage.read('userId'),
+                  userName: storage.read('fullName'),
+                  email: storage.read('email'),
+                  notes: notesController.text,
+                  sendNotification: sendNotification,
+                  currentJob: widget.job,
+                );
+
+                // Update local state
+                this.setState(() {
+                  isJobComplete = true;
+                });
+              },
+              isDefaultAction: true,
+              child: Text('Confirm Complete', style: TextStyle(fontSize: 17.sp)),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            isDestructiveAction: false,
+            child: Text('Cancel', style: TextStyle(fontSize: 17.sp)),
+          ),
+        ),
+      ),
     );
   }
 
@@ -889,56 +965,38 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   }
 
   void _showReturnDeviceConfirmationDialog() {
-    showDialog(
+    showCupertinoDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return CupertinoAlertDialog(
           title: Text(
             'Mark Device as Returned?',
-            style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'This will:',
-                style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                '• Mark device as returned',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
-              ),
-              Text(
-                '• Archive the job',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
-              ),
-              Text(
-                '• Move job to trash',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
-              ),
-            ],
+          content: Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: Text(
+              'This will:\n• Mark device as returned\n• Archive the job\n• Move job to trash',
+              style: TextStyle(fontSize: 13.sp),
+              textAlign: TextAlign.left,
+            ),
           ),
           actions: [
-            TextButton(
+            CupertinoDialogAction(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
-              ),
+              child: Text('Cancel', style: TextStyle(fontSize: 17.sp)),
             ),
-            ElevatedButton(
+            CupertinoDialogAction(
               onPressed: () {
-                _setDeviceAsReturned();
                 Navigator.of(context).pop();
+                _setDeviceAsReturned();
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              isDefaultAction: true,
               child: Text(
                 'Mark Returned',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.white),
+                style: TextStyle(fontSize: 17.sp, color: CupertinoColors.systemGreen),
               ),
             ),
           ],
@@ -948,30 +1006,31 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   }
 
   void _showIncompleteConfirmationDialog() {
-    showDialog(
+    showCupertinoDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return CupertinoAlertDialog(
           title: Text(
             'Set Job as Incomplete?',
-            style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
           ),
-          content: Text(
-            'This will change the job status to "In Progress" and mark it as incomplete.',
-            style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade700),
+          content: Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: Text(
+              'This will change the job status to "In Progress" and mark it as incomplete.',
+              style: TextStyle(fontSize: 13.sp),
+            ),
           ),
           actions: [
-            TextButton(
+            CupertinoDialogAction(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
-              ),
+              child: Text('Cancel', style: TextStyle(fontSize: 17.sp)),
             ),
-            ElevatedButton(
+            CupertinoDialogAction(
               onPressed: () {
+                Navigator.of(context).pop();
                 context.read<JobCubit>().setJobAsIncomplete(
                   jobId: widget.job.data!.sId!,
                   userId: storage.read('userId'),
@@ -986,12 +1045,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                 setState(() {
                   isJobComplete = false;
                 });
-                Navigator.of(context).pop();
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              isDefaultAction: true,
               child: Text(
                 'Mark Incomplete',
-                style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.white),
+                style: TextStyle(fontSize: 17.sp, color: CupertinoColors.systemOrange),
               ),
             ),
           ],

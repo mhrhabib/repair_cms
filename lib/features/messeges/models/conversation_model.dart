@@ -324,15 +324,15 @@ class Services {
 
 class AssignedItems {
   String? productName;
-  dynamic? priceExclVat;
-  dynamic? vat;
-  dynamic? priceInclVat;
+  dynamic priceExclVat;
+  dynamic vat;
+  dynamic priceInclVat;
   String? id;
   String? itemNumber;
-  dynamic? unit;
+  dynamic unit;
   String? physicalLocation;
-  dynamic? stockQty;
-  dynamic? amount;
+  dynamic stockQty;
+  dynamic amount;
   String? description;
   String? manufacturer;
   String? manufacturerNumber;
@@ -409,12 +409,12 @@ class Invoice {
   JobId? jobId;
   String? jobNo;
   String? text;
-  dynamic? subTotal;
-  dynamic? discount;
+  dynamic subTotal;
+  dynamic discount;
   String? discountPercent;
-  dynamic? vat;
-  dynamic? total;
-  dynamic? backAmount;
+  dynamic vat;
+  dynamic total;
+  dynamic backAmount;
   List<ServiceItemList>? serviceItemList;
   String? paymentMethod;
   String? paymentStatus;
@@ -424,7 +424,7 @@ class Invoice {
   List<Files>? files;
   CustomerDetails? customerDetails;
   String? paymentNote;
-  dynamic? paymentDueDate;
+  dynamic paymentDueDate;
   bool? isSend;
   bool? isRevoked;
   bool? isCreditInvoice;
@@ -443,7 +443,7 @@ class Invoice {
   String? sId;
   String? createdAt;
   String? updatedAt;
-  dynamic? iV;
+  dynamic iV;
   String? id;
 
   Invoice({
@@ -623,10 +623,10 @@ class JobId {
   DeviceId? deviceId;
   String? jobContactId;
   DefectId? defectId;
-  dynamic? subTotal;
-  dynamic? total;
-  dynamic? vat;
-  dynamic? discount;
+  dynamic subTotal;
+  dynamic total;
+  dynamic vat;
+  dynamic discount;
   String? jobNo;
   String? customerId;
   List<AssignedItems>? assignedItemsIds;
@@ -640,7 +640,7 @@ class JobId {
   String? userId;
   String? createdAt;
   String? updatedAt;
-  dynamic? iV;
+  dynamic iV;
   String? jobTrackingNumber;
   String? physicalLocation;
   String? prdynamicOption;
@@ -824,7 +824,7 @@ class DeviceId {
   String? color;
   String? createdAt;
   String? updatedAt;
-  dynamic? iV;
+  dynamic iV;
   String? id;
 
   DeviceId({
@@ -914,7 +914,7 @@ class DefectId {
   List<String>? assignItems;
   String? createdAt;
   String? updatedAt;
-  dynamic? iV;
+  dynamic iV;
   String? id;
 
   DefectId({
@@ -1008,7 +1008,7 @@ class Files {
   String? file;
   String? id;
   String? fileName;
-  dynamic? size;
+  dynamic size;
 
   Files({this.file, this.id, this.fileName, this.size});
 
@@ -1034,7 +1034,7 @@ class JobStatus {
   String? userId;
   String? colorCode;
   String? userName;
-  dynamic? createAtStatus;
+  dynamic createAtStatus;
   bool? notifications;
   String? email;
   String? notes;
@@ -1150,7 +1150,7 @@ class BillingAddress {
   String? city;
   String? country;
   String? customerId;
-  dynamic? iV;
+  dynamic iV;
 
   BillingAddress({this.sId, this.street, this.zip, this.city, this.country, this.customerId, this.iV});
 
@@ -1190,7 +1190,7 @@ class DeviceData {
   String? color;
   String? createdAt;
   String? updatedAt;
-  dynamic? iV;
+  dynamic iV;
 
   DeviceData({
     this.sId,
@@ -1266,8 +1266,8 @@ class ServiceItemList {
   String? category;
   bool? serialNoManagement;
   String? lineItemId;
-  dynamic? discountedIncl;
-  dynamic? discountedExcl;
+  dynamic discountedIncl;
+  dynamic discountedExcl;
 
   ServiceItemList({
     this.productName,
@@ -1344,10 +1344,10 @@ class ServiceItemList {
 class Status {
   String? title;
   String? userId;
-  dynamic? priority;
+  dynamic priority;
   String? email;
   String? colorCode;
-  dynamic? createdAt;
+  dynamic createdAt;
 
   Status({this.title, this.userId, this.priority, this.email, this.colorCode, this.createdAt});
 
@@ -1516,11 +1516,11 @@ class Quotation {
   String? jobId;
   String? text;
   String? status;
-  dynamic? subTotal;
-  dynamic? total;
-  dynamic? discount;
-  dynamic? rejectAmount;
-  dynamic? acceptAmount;
+  dynamic subTotal;
+  dynamic total;
+  dynamic discount;
+  dynamic rejectAmount;
+  dynamic acceptAmount;
   String? quotationName;
   bool? send;
   bool? anyTimeSend;
@@ -1530,14 +1530,14 @@ class Quotation {
   bool? accepted;
   bool? rejected;
   List<ServiceItemList>? serviceItemList;
-  dynamic? vat;
+  dynamic vat;
   CustomerDetails? customerDetails;
   String? userName;
   bool? onlinePaymentActived;
   String? userId;
   String? createdAt;
   String? updatedAt;
-  dynamic? iV;
+  dynamic iV;
   String? paymentId;
   String? rejectPaymentId;
   String? paymentMethod;
