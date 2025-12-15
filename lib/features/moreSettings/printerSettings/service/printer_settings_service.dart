@@ -24,9 +24,9 @@ class PrinterSettingsService {
           .map((e) => PrinterConfigModel.fromJson(e as Map<String, dynamic>))
           .toList();
 
-      // Find if config already exists (by IP address)
+      // Find if config already exists (by IP address, port and brand)
       final existingIndex = printers.indexWhere(
-        (p) => p.ipAddress == config.ipAddress && p.printerBrand == config.printerBrand,
+        (p) => p.ipAddress == config.ipAddress && p.printerBrand == config.printerBrand && p.port == config.port,
       );
 
       if (existingIndex != -1) {
@@ -40,7 +40,8 @@ class PrinterSettingsService {
       // If this is set as default, unset others
       if (config.isDefault) {
         printers = printers.map((p) {
-          if (p.ipAddress == config.ipAddress && p.printerBrand == config.printerBrand) {
+          // Keep the matching one (by brand/ip/port) as-is, unset default for others
+          if (p.ipAddress == config.ipAddress && p.printerBrand == config.printerBrand && p.port == config.port) {
             return p;
           }
           return p.copyWith(isDefault: false);
@@ -48,7 +49,7 @@ class PrinterSettingsService {
 
         // Save default printer ID
         final defaultKey = _getDefaultKey(config.printerType);
-        await _storage.write(defaultKey, '${config.printerBrand}_${config.ipAddress}');
+        await _storage.write(defaultKey, '${config.printerBrand}_${config.ipAddress}_${config.port}');
       }
 
       // Save updated list
@@ -97,7 +98,10 @@ class PrinterSettingsService {
           .map((e) => PrinterConfigModel.fromJson(e as Map<String, dynamic>))
           .toList();
 
-      printers.removeWhere((p) => p.ipAddress == config.ipAddress && p.printerBrand == config.printerBrand);
+      // Remove matching printer by brand, ip and port
+      printers.removeWhere(
+        (p) => p.ipAddress == config.ipAddress && p.printerBrand == config.printerBrand && p.port == config.port,
+      );
 
       await _storage.write(key, printers.map((e) => e.toJson()).toList());
 
@@ -137,7 +141,7 @@ class PrinterSettingsService {
 
     String summary = printer.printerBrand;
     if (printer.printerModel != null) summary += ' ${printer.printerModel}';
-    summary += ' @ ${printer.ipAddress}';
+    summary += ' @ ${printer.ipAddress}:${printer.port ?? 9100}';
 
     if (printerType == 'thermal' && printer.paperWidth != null) {
       summary += ' (${printer.paperWidth}mm)';

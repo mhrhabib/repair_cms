@@ -455,7 +455,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     width: 40.w,
                     height: 40.h,
                     decoration: BoxDecoration(color: const Color(0xFFC507FF), borderRadius: BorderRadius.circular(8.r)),
-                    child: Icon(SolarIconsBold.caseMinimalistic, color: Colors.white, size: 30.sp),
+                    child: Icon(SolarIconsBold.suitcaseTag, color: Colors.white, size: 30.sp),
                   ),
                   SizedBox(width: 16.w),
                   Container(

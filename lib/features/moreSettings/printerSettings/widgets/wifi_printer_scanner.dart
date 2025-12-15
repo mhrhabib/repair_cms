@@ -364,7 +364,6 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                             trailing: ElevatedButton(
                               onPressed: () {
                                 widget.onPrinterSelected(printer.ipAddress, printer.port);
-                                Navigator.pop(context);
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,

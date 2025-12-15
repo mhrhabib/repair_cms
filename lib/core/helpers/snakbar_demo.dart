@@ -54,6 +54,8 @@ class CustomSnackbar extends StatefulWidget {
 class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
+  double _dragOffset = 0.0;
+  bool _dismissing = false;
 
   @override
   void initState() {
@@ -74,12 +76,6 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
     super.dispose();
   }
 
-  void _handleDismiss() {
-    _controller.reverse().then((_) {
-      widget.onDismiss();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -91,49 +87,77 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Material(
-              elevation: 6,
-              borderRadius: BorderRadius.circular(30),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
+            child: GestureDetector(
+              onVerticalDragUpdate: (details) {
+                // accumulate upward drag only
+                setState(() {
+                  _dragOffset += details.delta.dy;
+                  // limit dragging downward (positive) so snackbar can't be pushed down too far
+                  if (_dragOffset > 60) _dragOffset = 60;
+                });
+              },
+              onVerticalDragEnd: (details) {
+                // if flicked up fast or dragged beyond threshold, dismiss
+                final velocity = details.velocity.pixelsPerSecond.dy;
+                if (velocity < -700 || _dragOffset < -50) {
+                  _dismissSnackbar();
+                } else {
+                  // animate back to position
+                  setState(() {
+                    _dragOffset = 0.0;
+                  });
+                }
+              },
+              child: Transform.translate(
+                offset: Offset(0, _dragOffset),
+                child: Material(
+                  elevation: 6,
                   borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(color: Colors.blue, blurRadius: 3, offset: Offset(2, 4), spreadRadius: 1),
-                    BoxShadow(color: Colors.blue, blurRadius: 1, offset: Offset(2, 4), spreadRadius: 1),
-                  ],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 4))],
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        // drag handle
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                          child: Icon(Icons.today_outlined, color: Colors.white, size: 24),
+                          child: Icon(Icons.today_outlined, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            widget.title,
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.title,
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // close button
+                        InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: _dismissSnackbar,
+                          child: Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: Icon(Icons.close, size: 20, color: Colors.black54),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: _handleDismiss,
-                        child: const Text('Dismiss', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -141,5 +165,16 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
         ),
       ),
     );
+  }
+
+  void _dismissSnackbar() {
+    if (_dismissing) return;
+    _dismissing = true;
+    // animate slide out then call onDismiss
+    _controller.reverse().then((_) {
+      try {
+        widget.onDismiss();
+      } catch (_) {}
+    });
   }
 }

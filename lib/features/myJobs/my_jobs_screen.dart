@@ -440,7 +440,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
               final job = jobs[index];
               return Padding(
-                padding: EdgeInsets.only(top: index == 0 ? 16.h : 0, bottom: 16.h, left: 16.w, right: 16.w),
+                padding: EdgeInsets.only(top: index == 0 ? 16.h : 0, bottom: 16.h),
                 child: JobCardWidget(job: job),
               );
             }, childCount: state.hasMore ? jobs.length + 1 : jobs.length),

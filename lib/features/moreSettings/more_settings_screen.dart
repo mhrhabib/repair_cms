@@ -153,7 +153,7 @@ class MoreSettingsScreen extends StatelessWidget {
 
             // Label Content
             _buildSettingsItem(
-              icon: SolarIconsOutline.laptopMinimalistic,
+              icon: SolarIconsOutline.laptop2,
               iconColor: Colors.blue,
               title: 'Label Content',
               onTap: () {

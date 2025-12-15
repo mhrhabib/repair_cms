@@ -10,6 +10,7 @@ import 'package:repair_cms/features/profile/profile_options_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class EnhancedSearchWidget extends StatefulWidget {
   final Function(String)? onSearchChanged;
@@ -137,7 +138,7 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                     onTap: () {
                       Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationsScreen()));
                     },
-                    child: Icon(Icons.notifications_none, color: Colors.grey.shade600, size: 24.sp),
+                    child: Icon(SolarIconsBold.bell, color: Colors.grey.shade600, size: 24.sp),
                   ),
                   Positioned(
                     right: 0,

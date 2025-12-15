@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
@@ -8,12 +9,17 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
+import 'dart:ui' as ui;
+import 'dart:typed_data';
 
 class ReceiptScreen extends StatelessWidget {
   ReceiptScreen({super.key, required this.job});
   final SingleJobModel job;
 
   final _settingsService = PrinterSettingsService();
+
+  // Key to capture the on-screen receipt widget for printing
+  final GlobalKey _printKey = GlobalKey();
 
   /// Show printer selection dialog
   Future<void> _showPrinterSelection(BuildContext context) async {
@@ -109,9 +115,15 @@ class ReceiptScreen extends StatelessWidget {
         }
       }
 
-      // Hide loading
+      // Hide loading (use root navigator to match showDialog's default)
       if (context.mounted) {
-        Navigator.of(context).pop();
+        try {
+          if (Navigator.of(context, rootNavigator: true).canPop()) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+        } catch (_) {
+          // ignore
+        }
       }
 
       // Show result
@@ -127,9 +139,15 @@ class ReceiptScreen extends StatelessWidget {
     } catch (e) {
       debugPrint('❌ Print error: $e');
 
-      // Hide loading
+      // Hide loading (ensure we pop the root dialog)
       if (context.mounted) {
-        Navigator.of(context).pop();
+        try {
+          if (Navigator.of(context, rootNavigator: true).canPop()) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+        } catch (_) {
+          // ignore
+        }
       }
 
       // Show error
@@ -143,7 +161,56 @@ class ReceiptScreen extends StatelessWidget {
   Future<bool> _printA4Receipt(BuildContext context) async {
     try {
       debugPrint('📄 Generating PDF for A4 receipt');
+      // Try to capture the on-screen receipt widget as an image and embed that into the PDF
+      Uint8List? capturedPng;
+      try {
+        final boundary = _printKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+        if (boundary != null) {
+          final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+          final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+          final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+          capturedPng = byteData?.buffer.asUint8List();
+          debugPrint(
+            '📷 Captured on-screen receipt: ${capturedPng?.lengthInBytes ?? 0} bytes — image ${image.width}x${image.height} (pixelRatio $pixelRatio)',
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ Widget capture failed: $e');
+        capturedPng = null;
+      }
 
+      if (capturedPng != null) {
+        final pdf = pw.Document();
+        final pw.ImageProvider img = pw.MemoryImage(capturedPng);
+
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(32),
+            build: (pw.Context ctx) {
+              return pw.Center(child: pw.Image(img, fit: pw.BoxFit.contain));
+            },
+          ),
+        );
+
+        debugPrint('✅ PDF (from captured image) generated, opening system print dialog');
+
+        final printResult = await Printing.layoutPdf(
+          onLayout: (PdfPageFormat format) async => pdf.save(),
+          name: 'Job_Receipt_${job.data?.jobNo ?? "unknown"}.pdf',
+          format: PdfPageFormat.a4,
+        );
+
+        if (printResult) {
+          debugPrint('✅ User completed printing from system dialog (image)');
+        } else {
+          debugPrint('⚠️ User cancelled print dialog (image)');
+        }
+
+        return printResult;
+      }
+
+      // Fall back to programmatic PDF build if capture failed
       final pdf = pw.Document();
       final customer = job.data?.customerDetails;
       final device = job.data?.deviceData;
@@ -573,8 +640,10 @@ class ReceiptScreen extends StatelessWidget {
       }
 
       return printResult;
-    } catch (e) {
+    } catch (e, s) {
+      // Log full stack trace to help debugging native/platform errors coming from Printing
       debugPrint('❌ A4 print error: $e');
+      debugPrint('Stack trace:\n$s');
       return false;
     }
   }
@@ -694,7 +763,10 @@ class ReceiptScreen extends StatelessWidget {
                 BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 5)),
               ],
             ),
-            child: JobReceiptWidgetNew(jobData: job),
+            child: RepaintBoundary(
+              key: _printKey,
+              child: JobReceiptWidgetNew(jobData: job),
+            ),
           ),
         ),
       ),
