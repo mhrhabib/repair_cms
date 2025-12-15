@@ -1,8 +1,10 @@
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/features/moreSettings/labelContent/label_content_screen.dart';
 import 'package:repair_cms/features/moreSettings/notificationSetting/notification_settings_screen.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/printer_settings_screen.dart';
+import 'package:repair_cms/set_up_di.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class MoreSettingsScreen extends StatelessWidget {
@@ -76,6 +78,10 @@ class MoreSettingsScreen extends StatelessWidget {
   // Method to clear user data and tokens
   Future<void> _clearUserData() async {
     try {
+      // Disconnect socket FIRST to prevent memory leaks
+      debugPrint('🔌 [Logout] Disconnecting socket');
+      SetUpDI.getIt<SocketService>().disconnect();
+
       // Clear authentication token
       await storage.remove('token');
 

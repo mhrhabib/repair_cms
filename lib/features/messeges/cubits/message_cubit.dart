@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/services/socket_service.dart';
+import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
 import 'package:repair_cms/features/messeges/repository/message_repository.dart';
@@ -10,11 +12,13 @@ part 'message_state.dart';
 class MessageCubit extends Cubit<MessageState> {
   final SocketService socketService;
   final MessageRepository messageRepository;
+  final LocalNotificationService notificationService;
   final List<Conversation> _conversations = [];
 
   String? _currentConversationId;
 
-  MessageCubit({required this.socketService, required this.messageRepository}) : super(MessageInitial()) {
+  MessageCubit({required this.socketService, required this.messageRepository, required this.notificationService})
+    : super(MessageInitial()) {
     _initializeListeners();
   }
 
@@ -104,6 +108,44 @@ class MessageCubit extends Cubit<MessageState> {
     // Update conversations list
     _updateConversationWithNewMessage(message);
     emit(MessageReceived(message: message));
+
+    // Show notification if message is from another user
+    _showNotificationForNewMessage(message);
+  }
+
+  /// Show notification for new incoming message
+  void _showNotificationForNewMessage(Conversation message) {
+    try {
+      final storage = GetStorage();
+      final currentUserId = storage.read('userId');
+      final currentUserEmail = storage.read('email');
+
+      // Don't show notification if user sent this message
+      final isOwnMessage = message.sender?.email == currentUserEmail || message.loggedUserId == currentUserId;
+
+      if (isOwnMessage) {
+        debugPrint('ℹ️ [MessageCubit] Skipping notification - own message');
+        return;
+      }
+
+      // Extract message details
+      final senderName = message.sender?.name ?? 'Someone';
+      final messageText = message.message?.message ?? 'New message';
+      final conversationId = message.conversationId ?? '';
+      final jobId = message.message?.jobId;
+
+      debugPrint('🔔 [MessageCubit] Showing notification from: $senderName');
+
+      // Show notification
+      notificationService.showMessageNotification(
+        senderName: senderName,
+        messageText: messageText,
+        conversationId: conversationId,
+        jobId: jobId,
+      );
+    } catch (e) {
+      debugPrint('❌ [MessageCubit] Error showing notification: $e');
+    }
   }
 
   void _handleMessageSeen(dynamic data) {
@@ -225,18 +267,31 @@ class MessageCubit extends Cubit<MessageState> {
 
   void markAsRead(Conversation message) {
     debugPrint('✅ [MessageCubit] Marking message as read');
+    if (!socketService.isConnected) {
+      debugPrint('⚠️ [MessageCubit] Socket not connected, cannot mark as read');
+      return;
+    }
     socketService.markAsRead(message.toJson());
   }
 
   void sendInternalComment({required Map<String, dynamic> message, required Map<String, dynamic> comment}) {
     debugPrint('💬 [MessageCubit] Sending internal comment');
+    if (!socketService.isConnected) {
+      debugPrint('❌ [MessageCubit] Socket not connected, cannot send comment');
+      emit(MessageError(message: 'Not connected to server. Please check your connection.'));
+      return;
+    }
     socketService.sendInternalComment({'message': message, 'comment': comment});
   }
 
   @override
   Future<void> close() {
-    // Clean up socket listeners if needed
-    debugPrint('🔌 [MessageCubit] Closing cubit');
+    // Clean up socket listeners to prevent memory leaks
+    debugPrint('🔌 [MessageCubit] Closing cubit and removing socket listeners');
+    socketService.off('onUpdateMessage');
+    socketService.off('messageSeen');
+    socketService.off('receiveMessage');
+    socketService.off('updateInternalComment');
     return super.close();
   }
 }

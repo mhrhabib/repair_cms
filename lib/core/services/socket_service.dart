@@ -7,17 +7,22 @@ class SocketService {
   io.Socket? socket;
 
   /// Connect and optionally join the user room. Call once (for example from main())
-  void connect({required String baseUrl, required String userId, Map<String, dynamic>? options}) {
-    socket = io.io(
-      baseUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .enableReconnection()
-          .setReconnectionAttempts(5)
-          .setReconnectionDelay(3000)
-          .build(),
-    );
+  void connect({required String baseUrl, required String userId, String? authToken, Map<String, dynamic>? options}) {
+    // Build socket options with authentication
+    final optionsBuilder = io.OptionBuilder()
+        .setTransports(['websocket'])
+        .disableAutoConnect()
+        .enableReconnection()
+        .setReconnectionAttempts(5)
+        .setReconnectionDelay(3000);
+
+    // Add auth token if provided
+    if (authToken != null && authToken.isNotEmpty) {
+      optionsBuilder.setAuth({'token': authToken});
+      debugPrint('🔐 Socket auth token configured');
+    }
+
+    socket = io.io(baseUrl, optionsBuilder.build());
 
     // Basic event handlers
     socket!.on('connect', (_) => debugPrint('🚀 Socket connected: \\${socket!.id}'));
@@ -78,6 +83,9 @@ class SocketService {
   void off(String event) {
     socket?.off(event);
   }
+
+  /// Check if socket is currently connected
+  bool get isConnected => socket?.connected ?? false;
 }
 
 final socketService = SocketService();

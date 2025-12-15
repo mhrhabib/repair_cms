@@ -1,5 +1,6 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/services/biometric_storage_service.dart';
 import 'package:repair_cms/core/services/socket_service.dart';
@@ -61,14 +62,17 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   }
 
   void _navigateToHome(User user) {
-    // Initialize socket connection
+    // Initialize socket connection with authentication
     final storage = GetStorage();
     final userId = storage.read('userId');
+    final authToken = storage.read('token');
 
     if (userId != null) {
+      debugPrint('🚀 [Login] Initializing socket connection');
       SetUpDI.getIt<SocketService>().connect(
-        baseUrl: 'wss://api.repaircms.com', // or 'https://api.repaircms.com'
+        baseUrl: ApiEndpoints.baseUrl, // or 'https://api.repaircms.com'
         userId: userId,
+        authToken: authToken, // Add authentication token
       );
     }
 

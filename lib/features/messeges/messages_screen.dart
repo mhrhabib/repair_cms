@@ -93,6 +93,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
+  /// Send a test notification to verify the notification system works
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(

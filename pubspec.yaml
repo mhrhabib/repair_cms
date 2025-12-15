@@ -43,6 +43,9 @@ dependencies:
   local_auth_android: ^2.0.3
   local_auth_ios: ^1.1.7
 
+  # Notifications
+  flutter_local_notifications: ^18.0.1
+
   # Forms & Input
   pinput: ^6.0.1
   drop_down_search_field: ^1.2.2
@@ -73,6 +76,8 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true

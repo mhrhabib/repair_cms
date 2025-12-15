@@ -4,7 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
-import 'package:repair_cms/features/messeges/messges_screen.dart';
+import 'package:repair_cms/features/messeges/messages_screen.dart';
 import 'package:repair_cms/features/moreSettings/more_settings_screen.dart';
 import 'package:repair_cms/features/myJobs/my_jobs_screen.dart';
 import 'package:repair_cms/features/scanner/job_scanner_screen.dart';

@@ -39,6 +39,7 @@ import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart
 import 'package:repair_cms/features/notifications/repository/notification_repo.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/core/services/socket_service.dart';
+import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
@@ -47,6 +48,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await SetUpDI.instance.init();
+
+  // Initialize local notifications
+  await SetUpDI.getIt<LocalNotificationService>().initialize();
+  await SetUpDI.getIt<LocalNotificationService>().requestPermissions();
+
   runApp(OKToast(child: const MyApp()));
 }
 
@@ -89,6 +95,7 @@ class MyApp extends StatelessWidget {
           create: (context) => MessageCubit(
             socketService: SetUpDI.getIt<SocketService>(),
             messageRepository: SetUpDI.getIt<MessageRepository>(),
+            notificationService: SetUpDI.getIt<LocalNotificationService>(),
           ),
         ),
       ],
