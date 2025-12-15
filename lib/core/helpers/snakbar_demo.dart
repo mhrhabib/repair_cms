@@ -1,9 +1,11 @@
 import 'dart:ui';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class SnackbarDemo extends StatelessWidget {
   final String message;
-  const SnackbarDemo({super.key, required this.message});
+  final Widget? icon;
+  const SnackbarDemo({super.key, required this.message, this.icon});
 
   void showCustomSnackbar(BuildContext context) {
     final overlay = Overlay.of(context);
@@ -12,6 +14,7 @@ class SnackbarDemo extends StatelessWidget {
     overlayEntry = OverlayEntry(
       builder: (context) => CustomSnackbar(
         title: message,
+        icon: icon,
         onDismiss: () {
           overlayEntry.remove();
         },
@@ -44,8 +47,9 @@ class SnackbarDemo extends StatelessWidget {
 class CustomSnackbar extends StatefulWidget {
   final String title;
   final VoidCallback onDismiss;
+  final Widget? icon;
 
-  const CustomSnackbar({super.key, required this.onDismiss, required this.title});
+  const CustomSnackbar({super.key, required this.onDismiss, required this.title, this.icon});
 
   @override
   State<CustomSnackbar> createState() => _CustomSnackbarState();
@@ -123,12 +127,12 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // drag handle
+                        // drag handle / optional icon
                         Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                          child: Icon(Icons.today_outlined, color: Colors.white, size: 20),
+                          child: widget.icon ?? Icon(SolarIconsOutline.infoCircle, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
@@ -200,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               );
 
                               // Show success message
-                              showCustomToast('Date range applied successfully', isError: false);
+                              SnackbarDemo(message: 'Date range applied successfully').showCustomSnackbar(context);
                             }
                           : null,
                       style: ElevatedButton.styleFrom(

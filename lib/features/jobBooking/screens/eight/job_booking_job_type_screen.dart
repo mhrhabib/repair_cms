@@ -109,9 +109,9 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
     }
   }
 
-  List<String> _getJobTypeNames(List<JobType> jobTypes) {
-    return jobTypes.map((jobType) => jobType.name ?? '').where((name) => name.isNotEmpty).toList();
-  }
+  // List<String> _getJobTypeNames(List<JobType> jobTypes) {
+  //   return jobTypes.map((jobType) => jobType.name ?? '').where((name) => name.isNotEmpty).toList();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +148,7 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                 child: Row(
                   children: [
                     GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => Navigator.of(context).popUntil(ModalRoute.withName(RouteNames.home)),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),

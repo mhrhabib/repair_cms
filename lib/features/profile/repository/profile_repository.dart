@@ -71,7 +71,7 @@ class ProfileRepository {
         throw Exception('Image file does not exist: $imagePath');
       }
 
-      final fileSize = await file.length();
+      // final fileSize = await file.length();
 
       // Read and encode file
       final bytes = await file.readAsBytes();

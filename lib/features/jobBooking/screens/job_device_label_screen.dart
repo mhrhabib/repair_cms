@@ -9,6 +9,9 @@ import 'package:repair_cms/features/moreSettings/printerSettings/service/printer
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
 import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
 
 class JobDeviceLabelScreen extends StatefulWidget {
   final CreateJobResponse jobResponse;
@@ -38,8 +41,10 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
   /// Enhanced print method using centralized printer service
   Future<void> _printLabel(PrinterConfigModel printer) async {
+    // If protocol is USB and printer supports image printing, try image path
+    final canPrintImage = printer.printerType == 'label';
     try {
-      showCustomToast('Preparing label...', isError: false);
+      SnackbarDemo(message: 'Preparing label...').showCustomSnackbar(context);
 
       debugPrint('🖨️ Printing with ${printer.printerBrand} ${printer.printerType}');
 
@@ -59,26 +64,60 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       debugPrint('📱 Device: ${labelData['deviceName']}');
       debugPrint('🔢 IMEI: ${labelData['imei']}');
 
-      showCustomToast('Sending to printer...', isError: false);
+      SnackbarDemo(message: 'Sending to printer...').showCustomSnackbar(context);
 
       // Use printer service factory to get appropriate service
       final printerService = PrinterServiceFactory.getPrinterService(printer.printerBrand);
 
-      final result = await printerService.printDeviceLabel(
-        ipAddress: printer.ipAddress,
-        labelData: labelData,
-        port: printer.port ?? 9100,
-      );
+      // Try generating image PDF for high-fidelity label (barcode + QR)
+      if (canPrintImage) {
+        final pdf = await _generateLabelPdf();
 
-      if (result.success) {
-        showCustomToast(result.message, isError: false);
-        debugPrint('✅ ${result.message}');
+        // Convert PDF to bytes and attempt image printing via service
+        final pdfBytes = await pdf.save();
+
+        // If service supports image printing, send bytes
+        final imageResult = await printerService.printLabelImage(
+          ipAddress: printer.ipAddress,
+          imageBytes: pdfBytes,
+          port: printer.port ?? 9100,
+        );
+
+        if (imageResult.success) {
+          SnackbarDemo(message: imageResult.message).showCustomSnackbar(context);
+          return;
+        }
+
+        // Fallback to text label
+        final labelText = _buildLabelText();
+        final textResult = await printerService.printLabel(
+          ipAddress: printer.ipAddress,
+          text: labelText,
+          port: printer.port ?? 9100,
+        );
+        if (textResult.success) {
+          SnackbarDemo(message: textResult.message).showCustomSnackbar(context);
+        } else {
+          throw Exception(textResult.message);
+        }
       } else {
-        throw Exception(result.message);
+        final result = await printerService.printDeviceLabel(
+          ipAddress: printer.ipAddress,
+          labelData: labelData,
+          port: printer.port ?? 9100,
+        );
+
+        if (result.success) {
+          SnackbarDemo(message: result.message).showCustomSnackbar(context);
+        } else {
+          throw Exception(result.message);
+        }
       }
+
+      // Result handled above per-printer type
     } catch (e) {
       debugPrint('❌ Print error: $e');
-      showCustomToast('Print failed: $e', isError: true);
+      SnackbarDemo(message: 'Print failed: $e').showCustomSnackbar(context);
     }
   }
 
@@ -132,6 +171,31 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
     return jobNumber.replaceAll(RegExp(r'[^0-9]'), '').padLeft(13, '0');
   }
 
+  /// Build a plain-text label that matches the preview shown on screen.
+  String _buildLabelText() {
+    final jobNumber = _getJobNumber();
+    final customer = _getCustomerName();
+    final device = _getDeviceName();
+    final imei = _getDeviceIMEI();
+    final defect = _getDefect();
+    final location = _getPhysicalLocation();
+
+    final buffer = StringBuffer();
+    buffer.writeln('*** DEVICE LABEL ***');
+    buffer.writeln('JOB: $jobNumber');
+    buffer.writeln('CUSTOMER: $customer');
+    buffer.writeln('DEVICE: $device');
+    buffer.writeln('IMEI: $imei');
+    buffer.writeln('DEFECT: $defect');
+    buffer.writeln('LOCATION: $location');
+    buffer.writeln('ID: ${widget.jobResponse.data?.sId ?? 'N/A'}');
+    buffer.writeln();
+    buffer.writeln('---');
+    buffer.writeln('Please keep this label with the device');
+
+    return buffer.toString();
+  }
+
   /// Show printer selection dialog
   Future<void> _showPrinterSelection() async {
     final allPrinters = _settingsService.getAllPrinters();
@@ -147,7 +211,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       builder: (context) => _PrinterSelectionDialog(printers: labelPrinters, onPrint: _printLabel),
     );
 
-    // Don't need to handle printing here since it's done in dialog
+    // If a printer was selected from the dialog, trigger printing
+    if (selectedPrinter != null) await _printLabel(selectedPrinter);
   }
 
   @override
@@ -166,7 +231,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
           style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
         ),
         trailing: GestureDetector(
-          onTap: _showPrinterSelection,
+          onTap: _handlePrintTap,
           child: Icon(Icons.print, size: 24.r, color: AppColors.primary),
         ),
       ),
@@ -265,6 +330,65 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  /// Handle print button tap: try default printer, otherwise show selection
+  Future<void> _handlePrintTap() async {
+    final defaultPrinter = _getDefaultPrinter();
+    if (defaultPrinter != null) {
+      await _printLabel(defaultPrinter);
+      return;
+    }
+
+    await _showPrinterSelection();
+  }
+
+  /// Generate a simple PDF representing the label (barcode + QR + text)
+  Future<pw.Document> _generateLabelPdf() async {
+    final doc = pw.Document();
+    final barcodeData = _getBarcodeData();
+    final qrData = _getQRCodeData();
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, 50 * PdfPageFormat.mm),
+        build: (context) {
+          return pw.Container(
+            padding: pw.EdgeInsets.all(6),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.BarcodeWidget(data: barcodeData, barcode: pw.Barcode.code128(), width: double.infinity, height: 40),
+                pw.SizedBox(height: 4),
+                pw.Text(_getJobNumber(), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 6),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(_getCustomerName(), style: pw.TextStyle(fontSize: 9)),
+                        pw.Text(_getDeviceName(), style: pw.TextStyle(fontSize: 9)),
+                        pw.Text('IMEI: ${_getDeviceIMEI()}', style: pw.TextStyle(fontSize: 9)),
+                      ],
+                    ),
+                    pw.BarcodeWidget(data: qrData, barcode: pw.Barcode.qrCode(), width: 50, height: 50),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    return doc;
   }
 }
 

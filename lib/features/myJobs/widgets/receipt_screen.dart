@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
@@ -35,10 +36,9 @@ class ReceiptScreen extends StatelessWidget {
     debugPrint('📊 Found ${configuredPrinters.length} configured printers');
 
     if (configuredPrinters.isEmpty) {
-      showCustomToast(
-        'No printers configured. Please configure a printer in Settings > Printer Settings',
-        isError: true,
-      );
+      SnackbarDemo(
+        message: 'No printers configured. Please configure a printer in Settings > Printer Settings',
+      ).showCustomSnackbar(context);
       return;
     }
 
@@ -130,10 +130,10 @@ class ReceiptScreen extends StatelessWidget {
       if (context.mounted) {
         if (success) {
           debugPrint('✅ Print job completed successfully');
-          showCustomToast('Receipt printed successfully!', isError: false);
+          SnackbarDemo(message: 'Receipt printed successfully!').showCustomSnackbar(context);
         } else {
           debugPrint('❌ Print job failed: $errorMessage');
-          showCustomToast(errorMessage ?? 'Print failed', isError: true);
+          SnackbarDemo(message: errorMessage ?? 'Print failed').showCustomSnackbar(context);
         }
       }
     } catch (e) {
@@ -152,7 +152,7 @@ class ReceiptScreen extends StatelessWidget {
 
       // Show error
       if (context.mounted) {
-        showCustomToast('Print error: $e', isError: true);
+        SnackbarDemo(message: 'Print error: $e').showCustomSnackbar(context);
       }
     }
   }

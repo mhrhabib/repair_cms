@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/helpers/show_toast.dart';
+import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
 import '../widgets/wifi_printer_scanner.dart';
@@ -47,7 +47,7 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
       _selectedProtocol = printer.protocol;
       _setAsDefault = printer.isDefault;
     });
-    showCustomToast('Form filled with ${printer.printerModel ?? "printer"} settings');
+    SnackbarDemo(message: 'Form filled with ${printer.printerModel ?? "printer"} settings').showCustomSnackbar(context);
   }
 
   Future<void> _scanForPrinters() async {
@@ -69,13 +69,13 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
 
     if (result != null) {
       debugPrint('✅ Selected printer: ${result['ip']}:${result['port']}');
-      showCustomToast('Printer selected: ${result['ip']}', isError: false);
+      SnackbarDemo(message: 'Printer selected: ${result['ip']}').showCustomSnackbar(context);
     }
   }
 
   Future<void> _saveSettings() async {
     if (_ipController.text.isEmpty && _selectedProtocol == 'TCP') {
-      showCustomToast('Please enter IP address', isError: true);
+      SnackbarDemo(message: 'Please enter IP address').showCustomSnackbar(context);
       return;
     }
 
@@ -96,12 +96,12 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
     try {
       await _settingsService.savePrinterConfig(config);
       debugPrint('✅ A4 printer config saved: ${config.ipAddress}');
-      showCustomToast('✅ Settings saved successfully!', isError: false);
+      SnackbarDemo(message: '✅ Settings saved successfully!').showCustomSnackbar(context);
       _loadSavedPrinters(); // Refresh the list
       _clearForm();
     } catch (e) {
       debugPrint('❌ Failed to save A4 printer config: $e');
-      showCustomToast('❌ Failed to save settings', isError: true);
+      SnackbarDemo(message: '❌ Failed to save settings').showCustomSnackbar(context);
     } finally {
       setState(() => _isSaving = false);
     }
@@ -137,10 +137,10 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
     if (confirm == true) {
       try {
         await _settingsService.deletePrinterConfig(printer);
-        showCustomToast('Printer deleted');
+        SnackbarDemo(message: 'Printer deleted').showCustomSnackbar(context);
         _loadSavedPrinters();
       } catch (e) {
-        showCustomToast('Failed to delete printer', isError: true);
+        SnackbarDemo(message: 'Failed to delete printer').showCustomSnackbar(context);
       }
     }
   }
@@ -149,10 +149,10 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
     try {
       final updatedPrinter = printer.copyWith(isDefault: true);
       await _settingsService.savePrinterConfig(updatedPrinter);
-      showCustomToast('✅ Set as default printer');
+      SnackbarDemo(message: '✅ Set as default printer').showCustomSnackbar(context);
       _loadSavedPrinters();
     } catch (e) {
-      showCustomToast('Failed to set default', isError: true);
+      SnackbarDemo(message: 'Failed to set default').showCustomSnackbar(context);
     }
   }
 

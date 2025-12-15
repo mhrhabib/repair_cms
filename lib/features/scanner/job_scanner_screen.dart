@@ -1,5 +1,6 @@
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 
 /// Job Scanner Screen - Scans QR/Barcode for Job IDs
 class JobScannerScreen extends StatefulWidget {
@@ -69,7 +70,7 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
 
     // Show success message with job ID
     // Example: context.go('/job-details/$code');
-    showCustomToast('Job ID scanned: $code\nNavigate to job details manually');
+    SnackbarDemo(message: 'Job ID scanned: $code\nNavigate to job details manually').showCustomSnackbar(context);
   }
 
   @override
@@ -185,7 +186,9 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
               if (jobId.isNotEmpty) {
                 Navigator.pop(context);
                 // Example: context.go('/job-details/$jobId');
-                showCustomToast('Job ID entered: $jobId\nNavigate to job details manually');
+                SnackbarDemo(
+                  message: 'Job ID entered: $jobId\nNavigate to job details manually',
+                ).showCustomSnackbar(context);
               }
             },
             style: ElevatedButton.styleFrom(

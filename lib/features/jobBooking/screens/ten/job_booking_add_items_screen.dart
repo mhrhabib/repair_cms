@@ -6,6 +6,7 @@ import 'package:repair_cms/features/jobBooking/models/job_item_model.dart';
 import 'package:repair_cms/features/jobBooking/screens/eleven/job_booking_file_upload_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 
 class JobBookingAddItemsScreen extends StatefulWidget {
   const JobBookingAddItemsScreen({super.key});
@@ -136,7 +137,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
 
     if (jobBookingState is! JobBookingData) {
       debugPrint('❌ [AddItems] State is not JobBookingData, aborting');
-      showCustomToast('Please complete the job information first', isError: true);
+      SnackbarDemo(message: 'Please complete the job information first').showCustomSnackbar(context);
       return;
     }
 
@@ -162,7 +163,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
     } catch (e, stackTrace) {
       debugPrint('💥 [AddItems] Error creating job request: $e');
       debugPrint('📋 Stack trace: $stackTrace');
-      showCustomToast('Error preparing job: $e', isError: true);
+      SnackbarDemo(message: 'Error preparing job: $e').showCustomSnackbar(context);
     }
   }
 
@@ -215,11 +216,11 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                 });
               } else {
                 debugPrint('❌ Response data is null');
-                showCustomToast('Job created but response data is missing', isError: true);
+                SnackbarDemo(message: 'Job created but response data is missing').showCustomSnackbar(context);
               }
             } else if (state is JobCreateError) {
               debugPrint('❌ Job creation failed: ${state.message}');
-              showCustomToast('Failed to create job: ${state.message}', isError: true);
+              SnackbarDemo(message: 'Failed to create job: ${state.message}').showCustomSnackbar(context);
             }
           },
         ),
@@ -257,7 +258,7 @@ class _JobBookingAddItemsScreenState extends State<JobBookingAddItemsScreen> {
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => Navigator.of(context).popUntil(ModalRoute.withName(RouteNames.home)),
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),

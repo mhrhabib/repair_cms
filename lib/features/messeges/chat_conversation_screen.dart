@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
@@ -108,9 +108,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             child: IconButton(
               icon: const Icon(Icons.info_outline, color: Colors.white, size: 20),
               padding: EdgeInsets.zero,
-              onPressed: () {
-                // TODO: Show info/details
-              },
+              onPressed: () {},
             ),
           ),
           const SizedBox(width: 8),
@@ -148,7 +146,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           }
 
           if (state is MessageError) {
-            showCustomToast(state.message, isError: true);
+            SnackbarDemo(message: state.message).showCustomSnackbar(context);
           }
         },
         builder: (context, state) {
@@ -648,7 +646,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.purple,
                   onTap: () {
                     Navigator.pop(context);
-                    showCustomToast('Gallery picker coming soon', isError: false);
+                    SnackbarDemo(message: 'Gallery picker coming soon').showCustomSnackbar(context);
                   },
                 ),
                 _buildAttachmentOption(
@@ -657,7 +655,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.blue,
                   onTap: () {
                     Navigator.pop(context);
-                    showCustomToast('Camera coming soon', isError: false);
+                    SnackbarDemo(message: 'Camera coming soon').showCustomSnackbar(context);
                   },
                 ),
                 _buildAttachmentOption(
@@ -666,7 +664,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.orange,
                   onTap: () {
                     Navigator.pop(context);
-                    showCustomToast('Document picker coming soon', isError: false);
+                    SnackbarDemo(message: 'Document picker coming soon').showCustomSnackbar(context);
                   },
                 ),
               ],

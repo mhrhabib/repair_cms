@@ -1,5 +1,6 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/jobBooking/cubits/fileUpload/job_file_upload_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
@@ -126,7 +127,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
       }
     } else {
       // Fallback: show toast and go home
-      showCustomToast('Job created successfully!', isError: false);
+      SnackbarDemo(message: 'Job created successfully!').showCustomSnackbar(context);
       Navigator.popUntil(context, (route) => route.isFirst);
     }
   }
@@ -163,7 +164,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
               }
             } else if (state is JobCreateError) {
               // Show error message
-              showCustomToast('Failed to create job: ${state.message}', isError: true);
+              SnackbarDemo(message: 'Failed to create job: ${state.message}').showCustomSnackbar(context);
             }
           },
         ),
@@ -175,7 +176,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
             } else if (state is JobFileUploadError) {
               debugPrint('⚠️ File upload failed: ${state.message}');
               // Job was created but file upload failed - still show success but with warning
-              showCustomToast('Job created but file upload failed: ${state.message}', isError: false);
+              SnackbarDemo(message: 'Job created but file upload failed: ${state.message}').showCustomSnackbar(context);
               Navigator.popUntil(context, (route) => route.isFirst);
             }
           },

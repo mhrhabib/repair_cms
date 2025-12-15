@@ -401,7 +401,12 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job due date updated successfully');
-        return SingleJobModel.fromJson(response.data);
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('📄 updateJobDueDate: response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to update job due date: ${response.statusCode}');
       }
@@ -660,7 +665,12 @@ class JobRepository {
 
       // First, get the current job to append to existing notes
       final currentJobResponse = await BaseClient.get(url: url);
-      final currentJob = SingleJobModel.fromJson(currentJobResponse.data);
+      dynamic currentJobData = currentJobResponse.data;
+      if (currentJobData is String) {
+        debugPrint('📄 addJobNote: response is String, decoding...');
+        currentJobData = jsonDecode(currentJobData);
+      }
+      final currentJob = SingleJobModel.fromJson(currentJobData);
 
       // Get existing defect and notes
       final existingDefects = currentJob.data?.defect ?? [];
@@ -698,7 +708,12 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job note added successfully');
-        return SingleJobModel.fromJson(response.data);
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('📄 addJobNote: response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to add job note: ${response.statusCode}');
       }
@@ -722,7 +737,12 @@ class JobRepository {
 
       // Get the current job
       final currentJobResponse = await BaseClient.get(url: url);
-      final currentJob = SingleJobModel.fromJson(currentJobResponse.data);
+      dynamic currentJobData = currentJobResponse.data;
+      if (currentJobData is String) {
+        debugPrint('📄 updateJobNote: response is String, decoding...');
+        currentJobData = jsonDecode(currentJobData);
+      }
+      final currentJob = SingleJobModel.fromJson(currentJobData);
 
       // Get existing defect and notes
       final existingDefects = currentJob.data?.defect ?? [];
@@ -760,7 +780,12 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job note updated successfully');
-        return SingleJobModel.fromJson(response.data);
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('📄 updateJobNote: response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to update job note: ${response.statusCode}');
       }
@@ -777,7 +802,12 @@ class JobRepository {
 
       // Get the current job
       final currentJobResponse = await BaseClient.get(url: url);
-      final currentJob = SingleJobModel.fromJson(currentJobResponse.data);
+      dynamic currentJobData = currentJobResponse.data;
+      if (currentJobData is String) {
+        debugPrint('📄 deleteJobNote: response is String, decoding...');
+        currentJobData = jsonDecode(currentJobData);
+      }
+      final currentJob = SingleJobModel.fromJson(currentJobData);
 
       // Get existing defect and notes
       final existingDefects = currentJob.data?.defect ?? [];
@@ -804,7 +834,12 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job note deleted successfully');
-        return SingleJobModel.fromJson(response.data);
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('📄 deleteJobNote: response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+        return SingleJobModel.fromJson(responseData);
       } else {
         throw Exception('Failed to delete job note: ${response.statusCode}');
       }

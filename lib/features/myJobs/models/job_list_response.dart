@@ -1494,7 +1494,6 @@ class Defect {
       '_id': id,
       'defect': defect.map((defect) => defect.toJson()).toList(),
       'jobType': jobType,
-      'jobType': jobType,
       'reference': reference,
       'description': description,
       'internalNote': internalNote?.map((note) => note.toJson()).toList(),

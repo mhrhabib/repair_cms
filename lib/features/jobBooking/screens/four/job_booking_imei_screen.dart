@@ -1,4 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import '../five/job_booking_device_security_screen.dart';
@@ -285,7 +286,7 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
 
     final imei = _imeiController.text.trim();
     if (imei.isNotEmpty) {
-      showCustomToast('IMEI saved: $imei', isError: false);
+      SnackbarDemo(message: 'IMEI saved: $imei').showCustomSnackbar(context);
     }
   }
 

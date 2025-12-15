@@ -1,4 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/five/widgets/pattern_input_widget.dart';
 import 'package:repair_cms/features/jobBooking/screens/six/choose_contact_type_screen.dart';
@@ -76,7 +77,7 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
     // Validation check
     if ((selectedOption == 'password' && _passwordController.text.isEmpty) ||
         (selectedOption == 'pattern' && connectedDots.isEmpty)) {
-      showCustomToast('Please enter the $selectedOption or select "No Security".', isError: true);
+      SnackbarDemo(message: 'Please enter the $selectedOption or select "No Security".').showCustomSnackbar(context);
       return;
     }
 

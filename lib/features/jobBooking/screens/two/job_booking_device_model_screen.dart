@@ -2,6 +2,7 @@
 
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
@@ -103,9 +104,9 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
         orElse: () => ModelsModel(),
       );
       _selectModel(modelName, newModel.sId ?? '');
-      showCustomToast('Model "$modelName" added successfully!', isError: false);
+      SnackbarDemo(message: 'Model "$modelName" added successfully!').showCustomSnackbar(context);
     } else if (state is ModelsError) {
-      showCustomToast('Failed to add model: ${state.message}', isError: true);
+      SnackbarDemo(message: 'Failed to add model: ${state.message}').showCustomSnackbar(context);
     }
 
     setState(() => _isAddingModel = false);

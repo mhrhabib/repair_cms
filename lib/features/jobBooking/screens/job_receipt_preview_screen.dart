@@ -12,7 +12,7 @@ import 'package:repair_cms/features/myJobs/models/single_job_model.dart' as my_j
 import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 
 class JobReceiptPreviewScreen extends StatefulWidget {
   final job_booking.CreateJobResponse jobResponse;
@@ -142,10 +142,9 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
       if (discoveredPrinters.isEmpty) {
         if (mounted) {
-          showCustomToast(
-            'No printers found on the network. Please ensure your printer is connected and try again.',
-            isError: true,
-          );
+          SnackbarDemo(
+            message: 'No printers found on the network. Please ensure your printer is connected and try again.',
+          ).showCustomSnackbar(context);
         }
         return;
       }
@@ -167,7 +166,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
       debugPrint('❌ Error discovering printers: $e');
       if (mounted) {
-        showCustomToast('Failed to discover printers: ${e.toString()}', isError: true);
+        SnackbarDemo(message: 'Failed to discover printers: ${e.toString()}').showCustomSnackbar(context);
       }
     }
   }
@@ -249,7 +248,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       try {
         await _settingsService.savePrinterConfig(config);
         if (mounted) {
-          showCustomToast('Printer configured successfully!', isError: false);
+          SnackbarDemo(message: 'Printer configured successfully!').showCustomSnackbar(context);
 
           // Now show printer selection
           _showPrinterSelection();
@@ -257,7 +256,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       } catch (e) {
         debugPrint('❌ Error saving printer config: $e');
         if (mounted) {
-          showCustomToast('Failed to save printer configuration', isError: true);
+          SnackbarDemo(message: 'Failed to save printer configuration').showCustomSnackbar(context);
         }
       }
     }
@@ -267,9 +266,8 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
   Future<void> _printReceipt(PrinterConfigModel printer) async {
     debugPrint('🚀 Starting print job with ${printer.printerBrand} ${printer.printerType}');
 
-    showCustomToast('Print functionality will be implemented here', isError: false);
+    SnackbarDemo(message: 'Print functionality will be implemented here').showCustomSnackbar(context);
 
-    // TODO: Implement actual printing based on printer type
     if (printer.printerType == 'thermal') {
       // Use thermal printer with paper width setting
       debugPrint('🖨️ Thermal printer - Paper width: ${printer.paperWidth ?? 80}mm');

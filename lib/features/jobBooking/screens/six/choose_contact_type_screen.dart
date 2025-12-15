@@ -295,7 +295,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                 child: Row(
                   children: [
                     GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => Navigator.of(context).popUntil(ModalRoute.withName(RouteNames.home)),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),

@@ -1,5 +1,6 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/services/biometric_storage_service.dart';
 import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/features/auth/signin/models/login_response_model.dart';
@@ -77,9 +78,9 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   Future<void> _saveBiometricCredentials() async {
     try {
       await BiometricStorageService.saveBiometricCredentials(email: widget.email, password: _passwordController.text);
-      showCustomToast('$_biometricType authentication enabled', isError: false);
+      SnackbarDemo(message: '$_biometricType authentication enabled').showCustomSnackbar(context);
     } catch (e) {
-      showCustomToast('Failed to save $_biometricType credentials', isError: true);
+      SnackbarDemo(message: 'Failed to save $_biometricType credentials').showCustomSnackbar(context);
     }
   }
 
@@ -90,7 +91,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
       setState(() {
         _hasStoredCredentials = false;
       });
-      showCustomToast('$_biometricType authentication disabled');
+      SnackbarDemo(message: '$_biometricType authentication disabled').showCustomSnackbar(context);
     } else {
       // Enable biometric - Show confirmation dialog
       bool? shouldEnable = await showDialog<bool>(
@@ -161,14 +162,14 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
               child: BlocConsumer<SignInCubit, SignInStates>(
                 listener: (context, state) {
                   if (state is LoginSuccess) {
-                    showCustomToast(state.message, isError: false);
+                    SnackbarDemo(message: state.message).showCustomSnackbar(context);
 
                     // Navigate based on user role or other conditions
                     if (state.user != null) {
                       _navigateToHome(state.user!);
                     }
                   } else if (state is SignInError) {
-                    showCustomToast(state.message, isError: true);
+                    SnackbarDemo(message: state.message).showCustomSnackbar(context);
                   }
                 },
                 builder: (context, state) {

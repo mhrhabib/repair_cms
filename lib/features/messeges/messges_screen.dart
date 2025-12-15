@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
@@ -79,7 +79,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             });
           }
           if (state is MessageError) {
-            showCustomToast(state.message, isError: true);
+            SnackbarDemo(message: state.message).showCustomSnackbar(context);
           }
         },
         builder: (context, state) {
@@ -299,7 +299,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 selectedConversations.clear();
                 isSelectionMode = false;
               });
-              showCustomToast('Selected messages removed', isError: false);
+              SnackbarDemo(message: 'Selected messages removed').showCustomSnackbar(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

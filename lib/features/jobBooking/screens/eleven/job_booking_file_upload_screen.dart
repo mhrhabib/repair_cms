@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:image_picker/image_picker.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/cubits/fileUpload/job_file_upload_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
@@ -28,7 +29,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
           listener: (context, state) {
             if (state is JobFileUploadSuccess) {
               debugPrint('✅ Files uploaded successfully to server');
-              showCustomToast('Files uploaded successfully', isError: false);
+              SnackbarDemo(message: 'Files uploaded successfully').showCustomSnackbar(context);
               // Navigate to next screen after successful upload
               Navigator.push(
                 context,
@@ -47,9 +48,9 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
               );
             } else if (state is JobFileUploadError) {
               debugPrint('❌ File upload failed: ${state.message}');
-              showCustomToast('Upload failed: ${state.message}', isError: true);
+              SnackbarDemo(message: 'Upload failed: ${state.message}').showCustomSnackbar(context);
               // Still allow navigation even if upload fails
-              showCustomToast('Continue without uploading files?', isError: false);
+              SnackbarDemo(message: 'Continue without uploading files?').showCustomSnackbar(context);
               // Auto-navigate after showing toast
               Future.delayed(const Duration(milliseconds: 500), () {
                 Navigator.push(
@@ -119,7 +120,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => Navigator.of(context).popUntil(ModalRoute.withName(RouteNames.home)),
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
@@ -481,7 +482,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
         await context.read<JobBookingCubit>().processAndAddFile(image.path);
       }
     } catch (e) {
-      showCustomToast('Error capturing image: $e', isError: true);
+      SnackbarDemo(message: 'Error capturing image: $e').showCustomSnackbar(context);
     }
   }
 
@@ -497,7 +498,7 @@ class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen>
         }
       }
     } catch (e) {
-      showCustomToast('Error selecting images: $e', isError: true);
+      SnackbarDemo(message: 'Error selecting images: $e').showCustomSnackbar(context);
     }
   }
 

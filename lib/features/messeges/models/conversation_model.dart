@@ -976,16 +976,16 @@ class DefectId {
   }
 }
 
-class dynamicernalNote {
+class InternalNote {
   String? text;
   String? userId;
   String? createdAt;
   String? userName;
   String? id;
 
-  dynamicernalNote({this.text, this.userId, this.createdAt, this.userName, this.id});
+  InternalNote({this.text, this.userId, this.createdAt, this.userName, this.id});
 
-  dynamicernalNote.fromJson(Map<String, dynamic> json) {
+  InternalNote.fromJson(Map<String, dynamic> json) {
     text = json['text'];
     userId = json['userId'];
     createdAt = json['createdAt'];

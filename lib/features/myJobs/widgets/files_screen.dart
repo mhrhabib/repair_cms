@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'dart:io' as io;
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
@@ -217,18 +218,12 @@ class _FilesScreenState extends State<FilesScreen> {
 
   void _showError(String message) {
     if (!_isMounted) return;
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 3)));
+    SnackbarDemo(message: message).showCustomSnackbar(context);
   }
 
   void _showSuccess(String message) {
     if (!_isMounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
-    );
+    SnackbarDemo(message: message).showCustomSnackbar(context);
   }
 
   String _formatFileSize(int bytes) {
@@ -270,11 +265,11 @@ class _FilesScreenState extends State<FilesScreen> {
         if (!_isMounted) return;
 
         if (state is JobFileUploadSuccess) {
-          showCustomToast('File uploaded successfully', isError: false);
+          _showSuccess('File uploaded successfully');
         } else if (state is JobFileDeleteSuccess) {
-          showCustomToast('File deleted successfully', isError: false);
+          _showSuccess('File deleted successfully');
         } else if (state is JobActionError) {
-          showCustomToast(state.message, isError: true);
+          _showError(state.message);
         }
       },
       child: Scaffold(
