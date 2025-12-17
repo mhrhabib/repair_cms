@@ -43,11 +43,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     }
   }
 
@@ -61,10 +57,31 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final userName = storage.read('fullName') ?? '';
     final userId = storage.read('userId') ?? '';
 
+    // Find the other participant in the conversation (not the logged-in user)
+    SenderReceiver? otherParticipant;
+    for (var message in _messages) {
+      // Check sender: if they sent a message and it's not me, they're the other participant
+      if (message.sender?.email != null && message.sender?.email != userEmail) {
+        otherParticipant = SenderReceiver(email: message.sender!.email, name: message.sender!.name);
+        break;
+      }
+      // Check receiver: if they received a message and it's not me, they're the other participant
+      if (message.receiver?.email != null && message.receiver?.email != userEmail) {
+        otherParticipant = SenderReceiver(email: message.receiver!.email, name: message.receiver!.name);
+        break;
+      }
+    }
+
+    // Fallback if no messages exist yet (empty conversation)
+    if (otherParticipant == null) {
+      SnackbarDemo(message: 'Cannot determine conversation participant').showCustomSnackbar(context);
+      return;
+    }
+
     context.read<MessageCubit>().sendMessage(
       conversationId: widget.conversationId,
       sender: SenderReceiver(email: userEmail, name: userName),
-      receiver: SenderReceiver(email: '', name: ''),
+      receiver: otherParticipant,
       messageText: messageText,
       messageType: 'standard',
       userId: userId,
@@ -162,6 +179,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     : ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.all(16),
+                        reverse: true,
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final message = _messages[index];

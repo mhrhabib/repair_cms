@@ -4,6 +4,7 @@ import 'star_printer_service.dart';
 import 'xprinter_printer_service.dart';
 import 'dymo_printer_service.dart';
 import 'usb_printer_service.dart';
+import 'a4_network_printer_service.dart';
 import 'base_printer_service.dart';
 
 /// Factory class to get the appropriate printer service based on brand
@@ -29,6 +30,11 @@ class PrinterServiceFactory {
   /// Get USB printer service (special case)
   static USBPrinterService getUSBPrinterService() {
     return USBPrinterService();
+  }
+
+  /// Get A4 network printer service (bypasses AirPrint)
+  static A4NetworkPrinterService getA4NetworkPrinterService() {
+    return A4NetworkPrinterService();
   }
 
   /// Check if a brand is supported

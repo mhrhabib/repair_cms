@@ -87,8 +87,8 @@ class MessageCubit extends Cubit<MessageState> {
       _handleMessageSeen(data);
     });
     socketService.on('receiveMessage', (data) {
-      debugPrint('👁️ [MessageCubit] Message seen: $data');
-      // _handleMessageSeen(data);
+      debugPrint('👁️ [MessageCubit] Message received: $data');
+      _handleMessageSeen(data);
     });
 
     // Listen for internal comment updates
@@ -243,8 +243,10 @@ class MessageCubit extends Cubit<MessageState> {
       userId: userId,
       participants: '${sender.email}-${jobId ?? 'general'}-${receiver.email}',
       loggedUserId: loggedUserId,
-      createdAt: DateTime.now(),
     );
+
+    debugPrint('➡️ [MessageCubit] Emitting sendMessage via socket');
+    debugPrint('➡️ [MessageCubit] Message data: ${messageModel.toJson()}');
 
     socketService.sendMessage(messageModel.toJson());
 
