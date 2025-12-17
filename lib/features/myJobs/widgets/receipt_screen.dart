@@ -6,9 +6,13 @@ import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
+import 'dart:io';
 
 class ReceiptScreen extends StatelessWidget {
   ReceiptScreen({super.key, required this.job});
@@ -73,6 +77,10 @@ class ReceiptScreen extends StatelessWidget {
     // Generate receipt text from job data
     final receiptText = _generateReceiptText();
 
+    // Capture navigator before async operations
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     // Show loading
     showDialog(
       context: context,
@@ -86,18 +94,8 @@ class ReceiptScreen extends StatelessWidget {
 
       // Route to appropriate printer based on type and brand
       if (printer.printerType == 'a4') {
-        debugPrint('📄 Printing to A4 printer via direct network connection (bypassing AirPrint)');
-
-        // Generate PDF and send directly to printer via TCP
-        final pdfBytes = await _generateA4ReceiptPDF(context);
-        if (pdfBytes != null) {
-          final a4Service = PrinterServiceFactory.getA4NetworkPrinterService();
-          final result = await a4Service.printA4Receipt(ipAddress: printer.ipAddress, pdfBytes: pdfBytes);
-          success = result.success;
-          errorMessage = result.message;
-        } else {
-          errorMessage = 'Failed to generate PDF receipt';
-        }
+        debugPrint('📄 Printing to A4 printer via system dialog');
+        success = await _printA4Receipt(context, targetPrinter: printer);
       } else if (printer.protocol.toLowerCase() == 'usb') {
         // USB printers require special handling
         final usbService = PrinterServiceFactory.getUSBPrinterService();
@@ -123,53 +121,46 @@ class ReceiptScreen extends StatelessWidget {
       }
 
       // Hide loading (use root navigator to match showDialog's default)
-      if (context.mounted) {
-        try {
-          if (Navigator.of(context, rootNavigator: true).canPop()) {
-            Navigator.of(context, rootNavigator: true).pop();
-          }
-        } catch (_) {
-          // ignore
-        }
+      debugPrint('🔄 Attempting to dismiss loading dialog');
+      try {
+        // Use the captured navigator instead of context which may be unmounted
+        navigator.pop();
+        debugPrint('✅ Loading dialog dismissed');
+      } catch (e) {
+        debugPrint('⚠️ Error dismissing dialog: $e');
+        // ignore any errors if the dialog was already dismissed
       }
 
       // Show result
-      if (context.mounted) {
-        if (success) {
-          debugPrint('✅ Print job completed successfully');
-          SnackbarDemo(message: 'Receipt printed successfully!').showCustomSnackbar(context);
-        } else {
-          debugPrint('❌ Print job failed: $errorMessage');
-          SnackbarDemo(message: errorMessage).showCustomSnackbar(context);
-        }
+      if (success) {
+        debugPrint('✅ Print job completed successfully');
+        scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Receipt printed successfully!')));
+      } else {
+        debugPrint('❌ Print job failed: $errorMessage');
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text(errorMessage ?? 'Print failed')));
       }
     } catch (e) {
       debugPrint('❌ Print error: $e');
 
       // Hide loading (ensure we pop the root dialog)
-      if (context.mounted) {
-        try {
-          if (Navigator.of(context, rootNavigator: true).canPop()) {
-            Navigator.of(context, rootNavigator: true).pop();
-          }
-        } catch (_) {
-          // ignore
-        }
+      try {
+        navigator.pop();
+        debugPrint('✅ Loading dialog dismissed (error case)');
+      } catch (popError) {
+        debugPrint('⚠️ Error dismissing dialog in catch: $popError');
+        // ignore any errors if the dialog was already dismissed
       }
 
       // Show error
-      if (context.mounted) {
-        SnackbarDemo(message: 'Print error: $e').showCustomSnackbar(context);
-      }
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Print error: $e')));
     }
   }
 
-  /// Generate A4 receipt PDF bytes for direct network printing (bypasses AirPrint)
-  Future<Uint8List?> _generateA4ReceiptPDF(BuildContext context) async {
+  /// Print to A4 printer using system print dialog
+  Future<bool> _printA4Receipt(BuildContext context, {PrinterConfigModel? targetPrinter}) async {
     try {
-      debugPrint('📄 Generating PDF for A4 network printing');
-
-      // Try to capture the on-screen receipt widget as an image
+      debugPrint('📄 Generating PDF for A4 receipt');
+      // Try to capture the on-screen receipt widget as an image and embed that into the PDF
       Uint8List? capturedPng;
       try {
         final boundary = _printKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
@@ -178,26 +169,539 @@ class ReceiptScreen extends StatelessWidget {
           final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
           final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
           capturedPng = byteData?.buffer.asUint8List();
-          debugPrint('📷 Captured receipt: ${capturedPng?.lengthInBytes ?? 0} bytes');
+          debugPrint(
+            '📷 Captured on-screen receipt: ${capturedPng?.lengthInBytes ?? 0} bytes — image ${image.width}x${image.height} (pixelRatio $pixelRatio)',
+          );
         }
       } catch (e) {
         debugPrint('❌ Widget capture failed: $e');
+        capturedPng = null;
       }
 
       if (capturedPng != null) {
-        // Generate PDF from captured image
-        final a4Service = PrinterServiceFactory.getA4NetworkPrinterService();
-        final pdfBytes = await a4Service.generatePdfFromImage(imageBytes: capturedPng);
-        debugPrint('✅ PDF generated: ${pdfBytes.length} bytes');
-        return pdfBytes;
+        final pdf = pw.Document();
+        final pw.ImageProvider img = pw.MemoryImage(capturedPng);
+
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(32),
+            build: (pw.Context ctx) {
+              return pw.Center(child: pw.Image(img, fit: pw.BoxFit.contain));
+            },
+          ),
+        );
+
+        debugPrint('✅ PDF (from captured image) generated');
+
+        // If printer is configured for raw TCP (jetdirect/9100), try sending PDF bytes directly
+        if (targetPrinter != null &&
+            ['raw', 'tcp', 'jetdirect', '9100'].contains(targetPrinter.protocol.toLowerCase())) {
+          final bytes = await pdf.save();
+          final port = targetPrinter.port ?? 9100;
+          try {
+            debugPrint('🔌 Attempting raw TCP send to ${targetPrinter.ipAddress}:$port');
+            final socket = await Socket.connect(targetPrinter.ipAddress, port, timeout: const Duration(seconds: 5));
+            socket.add(bytes);
+            await socket.flush();
+            socket.destroy();
+            debugPrint('✅ Sent PDF via raw TCP to ${targetPrinter.ipAddress}:$port');
+            return true;
+          } catch (e, s) {
+            debugPrint('❌ Raw TCP send failed: $e');
+            debugPrint('Stack:\n$s');
+            // fall through to system dialog fallback
+          }
+        }
+
+        debugPrint('🖨️ Opening system print dialog (fallback)');
+
+        final printResult = await Printing.layoutPdf(
+          onLayout: (PdfPageFormat format) async => pdf.save(),
+          name: 'Job_Receipt_${job.data?.jobNo ?? "unknown"}.pdf',
+          format: PdfPageFormat.a4,
+        );
+
+        if (printResult) {
+          debugPrint('✅ User completed printing from system dialog (image)');
+        } else {
+          debugPrint('⚠️ User cancelled print dialog (image)');
+        }
+
+        return printResult;
       }
 
-      debugPrint('❌ Failed to capture receipt widget');
-      return null;
-    } catch (e) {
-      debugPrint('❌ Error generating PDF: $e');
-      return null;
+      // Fall back to programmatic PDF build if capture failed
+      final pdf = pw.Document();
+      final customer = job.data?.customerDetails;
+      final device = job.data?.deviceData;
+      final services = job.data?.services ?? [];
+      final defect = job.data?.defect?.isNotEmpty == true ? job.data!.defect![0] : null;
+      final receiptFooter = job.data?.receiptFooter;
+
+      // Format currency values
+      final formattedSubTotal = _formatCurrency(job.data?.subTotal);
+      final formattedTotal = _formatCurrency(job.data?.total);
+      final formattedVat = _formatCurrency(job.data?.vat);
+      final formattedDiscount = _formatCurrency(job.data?.discount);
+
+      // Load company logo if available
+      pw.ImageProvider? logoImage;
+      if (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty) {
+        try {
+          debugPrint('📷 Loading company logo from: ${receiptFooter.companyLogoURL}');
+          logoImage = await networkImage(receiptFooter.companyLogoURL!);
+          debugPrint('✅ Company logo loaded successfully');
+        } catch (e) {
+          debugPrint('❌ Failed to load company logo: $e');
+          // Will fall back to text logo
+        }
+      }
+
+      // Build complete PDF document
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Header with company info and logo
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Company address
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          if (receiptFooter?.address != null) ...[
+                            pw.Text(
+                              receiptFooter!.address!.companyName ?? 'Company Name',
+                              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                            ),
+                            pw.SizedBox(height: 2),
+                            pw.Text(
+                              '${receiptFooter.address!.street ?? ''} ${receiptFooter.address!.num ?? ''}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(
+                              '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(receiptFooter.address!.country ?? '', style: const pw.TextStyle(fontSize: 8)),
+                          ] else ...[
+                            pw.Text('Company Name', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                            pw.Text('Address not available', style: const pw.TextStyle(fontSize: 8)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    // Company Logo
+                    pw.Container(
+                      width: 70,
+                      height: 70,
+                      decoration: pw.BoxDecoration(
+                        border: logoImage == null ? pw.Border.all(color: PdfColors.grey300) : null,
+                      ),
+                      child: logoImage != null
+                          ? pw.Image(logoImage, fit: pw.BoxFit.contain)
+                          : pw.Center(
+                              child: pw.Text(
+                                'LOGO',
+                                style: pw.TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: pw.FontWeight.normal,
+                                  color: PdfColors.green,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 12),
+
+                // Date and Job Info
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        _buildPdfRow('Date:', _formatDate(job.data?.createdAt)),
+                        _buildPdfRow('Job No:', job.data?.jobNo ?? 'N/A'),
+                        _buildPdfRow('Customer No:', customer?.customerNo ?? 'N/A'),
+                        _buildPdfRow('Tracking No:', job.data?.jobTrackingNumber ?? 'N/A'),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 8),
+
+                // Barcode placeholder
+                pw.Align(
+                  alignment: pw.Alignment.centerRight,
+                  child: pw.Container(
+                    height: 60,
+                    width: 100,
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
+                    child: pw.Column(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: [
+                        pw.Container(
+                          height: 40,
+                          child: pw.Row(
+                            children: List.generate(20, (index) {
+                              return pw.Expanded(
+                                child: pw.Container(color: index % 2 == 0 ? PdfColors.black : PdfColors.white),
+                              );
+                            }),
+                          ),
+                        ),
+                        pw.Text(job.data?.jobNo ?? 'N/A', style: const pw.TextStyle(fontSize: 8)),
+                      ],
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+
+                // Job Receipt Title
+                pw.Text('Job Receipt', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 12),
+
+                // Salutation
+                pw.Text('Hi there,', style: const pw.TextStyle(fontSize: 8)),
+                pw.Text(
+                  'Thank you for your trust. We are committed to processing your order as quickly as possible.',
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+                pw.SizedBox(height: 8),
+
+                // Device Details
+                pw.Container(
+                  decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Container(
+                        padding: const pw.EdgeInsets.all(4),
+                        width: 120,
+                        decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(
+                              'Device details:',
+                              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                            ),
+                            pw.SizedBox(height: 4),
+                            pw.Text(
+                              'Physical location:',
+                              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                            ),
+                            pw.SizedBox(height: 4),
+                            pw.Text('Job type:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                            pw.SizedBox(height: 4),
+                            pw.Text('Description:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      pw.Expanded(
+                        child: pw.Container(
+                          padding: const pw.EdgeInsets.all(4),
+                          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                device != null
+                                    ? '${device.brand} ${device.model ?? ''}, SN: ${device.serialNo ?? 'N/A'}'
+                                    : 'Device information not available',
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                              pw.SizedBox(height: 4),
+                              pw.Text(
+                                job.data?.physicalLocation ?? 'Not specified',
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                              pw.SizedBox(height: 4),
+                              pw.Text(
+                                job.data?.jobTypes ?? job.data?.jobType ?? 'N/A',
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                              pw.SizedBox(height: 4),
+                              pw.Text(
+                                defect?.description ?? 'No description provided',
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 32),
+
+                // Service Section
+                if (services.isNotEmpty)
+                  pw.Container(
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
+                    child: pw.Column(
+                      children: [
+                        // Header
+                        pw.Container(
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.grey200,
+                            border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300)),
+                          ),
+                          child: pw.Padding(
+                            padding: const pw.EdgeInsets.all(12),
+                            child: pw.Row(
+                              children: [
+                                pw.Expanded(
+                                  child: pw.Text('Service', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                                ),
+                                pw.SizedBox(
+                                  width: 100,
+                                  child: pw.Text(
+                                    'Price',
+                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                                    textAlign: pw.TextAlign.right,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Service items (if available in data model)
+                        // Note: Add service items here if they're available in the model
+
+                        // Financial Summary
+                        pw.Container(
+                          decoration: const pw.BoxDecoration(
+                            border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300)),
+                          ),
+                          child: pw.Padding(
+                            padding: const pw.EdgeInsets.all(12),
+                            child: pw.Column(
+                              children: [
+                                _buildPdfRow('Subtotal:', formattedSubTotal),
+                                if (job.data?.vat != null && job.data!.vat! > 0) _buildPdfRow('VAT:', formattedVat),
+                                if (job.data?.discount != null && job.data!.discount! > 0)
+                                  _buildPdfRow('Discount:', formattedDiscount),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Total
+                        pw.Container(
+                          decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                          child: pw.Padding(
+                            padding: const pw.EdgeInsets.all(12),
+                            child: pw.Row(
+                              children: [
+                                pw.Expanded(
+                                  child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                                ),
+                                pw.SizedBox(
+                                  width: 100,
+                                  child: pw.Text(
+                                    formattedTotal,
+                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                                    textAlign: pw.TextAlign.right,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(16),
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
+                    child: pw.Center(
+                      child: pw.Text('No services added', style: const pw.TextStyle(color: PdfColors.grey)),
+                    ),
+                  ),
+                pw.SizedBox(height: 32),
+
+                // Terms and Conditions
+                pw.Text(
+                  'Terms of service: If the defect is not covered by the manufacturer\'s warranty, I agree to the following. The execution of a paid repair after the creation of a cost estimate at the price of XXX euros including VAT. (Note: If a repair order is subsequently issued, only the actual repair costs according to the cost estimate will be invoiced). I want to be informed before the execution of a paid repair. If I decide against the execution of a repair or if it is not feasible, a handling or inspection fee of XXX euros including VAT will be charged upon return of the device.',
+                  style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+                ),
+                pw.SizedBox(height: 24),
+
+                // QR Code placeholder
+                pw.Align(
+                  alignment: pw.Alignment.centerRight,
+                  child: pw.Container(
+                    width: 100,
+                    height: 100,
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
+                    child: pw.Center(child: pw.Text('QR', style: const pw.TextStyle(fontSize: 24))),
+                  ),
+                ),
+                pw.Spacer(),
+
+                // Footer with company information
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Company Address
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Company Information',
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                          ),
+                          if (receiptFooter?.address != null) ...[
+                            pw.Text(
+                              receiptFooter!.address!.companyName ?? 'Company Name',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(
+                              '${receiptFooter.address!.street ?? ''} ${receiptFooter.address!.num ?? ''}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(
+                              '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(receiptFooter.address!.country ?? '', style: const pw.TextStyle(fontSize: 8)),
+                          ] else
+                            pw.Text('Address not available', style: const pw.TextStyle(fontSize: 8)),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(width: 8),
+                    // Contact Information
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Contact Information',
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                          ),
+                          if (receiptFooter?.contact != null) ...[
+                            pw.Text(
+                              'CEO: ${receiptFooter!.contact!.ceo ?? 'N/A'}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(
+                              'Tel: ${receiptFooter.contact!.telephone ?? 'N/A'}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(
+                              'Email: ${receiptFooter.contact!.email ?? 'N/A'}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(
+                              'Web: ${receiptFooter.contact!.website ?? 'N/A'}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                          ] else
+                            pw.Text('Contact not available', style: const pw.TextStyle(fontSize: 8)),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(width: 8),
+                    // Bank Information
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Bank Information', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                          if (receiptFooter?.bank != null) ...[
+                            pw.Text(
+                              'Bank: ${receiptFooter!.bank!.bankName ?? 'N/A'}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text(
+                              'IBAN: ${receiptFooter.bank!.iban ?? 'N/A'}',
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                            pw.Text('BIC: ${receiptFooter.bank!.bic ?? 'N/A'}', style: const pw.TextStyle(fontSize: 8)),
+                          ] else
+                            pw.Text('Bank details not available', style: const pw.TextStyle(fontSize: 8)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      debugPrint('✅ PDF generated');
+
+      // If printer is configured for raw TCP (jetdirect/9100), try sending PDF bytes directly
+      if (targetPrinter != null && ['raw', 'tcp', 'jetdirect', '9100'].contains(targetPrinter.protocol.toLowerCase())) {
+        final bytes = await pdf.save();
+        final port = targetPrinter.port ?? 9100;
+        try {
+          debugPrint('🔌 Attempting raw TCP send to ${targetPrinter.ipAddress}:$port');
+          final socket = await Socket.connect(targetPrinter.ipAddress, port, timeout: const Duration(seconds: 5));
+          socket.add(bytes);
+          await socket.flush();
+          socket.destroy();
+          debugPrint('✅ Sent PDF via raw TCP to ${targetPrinter.ipAddress}:$port');
+          return true;
+        } catch (e, s) {
+          debugPrint('❌ Raw TCP send failed: $e');
+          debugPrint('Stack:\n$s');
+          // fall through to system dialog fallback
+        }
+      }
+
+      debugPrint('🖨️ Opening system print dialog (fallback)');
+
+      // Show system print dialog and wait for result
+      final printResult = await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: 'Job_Receipt_${job.data?.jobNo ?? "unknown"}.pdf',
+        format: PdfPageFormat.a4,
+      );
+
+      // layoutPdf returns true if user printed, false if cancelled
+      if (printResult) {
+        debugPrint('✅ User completed printing from system dialog');
+      } else {
+        debugPrint('⚠️ User cancelled print dialog');
+      }
+
+      return printResult;
+    } catch (e, s) {
+      // Log full stack trace to help debugging native/platform errors coming from Printing
+      debugPrint('❌ A4 print error: $e');
+      debugPrint('Stack trace:\n$s');
+      return false;
     }
+  }
+
+  /// Helper to build PDF rows
+  pw.Widget _buildPdfRow(String label, String value, {bool bold = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: bold ? pw.TextStyle(fontWeight: pw.FontWeight.bold) : null),
+          pw.Text(value, style: bold ? pw.TextStyle(fontWeight: pw.FontWeight.bold) : null),
+        ],
+      ),
+    );
   }
 
   /// Generate receipt text from job data
@@ -240,6 +744,17 @@ class ReceiptScreen extends StatelessWidget {
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return 'N/A';
+    }
+  }
+
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return '€0.00';
+
+    try {
+      final numericAmount = double.tryParse(amount.toString()) ?? 0.0;
+      return '€${numericAmount.toStringAsFixed(2)}';
+    } catch (e) {
+      return '€0.00';
     }
   }
 
