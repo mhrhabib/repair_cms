@@ -12,6 +12,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
+import 'dart:io';
 
 class ReceiptScreen extends StatelessWidget {
   ReceiptScreen({super.key, required this.job});
@@ -90,7 +91,7 @@ class ReceiptScreen extends StatelessWidget {
       // Route to appropriate printer based on type and brand
       if (printer.printerType == 'a4') {
         debugPrint('📄 Printing to A4 printer via system dialog');
-        success = await _printA4Receipt(context);
+        success = await _printA4Receipt(context, targetPrinter: printer);
       } else if (printer.protocol.toLowerCase() == 'usb') {
         // USB printers require special handling
         final usbService = PrinterServiceFactory.getUSBPrinterService();
@@ -118,11 +119,11 @@ class ReceiptScreen extends StatelessWidget {
       // Hide loading (use root navigator to match showDialog's default)
       if (context.mounted) {
         try {
-          if (Navigator.of(context, rootNavigator: true).canPop()) {
-            Navigator.of(context, rootNavigator: true).pop();
-          }
+          // Attempt to pop the loading dialog unconditionally; some platforms
+          // may report canPop() == false even when the dialog is present.
+          Navigator.of(context, rootNavigator: true).pop();
         } catch (_) {
-          // ignore
+          // ignore any errors if the dialog was already dismissed
         }
       }
 
@@ -142,11 +143,9 @@ class ReceiptScreen extends StatelessWidget {
       // Hide loading (ensure we pop the root dialog)
       if (context.mounted) {
         try {
-          if (Navigator.of(context, rootNavigator: true).canPop()) {
-            Navigator.of(context, rootNavigator: true).pop();
-          }
+          Navigator.of(context, rootNavigator: true).pop();
         } catch (_) {
-          // ignore
+          // ignore any errors if the dialog was already dismissed
         }
       }
 
@@ -158,7 +157,7 @@ class ReceiptScreen extends StatelessWidget {
   }
 
   /// Print to A4 printer using system print dialog
-  Future<bool> _printA4Receipt(BuildContext context) async {
+  Future<bool> _printA4Receipt(BuildContext context, {PrinterConfigModel? targetPrinter}) async {
     try {
       debugPrint('📄 Generating PDF for A4 receipt');
       // Try to capture the on-screen receipt widget as an image and embed that into the PDF
@@ -193,7 +192,29 @@ class ReceiptScreen extends StatelessWidget {
           ),
         );
 
-        debugPrint('✅ PDF (from captured image) generated, opening system print dialog');
+        debugPrint('✅ PDF (from captured image) generated');
+
+        // If printer is configured for raw TCP (jetdirect/9100), try sending PDF bytes directly
+        if (targetPrinter != null &&
+            ['raw', 'tcp', 'jetdirect', '9100'].contains(targetPrinter.protocol.toLowerCase())) {
+          final bytes = await pdf.save();
+          final port = targetPrinter.port ?? 9100;
+          try {
+            debugPrint('🔌 Attempting raw TCP send to ${targetPrinter.ipAddress}:$port');
+            final socket = await Socket.connect(targetPrinter.ipAddress, port, timeout: const Duration(seconds: 5));
+            socket.add(bytes);
+            await socket.flush();
+            socket.destroy();
+            debugPrint('✅ Sent PDF via raw TCP to ${targetPrinter.ipAddress}:$port');
+            return true;
+          } catch (e, s) {
+            debugPrint('❌ Raw TCP send failed: $e');
+            debugPrint('Stack:\n$s');
+            // fall through to system dialog fallback
+          }
+        }
+
+        debugPrint('🖨️ Opening system print dialog (fallback)');
 
         final printResult = await Printing.layoutPdf(
           onLayout: (PdfPageFormat format) async => pdf.save(),
@@ -623,7 +644,28 @@ class ReceiptScreen extends StatelessWidget {
         ),
       );
 
-      debugPrint('✅ PDF generated, opening system print dialog');
+      debugPrint('✅ PDF generated');
+
+      // If printer is configured for raw TCP (jetdirect/9100), try sending PDF bytes directly
+      if (targetPrinter != null && ['raw', 'tcp', 'jetdirect', '9100'].contains(targetPrinter.protocol.toLowerCase())) {
+        final bytes = await pdf.save();
+        final port = targetPrinter.port ?? 9100;
+        try {
+          debugPrint('🔌 Attempting raw TCP send to ${targetPrinter.ipAddress}:$port');
+          final socket = await Socket.connect(targetPrinter.ipAddress, port, timeout: const Duration(seconds: 5));
+          socket.add(bytes);
+          await socket.flush();
+          socket.destroy();
+          debugPrint('✅ Sent PDF via raw TCP to ${targetPrinter.ipAddress}:$port');
+          return true;
+        } catch (e, s) {
+          debugPrint('❌ Raw TCP send failed: $e');
+          debugPrint('Stack:\n$s');
+          // fall through to system dialog fallback
+        }
+      }
+
+      debugPrint('🖨️ Opening system print dialog (fallback)');
 
       // Show system print dialog and wait for result
       final printResult = await Printing.layoutPdf(
