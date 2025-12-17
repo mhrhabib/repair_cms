@@ -77,6 +77,10 @@ class ReceiptScreen extends StatelessWidget {
     // Generate receipt text from job data
     final receiptText = _generateReceiptText();
 
+    // Capture navigator before async operations
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     // Show loading
     showDialog(
       context: context,
@@ -117,42 +121,38 @@ class ReceiptScreen extends StatelessWidget {
       }
 
       // Hide loading (use root navigator to match showDialog's default)
-      if (context.mounted) {
-        try {
-          // Attempt to pop the loading dialog unconditionally; some platforms
-          // may report canPop() == false even when the dialog is present.
-          Navigator.of(context, rootNavigator: true).pop();
-        } catch (_) {
-          // ignore any errors if the dialog was already dismissed
-        }
+      debugPrint('🔄 Attempting to dismiss loading dialog');
+      try {
+        // Use the captured navigator instead of context which may be unmounted
+        navigator.pop();
+        debugPrint('✅ Loading dialog dismissed');
+      } catch (e) {
+        debugPrint('⚠️ Error dismissing dialog: $e');
+        // ignore any errors if the dialog was already dismissed
       }
 
       // Show result
-      if (context.mounted) {
-        if (success) {
-          debugPrint('✅ Print job completed successfully');
-          SnackbarDemo(message: 'Receipt printed successfully!').showCustomSnackbar(context);
-        } else {
-          debugPrint('❌ Print job failed: $errorMessage');
-          SnackbarDemo(message: errorMessage ?? 'Print failed').showCustomSnackbar(context);
-        }
+      if (success) {
+        debugPrint('✅ Print job completed successfully');
+        scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Receipt printed successfully!')));
+      } else {
+        debugPrint('❌ Print job failed: $errorMessage');
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text(errorMessage ?? 'Print failed')));
       }
     } catch (e) {
       debugPrint('❌ Print error: $e');
 
       // Hide loading (ensure we pop the root dialog)
-      if (context.mounted) {
-        try {
-          Navigator.of(context, rootNavigator: true).pop();
-        } catch (_) {
-          // ignore any errors if the dialog was already dismissed
-        }
+      try {
+        navigator.pop();
+        debugPrint('✅ Loading dialog dismissed (error case)');
+      } catch (popError) {
+        debugPrint('⚠️ Error dismissing dialog in catch: $popError');
+        // ignore any errors if the dialog was already dismissed
       }
 
       // Show error
-      if (context.mounted) {
-        SnackbarDemo(message: 'Print error: $e').showCustomSnackbar(context);
-      }
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Print error: $e')));
     }
   }
 
