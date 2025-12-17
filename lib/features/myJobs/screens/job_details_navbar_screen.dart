@@ -1,5 +1,6 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class JobDetailsNavbar extends StatelessWidget {
   final int selectedIndex;
@@ -15,11 +16,11 @@ class JobDetailsNavbar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildNavItem(Icons.description_outlined, 'Job Details', 0),
-          _buildNavItem(Icons.receipt_outlined, 'Receipt´s', 1),
-          _buildNavItem(Icons.access_time, 'Status', 2),
-          _buildNavItem(Icons.notes_outlined, 'Notes', 3),
-          _buildNavItem(Icons.more_horiz, 'Files', 4),
+          _buildNavItem(SolarIconsOutline.clipboardList, 'Job Details', 0),
+          _buildNavItem(SolarIconsOutline.dialog2, 'Receipt´s', 1),
+          _buildNavItem(SolarIconsOutline.plugCircle, 'Status', 2),
+          _buildNavItem(SolarIconsOutline.pen2, 'Notes', 3),
+          _buildNavItem(SolarIconsOutline.cloudUpload, 'Files', 4),
         ],
       ),
     );

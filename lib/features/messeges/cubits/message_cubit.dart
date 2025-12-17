@@ -206,9 +206,49 @@ class MessageCubit extends Cubit<MessageState> {
     debugPrint('📋 [MessageCubit] Loading conversations');
     emit(MessageLoading());
 
-    // For now, emit loaded with existing conversations
-    // In production, fetch from API
-    emit(ConversationsLoaded(conversations: List.from(_conversations)));
+    // Group messages by conversationId and get only the latest message for each conversation
+    final Map<String, Conversation> conversationMap = {};
+
+    for (var message in _conversations) {
+      final convId = message.conversationId ?? '';
+      if (convId.isEmpty) continue;
+
+      // If this conversation doesn't exist yet, or this message is newer, update it
+      if (!conversationMap.containsKey(convId)) {
+        conversationMap[convId] = message;
+      } else {
+        // Compare timestamps to keep the latest message
+        final existingDate = _parseDateTime(conversationMap[convId]!.createdAt);
+        final newDate = _parseDateTime(message.createdAt);
+
+        if (newDate != null && (existingDate == null || newDate.isAfter(existingDate))) {
+          conversationMap[convId] = message;
+        }
+      }
+    }
+
+    // Convert map to list and sort by date (newest first)
+    final uniqueConversations = conversationMap.values.toList();
+    uniqueConversations.sort((a, b) {
+      final dateA = _parseDateTime(a.createdAt);
+      final dateB = _parseDateTime(b.createdAt);
+      if (dateA == null || dateB == null) return 0;
+      return dateB.compareTo(dateA); // Newest first
+    });
+
+    debugPrint(
+      '✅ [MessageCubit] Loaded ${uniqueConversations.length} unique conversations from ${_conversations.length} messages',
+    );
+    emit(ConversationsLoaded(conversations: uniqueConversations));
+  }
+
+  DateTime? _parseDateTime(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return null;
+    try {
+      return DateTime.parse(dateString);
+    } catch (e) {
+      return null;
+    }
   }
 
   void loadMessages(String conversationId) {

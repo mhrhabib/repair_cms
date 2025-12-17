@@ -1,5 +1,7 @@
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
+import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
+import 'package:repair_cms/features/home/home_screen.dart';
 import 'dart:math' as math;
 
 class JobProgressWidget extends StatelessWidget {
@@ -51,6 +53,7 @@ class JobProgressWidget extends StatelessWidget {
                 ),
               SizedBox(height: 8.h),
               _buildLegend(
+                context: context,
                 onHoldJobs: onHoldJobs,
                 repairInProgressJobs: repairInProgressJobs,
                 quotationConfirmedJobs: quotationConfirmedJobs,
@@ -135,6 +138,7 @@ class JobProgressWidget extends StatelessWidget {
   }
 
   Widget _buildLegend({
+    required BuildContext context,
     required int onHoldJobs,
     required int repairInProgressJobs,
     required int quotationConfirmedJobs,
@@ -142,28 +146,49 @@ class JobProgressWidget extends StatelessWidget {
   }) {
     return Column(
       children: [
-        _buildLegendItem('On Hold ($onHoldJobs)', const Color(0xFFB84343)),
+        _buildLegendItem(context, 'On Hold ($onHoldJobs)', const Color(0xFFB84343), 'parts_not_available'),
         SizedBox(height: 4.h),
-        _buildLegendItem('Repair in Progress ($repairInProgressJobs)', const Color(0xFFF39C12)),
+        _buildLegendItem(context, 'Repair in Progress ($repairInProgressJobs)', const Color(0xFFF39C12), 'in_progress'),
         SizedBox(height: 4.h),
-        _buildLegendItem('Quotation Confirmed ($quotationConfirmedJobs)', const Color(0xFF27AE60)),
+        _buildLegendItem(
+          context,
+          'Quotation Confirmed ($quotationConfirmedJobs)',
+          const Color(0xFF27AE60),
+          'accepted_quotes',
+        ),
         SizedBox(height: 4.h),
-        _buildLegendItem('Quotation Rejected ($quotationRejectedJobs)', const Color(0xFFFF5F5F)),
+        _buildLegendItem(context, 'Quotation Rejected ($quotationRejectedJobs)', const Color(0xFFFF5F5F), 'rejected'),
       ],
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 24.w,
-          height: 12.h,
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+  Widget _buildLegendItem(BuildContext context, String label, Color color, String statusFilter) {
+    return InkWell(
+      onTap: () {
+        // Filter jobs first
+        context.read<JobCubit>().filterJobsByStatus(statusFilter);
+
+        // Navigate to home screen - it will show MyJobs tab (managed by HomeScreen)
+        Navigator.of(
+          context,
+        ).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
+      },
+      borderRadius: BorderRadius.circular(4.r),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 4.h),
+        child: Row(
+          children: [
+            Container(
+              width: 24.w,
+              height: 12.h,
+              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+            ),
+            SizedBox(width: 8.w),
+            Expanded(child: Text(label, style: AppTypography.fontSize16)),
+            Icon(Icons.arrow_forward_ios, size: 12.sp, color: Colors.grey),
+          ],
         ),
-        SizedBox(width: 8.w),
-        Expanded(child: Text(label, style: AppTypography.fontSize16)),
-      ],
+      ),
     );
   }
 }

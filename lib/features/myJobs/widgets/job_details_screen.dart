@@ -7,15 +7,13 @@ import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
-import 'package:repair_cms/features/myJobs/job_details_navbar_screen.dart';
+import 'package:repair_cms/features/myJobs/screens/job_details_navbar_screen.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
+import 'package:repair_cms/features/myJobs/screens/job_progress_receipts.dart';
 import 'package:repair_cms/features/myJobs/widgets/files_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/notes_screen.dart';
-import 'package:repair_cms/features/myJobs/widgets/receipt_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/status_screen.dart';
-import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
-import 'package:repair_cms/features/jobBooking/models/create_job_request.dart' as job_booking;
 import 'package:solar_icons/solar_icons.dart';
 
 class JobDetailsScreen extends StatefulWidget {
@@ -146,7 +144,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       case 0:
         return JobDetailsContent(job: job);
       case 1:
-        return ReceiptScreen(job: job);
+        return ChatConversationScreen(conversationId: job.data!.sId!);
       case 2:
         return StatusScreen(jobId: job);
       case 3:
@@ -461,34 +459,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         children: [
           CupertinoButton(
             padding: EdgeInsets.zero,
-            onPressed: () => _navigateToDeviceLabel(widget.job),
-            child: Image.asset('assets/icon/label.png', width: 24.r, height: 24.r),
-          ),
-          Stack(
-            children: [
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatConversationScreen(conversationId: widget.job.data!.sId ?? ''),
-                      fullscreenDialog: true,
-                    ),
-                  );
-                },
-                child: Icon(SolarIconsOutline.dialog2, color: figmaBlue, size: 28.r),
-              ),
-              Positioned(
-                right: 8.w,
-                top: 8.h,
-                child: Container(
-                  width: 8.w,
-                  height: 8.h,
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                ),
-              ),
-            ],
+            onPressed: () => Navigator.of(
+              context,
+            ).push(CupertinoPageRoute(builder: (context) => JobProgressReceiptsScreen(job: widget.job))),
+            child: Icon(SolarIconsOutline.printer, size: 24.r, color: figmaBlue),
           ),
         ],
       ),
@@ -739,107 +713,6 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           ),
         ),
       ],
-    );
-  }
-
-  void _navigateToDeviceLabel(SingleJobModel job) {
-    debugPrint('🏷️ Navigating to device label screen');
-
-    // Convert SingleJobModel to CreateJobResponse format
-    final jobResponse = job_booking.CreateJobResponse(
-      success: job.success ?? true,
-      data: job_booking.JobData(
-        sId: job.data?.sId,
-        jobType: job.data?.jobType,
-        model: job.data?.model,
-        deviceId: job.data?.deviceId,
-        jobContactId: job.data?.jobContactId,
-        defectId: job.data?.defectId,
-        physicalLocation: job.data?.physicalLocation,
-        emailConfirmation: job.data?.emailConfirmation,
-        signatureFilePath: job.data?.signatureFilePath,
-        printOption: job.data?.printOption,
-        printDeviceLabel: job.data?.printDeviceLabel,
-        jobStatus: job.data?.jobStatus
-            ?.map(
-              (js) => job_booking.JobStatus(
-                title: js.title ?? '',
-                userId: js.userId ?? '',
-                colorCode: js.colorCode ?? '',
-                userName: js.userName ?? '',
-                createAtStatus: js.createAtStatus ?? 0,
-                notifications: js.notifications ?? false,
-                notes: js.notes ?? '',
-              ),
-            )
-            .toList(),
-        userId: job.data?.userId,
-        createdAt: job.data?.createdAt,
-        updatedAt: job.data?.updatedAt,
-        assignedItems: job.data?.assignedItems
-            ?.map((item) {
-              if (item is Map) {
-                return job_booking.AssignedItemData(
-                  productName: item['productName'] ?? item['name'],
-                  salePriceIncVat: item['price_incl_vat']?.toDouble() ?? 0.0,
-                );
-              }
-              return null;
-            })
-            .whereType<job_booking.AssignedItemData>()
-            .toList(),
-        device: job.data?.device
-            ?.map(
-              (d) => job_booking.DeviceData(
-                sId: d.sId,
-                brand: d.brand,
-                model: d.model,
-                imei: d.serialNo,
-                condition: d.condition
-                    ?.map((c) => job_booking.ConditionItem(value: c.value ?? '', id: c.id ?? ''))
-                    .toList(),
-                createdAt: d.createdAt,
-                updatedAt: d.updatedAt,
-              ),
-            )
-            .toList(),
-        contact: job.data?.contact
-            ?.map(
-              (c) => job_booking.ContactData(
-                sId: c.sId,
-                type: c.type,
-                salutation: c.salutation,
-                firstName: c.firstName,
-                lastName: c.lastName,
-                telephone: c.telephone,
-                email: c.email,
-                createdAt: c.createdAt,
-                updatedAt: c.updatedAt,
-              ),
-            )
-            .toList(),
-        defect: job.data?.defect
-            ?.map(
-              (d) => job_booking.DefectData(
-                sId: d.sId,
-                defect: d.defect
-                    ?.map((item) => job_booking.DefectItem(value: item.value ?? '', id: item.id ?? ''))
-                    .toList(),
-                description: d.description,
-                createdAt: d.createdAt,
-                updatedAt: d.updatedAt,
-              ),
-            )
-            .toList(),
-      ),
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            JobDeviceLabelScreen(jobResponse: jobResponse, printOption: 'Device Label', jobNo: job.data?.jobNo),
-      ),
     );
   }
 
