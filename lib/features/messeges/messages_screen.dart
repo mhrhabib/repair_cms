@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
@@ -18,6 +19,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   bool isSelectionMode = false;
   Set<String> selectedConversations = {};
   List<Conversation> _conversations = [];
+  Conversation? _selectedConversation;
 
   @override
   void initState() {
@@ -30,15 +32,19 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: isTablet
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
         title: Text(
           isSelectionMode ? 'Messages - remove selected' : 'Messages',
           style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
@@ -88,9 +94,66 @@ class _MessagesScreenState extends State<MessagesScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (isTablet) {
+            return Row(
+              children: [
+                SizedBox(width: 320.w, child: _conversations.isEmpty ? _buildEmptyState() : _buildMessagesList()),
+                Container(width: 1, color: Colors.grey[200]),
+                Expanded(
+                  child: _selectedConversation == null
+                      ? _buildChatPlaceholder()
+                      : KeyedSubtree(
+                          key: ValueKey(_selectedConversation!.conversationId),
+                          child: _buildEmbeddedChat(_selectedConversation!),
+                        ),
+                ),
+              ],
+            );
+          }
+
           return _conversations.isEmpty ? _buildEmptyState() : _buildMessagesList();
         },
       ),
+    );
+  }
+
+  Widget _buildChatPlaceholder() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.chat_bubble_outline, size: 80.sp, color: Colors.grey[300]),
+          SizedBox(height: 16.h),
+          Text(
+            'Select a conversation to start chatting',
+            style: AppTypography.fontSize16.copyWith(color: Colors.grey[400]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmbeddedChat(Conversation conversation) {
+    final storage = GetStorage();
+    final userEmail = storage.read('email');
+
+    // Determine the other participant
+    String? recipientEmail;
+    String? recipientName;
+
+    if (conversation.sender?.email != null && conversation.sender?.email != userEmail) {
+      recipientEmail = conversation.sender!.email;
+      recipientName = conversation.sender!.name;
+    } else if (conversation.receiver?.email != null && conversation.receiver?.email != userEmail) {
+      recipientEmail = conversation.receiver!.email;
+      recipientName = conversation.receiver!.name;
+    }
+
+    return ChatConversationScreen(
+      conversationId: conversation.conversationId ?? '',
+      recipientEmail: recipientEmail,
+      recipientName: recipientName,
+      isEmbedded: true,
     );
   }
 
@@ -268,6 +331,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   void _openChatDetail(Conversation conversation) {
+    if (MediaQuery.of(context).size.width >= 600) {
+      setState(() {
+        _selectedConversation = conversation;
+      });
+      return;
+    }
+
     final storage = GetStorage();
     final userEmail = storage.read('email');
 

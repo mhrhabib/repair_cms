@@ -441,6 +441,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
         if (state is JobSuccess) {
           final jobs = state.jobs;
+          bool isTablet = MediaQuery.of(context).size.width >= 600;
 
           if (jobs.isEmpty) {
             return const SliverToBoxAdapter(
@@ -449,6 +450,28 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   padding: EdgeInsets.all(32.0),
                   child: Text('No jobs found', style: TextStyle(fontSize: 16, color: Colors.grey)),
                 ),
+              ),
+            );
+          }
+
+          if (isTablet) {
+            return SliverPadding(
+              padding: EdgeInsets.all(16.w),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 400.w,
+                  mainAxisSpacing: 16.h,
+                  crossAxisSpacing: 16.w,
+                  mainAxisExtent: 220.h,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  if (index == jobs.length && state.hasMore) {
+                    context.read<JobCubit>().loadMoreJobs();
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final job = jobs[index];
+                  return JobCardWidget(job: job);
+                }, childCount: state.hasMore ? jobs.length + 1 : jobs.length),
               ),
             );
           }

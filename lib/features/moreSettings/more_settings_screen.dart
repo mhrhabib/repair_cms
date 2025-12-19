@@ -136,70 +136,132 @@ class MoreSettingsScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: Column(
-          children: [
-            // Printer Settings
-            _buildSettingsItem(
-              icon: SolarIconsOutline.printer,
-              iconColor: Colors.blue,
-              title: 'A4 Printer Settings',
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
-              },
-            ),
+        child: MediaQuery.of(context).size.width >= 600
+            ? GridView.count(
+                crossAxisCount: 2,
+                childAspectRatio: 4,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildSettingsCard(
+                    icon: SolarIconsOutline.printer,
+                    iconColor: Colors.blue,
+                    title: 'A4 Printer Settings',
+                    onTap: () {
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
+                    },
+                  ),
+                  _buildSettingsCard(
+                    icon: SolarIconsOutline.laptop2,
+                    iconColor: Colors.blue,
+                    title: 'Label Content',
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => LabelContentScreen()));
+                    },
+                  ),
+                  _buildSettingsCard(
+                    icon: SolarIconsOutline.bell,
+                    iconColor: Colors.blue,
+                    title: 'Notification Settings',
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationSettingsScreen()));
+                    },
+                  ),
+                  _buildSettingsCard(
+                    icon: SolarIconsOutline.logout,
+                    iconColor: Colors.red,
+                    title: 'Logout',
+                    textColor: Colors.red,
+                    onTap: () => _showLogoutDialog(context),
+                  ),
+                ],
+              )
+            : Column(
+                children: [
+                  // Printer Settings
+                  _buildSettingsItem(
+                    icon: SolarIconsOutline.printer,
+                    iconColor: Colors.blue,
+                    title: 'A4 Printer Settings',
+                    onTap: () {
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
+                    },
+                  ),
 
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                  Container(
+                    height: 1,
+                    alignment: Alignment.centerRight,
+                    width: MediaQuery.of(context).size.width * .78,
+                    decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                    ),
+                  ),
+
+                  // Label Content
+                  _buildSettingsItem(
+                    icon: SolarIconsOutline.laptop2,
+                    iconColor: Colors.blue,
+                    title: 'Label Content',
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => LabelContentScreen()));
+                    },
+                  ),
+
+                  Container(
+                    height: 1,
+                    alignment: Alignment.centerRight,
+                    width: MediaQuery.of(context).size.width * .78,
+                    decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                    ),
+                  ),
+
+                  // Notification Settings
+                  _buildSettingsItem(
+                    icon: SolarIconsOutline.bell,
+                    iconColor: Colors.blue,
+                    title: 'Notification Settings',
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationSettingsScreen()));
+                    },
+                  ),
+
+                  Container(
+                    height: 1,
+                    alignment: Alignment.centerRight,
+                    width: MediaQuery.of(context).size.width * .78,
+                    decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                    ),
+                  ),
+
+                  // Logout Button - Added at the bottom
+                  _buildLogoutItem(context),
+                ],
               ),
-            ),
-
-            // Label Content
-            _buildSettingsItem(
-              icon: SolarIconsOutline.laptop2,
-              iconColor: Colors.blue,
-              title: 'Label Content',
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => LabelContentScreen()));
-              },
-            ),
-
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
-              ),
-            ),
-
-            // Notification Settings
-            _buildSettingsItem(
-              icon: SolarIconsOutline.bell,
-              iconColor: Colors.blue,
-              title: 'Notification Settings',
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationSettingsScreen()));
-              },
-            ),
-
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
-              ),
-            ),
-
-            // Logout Button - Added at the bottom
-            _buildLogoutItem(context),
-          ],
-        ),
       ),
+    );
+  }
+
+  Widget _buildSettingsCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required VoidCallback onTap,
+    Color textColor = Colors.black87,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
+      ),
+      child: _buildSettingsItem(icon: icon, iconColor: iconColor, title: title, onTap: onTap),
     );
   }
 

@@ -71,25 +71,74 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Scaffold(
-      body: Stack(
+      body: Row(
         children: [
-          _screens[_currentIndex],
-          // Apply backdrop filter only when expanded
-          if (_isExpanded)
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.4),
-                width: double.infinity,
-                height: double.infinity,
-              ),
+          if (isTablet) _buildNavigationRail(),
+          Expanded(
+            child: Stack(
+              children: [
+                _screens[_currentIndex],
+                if (_isExpanded)
+                  BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+                  ),
+                _buildExpandableFAB(),
+              ],
             ),
-          // Position the expandable FAB above all content
-          _buildExpandableFAB(),
+          ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: isTablet ? null : _buildBottomNavigationBar(),
+    );
+  }
+
+  Widget _buildNavigationRail() {
+    return NavigationRail(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: (index) => setState(() => _currentIndex = index),
+      backgroundColor: AppColors.whiteColor,
+      labelType: NavigationRailLabelType.all,
+      selectedLabelTextStyle: AppTypography.fontSize12.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+      unselectedLabelTextStyle: AppTypography.fontSize12.copyWith(color: Colors.grey.shade400),
+      selectedIconTheme: IconThemeData(color: AppColors.primary, size: 28.sp),
+      unselectedIconTheme: IconThemeData(color: Colors.grey.shade400, size: 28.sp),
+      leading: Column(
+        children: [
+          SizedBox(height: 16.h),
+          _buildCenterAddButton(),
+          SizedBox(height: 24.h),
+        ],
+      ),
+      destinations: [
+        NavigationRailDestination(
+          icon: Icon(SolarIconsOutline.pieChart),
+          selectedIcon: Icon(SolarIconsBold.pieChart),
+          label: Text('Home'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(SolarIconsOutline.suitcaseTag),
+          selectedIcon: Icon(SolarIconsBold.suitcaseTag),
+          label: Text('My Jobs'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(SolarIconsOutline.chatUnread),
+          selectedIcon: Icon(SolarIconsBold.chatUnread),
+          label: Text('Messages'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(SolarIconsOutline.menuDots),
+          selectedIcon: Icon(SolarIconsBold.menuDots),
+          label: Text('More'),
+        ),
+      ],
     );
   }
 

@@ -10,8 +10,15 @@ class ChatConversationScreen extends StatefulWidget {
   final String conversationId;
   final String? recipientEmail;
   final String? recipientName;
+  final bool isEmbedded;
 
-  const ChatConversationScreen({super.key, required this.conversationId, this.recipientEmail, this.recipientName});
+  const ChatConversationScreen({
+    super.key,
+    required this.conversationId,
+    this.recipientEmail,
+    this.recipientName,
+    this.isEmbedded = false,
+  });
 
   @override
   State<ChatConversationScreen> createState() => _ChatConversationScreenState();
@@ -167,39 +174,41 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
         return Scaffold(
           backgroundColor: Colors.grey[50],
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  participantName,
-                  style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
+          appBar: widget.isEmbedded
+              ? null
+              : AppBar(
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        participantName,
+                        style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        'Online',
+                        style: TextStyle(color: Colors.green[600], fontSize: 12, fontWeight: FontWeight.w400),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      decoration: BoxDecoration(color: const Color(0xFF4A90E2), shape: BoxShape.circle),
+                      child: IconButton(
+                        icon: const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                        padding: EdgeInsets.zero,
+                        onPressed: () {},
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                 ),
-                Text(
-                  'Online',
-                  style: TextStyle(color: Colors.green[600], fontSize: 12, fontWeight: FontWeight.w400),
-                ),
-              ],
-            ),
-            actions: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                decoration: BoxDecoration(color: const Color(0xFF4A90E2), shape: BoxShape.circle),
-                child: IconButton(
-                  icon: const Icon(Icons.info_outline, color: Colors.white, size: 20),
-                  padding: EdgeInsets.zero,
-                  onPressed: () {},
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
           body: state is MessageLoading
               ? const Center(child: CircularProgressIndicator())
               : Column(

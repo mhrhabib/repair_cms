@@ -273,16 +273,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             _buildGreetingSection(),
                             SizedBox(height: 12.h),
 
-                            // Incomplete To-Do's Card
-                            _buildIncompleteToDoCard(context),
-                            SizedBox(height: 12.h),
-
-                            // Completed Jobs Card
-                            _buildCompletedJobsCard(),
-                            SizedBox(height: 16.h),
-
-                            // Job Progress Card - Using the new widget
-                            const JobProgressWidget(),
+                            if (MediaQuery.of(context).size.width >= 600)
+                              // Tablet Grid Layout
+                              Column(
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(child: _buildIncompleteToDoCard(context)),
+                                      SizedBox(width: 16.w),
+                                      Expanded(child: _buildCompletedJobsCard()),
+                                    ],
+                                  ),
+                                  SizedBox(height: 16.h),
+                                  const JobProgressWidget(),
+                                ],
+                              )
+                            else
+                              // Mobile Linear Layout
+                              Column(
+                                children: [
+                                  _buildIncompleteToDoCard(context),
+                                  SizedBox(height: 12.h),
+                                  _buildCompletedJobsCard(),
+                                  SizedBox(height: 16.h),
+                                  const JobProgressWidget(),
+                                ],
+                              ),
 
                             // Add bottom padding for FAB
                             SizedBox(height: 100.h),
