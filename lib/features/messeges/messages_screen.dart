@@ -97,7 +97,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           if (isTablet) {
             return Row(
               children: [
-                SizedBox(width: 320.w, child: _conversations.isEmpty ? _buildEmptyState() : _buildMessagesList()),
+                SizedBox(width: 350, child: _conversations.isEmpty ? _buildEmptyState() : _buildMessagesList()),
                 Container(width: 1, color: Colors.grey[200]),
                 Expanded(
                   child: _selectedConversation == null

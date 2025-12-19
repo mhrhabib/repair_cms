@@ -378,7 +378,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Navigator.push(context, MaterialPageRoute(builder: (context) => QuickTaskScreen()));
           },
           child: Container(
-            padding: EdgeInsets.all(8.w),
+            padding: MediaQuery.of(context).size.width >= 600 ? const EdgeInsets.all(12) : EdgeInsets.all(8.w),
             decoration: BoxDecoration(
               color: AppColors.whiteColor,
               borderRadius: BorderRadius.circular(12.r),
@@ -386,43 +386,108 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
               ],
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+            child: MediaQuery.of(context).size.width >= 600
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Incomplete To-Do\'s',
-                        style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Incomplete To-Do\'s',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.fontSize12.copyWith(color: AppColors.lightFontColor),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$incompleteCount',
+                                  style: AppTypography.fontSize16.copyWith(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.today_rounded, color: AppColors.primary.withValues(alpha: 0.1), size: 28.sp),
+                        ],
                       ),
-                      SizedBox(height: 8.h),
-                      Text('$incompleteCount', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => QuickTaskScreen()));
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(8.r),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'See All To-Do\'s',
+                              style: AppTypography.fontSize12.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Incomplete To-Do\'s',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              '$incompleteCount',
+                              style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.whiteColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: AppColors.borderColor),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.today_rounded, color: AppColors.primary, size: 22.sp),
+                            SizedBox(width: 4.w),
+                            Text(
+                              'See All To-Do\'s',
+                              style: AppTypography.fontSize16.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                SizedBox(width: 8.w),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.whiteColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(color: AppColors.borderColor),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.today_rounded, color: AppColors.primary, size: 22.sp),
-                      SizedBox(width: 4.w),
-                      Text(
-                        'See All To-Do\'s',
-                        style: AppTypography.fontSize16.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ),
         );
       },
@@ -456,7 +521,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
 
         return Container(
-          padding: EdgeInsets.all(12.w),
+          padding: MediaQuery.of(context).size.width >= 600 ? const EdgeInsets.all(12) : EdgeInsets.all(12.w),
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
             borderRadius: BorderRadius.circular(12.r),
@@ -464,106 +529,197 @@ class _DashboardScreenState extends State<DashboardScreen> {
               BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
             ],
           ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 40.w,
-                    height: 40.h,
-                    decoration: BoxDecoration(color: const Color(0xFFC507FF), borderRadius: BorderRadius.circular(8.r)),
-                    child: Icon(SolarIconsBold.suitcaseTag, color: Colors.white, size: 30.sp),
-                  ),
-                  SizedBox(width: 16.w),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
-                    child: GestureDetector(
-                      onTap: _showDateRangePicker,
-                      child: Row(
-                        children: [
-                          Text(
-                            _selectedStartDate != null && _selectedEndDate != null
-                                ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
-                                : 'This Month',
-                            style: AppTypography.fontSize16,
+          child: MediaQuery.of(context).size.width >= 600
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Completed Jobs',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.fontSize12.copyWith(color: AppColors.lightFontColor),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '$completedJobs',
+                                style: AppTypography.fontSize16.copyWith(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w500,
+                                  foreground: Paint()..shader = linearGradient,
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(width: 2.w),
-                          Container(height: 28.h, color: const Color(0x898FA0B2), width: 2.w),
-                          SizedBox(width: 2.w),
-                          const Icon(Icons.calendar_month, color: Color(0xFF2589F6)),
-                          Icon(Icons.keyboard_arrow_down, color: const Color(0xFF2589F6), size: 20.sp),
-                        ],
+                        ),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFC507FF).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: const Icon(SolarIconsBold.suitcaseTag, color: Color(0xFFC507FF), size: 20),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: _showDateRangePicker,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.borderColor.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: AppColors.borderColor),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_month, color: Color(0xFF2589F6), size: 16),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _selectedStartDate != null && _selectedEndDate != null
+                                    ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
+                                    : dateRangeText,
+                                style: AppTypography.fontSize12.copyWith(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            const Icon(Icons.keyboard_arrow_down, color: Color(0xFF2589F6), size: 16),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(dateRangeText, style: AppTypography.fontSize14.copyWith(color: AppColors.fontMainColor)),
-                      Text(
-                        'Completed Jobs',
-                        style: AppTypography.fontSize24.copyWith(
-                          fontWeight: FontWeight.w500,
-                          foreground: Paint()..shader = linearGradient,
-                        ),
+
+                    // Loading/Error state for tablet
+                    if (state is DashboardLoading) ...[
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        backgroundColor: AppColors.borderColor,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
                     ],
-                  ),
-                  Text(completedJobs.toString(), style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w800)),
-                ],
-              ),
-
-              // Loading state
-              if (state is DashboardLoading) ...[
-                SizedBox(height: 12.h),
-                LinearProgressIndicator(
-                  backgroundColor: AppColors.borderColor,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-              ],
-
-              // Error state
-              if (state is DashboardError) ...[
-                SizedBox(height: 12.h),
-                Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red, size: 16.sp),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text('Failed to load data', style: AppTypography.fontSize12.copyWith(color: Colors.red)),
-                      ),
-                      GestureDetector(
-                        onTap: _loadAllDashboardData,
-                        child: Text(
-                          'Retry',
-                          style: AppTypography.fontSize12.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w500,
+                    if (state is DashboardError) ...[const SizedBox(height: 8), _buildErrorWidget()],
+                  ],
+                )
+              : Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          width: 40.w,
+                          height: 40.h,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFC507FF),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Icon(SolarIconsBold.suitcaseTag, color: Colors.white, size: 30.sp),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: FittedBox(
+                            alignment: Alignment.centerRight,
+                            fit: BoxFit.scaleDown,
+                            child: Container(
+                              padding: EdgeInsets.all(8.w),
+                              decoration: BoxDecoration(
+                                color: AppColors.borderColor,
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: GestureDetector(
+                                onTap: _showDateRangePicker,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _selectedStartDate != null && _selectedEndDate != null
+                                          ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
+                                          : dateRangeText,
+                                      style: AppTypography.fontSize16,
+                                    ),
+                                    SizedBox(width: 2.w),
+                                    Container(height: 28.h, color: const Color(0x898FA0B2), width: 2.w),
+                                    SizedBox(width: 2.w),
+                                    const Icon(Icons.calendar_month, color: Color(0xFF2589F6)),
+                                    Icon(Icons.keyboard_arrow_down, color: const Color(0xFF2589F6), size: 20.sp),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              dateRangeText,
+                              style: AppTypography.fontSize14.copyWith(color: AppColors.fontMainColor),
+                            ),
+                            Text(
+                              'Completed Jobs',
+                              style: AppTypography.fontSize24.copyWith(
+                                fontWeight: FontWeight.w500,
+                                foreground: Paint()..shader = linearGradient,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          completedJobs.toString(),
+                          style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                    // Loading/Error state for mobile
+                    if (state is DashboardLoading) ...[
+                      SizedBox(height: 12.h),
+                      LinearProgressIndicator(
+                        backgroundColor: AppColors.borderColor,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
                     ],
-                  ),
+                    if (state is DashboardError) ...[SizedBox(height: 12.h), _buildErrorWidget()],
+                  ],
                 ),
-              ],
-            ],
-          ),
         );
       },
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      padding: EdgeInsets.all(8.w),
+      decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8.r)),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 16.sp),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text('Failed to load data', style: AppTypography.fontSize12.copyWith(color: Colors.red)),
+          ),
+          GestureDetector(
+            onTap: _loadAllDashboardData,
+            child: Text(
+              'Retry',
+              style: AppTypography.fontSize12.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

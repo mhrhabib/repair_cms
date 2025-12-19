@@ -459,10 +459,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
               padding: EdgeInsets.all(16.w),
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 400.w,
-                  mainAxisSpacing: 16.h,
-                  crossAxisSpacing: 16.w,
-                  mainAxisExtent: 220.h,
+                  maxCrossAxisExtent: 380, // Smaller cards for better tablet grid
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  mainAxisExtent: 160, // Tighter height for job cards on tablets
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   if (index == jobs.length && state.hasMore) {

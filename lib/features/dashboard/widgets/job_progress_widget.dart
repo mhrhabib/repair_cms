@@ -8,6 +8,8 @@ class JobProgressWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return BlocBuilder<DashboardCubit, DashboardState>(
       builder: (context, state) {
         int totalActiveJobs = 0;
@@ -27,7 +29,7 @@ class JobProgressWidget extends StatelessWidget {
         }
 
         return Container(
-          padding: EdgeInsets.all(12.w),
+          padding: isTablet ? const EdgeInsets.all(12) : EdgeInsets.all(12.w),
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
             borderRadius: BorderRadius.circular(12.r),
@@ -38,7 +40,7 @@ class JobProgressWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
+              _buildHeader(isTablet),
               SizedBox(height: 12.h),
               if (isLoading)
                 _buildLoadingChart()
@@ -49,6 +51,7 @@ class JobProgressWidget extends StatelessWidget {
                   repairInProgressJobs: repairInProgressJobs,
                   quotationConfirmedJobs: quotationConfirmedJobs,
                   quotationRejectedJobs: quotationRejectedJobs,
+                  isTablet: isTablet,
                 ),
               SizedBox(height: 8.h),
               _buildLegend(
@@ -57,6 +60,7 @@ class JobProgressWidget extends StatelessWidget {
                 repairInProgressJobs: repairInProgressJobs,
                 quotationConfirmedJobs: quotationConfirmedJobs,
                 quotationRejectedJobs: quotationRejectedJobs,
+                isTablet: isTablet,
               ),
             ],
           ),
@@ -65,14 +69,22 @@ class JobProgressWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isTablet) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Job Progress', style: AppTypography.fontSize16Bold),
+        Text(
+          'Job Progress',
+          style: isTablet
+              ? AppTypography.fontSize14.copyWith(fontWeight: FontWeight.bold)
+              : AppTypography.fontSize16Bold,
+        ),
         Text(
           'Live Status',
-          style: AppTypography.fontSize14.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+          style: (isTablet ? AppTypography.fontSize12 : AppTypography.fontSize14).copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -101,15 +113,16 @@ class JobProgressWidget extends StatelessWidget {
     required int repairInProgressJobs,
     required int quotationConfirmedJobs,
     required int quotationRejectedJobs,
+    required bool isTablet,
   }) {
     return Center(
       child: SizedBox(
-        width: 180.w,
-        height: 180.h,
+        width: isTablet ? 140.w : 180.w,
+        height: isTablet ? 140.h : 180.h,
         child: Stack(
           children: [
             CustomPaint(
-              size: Size(200.w, 180.h),
+              size: Size(isTablet ? 150.w : 200.w, isTablet ? 140.h : 180.h),
               painter: DonutChartPainter(
                 onHoldJobs: onHoldJobs,
                 repairInProgressJobs: repairInProgressJobs,
@@ -124,7 +137,8 @@ class JobProgressWidget extends StatelessWidget {
                 children: [
                   Text(
                     totalActiveJobs.toString(),
-                    style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600, color: AppColors.primary),
+                    style: (isTablet ? AppTypography.fontSize16.copyWith(fontSize: 18.sp) : AppTypography.fontSize28)
+                        .copyWith(fontWeight: FontWeight.w600, color: AppColors.primary),
                   ),
                   Text('Active Jobs', style: AppTypography.fontSize10.copyWith(color: AppColors.primary)),
                 ],
@@ -142,26 +156,40 @@ class JobProgressWidget extends StatelessWidget {
     required int repairInProgressJobs,
     required int quotationConfirmedJobs,
     required int quotationRejectedJobs,
+    required bool isTablet,
   }) {
     return Column(
       children: [
-        _buildLegendItem(context, 'On Hold ($onHoldJobs)', const Color(0xFFB84343), 'parts_not_available'),
+        _buildLegendItem(context, 'On Hold ($onHoldJobs)', const Color(0xFFB84343), 'parts_not_available', isTablet),
         SizedBox(height: 4.h),
-        _buildLegendItem(context, 'Repair in Progress ($repairInProgressJobs)', const Color(0xFFF39C12), 'in_progress'),
+        _buildLegendItem(
+          context,
+          'Repair in Progress ($repairInProgressJobs)',
+          const Color(0xFFF39C12),
+          'in_progress',
+          isTablet,
+        ),
         SizedBox(height: 4.h),
         _buildLegendItem(
           context,
           'Quotation Confirmed ($quotationConfirmedJobs)',
           const Color(0xFF27AE60),
           'accepted_quotes',
+          isTablet,
         ),
         SizedBox(height: 4.h),
-        _buildLegendItem(context, 'Quotation Rejected ($quotationRejectedJobs)', const Color(0xFFFF5F5F), 'rejected'),
+        _buildLegendItem(
+          context,
+          'Quotation Rejected ($quotationRejectedJobs)',
+          const Color(0xFFFF5F5F),
+          'rejected',
+          isTablet,
+        ),
       ],
     );
   }
 
-  Widget _buildLegendItem(BuildContext context, String label, Color color, String statusFilter) {
+  Widget _buildLegendItem(BuildContext context, String label, Color color, String statusFilter, bool isTablet) {
     return InkWell(
       onTap: () {
         // Navigate directly to MyJobsScreen with the respective status filter
@@ -178,7 +206,7 @@ class JobProgressWidget extends StatelessWidget {
               decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
             ),
             SizedBox(width: 8.w),
-            Expanded(child: Text(label, style: AppTypography.fontSize16)),
+            Expanded(child: Text(label, style: isTablet ? AppTypography.fontSize12 : AppTypography.fontSize16)),
             Icon(Icons.arrow_forward_ios, size: 12.sp, color: Colors.grey),
           ],
         ),

@@ -11,6 +11,8 @@ class JobCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -36,18 +38,23 @@ class JobCardWidget extends StatelessWidget {
                   ),
                   child: Text(
                     job.status.toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: Colors.white, fontSize: isTablet ? 10 : 12, fontWeight: FontWeight.w600),
                   ),
                 ),
                 Row(
                   children: [
-                    Text('Priority:', style: AppTypography.fontSize16Normal.copyWith(color: AppColors.fontMainColor)),
+                    Text(
+                      'Priority:',
+                      style: (isTablet ? AppTypography.fontSize12 : AppTypography.fontSize16Normal).copyWith(
+                        color: AppColors.fontMainColor,
+                      ),
+                    ),
                     const SizedBox(width: 4),
-                    Icon(Icons.flag, color: _getPriorityColor(job), size: 15.h),
+                    Icon(Icons.flag, color: _getPriorityColor(job), size: isTablet ? 12.h : 15.h),
                     const SizedBox(width: 4),
                     Text(
                       _getPriorityText(job),
-                      style: AppTypography.fontSize16Normal.copyWith(
+                      style: (isTablet ? AppTypography.fontSize12 : AppTypography.fontSize16Normal).copyWith(
                         color: AppColors.fontSecondaryColor,
                         fontWeight: FontWeight.w400,
                       ),
@@ -74,7 +81,7 @@ class JobCardWidget extends StatelessWidget {
                             TextSpan(
                               text: 'Job ID: ',
                               style: GoogleFonts.roboto(
-                                fontSize: 16.sp,
+                                fontSize: isTablet ? 12.sp : 16.sp,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.fontMainColor,
                               ),
@@ -82,7 +89,7 @@ class JobCardWidget extends StatelessWidget {
                             TextSpan(
                               text: job.jobNo,
                               style: GoogleFonts.roboto(
-                                fontSize: 16.sp,
+                                fontSize: isTablet ? 12.sp : 16.sp,
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.fontSecondaryColor,
                               ),
@@ -93,13 +100,16 @@ class JobCardWidget extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${job.dueDate != null ? intl.DateFormat('dd.MM.yyyy').format(job.dueDate!) : 'No date'} | ${_getWarrantyText(job)} | Location: ${job.customerDetails.shippingAddress.city}',
-                        style: AppTypography.fontSize16Normal.copyWith(fontSize: 16.sp, color: AppColors.fontMainColor),
+                        style: (isTablet ? AppTypography.fontSize12 : AppTypography.fontSize16Normal).copyWith(
+                          fontSize: isTablet ? 12.sp : 16.sp,
+                          color: AppColors.fontMainColor,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         job.deviceData.brand ?? 'Unknown',
-                        style: AppTypography.fontSize16Normal.copyWith(
-                          fontSize: 16.sp,
+                        style: (isTablet ? AppTypography.fontSize12 : AppTypography.fontSize16Normal).copyWith(
+                          fontSize: isTablet ? 12.sp : 16.sp,
                           fontWeight: FontWeight.w500,
                           color: AppColors.fontMainColor,
                         ),
@@ -107,8 +117,8 @@ class JobCardWidget extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'IMEI/SN: ${job.deviceData.imei ?? 'N/A'}',
-                        style: AppTypography.fontSize16Normal.copyWith(
-                          fontSize: 16.sp,
+                        style: (isTablet ? AppTypography.fontSize12 : AppTypography.fontSize16Normal).copyWith(
+                          fontSize: isTablet ? 12.sp : 16.sp,
                           color: AppColors.fontSecondaryColor,
                         ),
                       ),
@@ -121,7 +131,7 @@ class JobCardWidget extends StatelessWidget {
                       context,
                     ).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
                   },
-                  child: Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 32.h),
+                  child: Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: isTablet ? 24.h : 32.h),
                 ),
               ],
             ),
