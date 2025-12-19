@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
@@ -267,12 +268,31 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   void _openChatDetail(Conversation conversation) {
+    final storage = GetStorage();
+    final userEmail = storage.read('email');
+
+    // Determine the other participant
+    String? recipientEmail;
+    String? recipientName;
+
+    if (conversation.sender?.email != null && conversation.sender?.email != userEmail) {
+      recipientEmail = conversation.sender!.email;
+      recipientName = conversation.sender!.name;
+    } else if (conversation.receiver?.email != null && conversation.receiver?.email != userEmail) {
+      recipientEmail = conversation.receiver!.email;
+      recipientName = conversation.receiver!.name;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => BlocProvider.value(
           value: SetUpDI.getIt<MessageCubit>(),
-          child: ChatConversationScreen(conversationId: conversation.conversationId ?? ''),
+          child: ChatConversationScreen(
+            conversationId: conversation.conversationId ?? '',
+            recipientEmail: recipientEmail,
+            recipientName: recipientName,
+          ),
         ),
       ),
     );

@@ -1,7 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
-import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
-import 'package:repair_cms/features/home/home_screen.dart';
+import 'package:repair_cms/features/myJobs/screens/my_jobs_screen.dart';
 import 'dart:math' as math;
 
 class JobProgressWidget extends StatelessWidget {
@@ -165,13 +164,8 @@ class JobProgressWidget extends StatelessWidget {
   Widget _buildLegendItem(BuildContext context, String label, Color color, String statusFilter) {
     return InkWell(
       onTap: () {
-        // Filter jobs first
-        context.read<JobCubit>().filterJobsByStatus(statusFilter);
-
-        // Navigate to home screen - it will show MyJobs tab (managed by HomeScreen)
-        Navigator.of(
-          context,
-        ).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
+        // Navigate directly to MyJobsScreen with the respective status filter
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => MyJobsScreen(initialStatus: statusFilter)));
       },
       borderRadius: BorderRadius.circular(4.r),
       child: Padding(

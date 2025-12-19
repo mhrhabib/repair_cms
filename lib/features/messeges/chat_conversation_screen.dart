@@ -8,8 +8,10 @@ import 'package:repair_cms/features/messeges/models/message_model.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final String conversationId;
+  final String? recipientEmail;
+  final String? recipientName;
 
-  const ChatConversationScreen({super.key, required this.conversationId});
+  const ChatConversationScreen({super.key, required this.conversationId, this.recipientEmail, this.recipientName});
 
   @override
   State<ChatConversationScreen> createState() => _ChatConversationScreenState();
@@ -19,14 +21,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final storage = GetStorage();
-  List<Conversation> _messages = [];
   String? _loggedUserEmail;
+  String? _fallbackRecipientEmail;
+  String? _fallbackRecipientName;
 
   @override
   void initState() {
     super.initState();
     _loggedUserEmail = storage.read('email');
+    _fallbackRecipientEmail = widget.recipientEmail;
+    _fallbackRecipientName = widget.recipientName;
     debugPrint('🚀 [ChatConversationScreen] Loading messages for conversation: ${widget.conversationId}');
+    if (_fallbackRecipientEmail != null) {
+      debugPrint('ℹ️ [ChatConversationScreen] Using fallback recipient: $_fallbackRecipientEmail');
+    }
 
     // Load messages for this conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -47,7 +55,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     }
   }
 
-  void _sendMessage() {
+  void _sendMessage(List<Conversation> currentMessages) {
     final messageText = _messageController.text.trim();
     if (messageText.isEmpty) return;
 
@@ -59,7 +67,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     // Find the other participant in the conversation (not the logged-in user)
     SenderReceiver? otherParticipant;
-    for (var message in _messages) {
+    for (var message in currentMessages) {
       // Check sender: if they sent a message and it's not me, they're the other participant
       if (message.sender?.email != null && message.sender?.email != userEmail) {
         otherParticipant = SenderReceiver(email: message.sender!.email, name: message.sender!.name);
@@ -74,8 +82,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     // Fallback if no messages exist yet (empty conversation)
     if (otherParticipant == null) {
-      SnackbarDemo(message: 'Cannot determine conversation participant').showCustomSnackbar(context);
-      return;
+      if (_fallbackRecipientEmail != null) {
+        debugPrint('ℹ️ [ChatConversationScreen] Using fallback recipient for sending: $_fallbackRecipientEmail');
+        otherParticipant = SenderReceiver(email: _fallbackRecipientEmail!, name: _fallbackRecipientName ?? 'User');
+      } else {
+        SnackbarDemo(message: 'Cannot determine conversation participant').showCustomSnackbar(context);
+        return;
+      }
     }
 
     context.read<MessageCubit>().sendMessage(
@@ -96,104 +109,125 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Conversation',
-              style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            Text(
-              'Chat',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w400),
-            ),
-          ],
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            decoration: BoxDecoration(color: const Color(0xFF4A90E2), shape: BoxShape.circle),
-            child: IconButton(
-              icon: const Icon(Icons.info_outline, color: Colors.white, size: 20),
-              padding: EdgeInsets.zero,
-              onPressed: () {},
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: BlocConsumer<MessageCubit, MessageState>(
-        listener: (context, state) {
-          if (state is MessagesLoaded) {
-            setState(() {
-              _messages = state.messages;
-            });
-            // Scroll to bottom when messages loaded
-            Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+    return BlocConsumer<MessageCubit, MessageState>(
+      listener: (context, state) {
+        if (state is MessagesLoaded) {
+          // Scroll to bottom when messages loaded
+          Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
 
-            // Mark unread messages as read
-            for (var message in state.messages) {
-              if (message.seen == false && message.receiver?.email == _loggedUserEmail) {
-                context.read<MessageCubit>().markAsRead(message);
-              }
+          // Mark unread messages as read
+          for (var message in state.messages) {
+            if (message.seen == false && message.receiver?.email == _loggedUserEmail) {
+              context.read<MessageCubit>().markAsRead(message);
             }
           }
+        }
 
-          if (state is MessageReceived) {
-            // New message received via socket
-            if (state.message.conversationId == widget.conversationId) {
-              debugPrint('✅ [ChatConversationScreen] New message received via socket');
-              // The cubit already handles updating the messages list
-              Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
-            }
-          }
-
-          if (state is MessageSent) {
-            debugPrint('✅ [ChatConversationScreen] Message sent successfully');
+        if (state is MessageReceived) {
+          // New message received via socket
+          if (state.message.conversationId == widget.conversationId) {
+            debugPrint('✅ [ChatConversationScreen] New message received via socket');
+            // The cubit already handles updating the messages list
             Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
           }
+        }
 
-          if (state is MessageError) {
-            SnackbarDemo(message: state.message).showCustomSnackbar(context);
+        if (state is MessageSent) {
+          debugPrint('✅ [ChatConversationScreen] Message sent successfully');
+          Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+        }
+
+        if (state is MessageError) {
+          SnackbarDemo(message: state.message).showCustomSnackbar(context);
+        }
+      },
+      builder: (context, state) {
+        // Get messages from state - handle all state types that contain messages
+        List<Conversation> messages = [];
+        if (state is MessagesLoaded) {
+          messages = state.messages;
+        } else if (state is MessageSent) {
+          messages = state.messages;
+        } else if (state is MessageReceived) {
+          messages = state.messages;
+        }
+
+        // Determine participant name for the app bar
+        String participantName = _fallbackRecipientName ?? 'Conversation';
+        for (var message in messages) {
+          if (message.sender?.email != null && message.sender?.email != _loggedUserEmail) {
+            participantName = message.sender!.name ?? participantName;
+            break;
           }
-        },
-        builder: (context, state) {
-          if (state is MessageLoading) {
-            return const Center(child: CircularProgressIndicator());
+          if (message.receiver?.email != null && message.receiver?.email != _loggedUserEmail) {
+            participantName = message.receiver!.name ?? participantName;
+            break;
           }
+        }
 
-          return Column(
-            children: [
-              Expanded(
-                child: _messages.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        reverse: true,
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message = _messages[index];
-                          final isMe = message.sender?.email == _loggedUserEmail;
-
-                          return _buildMessageBubble(message, isMe);
-                        },
-                      ),
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  participantName,
+                  style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  'Online',
+                  style: TextStyle(color: Colors.green[600], fontSize: 12, fontWeight: FontWeight.w400),
+                ),
+              ],
+            ),
+            actions: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                decoration: BoxDecoration(color: const Color(0xFF4A90E2), shape: BoxShape.circle),
+                child: IconButton(
+                  icon: const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                  padding: EdgeInsets.zero,
+                  onPressed: () {},
+                ),
               ),
-              _buildMessageInput(),
+              const SizedBox(width: 8),
             ],
-          );
-        },
-      ),
+          ),
+          body: state is MessageLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    Expanded(
+                      child: messages.isEmpty
+                          ? _buildEmptyState()
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.all(16),
+                              reverse: true,
+                              itemCount: messages.length,
+                              itemBuilder: (context, index) {
+                                // With reverse: true, index 0 is the last item (latest message)
+                                // So we need to access messages in reverse order
+                                final reversedIndex = messages.length - 1 - index;
+                                final message = messages[reversedIndex];
+                                final isMe = message.sender?.email == _loggedUserEmail;
+
+                                return _buildMessageBubble(message, isMe);
+                              },
+                            ),
+                    ),
+                    _buildMessageInput(messages),
+                  ],
+                ),
+        );
+      },
     );
   }
 
@@ -558,7 +592,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   // File helper methods removed - attachments not supported in Conversation model
 
-  Widget _buildMessageInput() {
+  Widget _buildMessageInput(List<Conversation> currentMessages) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -626,7 +660,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             child: IconButton(
               icon: const Icon(Icons.send, color: Colors.white, size: 20),
               padding: EdgeInsets.zero,
-              onPressed: _sendMessage,
+              onPressed: () => _sendMessage(currentMessages),
             ),
           ),
         ],

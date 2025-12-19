@@ -144,7 +144,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       case 0:
         return JobDetailsContent(job: job);
       case 1:
-        return ChatConversationScreen(conversationId: job.data!.sId!);
+        final customer = job.data!.customerDetails;
+        final recipientEmail = customer?.email;
+        final recipientName = customer != null ? '${customer.firstName ?? ''} ${customer.lastName ?? ''}'.trim() : null;
+
+        return ChatConversationScreen(
+          conversationId: job.data!.sId!,
+          recipientEmail: recipientEmail,
+          recipientName: recipientName?.isNotEmpty == true ? recipientName : 'Customer',
+        );
       case 2:
         return StatusScreen(jobId: job);
       case 3:

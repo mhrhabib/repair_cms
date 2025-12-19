@@ -1,4 +1,6 @@
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 /// Global socket service used across the app.
@@ -13,8 +15,7 @@ class SocketService {
         .setTransports(['websocket'])
         .disableAutoConnect()
         .enableReconnection()
-        .setReconnectionAttempts(5)
-        .setReconnectionDelay(3000);
+        .setReconnectionAttempts(5);
 
     // Add auth token if provided
     if (authToken != null && authToken.isNotEmpty) {
@@ -82,6 +83,33 @@ class SocketService {
   /// Remove listener
   void off(String event) {
     socket?.off(event);
+  }
+
+  /// Manually reconnect the socket if disconnected
+  void reconnect() {
+    if (socket != null && !isConnected) {
+      debugPrint('🔄 [SocketService] Attempting to reconnect socket...');
+      socket!.connect();
+    } else if (socket == null) {
+      // Try to get parameters from storage
+      try {
+        final storage = GetStorage();
+        final userId = storage.read('userId');
+        final authToken = storage.read('token');
+        final baseUrl = ApiEndpoints.baseUrl;
+
+        if (userId != null) {
+          debugPrint('🔄 [SocketService] Socket not initialized. Reinitializing from storage...');
+          connect(baseUrl: baseUrl, userId: userId, authToken: authToken);
+        } else {
+          debugPrint('⚠️ [SocketService] Cannot reconnect: No user credentials in storage. Please login.');
+        }
+      } catch (e) {
+        debugPrint('❌ [SocketService] Error reading from storage: $e');
+      }
+    } else {
+      debugPrint('✅ [SocketService] Socket already connected');
+    }
   }
 
   /// Check if socket is currently connected

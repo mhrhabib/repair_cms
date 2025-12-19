@@ -1,5 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 
@@ -91,7 +92,7 @@ class JobCardWidget extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${job.dueDate} | ${_getWarrantyText(job)} | Location: ${job.customerDetails.shippingAddress.city}',
+                        '${job.dueDate != null ? intl.DateFormat('dd.MM.yyyy').format(job.dueDate!) : 'No date'} | ${_getWarrantyText(job)} | Location: ${job.customerDetails.shippingAddress.city}',
                         style: AppTypography.fontSize16Normal.copyWith(fontSize: 16.sp, color: AppColors.fontMainColor),
                       ),
                       const SizedBox(height: 8),
@@ -111,20 +112,6 @@ class JobCardWidget extends StatelessWidget {
                           color: AppColors.fontSecondaryColor,
                         ),
                       ),
-                      // if (job.assignerName.isNotEmpty) ...[
-                      //   const SizedBox(height: 8),
-                      //   Text(
-                      //     'Customer: ${job.assignerName}',
-                      //     style: const TextStyle(color: Colors.black54, fontSize: 12),
-                      //   ),
-                      // ],
-                      // if (job.total != '0') ...[
-                      //   const SizedBox(height: 8),
-                      //   Text(
-                      //     'Total: ${job.total}',
-                      //     style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w600),
-                      //   ),
-                      //],
                     ],
                   ),
                 ),
@@ -145,11 +132,11 @@ class JobCardWidget extends StatelessWidget {
   }
 
   Color _getPriorityColor(Job job) {
-    // You can customize this based on job priority from your data
+    final priority = job.jobPriority?.toLowerCase() ?? 'neutral';
 
-    if (job.jobPriority!.toLowerCase() == 'high') {
+    if (priority == 'high') {
       return Colors.red;
-    } else if (job.jobPriority!.toLowerCase() == 'urgent') {
+    } else if (priority == 'urgent') {
       return Colors.orange;
     } else {
       return Colors.grey;

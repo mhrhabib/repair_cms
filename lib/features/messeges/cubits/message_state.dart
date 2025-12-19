@@ -21,8 +21,10 @@ class MessagesLoaded extends MessageState {
 
 class MessageSent extends MessageState {
   final Conversation message;
+  final List<Conversation> messages;
+  final String conversationId;
 
-  MessageSent({required this.message});
+  MessageSent({required this.message, required this.messages, required this.conversationId});
 }
 
 class MessageError extends MessageState {
@@ -33,6 +35,8 @@ class MessageError extends MessageState {
 
 class MessageReceived extends MessageState {
   final Conversation message;
+  final List<Conversation> messages;
+  final String conversationId;
 
-  MessageReceived({required this.message});
+  MessageReceived({required this.message, required this.messages, required this.conversationId});
 }
