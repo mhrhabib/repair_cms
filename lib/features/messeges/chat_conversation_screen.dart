@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
+import 'package:repair_cms/features/messeges/models/sub_user_model.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final String conversationId;
@@ -20,11 +22,18 @@ class ChatConversationScreen extends StatefulWidget {
 class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _messageFocusNode = FocusNode();
   final storage = GetStorage();
   String? _loggedUserEmail;
   String? _fallbackRecipientEmail;
   String? _fallbackRecipientName;
-
+  bool _isInternalMode = false;
+  final List<String> _mentionIds = [];
+  String _searchQuery = '';
+  bool _showMentionSuggestions = false;
+  int _mentionStartIndex = -1;
+  List<SubUser> _subUsers = [];
+  List<Conversation> _messages = [];
   @override
   void initState() {
     super.initState();
@@ -39,14 +48,94 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     // Load messages for this conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MessageCubit>().loadConversation(conversationId: widget.conversationId);
+
+      // Load sub users for mentions
+      final userId = storage.read('userId');
+      if (userId != null) {
+        context.read<MessageCubit>().getSubUsers(userId: userId);
+      }
     });
+
+    // Listen to text changes for @ mention detection
+    _messageController.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
+    _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
     _scrollController.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    final text = _messageController.text;
+    final cursorPosition = _messageController.selection.baseOffset;
+
+    if (cursorPosition < 0) return;
+
+    // Find the last @ before cursor
+    int atIndex = -1;
+    for (int i = cursorPosition - 1; i >= 0; i--) {
+      if (text[i] == '@') {
+        atIndex = i;
+        break;
+      }
+      if (text[i] == ' ' || text[i] == '\n') {
+        break;
+      }
+    }
+
+    if (atIndex != -1 && _isInternalMode) {
+      // Extract search query after @
+      final searchText = text.substring(atIndex + 1, cursorPosition).toLowerCase();
+      setState(() {
+        _mentionStartIndex = atIndex;
+        _searchQuery = searchText;
+        _showMentionSuggestions = true;
+      });
+    } else {
+      setState(() {
+        _showMentionSuggestions = false;
+        _searchQuery = '';
+        _mentionStartIndex = -1;
+      });
+    }
+  }
+
+  List<SubUser> _getFilteredSubUsers() {
+    if (_searchQuery.isEmpty) return _subUsers;
+    return _subUsers.where((user) {
+      return (user.fullName ?? '').toLowerCase().contains(_searchQuery) ||
+          (user.email ?? '').toLowerCase().contains(_searchQuery) ||
+          (user.shortName ?? '').toLowerCase().contains(_searchQuery);
+    }).toList();
+  }
+
+  void _insertMention(SubUser user) {
+    final text = _messageController.text;
+    final beforeMention = text.substring(0, _mentionStartIndex);
+    final afterMention = text.substring(_messageController.selection.baseOffset);
+    final displayName = user.fullName ?? user.email ?? 'Unknown';
+    final newText = '$beforeMention@$displayName $afterMention';
+
+    _messageController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: beforeMention.length + displayName.length + 2),
+    );
+
+    // Add to mentions list
+    final mentionId = user.sId ?? user.email!;
+    if (mentionId.isNotEmpty && !_mentionIds.contains(mentionId)) {
+      _mentionIds.add(mentionId);
+    }
+
+    setState(() {
+      _showMentionSuggestions = false;
+      _searchQuery = '';
+      _mentionStartIndex = -1;
+    });
   }
 
   void _scrollToBottom() {
@@ -60,11 +149,63 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     if (messageText.isEmpty) return;
 
     debugPrint('📤 [ChatConversationScreen] Sending message: $messageText');
+    debugPrint('🔒 [ChatConversationScreen] Internal mode: $_isInternalMode');
+    debugPrint('👥 [ChatConversationScreen] Mentions: $_mentionIds');
 
     final userEmail = storage.read('email') ?? '';
     final userName = storage.read('fullName') ?? '';
     final userId = storage.read('userId') ?? '';
 
+    if (_isInternalMode) {
+      // Send internal comment (not visible to regular receiver)
+      _sendInternalComment(messageText, userEmail, userName, userId);
+    } else {
+      // Send regular message
+      _sendRegularMessage(messageText, userEmail, userName, userId, currentMessages);
+    }
+
+    _messageController.clear();
+    _mentionIds.clear();
+
+    // Reset internal mode after sending
+    setState(() {
+      _isInternalMode = false;
+    });
+
+    // Scroll to bottom after sending
+    Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+  }
+
+  void _sendInternalComment(String messageText, String userEmail, String userName, String userId) {
+    // TODO: Replace with your actual socket/API implementation
+    debugPrint('💬 Sending internal comment with mentions: $_mentionIds');
+
+    // Build payload and call cubit to handle optimistic update + socket send
+    final comment = {
+      'text': messageText,
+      'authorId': userId,
+      'userId': userId,
+      'messageId': widget.conversationId, // Set to conversationId for top-level comments
+      'conversationId': widget.conversationId,
+      'parentCommentId': null,
+      'mentions': _mentionIds,
+    };
+
+    debugPrint(comment.toString());
+
+    // Send via cubit - cubit will optimistically add to local list and emit state
+    context.read<MessageCubit>().sendInternalComment(comment: comment);
+
+    SnackbarDemo(message: 'Internal comment sent to ${_mentionIds.length} team members').showCustomSnackbar(context);
+  }
+
+  void _sendRegularMessage(
+    String messageText,
+    String userEmail,
+    String userName,
+    String userId,
+    List<Conversation> currentMessages,
+  ) {
     // Find the other participant in the conversation (not the logged-in user)
     SenderReceiver? otherParticipant;
     for (var message in currentMessages) {
@@ -100,11 +241,6 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       userId: userId,
       loggedUserId: userId,
     );
-
-    _messageController.clear();
-
-    // Scroll to bottom after sending
-    Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 
   @override
@@ -112,11 +248,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     return BlocConsumer<MessageCubit, MessageState>(
       listener: (context, state) {
         if (state is MessagesLoaded) {
-          // Scroll to bottom when messages loaded
+          // Update local messages and scroll
+          setState(() => _messages = List.from(state.messages));
           Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
 
           // Mark unread messages as read
-          for (var message in state.messages) {
+          for (var message in _messages) {
             if (message.seen == false && message.receiver?.email == _loggedUserEmail) {
               context.read<MessageCubit>().markAsRead(message);
             }
@@ -127,30 +264,41 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           // New message received via socket
           if (state.message.conversationId == widget.conversationId) {
             debugPrint('✅ [ChatConversationScreen] New message received via socket');
-            // The cubit already handles updating the messages list
+            // Update local messages
+            setState(() => _messages = List.from(state.messages));
             Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
           }
         }
 
         if (state is MessageSent) {
           debugPrint('✅ [ChatConversationScreen] Message sent successfully');
+          setState(() => _messages = List.from(state.messages));
           Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
         }
 
         if (state is MessageError) {
           SnackbarDemo(message: state.message).showCustomSnackbar(context);
         }
+
+        if (state is SubUsersLoaded) {
+          setState(() {
+            _subUsers = state.subUsers;
+          });
+          debugPrint('✅ [ChatConversationScreen] Loaded ${state.subUsers.length} sub users for mentions');
+        }
+
+        if (state is SubUsersError) {
+          debugPrint('❌ [ChatConversationScreen] Failed to load sub users: ${state.message}');
+        }
       },
       builder: (context, state) {
-        // Get messages from state - handle all state types that contain messages
-        List<Conversation> messages = [];
-        if (state is MessagesLoaded) {
-          messages = state.messages;
-        } else if (state is MessageSent) {
-          messages = state.messages;
-        } else if (state is MessageReceived) {
-          messages = state.messages;
-        }
+        // Use locally stored messages to avoid losing them on unrelated state emissions
+        final messages = _messages;
+
+        // Debug: log messages count to help diagnose empty UI
+        debugPrint('📊 [ChatConversationScreen] Resolved messages count: ${messages.length}');
+        if (messages.isNotEmpty)
+          debugPrint('   First message id: ${messages.first.sId}, conversationId: ${messages.first.conversationId}');
 
         // Determine participant name for the app bar
         String participantName = _fallbackRecipientName ?? 'Conversation';
@@ -223,11 +371,58 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                               },
                             ),
                     ),
+                    // Mention suggestions overlay
+                    if (_showMentionSuggestions && _isInternalMode) _buildMentionSuggestions(),
                     _buildMessageInput(messages),
                   ],
                 ),
         );
       },
+    );
+  }
+
+  Widget _buildMentionSuggestions() {
+    final filteredUsers = _getFilteredSubUsers();
+
+    if (filteredUsers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 200),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, -2))],
+      ),
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: filteredUsers.length,
+        itemBuilder: (context, index) {
+          final user = filteredUsers[index];
+          final displayName = user.fullName ?? user.email ?? 'Unknown';
+          final displayEmail = user.email ?? '';
+          final avatarText = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?';
+
+          return ListTile(
+            dense: true,
+            leading: CircleAvatar(
+              radius: 18,
+              backgroundColor: const Color(0xFF4A90E2),
+              backgroundImage: user.avatar != null && user.avatar!.isNotEmpty ? NetworkImage(user.avatar!) : null,
+              child: user.avatar == null || user.avatar!.isEmpty
+                  ? Text(
+                      avatarText,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    )
+                  : null,
+            ),
+            title: Text(displayName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: Text(displayEmail, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            onTap: () => _insertMention(user),
+          );
+        },
+      ),
     );
   }
 
@@ -270,6 +465,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final messageType = message.message?.messageType ?? 'standard';
     final hasAttachments = false; // Conversation model doesn't have attachments field
     final hasQuotation = messageType == 'quotation' && message.message?.quotation != null;
+    final hasComment = message.comment != null || (message.comments != null && message.comments!.isNotEmpty);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -304,7 +500,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
                         ),
                       ),
-                    if (hasQuotation)
+                    if (hasComment) ...[
+                      if (message.comments != null && message.comments!.isNotEmpty)
+                        for (var c in message.comments!) _buildCommentMessage(c, isMe)
+                      else if (message.comment != null)
+                        _buildCommentMessage(message.comment!, isMe),
+                    ] else if (hasQuotation)
                       _buildQuotationCard(message.message!.quotation!, isMe)
                     else
                       _buildStandardMessage(messageText, messageType, hasAttachments, message, isMe),
@@ -312,8 +513,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (hasComment) ...[
+                          Icon(Icons.lock, size: 14, color: Colors.yellow[700]),
+                          const SizedBox(width: 4),
+                        ],
                         Text(
-                          messageText.isNotEmpty || hasQuotation ? (messageText.isNotEmpty ? 'Today' : 'Today') : '',
+                          messageText.isNotEmpty || hasQuotation || hasComment
+                              ? (messageText.isNotEmpty || hasComment ? 'Today' : 'Today')
+                              : '',
                           style: TextStyle(color: Colors.grey[500], fontSize: 11),
                         ),
                         const SizedBox(width: 4),
@@ -379,12 +586,66 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ),
                 ),
               ),
-            // Attachments removed - not supported in Conversation model
             if (messageText.isNotEmpty)
               Text(
                 messageText,
                 style: TextStyle(color: isMe ? const Color(0xFF1E3A5F) : Colors.black87, fontSize: 14, height: 1.4),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommentMessage(Comment comment, bool isMe) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isMe ? const Color(0xFFFFF3CD) : const Color(0xFFFFF8E1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Comment header
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: Colors.orange[100], borderRadius: BorderRadius.circular(4)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.comment, size: 12, color: Colors.orange[700]),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Internal Comment',
+                    style: TextStyle(fontSize: 10, color: Colors.orange[700], fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+            // Comment text with inline mentions highlighted
+            RichText(
+              text: TextSpan(
+                children: [
+                  if (comment.mentions != null && comment.mentions!.isNotEmpty)
+                    TextSpan(
+                      text: '${comment.mentions!.map((m) => '@${m.split('@').first}').join(' ')} ',
+                      style: TextStyle(color: Colors.yellow[700], fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  TextSpan(
+                    text: comment.text ?? '',
+                    style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -540,7 +801,6 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     'Quotation Accepted',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32)),
                   ),
-                  // Acceptance date removed - not in Quotation model
                 ],
               ),
             ),
@@ -587,12 +847,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
-  // Note: Attachments removed as Conversation model doesn't have attachments field
-  // If attachments are needed, they should be added to the Conversation model
-
-  // File helper methods removed - attachments not supported in Conversation model
-
   Widget _buildMessageInput(List<Conversation> currentMessages) {
+    // Compact single-line message input
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -600,67 +856,84 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
         ],
       ),
-      padding: EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 12 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8 + MediaQuery.of(context).padding.bottom),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
-            child: IconButton(
-              icon: Icon(Icons.add, color: Colors.grey[700], size: 24),
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                _showAttachmentOptions();
-              },
-            ),
+          IconButton(
+            icon: Icon(Icons.add, color: Colors.grey[700], size: 22),
+            onPressed: _showAttachmentOptions,
           ),
-          const SizedBox(width: 12),
           Expanded(
             child: Container(
-              constraints: const BoxConstraints(maxHeight: 100),
-              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(24)),
-              child: TextField(
-                controller: _messageController,
-                decoration: InputDecoration(
-                  hintText: 'Write a message...',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.attach_file, color: Colors.grey[600], size: 20),
-                        onPressed: () {
-                          _showAttachmentOptions();
-                        },
+              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: _isInternalMode ? const Color(0xFF5B6B7D) : Colors.grey[100],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      focusNode: _messageFocusNode,
+                      style: TextStyle(color: _isInternalMode ? Colors.white : Colors.black87, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: _isInternalMode ? 'Internal message... @mention' : 'Write a message...',
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       ),
-                    ],
+                      maxLines: 1,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(currentMessages),
+                    ),
                   ),
-                ),
-                maxLines: null,
-                textInputAction: TextInputAction.newline,
+                  IconButton(
+                    icon: Icon(
+                      _isInternalMode ? Icons.lock : Icons.lock_open,
+                      color: _isInternalMode ? Colors.yellow[700] : Colors.grey[600],
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isInternalMode = !_isInternalMode;
+                        if (!_isInternalMode) {
+                          _mentionIds.clear();
+                          _showMentionSuggestions = false;
+                        }
+                      });
+                      SnackbarDemo(
+                        message: _isInternalMode
+                            ? 'Internal mode ON - Message will be private'
+                            : 'Internal mode OFF - Message will be visible to all',
+                      ).showCustomSnackbar(context);
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.attach_file, color: _isInternalMode ? Colors.white70 : Colors.grey[600], size: 20),
+                    onPressed: _showAttachmentOptions,
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: _isInternalMode
+                    ? [const Color(0xFF5B6B7D), const Color(0xFF404955)]
+                    : [const Color(0xFF4A90E2), const Color(0xFF357ABD)],
               ),
               shape: BoxShape.circle,
             ),
             child: IconButton(
               icon: const Icon(Icons.send, color: Colors.white, size: 20),
-              padding: EdgeInsets.zero,
               onPressed: () => _sendMessage(currentMessages),
+              padding: EdgeInsets.zero,
             ),
           ),
         ],

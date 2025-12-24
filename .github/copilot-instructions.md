@@ -33,175 +33,61 @@ class BrandCubit extends Cubit<BrandState> { ... }
 // brand_state.dart
 part of 'brand_cubit.dart';
 abstract class BrandState {}
-class BrandLoading extends BrandState {}
-```
+ # Repair CMS — Copilot / AI Agent Instructions
 
-### 3. Repository Pattern Evolution
-**New features (jobBooking onwards)**: Abstract interface + Impl class:
-```dart
-abstract class BrandRepository {
-  Future<List<BrandModel>> getBrandsList({required String userId});
-}
-class BrandRepositoryImpl implements BrandRepository { ... }
-```
+ Purpose: help an AI agent become productive quickly by describing the repo's essential structure, conventions, and concrete examples.
 
-**Legacy features** (auth, profile, myJobs, quickTask, dashboard): Concrete classes without interfaces. Don't refactor these without explicit request.
+ Quick start commands
+ - `flutter pub get`
+ - `flutter run`
+ - `flutter clean && flutter pub get`
 
-### 4. API Integration Critical Details
-**BaseClient** in `lib/core/base/base_client.dart` auto-injects Bearer token from GetStorage:
+ Core architecture (big picture)
+ - Flutter app using Bloc/Cubit state management and a single DI container (`lib/set_up_di.dart`).
+ - UI layers call Cubits → Cubits call Repositories → Repositories call `BaseClient` (HTTP) → backend at `https://api.repaircms.com`.
 
-```dart
-dio.Response response = await BaseClient.get(
-  url: ApiEndpoints.brandsListUrl.replaceAll('<id>', userId) // MUST use .replaceAll for placeholders
-);
-```
+ Dependency injection (3-step rule)
+ - Register repository as `registerLazySingleton` and cubits as `registerFactory` inside `lib/set_up_di.dart`.
+ - Provide the cubit via `MultiBlocProvider` in `lib/main.dart` and expose routes in `lib/core/routes/router.dart`.
+   Example: register `BrandRepository` in `SetUpDI`, add `BlocProvider` for `BrandCubit`, then add `GoRoute` for the screen.
 
-**Endpoints** in `lib/core/helpers/api_endpoints.dart` use template placeholders:
-- `<id>`, `<userId>`, `<brandId>`, `<jobId>` → Replace with `.replaceAll('<id>', actualValue)`
-- Base URL: `https://api.repaircms.com` (hardcoded, no env switching)
+ State & file patterns (must follow)
+ - Cubit file pairs: keep state in a `part` file. E.g. `brand_cubit.dart` + `brand_state.dart` (`part 'brand_state.dart';` / `part of 'brand_cubit.dart';`).
+ - Always emit Loading → Success/Error states in that order.
 
-**Response handling pattern**:
-```dart
-if (response.statusCode == 200) {
-  // Handle both List and Map responses with nested data keys
-  if (response.data is List) return (response.data as List).map(...).toList();
-  if (response.data is Map && data.containsKey('brands')) return (data['brands'] as List).map(...).toList();
-}
-```
+ Repository patterns
+ - New features: use an abstract repository interface + `Impl` class (e.g., `BrandRepository` + `BrandRepositoryImpl`).
+ - Legacy features (auth, profile, myJobs, quickTask, dashboard) are concrete classes — don't refactor these without direction.
 
-### 5. Error Handling Architecture
-Repositories throw **custom domain exceptions** (not generic Exception):
+ HTTP & API specifics
+ - `BaseClient` (`lib/core/base/base_client.dart`) injects `Authorization: Bearer <token>` from `GetStorage` and logs requests with emoji-prefixed `debugPrint`.
+ - Endpoints use placeholders in `lib/core/helpers/api_endpoints.dart` (e.g., `<id>`, `<userId>`, `<brandId>`). Use `.replaceAll('<id>', value)` before calling.
+ - Response handling: repo code must handle both List and Map responses (check existing repositories for examples).
 
-```dart
-class BrandException implements Exception {
-  final String message;
-  final int? statusCode;
-  BrandException({required this.message, this.statusCode});
-}
+ Error handling & logging
+ - Repositories throw domain-specific exceptions (e.g., `BrandException`) — cubits catch and emit typed error states.
+ - Logging convention: emoji prefixes (🚀, ✅, ❌, 🌐, etc.) via `debugPrint`; replicate when adding logs.
 
-// In repository:
-} on DioException catch (e) {
-  throw BrandException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
-}
-```
+ Storage & routing
+ - Persistent values in `GetStorage` (see `lib/core/helpers/storage.dart`): `token`, `userId`, `email`, `fullName`, `userType`, `locationId`, `isLoggedIn`.
+ - Routes are defined in `lib/core/routes/router.dart` and names in `lib/core/routes/route_names.dart`; navigation uses `context.go()` / `context.push()`.
 
-Cubits catch these and emit typed error states: `emit(BrandError(message: e.message))`
+ Project-specific constraints
+ - NO code generation: do not add `freezed` / `json_serializable` / build_runner.
+ - Models are manual `fromJson`/`toJson` and map Mongo `_id` → `sId`.
 
-### 6. Debug Logging Convention
-Use emoji-prefixed `debugPrint` (not `print`) throughout:
-- 🚀 Method start
-- ✅ Success
-- ❌ Error
-- 📊 Data/response
-- 👤 User context
-- 💥 Unexpected errors
-- 🌐 Network calls
+ Integration points & native
+ - Printing integrations (Brother/Dymo) use platform-specific packages — native Pod/Gradle changes may be required.
 
-Example: `debugPrint('🚀 [BrandCubit] Fetching brands for user: $userId');`
+ Where to look for examples
+ - DI: `lib/set_up_di.dart`
+ - App bootstrap & providers: `lib/main.dart`
+ - HTTP client & logging: `lib/core/base/base_client.dart`
+ - Endpoints: `lib/core/helpers/api_endpoints.dart`
+ - Routes: `lib/core/routes/router.dart`
 
-## Key Technical Patterns
+ When you modify code
+ - Follow 3-step DI: register repo, add BlocProvider, add route.
+ - Preserve legacy patterns unless changing an entire feature set.
 
-### State Management Flow
-```dart
-// In cubit methods:
-emit(BrandLoading());
-try {
-  final data = await repository.method();
-  emit(BrandLoaded(brands: data));
-} on CustomException catch (e) {
-  emit(BrandError(message: e.message));
-}
-
-// In UI:
-context.read<BrandCubit>().getBrands(userId: userId);  // Trigger action
-BlocBuilder<BrandCubit, BrandState>(builder: (context, state) { ... })
-```
-
-### Model Serialization (Manual, No Codegen)
-```dart
-class BrandModel {
-  String? sId;  // MongoDB _id field
-  String? name;
-  
-  BrandModel.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];  // Note underscore prefix
-    name = json['name'];
-  }
-  
-  Map<String, dynamic> toJson() => {'_id': sId, 'name': name};
-}
-```
-
-### Storage Keys (GetStorage)
-Access via `final storage = GetStorage()` from `lib/core/helpers/storage.dart`:
-- `token` - JWT bearer token
-- `userId`, `email`, `fullName`, `userType`, `locationId`
-- `isLoggedIn` - boolean flag
-
-Initialize in `main()`: `await GetStorage.init();` before `runApp()`
-
-### Routing & Navigation
-```dart
-// Define in lib/core/routes/route_names.dart:
-static const String brands = '/brands';
-
-// Register in AppRouter.router:
-GoRoute(path: RouteNames.brands, builder: (context, state) => BrandsScreen())
-
-// Navigate:
-context.go(RouteNames.brands);
-context.push(RouteNames.detail, extra: brandObject);
-```
-
-## Development Workflows
-
-### Adding a Complete Feature
-1. Create `lib/features/<feature>/` with `models/`, `repository/`, `cubits/`, `screens/`, `widgets/`
-2. Build model with `fromJson`/`toJson` (nullable fields, handle MongoDB `_id` → `sId`)
-3. Create repository interface + impl (throw custom exceptions)
-4. Build cubit with `part 'cubit_state.dart'` (emit Loading → Success/Error)
-5. Register in `SetUpDI.init()` (repo lazy, cubit factory)
-6. Add `BlocProvider` to `main.dart` MultiBlocProvider
-7. Add routes to `AppRouter.router` and `RouteNames`
-8. Build UI with `BlocBuilder`/`BlocListener`
-
-### Common Commands
-```bash
-flutter pub get                    # Install dependencies
-flutter run                        # Run app
-flutter run --release             # Release build
-flutter clean && flutter pub get  # Fix dependency issues
-```
-
-### Debugging API Issues
-1. Check `BaseClient` logs in console (🌐 emoji)
-2. Verify token in GetStorage: `debugPrint(storage.read('token'))`
-3. Confirm endpoint placeholder replacement: `.replaceAll('<id>', value)`
-4. Check response structure (List vs Map with nested keys)
-
-## Project-Specific Conventions
-
-**UI Design System**:
-- Screen size: `ScreenUtilInit(designSize: Size(375, 812))` - use `.w`, `.h`, `.sp`
-- Colors: `AppColors` in `lib/core/constants/app_colors.dart`
-- Typography: `AppTypography` (SF Pro Text via Google Fonts)
-- Common imports: `lib/core/app_exports.dart` barrel file
-
-**Toasts**: `showCustomToast(message, isError: bool)` from `lib/core/helpers/show_toast.dart`
-
-**Printer Integration**:
-- Brother: `another_brother` package
-- Dymo: `escp_printer` package
-
-**File Uploads**: Use `jobFileUpload` or `uploadProfileAvatar` endpoints with userId/jobId parameters
-
-**Date Picker**: `syncfusion_flutter_datepicker` (commercial license implied)
-
-## Important Gotchas
-
-1. **Never** use code generation (no `freezed`, `json_serializable`)
-2. **Always** emit states in order: Loading → Success/Error (check `brand_cubit.dart` for reference)
-3. **Repository registration**: Lazy singleton only (not factory) - prevents multiple HTTP client instances
-4. **State preservation**: See `BrandCubit.addBrand()` for pattern of preserving state during optimistic updates
-5. **Test coverage**: Minimal (only `widget_test.dart`). No TDD enforced.
-6. **iOS/Android native**: Printer setup requires native configuration (see Podfile, build.gradle)
+ If anything's unclear or you want more detail (examples for a specific feature), tell me which feature and I'll expand.

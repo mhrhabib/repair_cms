@@ -44,6 +44,8 @@ class Conversation {
   Sender? receiver;
   String? conversationId;
   Message? message;
+  Comment? comment;
+  List<Comment>? comments;
   bool? seen;
   List<ServiceItemList>? serviceItemList;
   String? participants;
@@ -60,6 +62,7 @@ class Conversation {
     this.receiver,
     this.conversationId,
     this.message,
+    this.comment,
     this.seen,
     this.serviceItemList,
     this.participants,
@@ -77,6 +80,17 @@ class Conversation {
     receiver = json['receiver'] != null ? Sender.fromJson(json['receiver']) : null;
     conversationId = json['conversationId'];
     message = json['message'] != null ? Message.fromJson(json['message']) : null;
+    comment = json['comment'] != null ? Comment.fromJson(json['comment']) : null;
+    if (json['comments'] != null) {
+      comments = <Comment>[];
+      try {
+        (json['comments'] as List).forEach((v) {
+          comments!.add(Comment.fromJson(v as Map<String, dynamic>));
+        });
+      } catch (_) {
+        // ignore malformed comments
+      }
+    }
     seen = json['seen'];
     if (json['serviceItemList'] != null) {
       serviceItemList = <ServiceItemList>[];
@@ -105,6 +119,12 @@ class Conversation {
     data['conversationId'] = conversationId;
     if (message != null) {
       data['message'] = message!.toJson();
+    }
+    if (comment != null) {
+      data['comment'] = comment!.toJson();
+    }
+    if (comments != null) {
+      data['comments'] = comments!.map((c) => c.toJson()).toList();
     }
     data['seen'] = seen;
     if (serviceItemList != null) {
@@ -154,6 +174,7 @@ class Message {
   String? quotationId;
   Quotation? quotation;
   Notification? notification;
+  Comment? comment;
 
   Message({
     this.message,
@@ -167,6 +188,7 @@ class Message {
     this.quotationId,
     this.quotation,
     this.notification,
+    this.comment,
   });
 
   Message.fromJson(Map<String, dynamic> json) {
@@ -186,6 +208,7 @@ class Message {
     quotationId = json['quotationId'];
     quotation = json['quotation'] != null ? Quotation.fromJson(json['quotation']) : null;
     notification = json['notification'] != null ? Notification.fromJson(json['notification']) : null;
+    comment = json['comment'] != null ? Comment.fromJson(json['comment']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -209,6 +232,107 @@ class Message {
     if (notification != null) {
       data['notification'] = notification!.toJson();
     }
+    if (comment != null) {
+      data['comment'] = comment!.toJson();
+    }
+    return data;
+  }
+}
+
+class Comment {
+  String? text;
+  String? authorId;
+  String? userId;
+  String? messageId;
+  String? conversationId;
+  String? parentCommentId;
+  List<String>? mentions;
+
+  Comment({
+    this.text,
+    this.authorId,
+    this.userId,
+    this.messageId,
+    this.conversationId,
+    this.parentCommentId,
+    this.mentions,
+  });
+
+  Comment.fromJson(Map<String, dynamic> json) {
+    // Flexible parsing: API may return nested objects for some fields.
+    dynamic _text = json['text'];
+    if (_text is String) {
+      text = _text;
+    } else if (_text is Map) {
+      text = _text['text'] ?? _text['message'] ?? _text['html'] ?? _text.toString();
+    } else if (_text != null) {
+      text = _text.toString();
+    }
+
+    dynamic _author = json['authorId'];
+    if (_author is String) {
+      authorId = _author;
+    } else if (_author is Map) {
+      authorId = _author['_id'] ?? _author['id'] ?? _author['sId'] ?? _author['userId'] ?? _author['email']?.toString();
+    }
+
+    dynamic _user = json['userId'];
+    if (_user is String) {
+      userId = _user;
+    } else if (_user is Map) {
+      userId = _user['_id'] ?? _user['id'] ?? _user['sId'] ?? _user['userId'] ?? _user['email']?.toString();
+    }
+
+    dynamic _messageId = json['messageId'];
+    if (_messageId is String) {
+      messageId = _messageId;
+    } else if (_messageId is Map) {
+      messageId = _messageId['_id'] ?? _messageId['id'] ?? _messageId['sId'] ?? _messageId.toString();
+    }
+
+    dynamic _conversationId = json['conversationId'];
+    if (_conversationId is String) {
+      conversationId = _conversationId;
+    } else if (_conversationId is Map) {
+      conversationId =
+          _conversationId['_id'] ?? _conversationId['id'] ?? _conversationId['sId'] ?? _conversationId.toString();
+    }
+
+    dynamic _parent = json['parentCommentId'];
+    if (_parent is String) {
+      parentCommentId = _parent;
+    } else if (_parent is Map) {
+      parentCommentId = _parent['_id'] ?? _parent['id'] ?? _parent['sId'] ?? _parent.toString();
+    }
+
+    // Mentions may be list of ids or list of objects
+    if (json['mentions'] != null) {
+      try {
+        final raw = json['mentions'];
+        if (raw is List) {
+          mentions = raw.map<String>((m) {
+            if (m is String) return m;
+            if (m is Map) return m['_id'] ?? m['id'] ?? m['sId'] ?? m['email'] ?? m.toString();
+            return m.toString();
+          }).toList();
+        }
+      } catch (_) {
+        mentions = null;
+      }
+    } else {
+      mentions = null;
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['text'] = text;
+    data['authorId'] = authorId;
+    data['userId'] = userId;
+    data['messageId'] = messageId;
+    data['conversationId'] = conversationId;
+    data['parentCommentId'] = parentCommentId;
+    data['mentions'] = mentions;
     return data;
   }
 }

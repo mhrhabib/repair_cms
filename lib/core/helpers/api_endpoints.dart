@@ -61,4 +61,7 @@ class ApiEndpoints {
   //messages
 
   static const String getConversation = '$baseUrl/message/<conversationId>';
+
+  // sub user management
+  static const String findSubUsersByOwner = '$baseUrl/user/find-by-owner/<userId>';
 }

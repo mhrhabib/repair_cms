@@ -447,7 +447,29 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   CreateJobRequest getCreateJobRequest() {
     final state = this.state;
     if (state is JobBookingData) {
-      return CreateJobRequest(job: state.job, defect: state.defect, device: state.device, contact: state.contact);
+      // Ensure customerId is present in contact and job when available in storage
+      final storedCustomerId = storage.read('customerId');
+      final validStoredCustomerId = _isValidObjectId(storedCustomerId) ? storedCustomerId : null;
+
+      var job = state.job;
+      var contact = state.contact;
+
+      if ((contact.customerId.isEmpty || !_isValidObjectId(contact.customerId)) && validStoredCustomerId != null) {
+        contact = contact.copyWith(customerId: validStoredCustomerId);
+        job = job.copyWith(
+          customerDetails: job.customerDetails.copyWith(customerId: validStoredCustomerId),
+          customerId: validStoredCustomerId,
+        );
+        debugPrint('💾 [JobBookingCubit] Injected stored customerId into job request: $validStoredCustomerId');
+      } else if (_isValidObjectId(contact.customerId)) {
+        // Ensure job.customerId and customerDetails are in sync with contact
+        job = job.copyWith(
+          customerDetails: job.customerDetails.copyWith(customerId: contact.customerId),
+          customerId: contact.customerId,
+        );
+      }
+
+      return CreateJobRequest(job: job, defect: state.defect, device: state.device, contact: contact);
     }
     throw Exception("Job data not initialized");
   }

@@ -187,6 +187,38 @@ class _FilesScreenState extends State<FilesScreen> {
     );
   }
 
+  // Open file: show full-screen for images, otherwise show info and allow copying URL
+  void _openFile(File file) {
+    final fileName = file.fileName ?? '';
+    final url = file.imageUrl;
+    final ext = _getFileExtension(fileName).toLowerCase();
+
+    final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(ext) && url != null && url.isNotEmpty;
+
+    if (isImage) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => FullscreenImageViewer(imageUrl: url)));
+      return;
+    }
+
+    // Non-image: show dialog with file info
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(fileName.isNotEmpty ? fileName : 'File'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Size: ${_formatFileSize(file.size ?? 0)}'),
+            const SizedBox(height: 8),
+            Text('Type: ${_getFileExtension(fileName).toUpperCase()}'),
+          ],
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      ),
+    );
+  }
+
   void _deleteFile(String filePath) {
     showDialog(
       context: context,
@@ -486,135 +518,174 @@ class _FilesScreenState extends State<FilesScreen> {
   Widget _buildFileCard(File file) {
     final fileName = file.fileName ?? 'Unknown';
     final fileSize = file.size ?? 0;
-    final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(_getFileExtension(fileName));
+    //final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(_getFileExtension(fileName));
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E5EA), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // File Preview/Icon
-          Expanded(
-            child: Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  ),
-                  child: isImage && file.imageUrl != null && file.imageUrl!.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                          child: Image.network(
-                            file.imageUrl!, // Using the imageUrl getter which constructs the full URL
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              debugPrint('🖼️ Error loading image from: ${file.imageUrl}');
-                              debugPrint('❌ Error: $error');
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(_getFileIcon(fileName), size: 48, color: const Color(0xFF8E8E93)),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Image not found',
-                                      style: TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) {
-                                debugPrint('✅ Image loaded successfully from: ${file.imageUrl}');
-                                return child;
-                              }
-                              final progress = loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                  : null;
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    CircularProgressIndicator(value: progress, color: const Color(0xFF007AFF)),
-                                    if (progress != null) ...[
+    return GestureDetector(
+      onTap: () => _openFile(file),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E5EA), width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // File Preview/Icon
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                    ),
+                    child: /*isImage &&*/ file.imageUrl != null && file.imageUrl!.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                            child: Image.network(
+                              file.imageUrl!, // Using the imageUrl getter which constructs the full URL
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                debugPrint('🖼️ Error loading image from: ${file.imageUrl}');
+                                debugPrint('❌ Error: $error');
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(_getFileIcon(fileName), size: 48, color: const Color(0xFF8E8E93)),
                                       const SizedBox(height: 8),
-                                      Text(
-                                        '${(progress * 100).toInt()}%',
-                                        style: const TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
+                                      const Text(
+                                        'Image not found',
+                                        style: TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
                                       ),
                                     ],
-                                  ],
+                                  ),
+                                );
+                              },
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) {
+                                  debugPrint('✅ Image loaded successfully from: ${file.imageUrl}');
+                                  return child;
+                                }
+                                final progress = loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                    : null;
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      CircularProgressIndicator(value: progress, color: const Color(0xFF007AFF)),
+                                      if (progress != null) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '${(progress * 100).toInt()}%',
+                                          style: const TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(_getFileIcon(fileName), size: 48, color: const Color(0xFF8E8E93)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _getFileExtension(fileName).toUpperCase(),
+                                  style: const TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
                                 ),
-                              );
-                            },
+                              ],
+                            ),
                           ),
-                        )
-                      : Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(_getFileIcon(fileName), size: 48, color: const Color(0xFF8E8E93)),
-                              const SizedBox(height: 4),
-                              Text(
-                                _getFileExtension(fileName).toUpperCase(),
-                                style: const TextStyle(fontSize: 10, color: Color(0xFF8E8E93)),
-                              ),
-                            ],
-                          ),
+                  ),
+                  // Delete button
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => _deleteFile(file.file ?? ''),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                ),
-                // Delete button
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: () => _deleteFile(file.file ?? ''),
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        child: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFFF3B30)),
                       ),
-                      child: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFFF3B30)),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // File Info
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fileName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1A1A)),
-                ),
-                const SizedBox(height: 4),
-                Text(_formatFileSize(fileSize), style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E93))),
-              ],
+            // File Info
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1A1A)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(_formatFileSize(fileSize), style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E93))),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Fullscreen image viewer widget
+}
+
+class FullscreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+
+  const FullscreenImageViewer({super.key, required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(backgroundColor: Colors.black, elevation: 0),
+      body: Center(
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+            final value = progress.expectedTotalBytes != null
+                ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                : null;
+            return Center(
+              child: CircularProgressIndicator(value: value, color: const Color(0xFF007AFF)),
+            );
+          },
+          errorBuilder: (context, error, stack) {
+            return const Center(
+              child: Text('Failed to load image', style: TextStyle(color: Colors.white)),
+            );
+          },
+        ),
       ),
     );
   }
