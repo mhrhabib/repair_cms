@@ -26,6 +26,8 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   bool _isPasswordValid = false;
   bool _obscureText = true;
 
+  String? _authError;
+
   bool _hasStoredCredentials = false;
   String _biometricType = 'Biometric'; // Default fallback
 
@@ -43,6 +45,9 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     final password = _passwordController.text;
     setState(() {
       _isPasswordValid = password.isNotEmpty && password.length >= 6;
+      if (_isPasswordValid) {
+        _authError = null;
+      }
     });
   }
 
@@ -166,14 +171,20 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
               child: BlocConsumer<SignInCubit, SignInStates>(
                 listener: (context, state) {
                   if (state is LoginSuccess) {
-                    SnackbarDemo(message: state.message).showCustomSnackbar(context);
+                    //SnackbarDemo(message: state.message).showCustomSnackbar(context);
 
                     // Navigate based on user role or other conditions
                     if (state.user != null) {
+                      setState(() {
+                        _authError = null;
+                      });
                       _navigateToHome(state.user!);
                     }
                   } else if (state is SignInError) {
-                    SnackbarDemo(message: state.message).showCustomSnackbar(context);
+                    // Show snackbar and an external error below the password field
+                    setState(() {
+                      _authError = 'Invalid email or password. Please try again.';
+                    });
                   }
                 },
                 builder: (context, state) {
@@ -214,6 +225,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                                   focusNode: _passwordFocusNode,
                                   style: AppTypography.sfProHintTextStyle17,
                                   textInputAction: TextInputAction.done,
+                                  autofocus: true,
                                   obscureText: _obscureText,
                                   decoration: InputDecoration(
                                     hintText: 'Enter your password',
@@ -240,7 +252,8 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                                           ),
                                       ],
                                     ),
-                                    errorStyle: const TextStyle(color: Colors.red, fontSize: 14),
+                                    // hide default InputDecorator error text; we show a custom widget below
+                                    errorStyle: const TextStyle(color: Colors.transparent, fontSize: 0, height: 0),
                                   ),
                                   keyboardType: TextInputType.visiblePassword,
                                   validator: _passwordValidator,
@@ -254,6 +267,17 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                             ],
                           ),
                         ),
+
+                        // External auth error message shown under the password field
+                        if (_authError != null) ...[
+                          const SizedBox(height: 8),
+                          Center(
+                            child: Text(
+                              _authError!,
+                              style: AppTypography.sfProHintTextStyle17.copyWith(color: Colors.red, fontSize: 15.sp),
+                            ),
+                          ),
+                        ],
 
                         SizedBox(height: 16),
 

@@ -27,7 +27,6 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   final TextEditingController _portController = TextEditingController(text: '9100');
   String _selectedProtocol = 'TCP';
   bool _setAsDefault = false;
-  bool _isTesting = false;
   bool _isSaving = false;
 
   List<PrinterConfigModel> _savedPrinters = [];
@@ -66,59 +65,6 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
     SnackbarDemo(
       message: 'Form filled with ${printer.printerModel ?? printer.printerBrand} settings',
     ).showCustomSnackbar(context);
-  }
-
-  Future<void> _testPrint() async {
-    if (_ipController.text.isEmpty) {
-      SnackbarDemo(message: 'Please enter IP address').showCustomSnackbar(context);
-      return;
-    }
-
-    setState(() => _isTesting = true);
-
-    final config = PrinterConfigModel(
-      printerType: 'thermal',
-      printerBrand: _selectedBrand,
-      printerModel: _selectedModel,
-      ipAddress: _ipController.text.trim(),
-      protocol: _selectedProtocol,
-      port: int.tryParse(_portController.text),
-      isDefault: _setAsDefault,
-    );
-
-    // Log test print attempt
-    debugPrint('\n${'=' * 60}');
-    debugPrint('🧪 TEST PRINT - THERMAL PRINTER');
-    debugPrint('=' * 60);
-    debugPrint('\n📋 WHAT SHOULD HAPPEN:');
-    debugPrint('  1. Connect to printer at ${config.ipAddress}:${config.port ?? 9100}');
-    debugPrint('  2. Send test pattern with printer info');
-    debugPrint('  3. Print confirmation receipt');
-    debugPrint('  4. Verify printer responds correctly');
-
-    debugPrint('\n🔧 CONFIGURATION:');
-    debugPrint('  • Brand: $_selectedBrand');
-    debugPrint('  • Model: ${_selectedModel ?? 'Not selected'}');
-    debugPrint('  • IP Address: ${_ipController.text.trim()}');
-    debugPrint('  • Port: ${_portController.text}');
-    debugPrint('  • Protocol: $_selectedProtocol');
-
-    debugPrint('\n⚠️  CURRENT STATUS:');
-    debugPrint('  • Test print functionality: NOT IMPLEMENTED YET');
-    debugPrint('  • Reason: Requires printer-specific driver integration');
-    debugPrint('  • Workaround: Save settings and test from receipt screen');
-
-    debugPrint('\n💡 NEXT STEPS:');
-    debugPrint('  1. Save these settings using the Save button');
-    debugPrint('  2. Go to any job details screen');
-    debugPrint('  3. Click Print Receipt to test actual printing');
-    debugPrint('${'=' * 60}\n');
-
-    // Show user-friendly message
-    SnackbarDemo(
-      message: 'Test print not available yet. Please save and test from receipt screen.',
-    ).showCustomSnackbar(context);
-    setState(() => _isTesting = false);
   }
 
   Future<void> _saveSettings() async {
@@ -504,23 +450,6 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             SizedBox(height: 12.h),
 
             // Test Print Button
-            SizedBox(
-              width: double.infinity,
-              height: 48.h,
-              child: ElevatedButton(
-                onPressed: _isTesting ? null : _testPrint,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-                ),
-                child: _isTesting
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Test Print',
-                        style: TextStyle(fontSize: 16.sp, color: Colors.white),
-                      ),
-              ),
-            ),
           ],
         ),
       ),

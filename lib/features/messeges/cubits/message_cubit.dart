@@ -326,6 +326,50 @@ class MessageCubit extends Cubit<MessageState> {
         // For now, just log the comment. You can emit a specific state or handle it differently
         // TODO: Add comment-specific handling, e.g., emit a CommentReceived state
         debugPrint('💬 [MessageCubit] Comment received: ${comment.text} by ${comment.authorId}');
+        // Attach comment to existing conversation if possible
+        try {
+          // Find existing conversation by message id or conversationId
+          final existingIndex = _conversations.indexWhere(
+            (c) =>
+                (comment.messageId != null && c.sId != null && c.sId == comment.messageId) ||
+                (comment.conversationId != null &&
+                    c.conversationId != null &&
+                    c.conversationId == comment.conversationId),
+          );
+
+          if (existingIndex != -1) {
+            final existing = _conversations[existingIndex];
+            existing.comments = existing.comments ?? [];
+            existing.comments!.add(comment);
+            debugPrint('📝 [MessageCubit] Attached comment to existing conversation at index $existingIndex');
+            _sortMessages();
+            emit(
+              MessageReceived(
+                message: existing,
+                messages: List.from(_conversations),
+                conversationId: _currentConversationId ?? existing.conversationId ?? '',
+              ),
+            );
+          } else {
+            // Create a new conversation entry for this comment
+            final newConv = Conversation(
+              comment: comment,
+              conversationId: comment.conversationId,
+              createdAt: DateTime.now().toIso8601String(),
+            );
+            _conversations.add(newConv);
+            debugPrint('📝 [MessageCubit] Added new conversation for comment');
+            emit(
+              MessageReceived(
+                message: newConv,
+                messages: List.from(_conversations),
+                conversationId: comment.conversationId ?? '',
+              ),
+            );
+          }
+        } catch (e) {
+          debugPrint('❌ [MessageCubit] Error attaching comment: $e');
+        }
       }
     } catch (e) {
       debugPrint('❌ [MessageCubit] Error handling internal comment from RCMS: $e');
@@ -511,19 +555,59 @@ class MessageCubit extends Cubit<MessageState> {
 
     // Build local Comment model for optimistic UI update
     try {
+      String? readField(String key) {
+        try {
+          if (comment.containsKey(key) && comment[key] != null) return comment[key] as String?;
+        } catch (_) {}
+        try {
+          final nested = comment['comment'];
+          if (nested is Map && nested.containsKey(key) && nested[key] != null) return nested[key] as String?;
+        } catch (_) {}
+        return null;
+      }
+
+      dynamic readMentions() {
+        try {
+          if (comment.containsKey('mentions') && comment['mentions'] != null) return comment['mentions'];
+        } catch (_) {}
+        try {
+          final nested = comment['comment'];
+          if (nested is Map && nested.containsKey('mentions') && nested['mentions'] != null) return nested['mentions'];
+        } catch (_) {}
+        return null;
+      }
+
       final localComment = Comment(
-        text: comment['text'] as String?,
-        authorId: comment['authorId'] as String? ?? comment['userId'] as String?,
-        userId: comment['userId'] as String?,
-        messageId: comment['messageId'] as String?,
-        conversationId: comment['conversationId'] as String?,
-        parentCommentId: comment['parentCommentId'] as String?,
-        mentions: comment['mentions'] != null ? List<String>.from(comment['mentions']) : null,
+        text: readField('text'),
+        authorId: readField('authorId') ?? readField('userId'),
+        userId: readField('userId'),
+        messageId: readField('messageId'),
+        conversationId: readField('conversationId'),
+        parentCommentId: readField('parentCommentId'),
+        mentions: readMentions() != null ? List<String>.from(readMentions()) : null,
       );
 
+      // Try to populate sender/receiver from payload for better optimistic UI
+      Sender? optimisticSender;
+      Sender? optimisticReceiver;
+      try {
+        final senderData = comment['sender'] ?? (comment['message'] != null ? comment['message']['sender'] : null);
+        if (senderData != null && senderData is Map<String, dynamic>) {
+          optimisticSender = Sender.fromJson(senderData);
+        }
+
+        final receiverData =
+            comment['receiver'] ?? (comment['message'] != null ? comment['message']['receiver'] : null);
+        if (receiverData != null && receiverData is Map<String, dynamic>) {
+          optimisticReceiver = Sender.fromJson(receiverData);
+        }
+      } catch (_) {
+        // ignore parsing issues
+      }
+
       final localConversation = Conversation(
-        sender: null,
-        receiver: null,
+        sender: optimisticSender,
+        receiver: optimisticReceiver,
         comment: localComment,
         seen: false,
         conversationId: comment['conversationId'] as String?,

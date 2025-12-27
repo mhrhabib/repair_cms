@@ -27,7 +27,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   final TextEditingController _portController = TextEditingController(text: '9100');
   String _selectedProtocol = 'TCP';
   bool _setAsDefault = false;
-  bool _isTesting = false;
   bool _isSaving = false;
 
   List<PrinterConfigModel> _savedPrinters = [];
@@ -65,72 +64,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
     SnackbarDemo(
       message: 'Form filled with ${printer.printerModel ?? printer.printerBrand} settings',
     ).showCustomSnackbar(context);
-  }
-
-  Future<void> _testPrint() async {
-    if (_ipController.text.isEmpty) {
-      SnackbarDemo(message: 'Please enter IP address').showCustomSnackbar(context);
-      return;
-    }
-
-    setState(() => _isTesting = true);
-
-    final config = PrinterConfigModel(
-      printerType: 'label',
-      printerBrand: _selectedBrand,
-      printerModel: _selectedModel,
-      ipAddress: _ipController.text.trim(),
-      protocol: _selectedProtocol,
-      port: int.tryParse(_portController.text),
-      isDefault: _setAsDefault,
-    );
-
-    // Log test print attempt
-    debugPrint('\n${'=' * 60}');
-    debugPrint('🧪 TEST PRINT - LABEL PRINTER');
-    debugPrint('=' * 60);
-    debugPrint('\n📋 WHAT SHOULD HAPPEN:');
-    debugPrint('  1. Connect to label printer at ${config.ipAddress}:${config.port ?? 9100}');
-    debugPrint('  2. Configure label size and settings');
-    debugPrint('  3. Print test label with printer info');
-    debugPrint('  4. Auto-cut label if supported');
-
-    debugPrint('\n🔧 CONFIGURATION:');
-    debugPrint('  • Brand: $_selectedBrand');
-    debugPrint('  • Model: ${_selectedModel ?? 'Not selected'}');
-    debugPrint('  • IP Address: ${_ipController.text.trim()}');
-    debugPrint('  • Port: ${_portController.text}');
-    debugPrint('  • Protocol: $_selectedProtocol');
-
-    debugPrint('\n⚠️  CURRENT STATUS:');
-    debugPrint('  • Test print functionality: NOT IMPLEMENTED YET');
-    debugPrint('  • Reason: Requires brand-specific label configuration');
-    debugPrint('  • Workaround: Save settings and test from receipt screen');
-
-    debugPrint('\n💡 SUPPORTED LABEL SIZES ($_selectedBrand):');
-    if (_selectedBrand == 'Brother') {
-      debugPrint('  • 62mm × 100mm (W62)');
-      debugPrint('  • 102mm × 152mm (W102)');
-      debugPrint('  • Continuous tape');
-    } else if (_selectedBrand == 'Dymo') {
-      debugPrint('  • 54mm × 101mm (1744907)');
-      debugPrint('  • 102mm × 159mm (4XL)');
-    } else {
-      debugPrint('  • 80mm × 80mm (standard)');
-      debugPrint('  • Custom sizes supported');
-    }
-
-    debugPrint('\n💡 NEXT STEPS:');
-    debugPrint('  1. Save these settings using the Save button');
-    debugPrint('  2. Go to any job details screen');
-    debugPrint('  3. Click Print Receipt to test actual label printing');
-    debugPrint('${'=' * 60}\n');
-
-    // Show user-friendly message
-    SnackbarDemo(
-      message: 'Test print not available yet. Please save and test from receipt screen.',
-    ).showCustomSnackbar(context);
-    setState(() => _isTesting = false);
   }
 
   Future<void> _saveSettings() async {
@@ -541,23 +474,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             SizedBox(height: 12.h),
 
             // Test Print Button
-            SizedBox(
-              width: double.infinity,
-              height: 48.h,
-              child: ElevatedButton(
-                onPressed: _isTesting ? null : _testPrint,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-                ),
-                child: _isTesting
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Test Print',
-                        style: TextStyle(fontSize: 16.sp, color: Colors.white),
-                      ),
-              ),
-            ),
           ],
         ),
       ),

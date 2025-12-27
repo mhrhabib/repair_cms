@@ -1,10 +1,13 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:repair_cms/core/connectivity/connectivity_cubit.dart';
 import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
 import 'package:repair_cms/features/auth/forgotPassword/repo/forgot_password_repo.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
+import 'package:repair_cms/features/common/no_internet_screen.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/features/company/repository/company_repo.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
@@ -63,6 +66,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => ConnectivityCubit(Connectivity())),
         BlocProvider(create: (context) => SignInCubit(repository: SetUpDI.getIt<SignInRepository>())),
         BlocProvider(create: (context) => ForgotPasswordCubit(repository: SetUpDI.getIt<ForgotPasswordRepository>())),
         BlocProvider(create: (context) => ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>())),
@@ -103,13 +107,35 @@ class MyApp extends StatelessWidget {
         designSize: const Size(375, 812),
         minTextAdapt: true,
         splitScreenMode: true,
-        child: MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          title: 'Repair CMS',
-          theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-          routerConfig: AppRouter.router,
+        child: _ConnectivityWrapper(
+          child: MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            title: 'RepairCMS',
+            theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+            routerConfig: AppRouter.router,
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _ConnectivityWrapper extends StatelessWidget {
+  final Widget child;
+
+  const _ConnectivityWrapper({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ConnectivityCubit, ConnectivityState>(
+      builder: (context, connectivityState) {
+        /// Show no internet screen when offline
+        if (connectivityState is ConnectivityOffline) {
+          return const NoInternetScreen();
+        }
+
+        return child;
+      },
     );
   }
 }

@@ -22,6 +22,7 @@ class _SignInScreenState extends State<SignInScreen> {
   bool _isEmailValid = false;
   bool _showBiometricOption = false;
   bool _hasCheckedBiometric = false;
+  String? _emailError;
 
   @override
   void initState() {
@@ -64,9 +65,17 @@ class _SignInScreenState extends State<SignInScreen> {
 
   void _validateEmail() {
     final email = _emailController.text;
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[A-Za-z]{2,}$');
     setState(() {
       _isEmailValid = emailRegex.hasMatch(email) && email.isNotEmpty;
+
+      if (email.isEmpty) {
+        _emailError = 'Email cannot be empty';
+      } else if (!emailRegex.hasMatch(email)) {
+        _emailError = 'Please enter a valid email address';
+      } else {
+        _emailError = null;
+      }
     });
   }
 
@@ -79,7 +88,7 @@ class _SignInScreenState extends State<SignInScreen> {
       return 'Email cannot be empty';
     }
 
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[A-Za-z]{2,}$');
     if (!emailRegex.hasMatch(value)) {
       return 'Please enter a valid email address';
     }
@@ -122,7 +131,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 child: BlocConsumer<SignInCubit, SignInStates>(
                   listener: (context, state) {
                     if (state is SignInSuccess) {
-                      SnackbarDemo(message: state.message).showCustomSnackbar(context);
+                      //SnackbarDemo(message: state.message).showCustomSnackbar(context);
                       _navigateToPasswordScreen(state.email);
                     } else if (state is SignInError) {
                       SnackbarDemo(message: state.message).showCustomSnackbar(context);
@@ -183,14 +192,22 @@ class _SignInScreenState extends State<SignInScreen> {
                                               child: Icon(Icons.check_circle, color: AppColors.greenColor, size: 30.w),
                                             )
                                           : null,
-                                      errorStyle: const TextStyle(color: Colors.red, fontSize: 14),
+                                      // hide default InputDecorator error text because we show a custom widget below
+                                      errorStyle: const TextStyle(color: Colors.transparent, fontSize: 0, height: 0),
                                     ),
+                                    // Ensure caret and focus behavior are explicit so cursor is visible
+                                    autofocus: true,
+                                    showCursor: true,
+                                    cursorColor: AppColors.blackColor,
+                                    enableInteractiveSelection: true,
                                     keyboardType: TextInputType.emailAddress,
                                     textInputAction: TextInputAction.done,
                                     validator: _emailValidator,
                                     onFieldSubmitted: (_) {
                                       if (_formKey.currentState!.validate() && _isEmailValid) {
                                         context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
+                                      } else {
+                                        _validateEmail();
                                       }
                                     },
                                   ),
@@ -198,6 +215,18 @@ class _SignInScreenState extends State<SignInScreen> {
                               ],
                             ),
                           ),
+
+                          // External error message shown under the email field (outside the input border)
+                          if (_emailError != null) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: AlignmentGeometry.center,
+                              child: Text(
+                                _emailError!,
+                                style: AppTypography.sfProHintTextStyle17.copyWith(color: Colors.red),
+                              ),
+                            ),
+                          ],
 
                           // Responsive spacing based on keyboard visibility
                           SizedBox(
@@ -242,6 +271,8 @@ class _SignInScreenState extends State<SignInScreen> {
                               : () {
                                   if (_formKey.currentState!.validate() && _isEmailValid) {
                                     context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
+                                  } else {
+                                    _validateEmail();
                                   }
                                 },
                           child: state is SignInLoading

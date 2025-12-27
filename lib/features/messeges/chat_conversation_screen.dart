@@ -177,26 +177,81 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   void _sendInternalComment(String messageText, String userEmail, String userName, String userId) {
-    // TODO: Replace with your actual socket/API implementation
     debugPrint('💬 Sending internal comment with mentions: $_mentionIds');
 
-    // Build payload and call cubit to handle optimistic update + socket send
-    final comment = {
-      'text': messageText,
-      'authorId': userId,
-      'userId': userId,
-      'messageId': widget.conversationId, // Set to conversationId for top-level comments
-      'conversationId': widget.conversationId,
-      'parentCommentId': null,
-      'mentions': _mentionIds,
+    // Build HTML text for the comment: replace plain @mentions with styled spans and exclude raw @names
+    String _buildCommentHtmlText(String text) {
+      // Build mention spans from _mentionIds using _subUsers lookup
+      final List<String> spans = [];
+      for (final id in _mentionIds) {
+        final sub = _subUsers.firstWhere(
+          (s) => (s.sId != null && s.sId == id) || (s.email != null && s.email == id),
+          orElse: () => SubUser(),
+        );
+        final displayName = sub.fullName ?? sub.email ?? id;
+        spans.add('<span style="color:#ffe500;" class="internal-user input__mod1">@${displayName}</span>');
+        // Remove the plain @DisplayName occurrence from the text (first occurrence)
+        final plain = '@$displayName';
+        if (text.contains(plain)) {
+          text = text.replaceFirst(plain, '');
+        }
+      }
+
+      // Trim leftover whitespace
+      final remaining = text.trim();
+
+      // Join spans and remaining text with non-breaking space as in examples
+      final joinedSpans = spans.isNotEmpty ? spans.join('&nbsp;') + '&nbsp;' : '';
+      return '$joinedSpans$remaining';
+    }
+
+    // Determine target message id (message being commented on) and parentCommentId if replying to a comment
+    String? _getTargetMessageId() {
+      try {
+        // Find most recent conversation entry that has a message with an id
+        for (var i = _messages.length - 1; i >= 0; i--) {
+          final m = _messages[i];
+          if (m.sId != null && m.message != null) return m.sId;
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    final targetMessageId = _getTargetMessageId() ?? widget.conversationId;
+    // For now we don't support replying to a specific comment in UI; parentCommentId == targetMessageId
+    final parentCommentId = targetMessageId;
+
+    final htmlText = _buildCommentHtmlText(messageText);
+
+    // Build combined payload (message + comment) to send via socket
+    final participants = _fallbackRecipientEmail ?? userEmail;
+
+    final payload = {
+      'message': {
+        'sender': {'email': userEmail, 'name': userName},
+        'seen': true,
+        'message': {'message': '', 'messageType': 'comment', 'jobId': widget.conversationId},
+        'conversationId': widget.conversationId,
+        'userId': userId,
+        'participants': participants,
+        'loggedUserId': userId,
+      },
+      'comment': {
+        'text': htmlText,
+        'authorId': userId,
+        'userId': userId,
+        'messageId': targetMessageId,
+        'conversationId': widget.conversationId,
+        'mentions': _mentionIds,
+      },
     };
 
-    debugPrint(comment.toString());
+    debugPrint(payload.toString());
 
     // Send via cubit - cubit will optimistically add to local list and emit state
-    context.read<MessageCubit>().sendInternalComment(comment: comment);
+    context.read<MessageCubit>().sendInternalComment(comment: payload);
 
-    SnackbarDemo(message: 'Internal comment sent to ${_mentionIds.length} team members').showCustomSnackbar(context);
+    //SnackbarDemo(message: 'Internal comment sent to ${_mentionIds.length} team members').showCustomSnackbar(context);
   }
 
   void _sendRegularMessage(
@@ -502,9 +557,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       ),
                     if (hasComment) ...[
                       if (message.comments != null && message.comments!.isNotEmpty)
-                        for (var c in message.comments!) _buildCommentMessage(c, isMe)
+                        for (var c in message.comments!) _buildCommentMessage(c)
                       else if (message.comment != null)
-                        _buildCommentMessage(message.comment!, isMe),
+                        _buildCommentMessage(message.comment!),
                     ] else if (hasQuotation)
                       _buildQuotationCard(message.message!.quotation!, isMe)
                     else
@@ -555,100 +610,127 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     Conversation message,
     bool isMe,
   ) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isMe ? const Color(0xFFD6E8FF) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (messageType == 'comment')
-              Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isMe ? Colors.white.withValues(alpha: 0.5) : Colors.orange[50],
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Internal Comment',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isMe ? const Color(0xFF4A90E2) : Colors.orange[700],
-                    fontWeight: FontWeight.bold,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+      children: [
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isMe ? const Color(0xFFD6E8FF) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (messageType == 'comment')
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isMe ? Colors.white.withValues(alpha: 0.5) : Colors.orange[50],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Internal Comment',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isMe ? const Color(0xFF4A90E2) : Colors.orange[700],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            if (messageText.isNotEmpty)
-              Text(
-                messageText,
-                style: TextStyle(color: isMe ? const Color(0xFF1E3A5F) : Colors.black87, fontSize: 14, height: 1.4),
-              ),
-          ],
+                if (messageText.isNotEmpty)
+                  Text(
+                    messageText,
+                    style: TextStyle(color: isMe ? const Color(0xFF1E3A5F) : Colors.black87, fontSize: 14, height: 1.4),
+                  ),
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildCommentMessage(Comment comment, bool isMe) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isMe ? const Color(0xFFFFF3CD) : const Color(0xFFFFF8E1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.orange[200]!, width: 1),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Comment header
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: Colors.orange[100], borderRadius: BorderRadius.circular(4)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.comment, size: 12, color: Colors.orange[700]),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Internal Comment',
-                    style: TextStyle(fontSize: 10, color: Colors.orange[700], fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
+  Widget _buildCommentMessage(Comment comment) {
+    // Determine if this comment was authored by the logged-in user
+    final storedUserId = GetStorage().read('userId') as String?;
+    final isMe =
+        (comment.authorId != null && comment.authorId == storedUserId) ||
+        (comment.userId != null && comment.userId == storedUserId);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+      children: [
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isMe ? const Color(0xFFFFF3CD) : const Color(0xFFFFF8E1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.orange[200]!, width: 1),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+              ],
             ),
-            // Comment text with inline mentions highlighted
-            RichText(
-              text: TextSpan(
-                children: [
-                  if (comment.mentions != null && comment.mentions!.isNotEmpty)
-                    TextSpan(
-                      text: '${comment.mentions!.map((m) => '@${m.split('@').first}').join(' ')} ',
-                      style: TextStyle(color: Colors.yellow[700], fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                  TextSpan(
-                    text: comment.text ?? '',
-                    style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Comment header
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.orange[100], borderRadius: BorderRadius.circular(4)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.comment, size: 12, color: Colors.orange[700]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Internal Comment',
+                        style: TextStyle(fontSize: 10, color: Colors.orange[700], fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                // Comment text with inline mentions highlighted
+                Builder(
+                  builder: (context) {
+                    final raw = comment.text ?? '';
+                    // Strip simple HTML tags and decode non-breaking spaces for display
+                    String cleaned = raw.replaceAll(RegExp(r'<[^>]*>'), '');
+                    cleaned = cleaned.replaceAll('&nbsp;', ' ');
+
+                    return RichText(
+                      text: TextSpan(
+                        children: [
+                          // if (comment.mentions != null && comment.mentions!.isNotEmpty)
+                          //   TextSpan(
+                          //     text: '${comment.mentions!.map((m) => '@${m.split('@').first}').join(' ')} ',
+                          //     style: TextStyle(color: Colors.yellow[700], fontWeight: FontWeight.bold, fontSize: 14),
+                          //   ),
+                          TextSpan(
+                            text: cleaned,
+                            style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -903,11 +985,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           _showMentionSuggestions = false;
                         }
                       });
-                      SnackbarDemo(
-                        message: _isInternalMode
-                            ? 'Internal mode ON - Message will be private'
-                            : 'Internal mode OFF - Message will be visible to all',
-                      ).showCustomSnackbar(context);
+                      // SnackbarDemo(
+                      //   message: _isInternalMode
+                      //       ? 'Internal mode ON - Message will be private'
+                      //       : 'Internal mode OFF - Message will be visible to all',
+                      // ).showCustomSnackbar(context);
                     },
                   ),
                   IconButton(
@@ -971,7 +1053,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.purple,
                   onTap: () {
                     Navigator.pop(context);
-                    SnackbarDemo(message: 'Gallery picker coming soon').showCustomSnackbar(context);
+                    // SnackbarDemo(message: 'Gallery picker coming soon').showCustomSnackbar(context);
                   },
                 ),
                 _buildAttachmentOption(
@@ -980,7 +1062,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.blue,
                   onTap: () {
                     Navigator.pop(context);
-                    SnackbarDemo(message: 'Camera coming soon').showCustomSnackbar(context);
+                    //  SnackbarDemo(message: 'Camera coming soon').showCustomSnackbar(context);
                   },
                 ),
                 _buildAttachmentOption(
@@ -989,7 +1071,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.orange,
                   onTap: () {
                     Navigator.pop(context);
-                    SnackbarDemo(message: 'Document picker coming soon').showCustomSnackbar(context);
+                    //(message: 'Document picker coming soon').showCustomSnackbar(context);
                   },
                 ),
               ],

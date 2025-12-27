@@ -9,85 +9,60 @@ Flutter mobile app for repair shop management with job tracking, quick tasks, cu
 All services follow a **strict 3-step registration** in `lib/set_up_di.dart` → `main.dart`:
 
 ```dart
-// Step 1: Register in SetUpDI.init()
-_getIt.registerLazySingleton<BrandRepository>(() => BrandRepositoryImpl());
-_getIt.registerFactory<BrandCubit>(() => BrandCubit(brandRepository: _getIt<BrandRepository>()));
+# Repair CMS — Copilot / AI Agent Instructions
 
-// Step 2: Add to MultiBlocProvider in main.dart
-BlocProvider(create: (context) => BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>()))
+Purpose: concise, practical rules to help an AI coding agent be productive in this repo.
 
-// Step 3: Routes in AppRouter.router (lib/core/routes/router.dart)
-GoRoute(path: RouteNames.brands, builder: (context, state) => BrandsScreen())
-```
+Quick start
+- `flutter pub get`
+- `flutter run` (or `flutter run -d <device>`)
+- `flutter clean && flutter pub get`
 
-**Rule**: Repositories are `registerLazySingleton`, cubits are `registerFactory`. Missing any step breaks DI.
+Big picture
+- Flutter mobile app using Bloc/Cubit for state; single DI container (`lib/set_up_di.dart`).
+- Data flow: UI → `Cubit` → `Repository` → `BaseClient` (HTTP) → backend (api.repaircms.com).
 
-### 2. State File Pattern (Part-of Declaration)
-States MUST be defined in separate files using part-of:
+Critical patterns (must follow)
+- Dependency Injection (3-step):
+  1. Register repository/cubit in `lib/set_up_di.dart` (`registerLazySingleton` for repos, `registerFactory` for cubits).
+  2. Provide cubit in `lib/main.dart` via `MultiBlocProvider`.
+  3. Add route in `lib/core/routes/router.dart` using `RouteNames`.
+  Example: `_getIt.registerLazySingleton<BrandRepository>(() => BrandRepositoryImpl());`
 
-```dart
-// brand_cubit.dart
-part 'brand_state.dart';
-class BrandCubit extends Cubit<BrandState> { ... }
+- State files: cubits must `part` a separate state file (`my_cubit.dart` + `my_cubit_state.dart` with `part` / `part of`).
+  Emit: Loading → Success/Error (consistent ordering expected by UI).
 
-// brand_state.dart
-part of 'brand_cubit.dart';
-abstract class BrandState {}
- # Repair CMS — Copilot / AI Agent Instructions
+- Repositories: new features use interface + Impl (`FooRepository` + `FooRepositoryImpl`). Legacy concrete classes exist (auth, profile, myJobs, quickTask, dashboard) — do not refactor without direction.
 
- Purpose: help an AI agent become productive quickly by describing the repo's essential structure, conventions, and concrete examples.
+HTTP / API specifics
+- `BaseClient` (`lib/core/base/base_client.dart`) attaches `Authorization: Bearer <token>` from `GetStorage` and logs requests using emoji-prefixed `debugPrint`.
+- Endpoints are defined in `lib/core/helpers/api_endpoints.dart` and contain placeholders like `<id>` / `<userId>`; replace with `.replaceAll('<id>', value)` before calling.
+- Repositories must handle Map and List responses (see examples in `lib/core/repositories`).
 
- Quick start commands
- - `flutter pub get`
- - `flutter run`
- - `flutter clean && flutter pub get`
+Models & storage
+- Manual `fromJson`/`toJson` models; map Mongo `_id` → `sId` (follow existing model implementations).
+- Persistent keys (GetStorage) include: `token`, `userId`, `email`, `fullName`, `userType`, `locationId`, `isLoggedIn` (see `lib/core/helpers/storage.dart`).
 
- Core architecture (big picture)
- - Flutter app using Bloc/Cubit state management and a single DI container (`lib/set_up_di.dart`).
- - UI layers call Cubits → Cubits call Repositories → Repositories call `BaseClient` (HTTP) → backend at `https://api.repaircms.com`.
+Routing & navigation
+- Routes: `lib/core/routes/router.dart`; names: `lib/core/routes/route_names.dart`.
+- Use `context.go()` / `context.push()` consistently.
 
- Dependency injection (3-step rule)
- - Register repository as `registerLazySingleton` and cubits as `registerFactory` inside `lib/set_up_di.dart`.
- - Provide the cubit via `MultiBlocProvider` in `lib/main.dart` and expose routes in `lib/core/routes/router.dart`.
-   Example: register `BrandRepository` in `SetUpDI`, add `BlocProvider` for `BrandCubit`, then add `GoRoute` for the screen.
+Platform / native notes
+- Printing integrations (Brother / Dymo) use native plugins — changes may require Pod/Gradle updates. Test native flows on device/simulator.
 
- State & file patterns (must follow)
- - Cubit file pairs: keep state in a `part` file. E.g. `brand_cubit.dart` + `brand_state.dart` (`part 'brand_state.dart';` / `part of 'brand_cubit.dart';`).
- - Always emit Loading → Success/Error states in that order.
+Constraints & conventions
+- NO code generation: do not add `freezed`, `json_serializable`, or run `build_runner`.
+- Logging uses emoji prefixes (🚀, ✅, ❌, 🌐) via `debugPrint` — follow this for consistency.
 
- Repository patterns
- - New features: use an abstract repository interface + `Impl` class (e.g., `BrandRepository` + `BrandRepositoryImpl`).
- - Legacy features (auth, profile, myJobs, quickTask, dashboard) are concrete classes — don't refactor these without direction.
+Adding a new feature (checklist)
+1. Create repository interface + Impl.
+2. Register in `lib/set_up_di.dart` (`registerLazySingleton`/`registerFactory`).
+3. Provide the cubit in `lib/main.dart` `MultiBlocProvider`.
+4. Add route in `lib/core/routes/router.dart` and `RouteNames`.
+5. Implement UI screen and wire to cubit.
 
- HTTP & API specifics
- - `BaseClient` (`lib/core/base/base_client.dart`) injects `Authorization: Bearer <token>` from `GetStorage` and logs requests with emoji-prefixed `debugPrint`.
- - Endpoints use placeholders in `lib/core/helpers/api_endpoints.dart` (e.g., `<id>`, `<userId>`, `<brandId>`). Use `.replaceAll('<id>', value)` before calling.
- - Response handling: repo code must handle both List and Map responses (check existing repositories for examples).
+Files to inspect first
+- `lib/set_up_di.dart`, `lib/main.dart`, `lib/core/base/base_client.dart`, `lib/core/helpers/api_endpoints.dart`, `lib/core/helpers/storage.dart`, `lib/core/routes/router.dart`, `lib/core/routes/route_names.dart`.
 
- Error handling & logging
+If something is unclear or you want examples for a specific feature, tell me which feature and I will expand or add code snippets.
  - Repositories throw domain-specific exceptions (e.g., `BrandException`) — cubits catch and emit typed error states.
- - Logging convention: emoji prefixes (🚀, ✅, ❌, 🌐, etc.) via `debugPrint`; replicate when adding logs.
-
- Storage & routing
- - Persistent values in `GetStorage` (see `lib/core/helpers/storage.dart`): `token`, `userId`, `email`, `fullName`, `userType`, `locationId`, `isLoggedIn`.
- - Routes are defined in `lib/core/routes/router.dart` and names in `lib/core/routes/route_names.dart`; navigation uses `context.go()` / `context.push()`.
-
- Project-specific constraints
- - NO code generation: do not add `freezed` / `json_serializable` / build_runner.
- - Models are manual `fromJson`/`toJson` and map Mongo `_id` → `sId`.
-
- Integration points & native
- - Printing integrations (Brother/Dymo) use platform-specific packages — native Pod/Gradle changes may be required.
-
- Where to look for examples
- - DI: `lib/set_up_di.dart`
- - App bootstrap & providers: `lib/main.dart`
- - HTTP client & logging: `lib/core/base/base_client.dart`
- - Endpoints: `lib/core/helpers/api_endpoints.dart`
- - Routes: `lib/core/routes/router.dart`
-
- When you modify code
- - Follow 3-step DI: register repo, add BlocProvider, add route.
- - Preserve legacy patterns unless changing an entire feature set.
-
- If anything's unclear or you want more detail (examples for a specific feature), tell me which feature and I'll expand.
