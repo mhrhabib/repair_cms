@@ -84,15 +84,16 @@ class DashboardRepository {
       dio.Response response = await BaseClient.get(url: ApiEndpoints.completeUserJob.replaceAll('<id>', userId ?? ''));
 
       if (response.statusCode == 200) {
+        // Normalize response data: if backend sent a JSON string, decode it.
+        final dynamic responseData = response.data is String ? jsonDecode(response.data) : response.data;
+
         debugPrint('✅ Job progress data fetched successfully');
-        debugPrint('📊 Job Progress Response: ${jsonEncode(response.data)}');
+        debugPrint('📊 response.data type: ${response.data.runtimeType}');
+        debugPrint('📊 parsed responseData type: ${responseData.runtimeType}');
+        debugPrint('📊 Job Progress Response: ${jsonEncode(responseData)}');
 
-        // Parse JSON string to Map if needed
-        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
-
-        // Try to parse as JobProgressResponse first, if API has separate endpoint
-        // If using the same dashboard endpoint, use the mapping method
-        return CompletedJobsResponseModel.fromJson(responseData);
+        // Map to model
+        return CompletedJobsResponseModel.fromJson(responseData as Map<String, dynamic>);
       } else {
         throw Exception('Failed to fetch job progress: ${response.statusCode} - ${response.data}');
       }

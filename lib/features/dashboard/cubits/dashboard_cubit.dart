@@ -47,6 +47,11 @@ class DashboardCubit extends Cubit<DashboardState> {
         userId: userId,
       );
 
+      if (isClosed) {
+        debugPrint('🔁 DashboardCubit closed; aborting getDashboardStats');
+        return;
+      }
+
       _dashboardStats = response;
 
       debugPrint('✅ DashboardCubit: Successfully fetched dashboard stats');
@@ -68,6 +73,10 @@ class DashboardCubit extends Cubit<DashboardState> {
       debugPrint('🔄 DashboardCubit: Fetching job progress data');
 
       final response = await repository.getJobProgress();
+      if (isClosed) {
+        debugPrint('🔁 DashboardCubit closed; aborting getJobProgress');
+        return;
+      }
       _jobProgress = response;
 
       debugPrint('✅ DashboardCubit: Successfully fetched job progress');
@@ -111,6 +120,11 @@ class DashboardCubit extends Cubit<DashboardState> {
 
       // Wait for both requests to complete
       final results = await Future.wait([statsFuture, progressFuture]);
+
+      if (isClosed) {
+        debugPrint('🔁 DashboardCubit closed; aborting loadAllDashboardData');
+        return;
+      }
 
       _dashboardStats = results[0];
       _jobProgress = results[1];

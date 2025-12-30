@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -30,6 +33,7 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
   void initState() {
     super.initState();
     _loadSavedPrinters();
+    _ipController.addListener(() => setState(() {}));
   }
 
   void _loadSavedPrinters() {
@@ -104,6 +108,38 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
       SnackbarDemo(message: '❌ Failed to save settings').showCustomSnackbar(context);
     } finally {
       setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _sendRawTestPrint() async {
+    final ip = _ipController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 9100;
+
+    if (ip.isEmpty) {
+      SnackbarDemo(message: 'Please enter printer IP to test print').showCustomSnackbar(context);
+      return;
+    }
+
+    SnackbarDemo(message: 'Sending test print to $ip:$port').showCustomSnackbar(context);
+
+    try {
+      debugPrint('📤 [TestPrint] Connecting to $ip:$port');
+      final socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
+
+      // Initialize printer (ESC @), send text, then form feed
+      socket.add([0x1B, 0x40]); // ESC @
+      final message = 'RepairCMS Test Print\n\n';
+      socket.add(utf8.encode(message));
+      socket.add([0x0C]); // form feed
+
+      await socket.flush();
+      socket.destroy();
+
+      debugPrint('✅ [TestPrint] Sent test print to $ip:$port');
+      SnackbarDemo(message: 'Test print sent to $ip:$port').showCustomSnackbar(context);
+    } catch (e) {
+      debugPrint('❌ [TestPrint] Error sending test print: $e');
+      SnackbarDemo(message: 'Failed to send test print: $e').showCustomSnackbar(context);
     }
   }
 
@@ -405,6 +441,21 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
                       ),
               ),
             ),
+            SizedBox(height: 12.h),
+
+            // Test Raw Print Button (visible when IP is provided)
+            if (_ipController.text.trim().isNotEmpty)
+              SizedBox(
+                width: double.infinity,
+                height: 48.h,
+                child: OutlinedButton(
+                  onPressed: _sendRawTestPrint,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                  ),
+                  child: Text('Test Raw Print', style: TextStyle(fontSize: 16.sp)),
+                ),
+              ),
           ],
         ),
       ),
