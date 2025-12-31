@@ -105,14 +105,14 @@ class ReceiptScreen extends StatelessWidget {
       } else {
         // Network printers - use factory to get appropriate service
         debugPrint('🖨️ Printing to ${printer.printerBrand} ${printer.printerType} printer');
-        final printerService = PrinterServiceFactory.getPrinterService(printer.printerBrand);
+        final printerService = PrinterServiceFactory.getPrinterServiceForConfig(printer);
 
         if (printer.printerType == 'thermal') {
           final result = await printerService.printThermalReceipt(ipAddress: printer.ipAddress, text: receiptText);
           success = result.success;
           errorMessage = result.message;
         } else if (printer.printerType == 'label') {
-          final result = await printerService.printLabel(ipAddress: printer.ipAddress, text: receiptText);
+          final result = await PrinterServiceFactory.printLabelWithFallback(config: printer, text: receiptText);
           success = result.success;
           errorMessage = result.message;
         } else {

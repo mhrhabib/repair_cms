@@ -379,7 +379,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                 suffixIcon: Icon(Icons.router, color: Colors.grey.shade400),
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
             ),
             SizedBox(height: 16.h),
 

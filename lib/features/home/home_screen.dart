@@ -131,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final bool isSelected = _currentIndex == index;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => _onItemTapped(index),
       child: SizedBox(
         width: 60.w,
@@ -186,6 +187,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _onItemTapped(int index) {
+    // Remove focus from any focused input first so taps aren't consumed by focus changes
+    try {
+      FocusScope.of(context).unfocus();
+    } catch (_) {}
+
     setState(() {
       _currentIndex = index;
     });

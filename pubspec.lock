@@ -89,6 +89,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  brother_printer:
+    dependency: "direct main"
+    description:
+      name: brother_printer
+      sha256: "4696d1ff949e48b8076c9da4045d0e1a5d334a827553c7c2adba64727fe57d9d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.6"
   characters:
     dependency: transitive
     description:

@@ -66,8 +66,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       SnackbarDemo(message: 'Sending to printer...').showCustomSnackbar(context);
 
-      // Use printer service factory to get appropriate service
-      final printerService = PrinterServiceFactory.getPrinterService(printer.printerBrand);
+      // Use printer service factory to get appropriate service (may prefer SDK or raw TCP)
+      final printerService = PrinterServiceFactory.getPrinterServiceForConfig(printer);
 
       // Try generating image PDF for high-fidelity label (barcode + QR)
       if (canPrintImage) {
@@ -76,7 +76,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         // Convert PDF to bytes and attempt image printing via service
         final pdfBytes = await pdf.save();
 
-        // If service supports image printing, send bytes
+        // Try image printing first via configured service
         final imageResult = await printerService.printLabelImage(
           ipAddress: printer.ipAddress,
           imageBytes: pdfBytes,
@@ -88,24 +88,16 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
           return;
         }
 
-        // Fallback to text label
+        // Fallback: attempt structured/device label via SDK/raw fallback
         final labelText = _buildLabelText();
-        final textResult = await printerService.printLabel(
-          ipAddress: printer.ipAddress,
-          text: labelText,
-          port: printer.port ?? 9100,
-        );
+        final textResult = await PrinterServiceFactory.printLabelWithFallback(config: printer, text: labelText);
         if (textResult.success) {
           SnackbarDemo(message: textResult.message).showCustomSnackbar(context);
         } else {
           throw Exception(textResult.message);
         }
       } else {
-        final result = await printerService.printDeviceLabel(
-          ipAddress: printer.ipAddress,
-          labelData: labelData,
-          port: printer.port ?? 9100,
-        );
+        final result = await PrinterServiceFactory.printDeviceLabelWithFallback(config: printer, labelData: labelData);
 
         if (result.success) {
           SnackbarDemo(message: result.message).showCustomSnackbar(context);

@@ -142,7 +142,7 @@ class MoreSettingsScreen extends StatelessWidget {
             _buildSettingsItem(
               icon: SolarIconsOutline.printer,
               iconColor: Colors.blue,
-              title: 'A4 Printer Settings',
+              title: 'Printer Settings',
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
               },

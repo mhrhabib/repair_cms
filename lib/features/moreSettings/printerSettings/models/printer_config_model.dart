@@ -9,6 +9,7 @@ class PrinterConfigModel {
   final String? usbDeviceId; // For USB printers
   final LabelSize? labelSize; // For label printers
   final int? paperWidth; // For thermal printers (80mm, 58mm)
+  final bool? useSdk; // Whether to prefer vendor SDK (e.g., Brother) for this printer
 
   PrinterConfigModel({
     required this.printerType,
@@ -21,6 +22,7 @@ class PrinterConfigModel {
     this.usbDeviceId,
     this.labelSize,
     this.paperWidth,
+    this.useSdk,
   });
 
   // Get label dimensions
@@ -41,6 +43,7 @@ class PrinterConfigModel {
       usbDeviceId: json['usbDeviceId'],
       labelSize: json['labelSize'] != null ? LabelSize.fromJson(json['labelSize']) : null,
       paperWidth: json['paperWidth'],
+      useSdk: json['useSdk'] ?? false,
     );
   }
 
@@ -56,6 +59,7 @@ class PrinterConfigModel {
       'usbDeviceId': usbDeviceId,
       'labelSize': labelSize?.toJson(),
       'paperWidth': paperWidth,
+      'useSdk': useSdk ?? false,
     };
   }
 
@@ -70,6 +74,7 @@ class PrinterConfigModel {
     String? usbDeviceId,
     LabelSize? labelSize,
     int? paperWidth,
+    bool? useSdk,
   }) {
     return PrinterConfigModel(
       printerType: printerType ?? this.printerType,
@@ -82,6 +87,7 @@ class PrinterConfigModel {
       usbDeviceId: usbDeviceId ?? this.usbDeviceId,
       labelSize: labelSize ?? this.labelSize,
       paperWidth: paperWidth ?? this.paperWidth,
+      useSdk: useSdk ?? this.useSdk,
     );
   }
 }
@@ -120,6 +126,7 @@ class LabelSize {
     return [
       LabelSize(width: 62, height: 100, name: '62x100'),
       LabelSize(width: 62, height: 29, name: '62x29'),
+      LabelSize(width: 51, height: 26, name: '51x26'),
       LabelSize(width: 102, height: 152, name: '102x152'),
       LabelSize(width: 102, height: 51, name: '102x51'),
       LabelSize(width: 29, height: 90, name: '29x90'),

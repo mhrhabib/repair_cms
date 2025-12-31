@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
+import '../service/printer_service_factory.dart';
 import '../widgets/wifi_printer_scanner.dart';
 
 class LabelPrinterScreen extends StatefulWidget {
@@ -28,12 +29,34 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   String _selectedProtocol = 'TCP';
   bool _setAsDefault = false;
   bool _isSaving = false;
+  bool _useSdk = false;
 
   List<PrinterConfigModel> _savedPrinters = [];
 
   // Models for each brand
   final Map<String, List<String>> _brandModels = {
-    'Brother': ['QL-820NWB', 'QL-1110NWB', 'PT-P750W', 'PT-P300BT', 'QL-700', 'QL-800'],
+    'Brother': [
+      // QL Series (Label Printers)
+      'QL-820NWB',
+      'QL-1110NWB',
+      'QL-700',
+      'QL-800',
+      // PT Series (Label Makers)
+      'PT-P750W',
+      'PT-P300BT',
+      // TD-2D Series (Desktop Label Printers) - Supported by another_brother SDK
+      'TD-2030A',
+      'TD-2125N',
+      'TD-2125NWB',
+      'TD-2135N',
+      'TD-2135NWB',
+      // TD-4D Series (Desktop Label Printers) - May work with another_brother SDK
+      'TD-4210D',
+      'TD-4410D',
+      'TD-4420DN',
+      'TD-4520DN',
+      'TD-4550DNWB',
+    ],
     'Xprinter': ['XP-420B', 'XP-470B', 'XP-DT425B'],
     'Dymo': ['LabelWriter 450', 'LabelWriter 4XL', 'LabelWriter 550'],
   };
@@ -60,6 +83,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       _portController.text = printer.port?.toString() ?? '9100';
       _selectedProtocol = printer.protocol;
       _setAsDefault = printer.isDefault;
+      _useSdk = printer.useSdk ?? false;
     });
     SnackbarDemo(
       message: 'Form filled with ${printer.printerModel ?? printer.printerBrand} settings',
@@ -87,6 +111,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       protocol: _selectedProtocol,
       port: int.tryParse(_portController.text),
       isDefault: _setAsDefault,
+      useSdk: _useSdk,
       labelSize: _selectedLabelSize,
     );
 
@@ -111,6 +136,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       _portController.text = '9100';
       _selectedProtocol = 'TCP';
       _setAsDefault = false;
+      _useSdk = false;
     });
   }
 
@@ -253,7 +279,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                         ],
                       ),
                       subtitle: Text(
-                        '${printer.ipAddress}:${printer.port} (${printer.labelSize?.name ?? "N/A"})',
+                        '${printer.ipAddress}:${printer.port} (${printer.labelSize?.name ?? "N/A"}) • ${printer.useSdk == true ? 'SDK' : 'Raw TCP'}',
                         style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
                       ),
                       trailing: PopupMenuButton<String>(
@@ -403,7 +429,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                 suffixIcon: Icon(Icons.router, color: Colors.grey.shade400),
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
             ),
             SizedBox(height: 16.h),
 
@@ -451,6 +477,14 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
+            if (_selectedBrand == 'Brother')
+              CheckboxListTile(
+                title: const Text('Use Brother SDK (recommended for TD/QL series)'),
+                value: _useSdk,
+                onChanged: (value) => setState(() => _useSdk = value ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
             SizedBox(height: 24.h),
 
             // Save Button
@@ -474,6 +508,53 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             SizedBox(height: 12.h),
 
             // Test Print Button
+            if (_ipController.text.trim().isNotEmpty)
+              SizedBox(
+                width: double.infinity,
+                height: 48.h,
+                child: OutlinedButton(
+                  onPressed: () async {
+                    // Build a simple test label text
+                    final testText = 'RepairCMS Label Test\n\nMODEL: ${_selectedModel ?? ''}';
+
+                    // Prepare a temporary PrinterConfigModel for this test
+                    final temp = PrinterConfigModel(
+                      printerType: 'label',
+                      printerBrand: _selectedBrand,
+                      printerModel: _selectedModel,
+                      ipAddress: _ipController.text.trim(),
+                      protocol: _selectedProtocol,
+                      port: int.tryParse(_portController.text),
+                      isDefault: false,
+                      labelSize: _selectedLabelSize,
+                      useSdk: _useSdk,
+                    );
+
+                    // Console debug: show payload and config for debugging
+                    debugPrint('🖨️ Test Print — payload:\n$testText');
+                    debugPrint('🖨️ Test Print — config: ${temp.toJson()}');
+                    debugPrint('🖨️ Selected LabelSize: ${_selectedLabelSize?.toString() ?? 'N/A'}');
+
+                    SnackbarDemo(message: 'Sending test print...').showCustomSnackbar(context);
+
+                    try {
+                      final res = await PrinterServiceFactory.getPrinterServiceForConfig(
+                        temp,
+                      ).printLabel(ipAddress: temp.ipAddress, text: testText, port: temp.port ?? 9100);
+
+                      debugPrint('🖨️ Print result: success=${res.success}, code=${res.code}, message=${res.message}');
+                      SnackbarDemo(message: res.message).showCustomSnackbar(context);
+                    } catch (e, st) {
+                      debugPrint('❌ Test print failed: $e\n$st');
+                      SnackbarDemo(message: '❌ Test print failed').showCustomSnackbar(context);
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                  ),
+                  child: Text('Test Print (Label)', style: TextStyle(fontSize: 16.sp)),
+                ),
+              ),
           ],
         ),
       ),

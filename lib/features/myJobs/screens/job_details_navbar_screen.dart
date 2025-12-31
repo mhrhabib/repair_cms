@@ -17,7 +17,7 @@ class JobDetailsNavbar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildNavItem(SolarIconsOutline.clipboardList, 'Job Details', 0),
-          _buildNavItem(SolarIconsOutline.dialog2, 'Receipt´s', 1),
+          _buildNavItem(SolarIconsOutline.dialog2, 'Messages', 1),
           _buildNavItem(SolarIconsOutline.plugCircle, 'Status', 2),
           _buildNavItem(SolarIconsOutline.pen2, 'Notes', 3),
           _buildNavItem(SolarIconsOutline.cloudUpload, 'Files', 4),

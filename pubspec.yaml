@@ -2,7 +2,7 @@ name: repair_cms
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.1.1+0
+version: 1.1.2
 
 environment:
   sdk: ^3.8.1
@@ -69,6 +69,8 @@ dependencies:
   escp_printer: ^1.0.2
   socket_io_client: ^3.1.3
   connectivity_plus: ^7.0.0
+  # For Brother label printers (TD-2D, TD-4D series)
+  brother_printer: ^0.2.6
   # Network ESC/POS printing packages were removed; using raw TCP printing instead
 
 

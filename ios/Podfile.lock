@@ -1,4 +1,8 @@
 PODS:
+  - BRLMPrinterKit (4.13.0)
+  - brother_printer (0.0.1):
+    - BRLMPrinterKit
+    - Flutter
   - connectivity_plus (0.0.1):
     - Flutter
   - DKImagePickerController/Core (4.3.9):
@@ -108,6 +112,7 @@ PODS:
   - SwiftyGif (5.4.5)
 
 DEPENDENCIES:
+  - brother_printer (from `.symlinks/plugins/brother_printer/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
@@ -123,6 +128,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - BRLMPrinterKit
     - DKImagePickerController
     - DKPhotoGallery
     - GoogleDataTransport
@@ -140,6 +146,8 @@ SPEC REPOS:
     - SwiftyGif
 
 EXTERNAL SOURCES:
+  brother_printer:
+    :path: ".symlinks/plugins/brother_printer/ios"
   connectivity_plus:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   file_picker:
@@ -166,6 +174,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/printing/ios"
 
 SPEC CHECKSUMS:
+  BRLMPrinterKit: 0c3e83e2c0e5db32c574e72339fa6b6ae11cbf33
+  brother_printer: 5f849d71ad9c2f9b8ab5f0b4ca05638d6e416445
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60

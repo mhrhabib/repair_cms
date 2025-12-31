@@ -30,6 +30,8 @@
 	<string>This app needs camera access to scan QR codes and barcodes for job identification.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to quickly and securely access your account</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to connect to nearby printers and accessories for printing and device discovery.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to photo library to select photos for your profile picture.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
