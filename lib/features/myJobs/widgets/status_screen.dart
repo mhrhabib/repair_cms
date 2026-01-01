@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
@@ -49,31 +50,61 @@ class _StatusScreenState extends State<StatusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoScaffold(
-      transitionBackgroundColor: AppColors.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: BlocListener<JobCubit, JobStates>(
-          listener: (context, state) {
-            // Handle side effects like showing snackbars
-            if (state is JobStatusUpdateSuccess) {
-              SnackbarDemo(message: 'Status updated successfully').showCustomSnackbar(context);
-            } else if (state is JobActionError) {
-              SnackbarDemo(message: 'Failed to update status: ${state.message}').showCustomSnackbar(context);
-            }
-          },
-          child: BlocBuilder<JobCubit, JobStates>(
-            builder: (context, state) {
-              if (state is JobDetailSuccess) {
-                return _buildStatusScreen(context, state.job);
-              } else if (state is JobLoading || state is JobActionLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (state is JobError) {
-                return Center(child: Text('Error: ${state.message}'));
-              }
-              return const Center(child: Text('No job data available'));
-            },
-          ),
-        ),
+    final Color figmaBlue = const Color(0xFF007AFF);
+
+    return BlocListener<JobCubit, JobStates>(
+      listener: (context, state) {
+        // Handle side effects like showing snackbars
+        if (state is JobStatusUpdateSuccess) {
+          SnackbarDemo(message: 'Status updated successfully').showCustomSnackbar(context);
+        } else if (state is JobActionError) {
+          SnackbarDemo(message: 'Failed to update status: ${state.message}').showCustomSnackbar(context);
+        }
+      },
+      child: BlocBuilder<JobCubit, JobStates>(
+        builder: (context, state) {
+          if (state is JobDetailSuccess) {
+            return Scaffold(
+              backgroundColor: AppColors.scaffoldBackgroundColor,
+              appBar: CupertinoNavigationBar(
+                backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+                leading: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(CupertinoIcons.back, color: figmaBlue, size: 28.r),
+                      Text(
+                        'Back',
+                        style: TextStyle(color: figmaBlue, fontSize: 17.sp),
+                      ),
+                    ],
+                  ),
+                ),
+                middle: Text(
+                  'Status',
+                  style: TextStyle(
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w600,
+                    color: CupertinoColors.label.resolveFrom(context),
+                  ),
+                ),
+                trailing: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _showAddStatusBottomSheet,
+                  child: Icon(CupertinoIcons.add_circled_solid, color: figmaBlue, size: 28.r),
+                ),
+              ),
+              body: _buildStatusScreen(context, state.job),
+            );
+          } else if (state is JobLoading || state is JobActionLoading) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          } else if (state is JobError) {
+            return Scaffold(body: Center(child: Text('Error: ${state.message}')));
+          }
+          return const Scaffold(body: Center(child: Text('No job data available')));
+        },
       ),
     );
   }
@@ -82,82 +113,57 @@ class _StatusScreenState extends State<StatusScreen> {
     final statusHistory = job.data?.jobStatus ?? [];
     statusHistory.sort((a, b) => (b.createAtStatus ?? 0).compareTo(a.createAtStatus ?? 0));
 
-    return Column(
-      children: [
-        // Header with back button and add button
-        Container(
-          color: Colors.white,
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-                onPressed: () => Navigator.pop(context),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Text(
-                  'Status',
-                  style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+    return Container(
+      margin: EdgeInsets.all(12.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r), bottom: Radius.circular(16.r)),
+      ),
+      child: Column(
+        children: [
+          // Job Status Header
+          Padding(
+            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Job Status',
+                style: GoogleFonts.roboto(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF3C3C43).withValues(alpha: 0.6),
                 ),
               ),
-              InkWell(
-                onTap: _showAddStatusBottomSheet,
-                child: Container(
-                  width: 32.w,
-                  height: 32.h,
-                  decoration: BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                  child: Icon(Icons.add, color: Colors.white, size: 20.sp),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        Divider(height: 1, color: Colors.grey.shade300),
-
-        SizedBox(height: 16.h),
-
-        // Job Status Header
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Job Status',
-              style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black87),
             ),
           ),
-        ),
 
-        SizedBox(height: 12.h),
-
-        // Status History List
-        Expanded(
-          child: statusHistory.isNotEmpty
-              ? ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  itemCount: statusHistory.length,
-                  itemBuilder: (context, index) {
-                    final status = statusHistory[index];
-                    return _buildStatusListItem(
-                      title: _formatStatusTitle(status.title ?? ''),
-                      time: status.createAtStatus != null ? _formatTimestamp(status.createAtStatus!) : 'Unknown time',
-                      userName: status.userName ?? 'System',
-                      color: _getStatusColorForStatus(status.title ?? ''),
-                    );
-                  },
-                )
-              : Center(
-                  child: Text(
-                    'No status history available',
-                    style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
+          // Status History List
+          Expanded(
+            child: statusHistory.isNotEmpty
+                ? ListView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    itemCount: statusHistory.length,
+                    itemBuilder: (context, index) {
+                      final status = statusHistory[index];
+                      final isLast = index == statusHistory.length - 1;
+                      return _buildStatusListItem(
+                        title: _formatStatusTitle(status.title ?? ''),
+                        time: status.createAtStatus != null ? _formatTimestamp(status.createAtStatus!) : 'Unknown time',
+                        userName: status.userName ?? 'System',
+                        color: _getStatusColorForStatus(status.title ?? ''),
+                        isLast: isLast,
+                      );
+                    },
+                  )
+                : Center(
+                    child: Text(
+                      'No status history available',
+                      style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.grey.shade600),
+                    ),
                   ),
-                ),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -166,49 +172,92 @@ class _StatusScreenState extends State<StatusScreen> {
     required String time,
     required String userName,
     required Color color,
+    bool isLast = false,
   }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
-      ),
+    return IntrinsicHeight(
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Color indicator circle
-          Container(
-            width: 12.w,
-            height: 12.h,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          // Timeline indicator column
+          Column(
+            children: [
+              // Color dot
+              Container(
+                width: 16.w,
+                height: 16.w,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              // Dotted line connector (if not last item)
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2.w,
+                    margin: EdgeInsets.symmetric(vertical: 4.h),
+                    child: CustomPaint(painter: DottedLinePainter(color: Colors.grey.shade400)),
+                  ),
+                ),
+            ],
           ),
-          SizedBox(width: 12.w),
-          // Status info
+          SizedBox(width: 16.w),
+          // Status content
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500, color: Colors.black87),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  time,
-                  style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade600),
-                ),
-                Text(
-                  userName,
-                  style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade600),
-                ),
-              ],
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 16.h : 24.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.roboto(
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF3C3C43),
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    time,
+                    style: GoogleFonts.roboto(fontSize: 15.sp, color: const Color(0xFF3C3C43).withValues(alpha: 0.6)),
+                  ),
+                  Text(
+                    userName,
+                    style: GoogleFonts.roboto(fontSize: 15.sp, color: const Color(0xFF3C3C43).withValues(alpha: 0.6)),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+// Custom painter for dotted line
+class DottedLinePainter extends CustomPainter {
+  final Color color;
+
+  DottedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    const dashHeight = 4.0;
+    const dashSpace = 3.0;
+    double startY = 0;
+
+    while (startY < size.height) {
+      canvas.drawLine(Offset(size.width / 2, startY), Offset(size.width / 2, startY + dashHeight), paint);
+      startY += dashHeight + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 // Add Status Bottom Sheet - FIXED VERSION
@@ -353,7 +402,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: DropdownButtonFormField<String>(
-                                  value: selectedStatus,
+                                  initialValue: selectedStatus,
                                   decoration: InputDecoration(
                                     contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                                     border: InputBorder.none,
@@ -411,7 +460,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: DropdownButtonFormField<String>(
-                                  value: selectedNotification,
+                                  initialValue: selectedNotification,
                                   decoration: InputDecoration(
                                     contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                                     border: InputBorder.none,

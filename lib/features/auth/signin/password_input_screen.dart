@@ -1,8 +1,13 @@
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/api_endpoints.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/services/biometric_storage_service.dart';
+import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/features/auth/signin/models/login_response_model.dart';
 import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 class PasswordInputScreen extends StatefulWidget {
   const PasswordInputScreen({super.key, required this.email});
@@ -22,7 +27,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   bool _obscureText = true;
 
   bool _hasStoredCredentials = false;
-  final String _biometricType = 'Biometric';
+  String _biometricType = 'Biometric'; // Default fallback
 
   @override
   void initState() {
@@ -31,6 +36,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     _passwordFocusNode.addListener(() {
       setState(() {});
     });
+    _loadBiometricType();
   }
 
   void _validatePassword() {
@@ -40,16 +46,45 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     });
   }
 
+  Future<void> _loadBiometricType() async {
+    try {
+      final biometricType = await BiometricStorageService.getBiometricType();
+      final hasStoredCredentials = await BiometricStorageService.hasBiometricCredentials();
+      setState(() {
+        _biometricType = biometricType;
+        _hasStoredCredentials = hasStoredCredentials;
+        debugPrint('Biometric type loaded: $_biometricType');
+      });
+    } catch (e) {
+      debugPrint('Error loading biometric type: $e');
+      // Keep default 'Biometric' if there's an error
+    }
+  }
+
   void _navigateToHome(User user) {
+    // Initialize socket connection with authentication
+    final storage = GetStorage();
+    final userId = storage.read('userId');
+    final authToken = storage.read('token');
+
+    if (userId != null) {
+      debugPrint('🚀 [Login] Initializing socket connection');
+      SetUpDI.getIt<SocketService>().connect(
+        baseUrl: ApiEndpoints.baseUrl, // or 'https://api.repaircms.com'
+        userId: userId,
+        authToken: authToken, // Add authentication token
+      );
+    }
+
     context.pushReplacement(RouteNames.home);
   }
 
   Future<void> _saveBiometricCredentials() async {
     try {
       await BiometricStorageService.saveBiometricCredentials(email: widget.email, password: _passwordController.text);
-      showCustomToast('$_biometricType authentication enabled', isError: false);
+      SnackbarDemo(message: '$_biometricType authentication enabled').showCustomSnackbar(context);
     } catch (e) {
-      showCustomToast('Failed to save $_biometricType credentials', isError: true);
+      SnackbarDemo(message: 'Failed to save $_biometricType credentials').showCustomSnackbar(context);
     }
   }
 
@@ -60,7 +95,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
       setState(() {
         _hasStoredCredentials = false;
       });
-      showCustomToast('$_biometricType authentication disabled');
+      SnackbarDemo(message: '$_biometricType authentication disabled').showCustomSnackbar(context);
     } else {
       // Enable biometric - Show confirmation dialog
       bool? shouldEnable = await showDialog<bool>(
@@ -103,7 +138,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   }
 
   void _onForgotPassword() {
-    context.push(RouteNames.passwordForgotten);
+    context.push(RouteNames.passwordForgotten, extra: widget.email);
   }
 
   @override
@@ -131,14 +166,14 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
               child: BlocConsumer<SignInCubit, SignInStates>(
                 listener: (context, state) {
                   if (state is LoginSuccess) {
-                    showCustomToast(state.message, isError: false);
+                    SnackbarDemo(message: state.message).showCustomSnackbar(context);
 
                     // Navigate based on user role or other conditions
                     if (state.user != null) {
                       _navigateToHome(state.user!);
                     }
                   } else if (state is SignInError) {
-                    showCustomToast(state.message, isError: true);
+                    SnackbarDemo(message: state.message).showCustomSnackbar(context);
                   }
                 },
                 builder: (context, state) {

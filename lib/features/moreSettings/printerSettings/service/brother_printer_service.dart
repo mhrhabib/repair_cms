@@ -1,291 +1,125 @@
-import 'dart:ui' as ui;
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:convert';
 
-import 'package:another_brother/label_info.dart';
-import 'package:another_brother/printer_info.dart';
-import 'package:flutter/foundation.dart';
+import 'base_printer_service.dart';
 
-/// Service class to handle Brother printer operations
-class BrotherPrinterService {
+/// Lightweight network printer service (raw TCP) that works on the iOS simulator
+/// This is intended as a simulator-friendly replacement for the device-only
+/// `another_brother` SDK. It sends plain text over TCP (port 9100 by default).
+/// For full ESC/POS features or label printing support you should integrate a
+/// platform-specific plugin or add an ESC/POS utility package.
+class BrotherPrinterService implements BasePrinterService {
   static final BrotherPrinterService _instance = BrotherPrinterService._internal();
   factory BrotherPrinterService() => _instance;
   BrotherPrinterService._internal();
 
-  /// Configure and print text to Brother label printer
-  Future<PrinterResult> printLabel({
-    required String ipAddress,
-    required String text,
-    Model? printerModel,
-    bool isAutoCut = true,
-    bool isEndCut = true,
-  }) async {
-    try {
-      var printer = Printer();
-      var printInfo = PrinterInfo();
-
-      // Configure printer
-      printInfo.printerModel = printerModel!;
-      printInfo.port = Port.NET;
-      printInfo.ipAddress = ipAddress;
-
-      // Configure label
-      var labelInfo = LabelInfo();
-      labelInfo.labelNameIndex = QL700.ordinalFromID(QL700.W62.getId());
-      labelInfo.isAutoCut = isAutoCut;
-      labelInfo.isEndCut = isEndCut;
-      printInfo.labelNameIndex = labelInfo.labelNameIndex;
-
-      await printer.setPrinterInfo(printInfo);
-
-      // Create Paragraph for printing
-      final paragraphBuilder = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: ui.TextAlign.left, fontSize: 12.0))
-        ..pushStyle(ui.TextStyle(color: const ui.Color(0xFF000000), fontSize: 12.0))
-        ..addText(text);
-
-      final paragraph = paragraphBuilder.build()..layout(const ui.ParagraphConstraints(width: 300));
-
-      // Print text
-      var result = await printer.printText(paragraph);
-      return PrinterResult(
-        success: result.errorCode == ErrorCode.ERROR_NONE,
-        errorCode: result.errorCode,
-        message: _getErrorMessage(result.errorCode),
-      );
-    } catch (e) {
-      return PrinterResult(success: false, errorCode: ErrorCode.ERROR_BATTERY_EMPTY, message: 'Error: ${e.toString()}');
-    }
-  }
-
-  /// Configure and print image to Brother label printer
-  Future<PrinterResult> printLabelImage({
-    required String ipAddress,
-    required Uint8List imageBytes,
-    Model? printerModel,
-    bool isAutoCut = true,
-    bool isEndCut = true,
-  }) async {
-    try {
-      var printer = Printer();
-      var printInfo = PrinterInfo();
-
-      // Configure printer
-      printInfo.printerModel = printerModel!;
-      printInfo.port = Port.NET;
-      printInfo.ipAddress = ipAddress;
-
-      // Configure label
-      var labelInfo = LabelInfo();
-      labelInfo.labelNameIndex = QL700.ordinalFromID(QL700.W62.getId());
-      labelInfo.isAutoCut = isAutoCut;
-      labelInfo.isEndCut = isEndCut;
-
-      await printer.setPrinterInfo(printInfo);
-
-      // Print image - Convert Uint8List to ui.Image
-      final codec = await ui.instantiateImageCodec(imageBytes);
-      final frame = await codec.getNextFrame();
-      final uiImage = frame.image;
-
-      var result = await printer.printImage(uiImage);
-      return PrinterResult(
-        success: result.errorCode == ErrorCode.ERROR_NONE,
-        errorCode: result.errorCode,
-        message: _getErrorMessage(result.errorCode),
-      );
-    } catch (e) {
-      return PrinterResult(success: false, errorCode: ErrorCode.ERROR_BUFFER_FULL, message: 'Error: ${e.toString()}');
-    }
-  }
-
-  /// Print thermal receipt (80mm)
+  @override
   Future<PrinterResult> printThermalReceipt({
     required String ipAddress,
     required String text,
-    Model? printerModel,
+    int port = 9100,
+    Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
-      var printer = Printer();
-      var printInfo = PrinterInfo();
+      final socket = await Socket.connect(ipAddress, port, timeout: timeout);
+      socket.add(utf8.encode(text));
+      // A few line feeds to ensure the printer advances paper
+      socket.add(utf8.encode('\n\n\n'));
+      await socket.flush();
+      socket.destroy();
 
-      // Configure printer for thermal printing
-      printInfo.printerModel = printerModel!;
-      printInfo.port = Port.NET;
-      printInfo.ipAddress = ipAddress;
-
-      // Configure for thermal paper
-      var labelInfo = LabelInfo();
-      labelInfo.labelNameIndex = QL700.ordinalFromID(QL700.W62.getId());
-
-      await printer.setPrinterInfo(printInfo);
-
-      // Print receipt - Create Paragraph for printing
-      final paragraphBuilder = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: ui.TextAlign.left, fontSize: 12.0))
-        ..pushStyle(ui.TextStyle(color: const ui.Color(0xFF000000), fontSize: 12.0))
-        ..addText(text);
-
-      final paragraph = paragraphBuilder.build()..layout(const ui.ParagraphConstraints(width: 300));
-
-      var result = await printer.printText(paragraph);
-      return PrinterResult(
-        success: result.errorCode == ErrorCode.ERROR_NONE,
-        errorCode: result.errorCode,
-        message: _getErrorMessage(result.errorCode),
-      );
+      return PrinterResult(success: true, message: 'Printed (raw TCP)', code: 0);
     } catch (e) {
-      return PrinterResult(success: false, errorCode: ErrorCode.ERROR_BATTERY_EMPTY, message: 'Error: ${e.toString()}');
+      return PrinterResult(success: false, message: 'Print error: $e', code: -1);
     }
   }
 
-  /// Get printer status
-  Future<PrinterStatus> getPrinterStatus({required String ipAddress, required Model printerModel}) async {
+  @override
+  Future<PrinterResult> printLabel({
+    required String ipAddress,
+    required String text,
+    int port = 9100,
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    return printThermalReceipt(ipAddress: ipAddress, text: text, port: port, timeout: timeout);
+  }
+
+  @override
+  Future<PrinterResult> printDeviceLabel({
+    required String ipAddress,
+    required Map<String, String> labelData,
+    int port = 9100,
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
     try {
-      var printer = Printer();
-      var printInfo = PrinterInfo();
+      // Step 1: Connect to printer
+      final socket = await Socket.connect(ipAddress, port, timeout: timeout);
 
-      printInfo.printerModel = printerModel;
-      printInfo.port = Port.NET;
-      printInfo.ipAddress = ipAddress;
+      // Step 2: Build ESC/POS commands
+      final List<int> bytes = [];
 
-      await printer.setPrinterInfo(printInfo);
+      // ESC/POS Commands
+      const esc = 0x1B;
+      const gs = 0x1D;
 
-      var status = await printer.getPrinterStatus();
+      // Initialize printer
+      bytes.addAll([esc, 0x40]); // ESC @ - Initialize
 
-      return PrinterStatus(
-        isConnected: status.errorCode == ErrorCode.ERROR_NONE,
-        errorCode: status.errorCode,
-        message: _getErrorMessage(status.errorCode),
-      );
+      // Bold ON
+      bytes.addAll([esc, 0x45, 0x01]); // ESC E 1
+
+      // Print title
+      bytes.addAll(utf8.encode('DEVICE LABEL\n'));
+
+      // Bold OFF
+      bytes.addAll([esc, 0x45, 0x00]); // ESC E 0
+
+      // Line separator
+      bytes.addAll(utf8.encode('===============\n'));
+
+      // Print data fields
+      labelData.forEach((key, value) {
+        bytes.addAll(utf8.encode('$key: $value\n'));
+      });
+
+      // Line separator
+      bytes.addAll(utf8.encode('===============\n'));
+
+      // Line feeds
+      bytes.addAll([0x0A, 0x0A, 0x0A]);
+
+      // Cut paper (if supported)
+      bytes.addAll([gs, 0x56, 0x42, 0x00]); // GS V B 0 - Full cut
+
+      // Step 3: Send to printer
+      socket.add(Uint8List.fromList(bytes));
+      await socket.flush();
+      socket.destroy();
+
+      return PrinterResult(success: true, message: 'Device label printed successfully', code: 0);
     } catch (e) {
-      return PrinterStatus(isConnected: false, errorCode: ErrorCode.ERROR_CANCEL, message: 'Error: ${e.toString()}');
+      return PrinterResult(success: false, message: 'Device label print error: $e', code: -1);
     }
   }
 
-  /// Helper method to get user-friendly error messages
-  String _getErrorMessage(ErrorCode errorCode) {
-    switch (errorCode) {
-      case ErrorCode.ERROR_NONE:
-        return 'Success';
-      case ErrorCode.ERROR_NOT_SAME_MODEL:
-        return 'Printer model mismatch';
-      case ErrorCode.ERROR_BROTHER_PRINTER_NOT_FOUND:
-        return 'Printer not found on network';
-      case ErrorCode.ERROR_PAPER_EMPTY:
-        return 'Paper empty';
-      case ErrorCode.ERROR_BATTERY_EMPTY:
-        return 'Battery empty';
-      case ErrorCode.ERROR_COMMUNICATION_ERROR:
-        return 'Communication error';
-      case ErrorCode.ERROR_OVERHEAT:
-        return 'Printer overheated';
-      case ErrorCode.ERROR_PAPER_JAM:
-        return 'Paper jam detected';
-      case ErrorCode.ERROR_HIGH_VOLTAGE_ADAPTER:
-        return 'High voltage adapter error';
-      case ErrorCode.ERROR_CHANGE_CASSETTE:
-        return 'Change cassette';
-      case ErrorCode.ERROR_FEED_OR_CASSETTE_EMPTY:
-        return 'Feed or cassette empty';
-      case ErrorCode.ERROR_SYSTEM_ERROR:
-        return 'System error';
-      case ErrorCode.ERROR_NO_CASSETTE:
-        return 'No cassette';
-      case ErrorCode.ERROR_WRONG_CASSETTE_DIRECT:
-        return 'Wrong cassette';
-      case ErrorCode.ERROR_CREATE_SOCKET_FAILED:
-        return 'Failed to create socket connection';
-      case ErrorCode.ERROR_CONNECT_SOCKET_FAILED:
-        return 'Failed to connect to printer';
-      default:
-        return 'Unknown error occurred';
-    }
-  }
-}
-
-/// Result class for print operations
-class PrinterResult {
-  final bool success;
-  final ErrorCode errorCode;
-  final String message;
-
-  PrinterResult({required this.success, required this.errorCode, required this.message});
-}
-
-/// Status class for printer connection
-class PrinterStatus {
-  final bool isConnected;
-  final ErrorCode errorCode;
-  final String message;
-
-  PrinterStatus({required this.isConnected, required this.errorCode, required this.message});
-}
-
-/// Example usage class
-class PrinterExamples {
-  final BrotherPrinterService _printerService = BrotherPrinterService();
-
-  /// Example: Print a simple label
-  Future<void> printSimpleLabel(String ipAddress) async {
-    final result = await _printerService.printLabel(
-      ipAddress: ipAddress,
-      text:
-          '╔════════════════════╗\n'
-          '║  ORDER #12345     ║\n'
-          '║                   ║\n'
-          '║  Customer: John   ║\n'
-          '║  Date: 2025-11-10 ║\n'
-          '╚════════════════════╝\n',
-      printerModel: Model.TD_4550DNWB,
-      isAutoCut: true,
-    );
-
-    if (result.success) {
-      debugPrint('✅ Label printed successfully');
-    } else {
-      debugPrint('❌ Print failed: ${result.message}');
-    }
+  @override
+  Future<PrinterResult> printLabelImage({
+    required String ipAddress,
+    required Uint8List imageBytes,
+    int port = 9100,
+  }) async {
+    return PrinterResult(success: false, message: 'Image printing not supported', code: -2);
   }
 
-  /// Example: Print thermal receipt
-  Future<void> printReceipt(String ipAddress, String receiptText) async {
-    final result = await _printerService.printThermalReceipt(
-      ipAddress: ipAddress,
-      text: receiptText,
-      printerModel: Model.QL_820NWB,
-    );
-
-    if (result.success) {
-      debugPrint('✅ Receipt printed successfully');
-    } else {
-      debugPrint('❌ Print failed: ${result.message}');
-    }
-  }
-
-  /// Example: Check printer status before printing
-  Future<bool> checkPrinterBeforePrint(String ipAddress) async {
-    final status = await _printerService.getPrinterStatus(ipAddress: ipAddress, printerModel: Model.TD_4550DNWB);
-
-    if (status.isConnected) {
-      debugPrint('✅ Printer is ready');
-      return true;
-    } else {
-      debugPrint('❌ Printer not ready: ${status.message}');
-      return false;
-    }
-  }
-
-  /// Example: Print image label
-  Future<void> printImageLabel(String ipAddress, Uint8List imageData) async {
-    final result = await _printerService.printLabelImage(
-      ipAddress: ipAddress,
-      imageBytes: imageData,
-      printerModel: Model.TD_4550DNWB,
-      isAutoCut: true,
-      isEndCut: true,
-    );
-
-    if (result.success) {
-      debugPrint('✅ Image label printed successfully');
-    } else {
-      debugPrint('❌ Print failed: ${result.message}');
+  @override
+  Future<PrinterStatus> getPrinterStatus({required String ipAddress, int port = 9100}) async {
+    try {
+      final socket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 4));
+      socket.destroy();
+      return PrinterStatus(isConnected: true, message: 'Printer reachable', code: 0);
+    } catch (e) {
+      return PrinterStatus(isConnected: false, message: 'Printer not reachable: $e', code: -1);
     }
   }
 }

@@ -31,9 +31,12 @@ class DashboardRepository {
 
       if (response.statusCode == 200) {
         debugPrint('✅ Completed jobs fetched successfully');
-        debugPrint('📈 Response data: ${jsonEncode(response.data)}');
+        debugPrint('📈 Response data: ${response.data}');
 
-        return CompletedJobsResponseModel.fromJson(response.data);
+        // Parse JSON string to Map if needed
+        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+
+        return CompletedJobsResponseModel.fromJson(responseData);
       } else {
         throw Exception('Failed to fetch completed jobs: ${response.statusCode} - ${response.data}');
       }
@@ -84,9 +87,12 @@ class DashboardRepository {
         debugPrint('✅ Job progress data fetched successfully');
         debugPrint('📊 Job Progress Response: ${jsonEncode(response.data)}');
 
+        // Parse JSON string to Map if needed
+        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+
         // Try to parse as JobProgressResponse first, if API has separate endpoint
         // If using the same dashboard endpoint, use the mapping method
-        return CompletedJobsResponseModel.fromJson(response.data);
+        return CompletedJobsResponseModel.fromJson(responseData);
       } else {
         throw Exception('Failed to fetch job progress: ${response.statusCode} - ${response.data}');
       }

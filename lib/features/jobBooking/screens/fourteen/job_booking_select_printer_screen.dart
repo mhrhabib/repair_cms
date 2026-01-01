@@ -1,11 +1,11 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/jobBooking/cubits/fileUpload/job_file_upload_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_receipt_preview_screen.dart';
-import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
 
 class JobBookingSelectPrinterScreen extends StatefulWidget {
   final String jobId;
@@ -111,21 +111,23 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
         debugPrint('📄 [SelectPrinter] Navigating to receipt preview with complete job data');
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
                 JobReceiptPreviewScreen(jobResponse: jobCreateState.response, printOption: _selectedPrinterType),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 1.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOut;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
           ),
         );
       }
     } else {
-      // Fallback: show snackbar and go home
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Job created successfully!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      // Fallback: show toast and go home
+      SnackbarDemo(message: 'Job created successfully!').showCustomSnackbar(context);
       Navigator.popUntil(context, (route) => route.isFirst);
     }
   }
@@ -162,13 +164,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
               }
             } else if (state is JobCreateError) {
               // Show error message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to create job: ${state.message}'),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
+              SnackbarDemo(message: 'Failed to create job: ${state.message}').showCustomSnackbar(context);
             }
           },
         ),
@@ -180,13 +176,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
             } else if (state is JobFileUploadError) {
               debugPrint('⚠️ File upload failed: ${state.message}');
               // Job was created but file upload failed - still show success but with warning
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Job created but file upload failed: ${state.message}'),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
+              SnackbarDemo(message: 'Job created but file upload failed: ${state.message}').showCustomSnackbar(context);
               Navigator.popUntil(context, (route) => route.isFirst);
             }
           },

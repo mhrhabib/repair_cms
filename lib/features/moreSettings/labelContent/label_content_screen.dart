@@ -46,7 +46,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -134,7 +134,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: Colors.white,
+              activeThumbColor: Colors.white,
               activeTrackColor: const Color(0xFF4A90E2),
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: Colors.grey[300],

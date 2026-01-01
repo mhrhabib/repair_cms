@@ -141,13 +141,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
-      listeners: [
-        BlocListener<JobBookingCubit, JobBookingState>(
-          listener: (context, state) {
-            // TODO: implement listener
-          },
-        ),
-      ],
+      listeners: [BlocListener<JobBookingCubit, JobBookingState>(listener: (context, state) {})],
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundColor,
         body: SafeArea(

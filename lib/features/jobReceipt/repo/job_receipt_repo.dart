@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import '../../../core/base/base_client.dart';
 import '../../../core/helpers/api_endpoints.dart';
 import '../models/job_receipt_model.dart';
@@ -39,15 +40,22 @@ class JobReceiptRepositoryImpl implements JobReceiptRepository {
       if (response.statusCode == 200) {
         debugPrint('✅ [JobReceiptRepository] Job receipt fetched successfully');
 
-        if (response.data is Map<String, dynamic>) {
-          final receipt = JobReceiptModel.fromJson(response.data as Map<String, dynamic>);
+        // Handle both String and parsed JSON responses
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('🔄 [JobReceiptRepository] Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
+        if (jsonData is Map<String, dynamic>) {
+          final receipt = JobReceiptModel.fromJson(jsonData);
           debugPrint('📦 [JobReceiptRepository] Receipt ID: ${receipt.sId}');
           debugPrint('📋 [JobReceiptRepository] QR Code Enabled: ${receipt.qrCodeEnabled}');
           return receipt;
         } else {
           debugPrint('⚠️ [JobReceiptRepository] Unexpected response format');
           throw JobReceiptException(
-            message: 'Unexpected response format. Expected Map but got ${response.data.runtimeType}',
+            message: 'Unexpected response format. Expected Map but got ${jsonData.runtimeType}',
             statusCode: response.statusCode,
           );
         }

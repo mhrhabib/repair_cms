@@ -7,14 +7,15 @@ import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 
 class MyJobsScreen extends StatefulWidget {
-  const MyJobsScreen({super.key});
+  final String? initialStatus;
+  const MyJobsScreen({super.key, this.initialStatus});
 
   @override
   State<MyJobsScreen> createState() => _MyJobsScreenState();
 }
 
 class _MyJobsScreenState extends State<MyJobsScreen> {
-  int _selectedTabIndex = 0;
+  late int _selectedTabIndex;
   bool _showSearchOverlay = false;
 
   // Updated tab configuration with all status filters
@@ -31,11 +32,23 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Initialize selected tab based on initialStatus
+    _selectedTabIndex = 0;
+    if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
+      final index = _tabs.indexWhere((tab) => tab.status == widget.initialStatus);
+      if (index != -1) {
+        _selectedTabIndex = index;
+      }
+    }
+
     // Load initial jobs when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
+      if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
+        context.read<JobCubit>().filterJobsByStatus(widget.initialStatus!);
+      } else {
         context.read<JobCubit>().getJobs();
-      });
+      }
     });
   }
 
@@ -61,13 +74,26 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
               SliverAppBar(
                 backgroundColor: Colors.white,
                 elevation: 0,
-                leading: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _showSearchOverlay = true;
-                    });
-                  },
-                  icon: const Icon(Icons.search, color: Colors.black87),
+                leadingWidth: Navigator.of(context).canPop() ? 80.w : 56.w,
+                leading: FittedBox(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (Navigator.of(context).canPop())
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+                        ),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _showSearchOverlay = true;
+                          });
+                        },
+                        icon: const Icon(Icons.search, color: Colors.black87),
+                      ),
+                    ],
+                  ),
                 ),
                 title: const Text(
                   'My Jobs',
@@ -440,7 +466,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
               final job = jobs[index];
               return Padding(
-                padding: EdgeInsets.only(top: index == 0 ? 16.h : 0, bottom: 16.h, left: 16.w, right: 16.w),
+                padding: EdgeInsets.only(top: index == 0 ? 16.h : 0, bottom: 16.h),
                 child: JobCardWidget(job: job),
               );
             }, childCount: state.hasMore ? jobs.length + 1 : jobs.length),

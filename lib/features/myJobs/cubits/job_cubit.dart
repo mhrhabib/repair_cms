@@ -39,7 +39,10 @@ class JobCubit extends Cubit<JobStates> {
     }
 
     try {
-      print('🔄 JobCubit: Fetching jobs with params: page=$page, status=$status');
+      debugPrint('🔄 JobCubit: Fetching jobs with params: page=$page, status=$status');
+
+      final userId = storage.read('userId');
+      debugPrint('👤 JobCubit: User ID from storage: $userId');
 
       final JobListResponse response = await repository.getJobs(
         keyword: _currentKeyword,
@@ -48,19 +51,19 @@ class JobCubit extends Cubit<JobStates> {
         status: _currentStatusFilter,
         page: _currentPage,
         pageSize: _pageSize,
-        userID: storage.read('userId'),
+        userID: userId,
       );
 
-      print('✅ JobCubit: Successfully parsed ${response.jobs.length} jobs');
-      print('📊 JobCubit: Total jobs: ${response.totalJobs}, Pages: ${response.pages}');
+      debugPrint('✅ JobCubit: Successfully parsed ${response.jobs.length} jobs');
+      debugPrint('📊 JobCubit: Total jobs: ${response.totalJobs}, Pages: ${response.pages}');
 
       // Check if jobs are properly parsed
       if (response.jobs.isNotEmpty) {
         final firstJob = response.jobs.first;
-        print('🔍 First job details:');
-        print('   - Job No: ${firstJob.jobNo}');
-        print('   - Customer: ${firstJob.customerDetails.firstName} ${firstJob.customerDetails.lastName}');
-        print('   - Status: ${firstJob.status}');
+        debugPrint('🔍 First job details:');
+        debugPrint('   - Job No: ${firstJob.jobNo}');
+        debugPrint('   - Customer: ${firstJob.customerDetails.firstName} ${firstJob.customerDetails.lastName}');
+        debugPrint('   - Status: ${firstJob.status}');
       }
 
       if (loadMore) {
@@ -98,8 +101,8 @@ class JobCubit extends Cubit<JobStates> {
         );
       }
     } catch (e) {
-      print('❌ JobCubit Error: $e');
-      print('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ JobCubit Error: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
       emit(JobError(message: e.toString()));
     }
   }
@@ -572,13 +575,13 @@ class JobCubit extends Cubit<JobStates> {
     }
   }
 
-  Future<void> deleteJobFile({required String jobId, required String fileId}) async {
+  Future<void> deleteJobFile({required String jobId, required String filePath}) async {
     if (isClosed) return;
 
     emit(JobActionLoading());
 
     try {
-      final SingleJobModel updatedJob = await repository.deleteJobFile(jobId: jobId, fileId: fileId);
+      final SingleJobModel updatedJob = await repository.deleteJobFile(jobId: jobId, filePath: filePath);
 
       if (!isClosed) {
         emit(JobFileDeleteSuccess(job: updatedJob));

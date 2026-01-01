@@ -84,16 +84,18 @@ class ProfileCubit extends Cubit<ProfileStates> {
       debugPrint('   👤 User ID: $userId');
       debugPrint('   📁 Avatar path: $avatarPath');
 
-      // Step 1: Upload avatar and get image path
-      final imagePath = await repository.updateUserAvatar(userId, avatarPath);
-      debugPrint('   ✅ Avatar uploaded, image path: $imagePath');
+      // Step 1: Upload avatar and get response with file path and URL
+      final uploadResponse = await repository.updateUserAvatar(userId, avatarPath);
+      debugPrint('   ✅ Avatar uploaded, response: $uploadResponse');
 
-      // Step 2: Get the actual image URL using the image path
-      final imageUrl = await repository.getImageUrl(imagePath['file']);
-      debugPrint('   🌐 Image URL retrieved: $imageUrl');
+      // Extract file path and URL from response
+      final s3FilePath = uploadResponse['file'] as String;
+      final signedUrl = uploadResponse['url'] as String;
+      debugPrint('   📁 S3 File Path: $s3FilePath');
+      debugPrint('   🌐 Signed URL: $signedUrl');
 
-      // Step 3: Update user profile with the new avatar URL
-      final UserData updatedUser = await repository.updateUserProfile(userId, {'avatar': imageUrl});
+      // Step 2: Update user profile with the S3 file path (not the signed URL which expires)
+      final UserData updatedUser = await repository.updateUserProfile(userId, {'avatar': s3FilePath});
 
       // Update storage with new user data
       await storage.write('user', updatedUser.toJson());
@@ -106,7 +108,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
 
       debugPrint('✅ ProfileCubit: Avatar update completed successfully');
 
-      return imageUrl;
+      return signedUrl;
     } catch (e, stackTrace) {
       debugPrint('❌ ProfileCubit Error in updateUserAvatar: $e');
       debugPrint('📜 Stack Trace: $stackTrace');

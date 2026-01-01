@@ -30,12 +30,16 @@ import 'package:repair_cms/features/jobBooking/repository/models_repository.dart
 import 'package:repair_cms/features/jobBooking/repository/service_repository.dart';
 import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
 import 'package:repair_cms/features/jobReceipt/repo/job_receipt_repo.dart';
+import 'package:repair_cms/features/messeges/repository/message_repository.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
 import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
 import 'package:repair_cms/features/notifications/repository/notification_repo.dart';
+import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
+import 'package:repair_cms/core/services/socket_service.dart';
+import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
@@ -44,6 +48,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await SetUpDI.instance.init();
+
+  // Initialize local notifications
+  await SetUpDI.getIt<LocalNotificationService>().initialize();
+  await SetUpDI.getIt<LocalNotificationService>().requestPermissions();
+
   runApp(OKToast(child: const MyApp()));
 }
 
@@ -81,6 +90,13 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => JobReceiptCubit(jobReceiptRepository: SetUpDI.getIt<JobReceiptRepository>())),
         BlocProvider(
           create: (context) => NotificationCubit(notificationRepository: SetUpDI.getIt<NotificationRepository>()),
+        ),
+        BlocProvider(
+          create: (context) => MessageCubit(
+            socketService: SetUpDI.getIt<SocketService>(),
+            messageRepository: SetUpDI.getIt<MessageRepository>(),
+            notificationService: SetUpDI.getIt<LocalNotificationService>(),
+          ),
         ),
       ],
       child: ScreenUtilInit(

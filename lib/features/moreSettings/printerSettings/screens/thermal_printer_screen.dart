@@ -1,7 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/helpers/show_toast.dart';
+import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
 import '../widgets/wifi_printer_scanner.dart';
@@ -29,6 +30,8 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   bool _isTesting = false;
   bool _isSaving = false;
 
+  List<PrinterConfigModel> _savedPrinters = [];
+
   // Models for each brand
   final Map<String, List<String>> _brandModels = {
     'Epson': ['TM-T20II', 'TM-T82', 'TM-T88V', 'TM-M30'],
@@ -40,28 +43,34 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedSettings();
+    _loadSavedPrinters();
   }
 
-  void _loadSavedSettings() {
-    final defaultPrinter = _settingsService.getDefaultPrinter('thermal');
-    if (defaultPrinter != null) {
-      setState(() {
-        _selectedBrand = defaultPrinter.printerBrand;
-        _selectedModel = defaultPrinter.printerModel;
-        _paperWidth = defaultPrinter.paperWidth ?? 80;
-        _ipController.text = defaultPrinter.ipAddress;
-        _portController.text = defaultPrinter.port?.toString() ?? '9100';
-        _selectedProtocol = defaultPrinter.protocol;
-        _setAsDefault = defaultPrinter.isDefault;
-      });
-      debugPrint('📊 Loaded thermal printer settings: $_selectedBrand');
-    }
+  void _loadSavedPrinters() {
+    setState(() {
+      _savedPrinters = _settingsService.getPrinters('thermal');
+    });
+    debugPrint('📊 Loaded ${_savedPrinters.length} thermal printers');
+  }
+
+  void _fillFormFromPrinter(PrinterConfigModel printer) {
+    setState(() {
+      _selectedBrand = printer.printerBrand;
+      _selectedModel = printer.printerModel;
+      _paperWidth = printer.paperWidth ?? 80;
+      _ipController.text = printer.ipAddress;
+      _portController.text = printer.port?.toString() ?? '9100';
+      _selectedProtocol = printer.protocol;
+      _setAsDefault = printer.isDefault;
+    });
+    SnackbarDemo(
+      message: 'Form filled with ${printer.printerModel ?? printer.printerBrand} settings',
+    ).showCustomSnackbar(context);
   }
 
   Future<void> _testPrint() async {
     if (_ipController.text.isEmpty) {
-      showCustomToast('Please enter IP address', isError: true);
+      SnackbarDemo(message: 'Please enter IP address').showCustomSnackbar(context);
       return;
     }
 
@@ -106,13 +115,15 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
     debugPrint('${'=' * 60}\n');
 
     // Show user-friendly message
-    showCustomToast('Test print not available yet. Please save and test from receipt screen.', isError: false);
+    SnackbarDemo(
+      message: 'Test print not available yet. Please save and test from receipt screen.',
+    ).showCustomSnackbar(context);
     setState(() => _isTesting = false);
   }
 
   Future<void> _saveSettings() async {
     if (_ipController.text.isEmpty) {
-      showCustomToast('Please enter IP address', isError: true);
+      SnackbarDemo(message: 'Please enter IP address').showCustomSnackbar(context);
       return;
     }
 
@@ -131,39 +142,205 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
 
     try {
       await _settingsService.savePrinterConfig(config);
-      showCustomToast('✅ Settings saved successfully!', isError: false);
+      SnackbarDemo(message: '✅ Settings saved successfully!').showCustomSnackbar(context);
+      _loadSavedPrinters(); // Refresh the list
+      _clearForm();
     } catch (e) {
-      showCustomToast('❌ Failed to save settings', isError: true);
+      SnackbarDemo(message: '❌ Failed to save settings').showCustomSnackbar(context);
     } finally {
       setState(() => _isSaving = false);
     }
   }
 
+  void _clearForm() {
+    setState(() {
+      _selectedBrand = 'Epson';
+      _selectedModel = null;
+      _paperWidth = 80;
+      _ipController.clear();
+      _portController.text = '9100';
+      _selectedProtocol = 'TCP';
+      _setAsDefault = false;
+    });
+  }
+
+  Future<void> _deletePrinter(PrinterConfigModel printer) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Printer'),
+        content: Text('Delete ${printer.printerModel ?? printer.printerBrand}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _settingsService.deletePrinterConfig(printer);
+        SnackbarDemo(message: 'Printer deleted').showCustomSnackbar(context);
+        _loadSavedPrinters();
+      } catch (e) {
+        SnackbarDemo(message: 'Failed to delete printer').showCustomSnackbar(context);
+      }
+    }
+  }
+
+  Future<void> _setAsDefaultPrinter(PrinterConfigModel printer) async {
+    try {
+      final updatedPrinter = printer.copyWith(isDefault: true);
+      await _settingsService.savePrinterConfig(updatedPrinter);
+      SnackbarDemo(message: '✅ Set as default printer').showCustomSnackbar(context);
+      _loadSavedPrinters();
+    } catch (e) {
+      SnackbarDemo(message: 'Failed to set default').showCustomSnackbar(context);
+    }
+  }
+
   /// Show WiFi printer scanner dialog
-  void _showWiFiScanner() {
-    showDialog(
+  Future<void> _showWiFiScanner() async {
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => WiFiPrinterScanner(
-        onPrinterSelected: (ipAddress, port) {
+        onPrinterSelected: (String ipAddress, int port) {
+          // Fill the form immediately when "Use" is clicked
           setState(() {
             _ipController.text = ipAddress;
             _portController.text = port.toString();
           });
-          showCustomToast('✅ Printer selected: $ipAddress:$port', isError: false);
+          Navigator.pop(context, {'ip': ipAddress, 'port': port});
         },
       ),
     );
+
+    if (result != null) {
+      debugPrint('✅ Selected printer: ${result['ip']}:${result['port']}');
+      SnackbarDemo(message: 'Printer selected: ${result['ip']}').showCustomSnackbar(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Thermal Printer (80mm)'), backgroundColor: AppColors.scaffoldBackgroundColor),
+      appBar: CupertinoNavigationBar(
+        backgroundColor: AppColors.scaffoldBackgroundColor,
+        border: null,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(CupertinoIcons.back, size: 28.r, color: const Color(0xFF007AFF)),
+              SizedBox(width: 4.w),
+              Text(
+                'Back',
+                style: TextStyle(fontSize: 17.sp, color: const Color(0xFF007AFF)),
+              ),
+            ],
+          ),
+        ),
+        middle: Text(
+          'Thermal Printer (80mm)',
+          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Saved Printers List
+            if (_savedPrinters.isNotEmpty) ...[
+              Text(
+                'Saved Printers',
+                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 12.h),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _savedPrinters.length,
+                itemBuilder: (context, index) {
+                  final printer = _savedPrinters[index];
+                  return Card(
+                    margin: EdgeInsets.only(bottom: 8.h),
+                    child: ListTile(
+                      leading: Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: printer.isDefault ? Colors.green.shade50 : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Icon(
+                          Icons.print,
+                          color: printer.isDefault ? Colors.green.shade700 : Colors.grey.shade700,
+                          size: 24.sp,
+                        ),
+                      ),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${printer.printerBrand} ${printer.printerModel ?? ""}',
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp),
+                            ),
+                          ),
+                          if (printer.isDefault)
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4.r)),
+                              child: Text(
+                                'DEFAULT',
+                                style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                        ],
+                      ),
+                      subtitle: Text(
+                        '${printer.ipAddress}:${printer.port} (${printer.paperWidth}mm)',
+                        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+                      ),
+                      trailing: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'use') {
+                            _fillFormFromPrinter(printer);
+                          } else if (value == 'default') {
+                            _setAsDefaultPrinter(printer);
+                          } else if (value == 'delete') {
+                            _deletePrinter(printer);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 'use', child: Text('Use')),
+                          if (!printer.isDefault) const PopupMenuItem(value: 'default', child: Text('Set as Default')),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 24.h),
+              Divider(height: 1.h),
+              SizedBox(height: 24.h),
+            ],
+
+            // Form Title
+            Text(
+              'Add New Printer',
+              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16.h),
+
             // Brand Selection
             Text(
               'Printer Brand',
@@ -171,7 +348,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedBrand,
+              initialValue: _selectedBrand,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
@@ -195,7 +372,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedModel,
+              initialValue: _selectedModel,
               hint: const Text('Select Model (Optional)'),
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
@@ -215,7 +392,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<int>(
-              value: _paperWidth,
+              initialValue: _paperWidth,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
@@ -284,7 +461,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             ),
             SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
-              value: _selectedProtocol,
+              initialValue: _selectedProtocol,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),

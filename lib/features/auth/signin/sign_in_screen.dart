@@ -2,6 +2,7 @@
 
 import 'package:local_auth/local_auth.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/services/biometric_storage_service.dart';
 import 'package:repair_cms/features/auth/widgets/three_dots_pointer_widget.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
@@ -121,10 +122,10 @@ class _SignInScreenState extends State<SignInScreen> {
                 child: BlocConsumer<SignInCubit, SignInStates>(
                   listener: (context, state) {
                     if (state is SignInSuccess) {
-                      showCustomToast(state.message, isError: false);
+                      SnackbarDemo(message: state.message).showCustomSnackbar(context);
                       _navigateToPasswordScreen(state.email);
                     } else if (state is SignInError) {
-                      showCustomToast(state.message, isError: true);
+                      SnackbarDemo(message: state.message).showCustomSnackbar(context);
                     }
                   },
                   builder: (context, state) {
@@ -144,7 +145,14 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
 
-                          SizedBox(height: screenHeight * 0.02),
+                          // Responsive spacing: smaller when keyboard is visible
+                          // Use keyboard visibility only so auto-focus doesn't force small gap when idle
+                          SizedBox(
+                            height: (MediaQuery.of(context).viewInsets.bottom > 0)
+                                ? screenHeight *
+                                      0.02 // small gap when keyboard shown
+                                : screenHeight * 0.12, // reasonable large gap when idle
+                          ),
 
                           // Email Input
                           Container(
@@ -159,9 +167,11 @@ class _SignInScreenState extends State<SignInScreen> {
                                     controller: _emailController,
                                     focusNode: _emailFocusNode,
                                     style: AppTypography.sfProHintTextStyle17,
+                                    autovalidateMode: AutovalidateMode.onUserInteraction,
                                     decoration: InputDecoration(
                                       hintText: 'your@business.com',
                                       hintStyle: AppTypography.sfProHintTextStyle17,
+
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide.none,
@@ -189,7 +199,12 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
 
-                          SizedBox(height: screenHeight * 0.18),
+                          // Responsive spacing based on keyboard visibility
+                          SizedBox(
+                            height: (MediaQuery.of(context).viewInsets.bottom > 0)
+                                ? screenHeight * 0.05
+                                : screenHeight * 0.18,
+                          ),
 
                           // Progress Indicator
                         ],
@@ -276,7 +291,7 @@ class _SignInScreenState extends State<SignInScreen> {
       debugPrint('📱 isAvailable: $isAvailable, isDeviceSupported: $isDeviceSupported');
 
       if (!isAvailable || !isDeviceSupported) {
-        showCustomToast('Biometric not available', isError: true);
+        SnackbarDemo(message: 'Biometric not available').showCustomSnackbar(context);
         return;
       }
 
@@ -302,21 +317,21 @@ class _SignInScreenState extends State<SignInScreen> {
             _isEmailValid = true;
           });
 
-          showCustomToast('Login successful!', isError: false);
+          SnackbarDemo(message: 'Login successful!').showCustomSnackbar(context);
 
           if (mounted) {
             context.push(RouteNames.home, extra: credentials['email']!);
           }
         } else {
-          showCustomToast('Credentials not found', isError: true);
+          SnackbarDemo(message: 'Credentials not found').showCustomSnackbar(context);
         }
       } else {
         debugPrint('❌ Authentication failed or canceled');
-        showCustomToast('Authentication canceled', isError: true);
+        SnackbarDemo(message: 'Authentication canceled').showCustomSnackbar(context);
       }
     } catch (e) {
       debugPrint('💥 Error: $e');
-      showCustomToast('Error: $e', isError: true);
+      SnackbarDemo(message: 'Error: $e').showCustomSnackbar(context);
     }
   }
 }

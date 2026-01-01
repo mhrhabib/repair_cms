@@ -4,9 +4,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
-import 'package:repair_cms/features/messeges/messges_screen.dart';
+import 'package:repair_cms/features/messeges/messages_screen.dart';
 import 'package:repair_cms/features/moreSettings/more_settings_screen.dart';
-import 'package:repair_cms/features/myJobs/my_jobs_screen.dart';
+import 'package:repair_cms/features/myJobs/screens/my_jobs_screen.dart';
+import 'package:repair_cms/features/scanner/job_scanner_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -108,8 +109,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildBottomNavItem(0, SolarIconsOutline.pinCircle, 'Home'),
-              _buildBottomNavItem(1, SolarIconsOutline.caseRoundMinimalistic, 'My Jobs'),
+              _buildBottomNavItem(0, SolarIconsOutline.pieChart, 'Home'),
+              _buildBottomNavItem(1, SolarIconsOutline.suitcaseTag, 'My Jobs'),
               // Empty container to balance the space for the center button
               SizedBox(width: 56.w, height: 56.h),
               _buildBottomNavItem(2, SolarIconsOutline.chatUnread, 'Messages'),
@@ -217,7 +218,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
                           // Handle New Job action
-                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobBookingFirstScreen()));
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) => JobBookingFirstScreen(),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                const begin = Offset(0.0, 1.0); // Start from bottom
+                                const end = Offset.zero; // End at center
+                                const curve = Curves.easeInOut;
+                                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                var offsetAnimation = animation.drive(tween);
+                                return SlideTransition(position: offsetAnimation, child: child);
+                              },
+                            ),
+                          );
                           debugPrint('New Job tapped');
                           _toggleExpansion();
                         },
@@ -231,24 +244,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         label: 'Barcode Scanner',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
-                          // Handle Barcode Scanner action
-                          debugPrint('Barcode Scanner tapped');
                           _toggleExpansion();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const JobScannerScreen(isBarcodeMode: true)),
+                          );
                         },
                       ),
                       SizedBox(height: 16.h),
 
-                      // New Job Button
+                      // QR Scanner Button
                       _buildExpandableButton(
                         icon: SolarIconsBold.qrCode,
                         label: 'QR Scanner',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () {
-                          // Handle QR Scanner action
-                          debugPrint('QR Scanner tapped');
                           _toggleExpansion();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const JobScannerScreen(isBarcodeMode: false)),
+                          );
                         },
                       ),
+                      SizedBox(height: 16.h),
+
+                      // Demo Conversation Button
                       SizedBox(height: 20.h),
                     ],
                   ),

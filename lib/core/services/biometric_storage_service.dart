@@ -1,13 +1,79 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
+import 'dart:io' show Platform;
 
 class BiometricStorageService {
   static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  static final LocalAuthentication _localAuth = LocalAuthentication();
 
   // Android options for biometric storage
   static const AndroidOptions _androidOptions = AndroidOptions(encryptedSharedPreferences: true);
 
-  // iOS options for biometric storage
-  static const IOSOptions _iosOptions = IOSOptions(accessibility: KeychainAccessibility.passcode);
+  // iOS options for biometric storage - using unlocked accessibility for better compatibility
+  static const IOSOptions _iosOptions = IOSOptions(
+    accessibility: KeychainAccessibility.unlocked,
+    synchronizable: false,
+  );
+
+  // Get platform-specific biometric type
+  static Future<String> getBiometricType() async {
+    try {
+      // Platform-specific defaults
+      if (Platform.isIOS) {
+        // For iOS, most modern devices have Face ID
+        return 'Face ID';
+      } else if (Platform.isAndroid) {
+        // For Android, check available biometrics
+        final bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
+        final bool canAuthenticate = await _localAuth.isDeviceSupported();
+
+        if (!canAuthenticate || !canAuthenticateWithBiometrics) {
+          return 'Biometric';
+        }
+
+        final List<BiometricType> availableBiometrics = await _localAuth.getAvailableBiometrics();
+
+        if (availableBiometrics.contains(BiometricType.face)) {
+          return 'Face ID';
+        } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
+          return 'Fingerprint';
+        } else if (availableBiometrics.contains(BiometricType.iris)) {
+          return 'Iris';
+        } else {
+          return 'Biometric';
+        }
+      } else {
+        // For other platforms, use generic biometric check
+        final bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
+        final bool canAuthenticate = await _localAuth.isDeviceSupported();
+
+        if (!canAuthenticate || !canAuthenticateWithBiometrics) {
+          return 'Biometric';
+        }
+
+        final List<BiometricType> availableBiometrics = await _localAuth.getAvailableBiometrics();
+
+        if (availableBiometrics.contains(BiometricType.face)) {
+          return 'Face ID';
+        } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
+          return 'Fingerprint';
+        } else if (availableBiometrics.contains(BiometricType.iris)) {
+          return 'Iris';
+        } else {
+          return 'Biometric';
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting biometric type: $e');
+      // Platform-specific fallbacks
+      if (Platform.isIOS) {
+        return 'Face ID';
+      } else {
+        return 'Biometric';
+      }
+    }
+  }
 
   // Save credentials securely for biometric authentication
   static Future<void> saveBiometricCredentials({required String email, required String password}) async {
@@ -28,9 +94,9 @@ class BiometricStorageService {
         iOptions: _iosOptions,
       );
 
-      print('Biometric credentials saved successfully for: $email');
+      debugPrint('Biometric credentials saved successfully for: $email');
     } catch (e) {
-      print('Error saving biometric credentials: $e');
+      debugPrint('Error saving biometric credentials: $e');
       throw Exception('Failed to save biometric credentials');
     }
   }
@@ -47,7 +113,7 @@ class BiometricStorageService {
 
       return {'email': email, 'password': password};
     } catch (e) {
-      print('Error reading biometric credentials: $e');
+      debugPrint('Error reading biometric credentials: $e');
       return {'email': null, 'password': null};
     }
   }
@@ -72,9 +138,9 @@ class BiometricStorageService {
       await _secureStorage.delete(key: 'biometric_email', aOptions: _androidOptions, iOptions: _iosOptions);
       await _secureStorage.delete(key: 'biometric_password', aOptions: _androidOptions, iOptions: _iosOptions);
 
-      print('Biometric authentication disabled');
+      debugPrint('Biometric authentication disabled');
     } catch (e) {
-      print('Error disabling biometric: $e');
+      debugPrint('Error disabling biometric: $e');
     }
   }
 
@@ -83,7 +149,7 @@ class BiometricStorageService {
     try {
       await _secureStorage.deleteAll(aOptions: _androidOptions, iOptions: _iosOptions);
     } catch (e) {
-      print('Error clearing biometric data: $e');
+      debugPrint('Error clearing biometric data: $e');
     }
   }
 }

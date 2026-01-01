@@ -227,7 +227,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 child: Switch.adaptive(
                   value: value,
                   onChanged: onChanged,
-                  activeColor: Colors.blue,
+                  activeThumbColor: Colors.blue,
                   inactiveThumbColor: Colors.grey,
                   inactiveTrackColor: Colors.grey.shade300,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

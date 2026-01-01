@@ -32,6 +32,42 @@ class JobTypeCubit extends Cubit<JobTypeState> {
     emit(JobTypeInitial());
   }
 
+  Future<void> createJobType({required String name, required String userId, required String locationId}) async {
+    // Basic validation
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      debugPrint('❌ [JobTypeCubit] Attempted to create job type with empty name');
+      emit(const JobTypeError(message: 'Job type name cannot be empty'));
+      return;
+    }
+
+    emit(JobTypeLoading());
+
+    try {
+      debugPrint('🚀 [JobTypeCubit] Creating job type: $trimmedName');
+
+      final newJobType = await jobTypeRepository.createJobType(
+        name: trimmedName,
+        userId: userId,
+        locationId: locationId,
+      );
+
+      debugPrint('✅ [JobTypeCubit] Job type created successfully: ${newJobType.sId ?? 'unknown id'}');
+
+      // Refresh the job types list
+      await getJobTypes(userId: userId);
+    } on JobTypeException catch (e) {
+      debugPrint('❌ [JobTypeCubit] JobTypeException during creation: ${e.message}');
+      emit(JobTypeError(message: e.message));
+      return;
+    } catch (e, stackTrace) {
+      debugPrint('💥 [JobTypeCubit] Unexpected error during creation: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      emit(JobTypeError(message: 'Failed to create job type'));
+      return;
+    }
+  }
+
   // Get job type by ID
   JobType? getJobTypeById(String jobTypeId) {
     final state = this.state;

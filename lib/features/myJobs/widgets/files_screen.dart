@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'dart:io' as io;
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
@@ -186,7 +187,7 @@ class _FilesScreenState extends State<FilesScreen> {
     );
   }
 
-  void _deleteFile(String fileId) {
+  void _deleteFile(String filePath) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -197,7 +198,7 @@ class _FilesScreenState extends State<FilesScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _performDeleteFile(fileId);
+              _performDeleteFile(filePath);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
@@ -207,28 +208,22 @@ class _FilesScreenState extends State<FilesScreen> {
     );
   }
 
-  void _performDeleteFile(String fileId) {
+  void _performDeleteFile(String filePath) {
     if (!_isMounted) return;
 
     final jobCubit = context.read<JobCubit>();
 
-    jobCubit.deleteJobFile(jobId: widget.jobId.data?.sId ?? '', fileId: fileId);
+    jobCubit.deleteJobFile(jobId: widget.jobId.data?.sId ?? '', filePath: filePath);
   }
 
   void _showError(String message) {
     if (!_isMounted) return;
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 3)));
+    SnackbarDemo(message: message).showCustomSnackbar(context);
   }
 
   void _showSuccess(String message) {
     if (!_isMounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
-    );
+    SnackbarDemo(message: message).showCustomSnackbar(context);
   }
 
   String _formatFileSize(int bytes) {
@@ -279,29 +274,35 @@ class _FilesScreenState extends State<FilesScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: const Text(
-            'Files',
-            style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          actions: [
-            IconButton(
-              icon: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(color: const Color(0xFF007AFF), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
-              ),
-              onPressed: _showUploadMethodSheet,
+        appBar: CupertinoNavigationBar(
+          backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+          leading: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => Navigator.of(context).pop(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(CupertinoIcons.back, color: const Color(0xFF007AFF), size: 28.r),
+                Text(
+                  'Back',
+                  style: TextStyle(color: const Color(0xFF007AFF), fontSize: 17.sp),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-          ],
+          ),
+          middle: Text(
+            'Files',
+            style: TextStyle(
+              fontSize: 17.sp,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.label.resolveFrom(context),
+            ),
+          ),
+          trailing: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: _showUploadMethodSheet,
+            child: Icon(CupertinoIcons.add_circled_solid, color: const Color(0xFF007AFF), size: 28.r),
+          ),
         ),
         body: BlocBuilder<JobCubit, JobStates>(
           buildWhen: (previous, current) {
@@ -574,7 +575,7 @@ class _FilesScreenState extends State<FilesScreen> {
                   top: 8,
                   right: 8,
                   child: GestureDetector(
-                    onTap: () => _deleteFile(file.id ?? ''),
+                    onTap: () => _deleteFile(file.file ?? ''),
                     child: Container(
                       width: 28,
                       height: 28,

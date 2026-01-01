@@ -1,6 +1,8 @@
 // repositories/signin_repository.dart
 import 'dart:async';
+import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter/material.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 
@@ -16,7 +18,10 @@ class SignInRepository {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return FindUserResponseModel.fromJson(response.data);
+        // Decode the JSON string response to Map
+        final Map<String, dynamic> responseData = json.decode(response.data);
+        debugPrint('✅ [SignInRepository] User found for email: $responseData');
+        return FindUserResponseModel.fromJson(responseData);
       } else {
         throw Exception('Failed to find user: ${response.statusCode}');
       }
@@ -39,7 +44,9 @@ class SignInRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return LoginResponseModel.fromJson(response.data);
+        // Decode the JSON string response to Map
+        final Map<String, dynamic> responseData = json.decode(response.data);
+        return LoginResponseModel.fromJson(responseData);
       } else {
         throw Exception('Login failed: ${response.statusCode}');
       }

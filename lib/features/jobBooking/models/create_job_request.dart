@@ -756,13 +756,12 @@ class Contact {
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> data = {
       'type': type,
       'customerId': customerId,
       'type2': type2,
       'organization': organization,
       'customerNo': customerNo,
-      'email': email,
       'telephone': telephone,
       'telephone_prefix': telephonePrefix,
       'shipping_address': shippingAddress.toJson(),
@@ -774,6 +773,13 @@ class Contact {
       'vatNo': vatNo,
       'reverseCharge': reverseCharge,
     };
+
+    // Only include email if it's not empty and contains @
+    if (email.isNotEmpty && email.contains('@')) {
+      data['email'] = email;
+    }
+
+    return data;
   }
 
   Contact copyWith({

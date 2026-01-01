@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
@@ -31,8 +32,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void initState() {
-    print(context.read<SignInCubit>().userType);
-    print(context.read<SignInCubit>().userId);
+    debugPrint(context.read<SignInCubit>().userType);
+    debugPrint(context.read<SignInCubit>().userId);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAllDashboardData();
@@ -200,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               );
 
                               // Show success message
-                              showCustomToast('Date range applied successfully', isError: false);
+                              SnackbarDemo(message: 'Date range applied successfully').showCustomSnackbar(context);
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -300,7 +301,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: EnhancedSearchWidget(
                     onSearchChanged: (query) {
                       // Handle search query changes
-                      print('Search query: $query');
+                      debugPrint('Search query: $query');
                     },
                     onQRScanPressed: () {
                       // Handle QR scan button press
@@ -455,7 +456,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     width: 40.w,
                     height: 40.h,
                     decoration: BoxDecoration(color: const Color(0xFFC507FF), borderRadius: BorderRadius.circular(8.r)),
-                    child: Icon(SolarIconsBold.caseMinimalistic, color: Colors.white, size: 30.sp),
+                    child: Icon(SolarIconsBold.suitcaseTag, color: Colors.white, size: 30.sp),
                   ),
                   SizedBox(width: 16.w),
                   Container(

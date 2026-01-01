@@ -1,4 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/five/widgets/pattern_input_widget.dart';
 import 'package:repair_cms/features/jobBooking/screens/six/choose_contact_type_screen.dart';
@@ -76,16 +77,23 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
     // Validation check
     if ((selectedOption == 'password' && _passwordController.text.isEmpty) ||
         (selectedOption == 'pattern' && connectedDots.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please enter the $selectedOption or select "No Security".'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      SnackbarDemo(message: 'Please enter the $selectedOption or select "No Security".').showCustomSnackbar(context);
       return;
     }
 
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ChooseContactTypeScreen()));
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const ChooseContactTypeScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var offsetAnimation = animation.drive(tween);
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+      ),
+    );
   }
 
   // Shows the pattern drawing bottom sheet and awaits the result
@@ -116,16 +124,25 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
           slivers: [
             // Top Progress Bar
             SliverToBoxAdapter(
-              child: Container(
-                height: 12.h,
-                width: MediaQuery.of(context).size.width * .071 * 5,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(6)),
-                  boxShadow: [
-                    BoxShadow(color: const Color.fromARGB(255, 75, 41, 41), blurRadius: 1, blurStyle: BlurStyle.outer),
-                  ],
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 12.h,
+                    width: MediaQuery.of(context).size.width * .071 * 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(255, 75, 41, 41),
+                          blurRadius: 1,
+                          blurStyle: BlurStyle.outer,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
             // Header
@@ -323,7 +340,7 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
                   Text(
                     subtitle,
                     style: AppTypography.fontSize12.copyWith(
-                      color: isSelected ? AppColors.primary.withOpacity(0.8) : Colors.grey.shade600,
+                      color: isSelected ? AppColors.primary.withValues(alpha: 0.8) : Colors.grey.shade600,
                     ),
                   ),
                 ],

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'package:repair_cms/features/notifications/models/notificaiton_model.dart
 
 abstract class NotificationRepository {
   Future<List<Notifications>> getNotifications({required String userId});
+  Future<void> deleteNotification({required String notificationId});
 }
 
 class NotificationRepositoryImpl implements NotificationRepository {
@@ -24,12 +26,19 @@ class NotificationRepositoryImpl implements NotificationRepository {
       debugPrint('   📊 Response Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        if (response.data is List) {
-          final notifications = (response.data as List).map((json) => Notifications.fromJson(json)).toList();
+        // Handle String response that needs decoding
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          debugPrint('   📄 Response is String, decoding...');
+          responseData = jsonDecode(responseData);
+        }
+
+        if (responseData is List) {
+          final notifications = (responseData).map((json) => Notifications.fromJson(json)).toList();
           debugPrint('   📦 Parsed ${notifications.length} notifications');
           return notifications;
-        } else if (response.data is Map) {
-          final data = response.data as Map;
+        } else if (responseData is Map) {
+          final data = responseData;
           if (data.containsKey('notifications') && data['notifications'] is List) {
             final notifications = (data['notifications'] as List).map((json) => Notifications.fromJson(json)).toList();
             debugPrint('   📦 Parsed ${notifications.length} notifications from "notifications" key');
@@ -41,7 +50,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           }
         }
 
-        debugPrint('   ⚠️ Unexpected response format: ${response.data}');
+        debugPrint('   ⚠️ Unexpected response format: $responseData');
         throw NotificationException(message: 'Unexpected response format from server');
       } else {
         throw NotificationException(
@@ -57,6 +66,43 @@ class NotificationRepositoryImpl implements NotificationRepository {
       throw NotificationException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
     } catch (e, stackTrace) {
       debugPrint('💥 [NotificationRepository] Unexpected error:');
+      debugPrint('   💥 Error: $e');
+      debugPrint('   📋 Stack: $stackTrace');
+      throw NotificationException(message: 'Unexpected error: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteNotification({required String notificationId}) async {
+    try {
+      debugPrint('🚀 [NotificationRepository] Deleting notification');
+      debugPrint('   📍 URL: ${ApiEndpoints.deleteNotification.replaceAll('<id>', notificationId)}');
+      debugPrint('   🗑️ Notification ID: $notificationId');
+
+      dio.Response response = await BaseClient.delete(
+        url: ApiEndpoints.deleteNotification.replaceAll('<id>', notificationId),
+      );
+
+      debugPrint('✅ [NotificationRepository] Delete notification response received:');
+      debugPrint('   📊 Status Code: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint('   ✅ Notification deleted successfully');
+        return;
+      } else {
+        throw NotificationException(
+          message: 'Failed to delete notification: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('🌐 [NotificationRepository] DioException during delete:');
+      debugPrint('   💥 Error: ${e.message}');
+      debugPrint('   📍 Type: ${e.type}');
+      debugPrint('   🔧 Response: ${e.response?.data}');
+      throw NotificationException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+    } catch (e, stackTrace) {
+      debugPrint('💥 [NotificationRepository] Unexpected error during delete:');
       debugPrint('   💥 Error: $e');
       debugPrint('   📋 Stack: $stackTrace');
       throw NotificationException(message: 'Unexpected error: $e');

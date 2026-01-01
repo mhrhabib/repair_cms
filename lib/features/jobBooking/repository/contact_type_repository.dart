@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart' as dio;
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -52,7 +53,13 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
       debugPrint('   📊 Status Code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final businessModel = BusinessModel.fromJson(response.data);
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
+        final businessModel = BusinessModel.fromJson(jsonData);
 
         if (businessModel.customersorsuppliers != null) {
           debugPrint('   📦 Parsed ${businessModel.customersorsuppliers!.length} profiles');
@@ -89,8 +96,14 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
       debugPrint('   📄 Response Data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
         // Handle different response structures
-        Map<String, dynamic> responseData = response.data;
+        Map<String, dynamic> responseData = jsonData;
 
         // Check if response has 'customer' or 'customerorsupplier' array
         if (responseData.containsKey('customer')) {
@@ -149,8 +162,14 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
       debugPrint('   📄 Response Data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
         // Handle different response structures
-        Map<String, dynamic> responseData = response.data;
+        Map<String, dynamic> responseData = jsonData;
 
         // Check if response has 'customer' or 'customerorsupplier' array
         if (responseData['success'] == true) {

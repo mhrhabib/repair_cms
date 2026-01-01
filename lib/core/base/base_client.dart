@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/interceptors/log_interceptor.dart';
 
 class BaseClient {
   static Future<BaseOptions> getBaseOptions() async {
@@ -14,6 +15,10 @@ class BaseClient {
       validateStatus: (status) {
         return status! < 500;
       },
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 120), // Longer for file uploads
+      responseType: ResponseType.plain, // Get raw response to see what server returns
       headers: {
         "Accept": "application/json",
         'Content-type': 'application/json',
@@ -26,12 +31,19 @@ class BaseClient {
     return options;
   }
 
+  static Dio _createDioInstance() {
+    var dio = Dio();
+    // Add custom log interceptor for detailed request/response logging
+    dio.interceptors.add(LoggingInterceptor());
+    return dio;
+  }
+
   static Future<dynamic> get({required String url, dynamic payload}) async {
     final storage = GetStorage();
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio();
+    var dio = _createDioInstance();
 
     // Apply base options
     final baseOptions = await getBaseOptions();
@@ -64,7 +76,7 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio();
+    var dio = _createDioInstance();
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 
@@ -91,7 +103,7 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio();
+    var dio = _createDioInstance();
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 
@@ -118,7 +130,7 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio();
+    var dio = _createDioInstance();
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 
@@ -145,7 +157,7 @@ class BaseClient {
     final token = storage.read('token');
     debugPrint(">>>>>>> Token: $token");
 
-    var dio = Dio();
+    var dio = _createDioInstance();
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 

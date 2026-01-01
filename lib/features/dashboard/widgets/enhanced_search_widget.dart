@@ -10,6 +10,7 @@ import 'package:repair_cms/features/profile/profile_options_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class EnhancedSearchWidget extends StatefulWidget {
   final Function(String)? onSearchChanged;
@@ -26,6 +27,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   Timer? _debounce;
+
+  // Store the signed avatar URL
+  String? _avatarSignedUrl;
 
   @override
   void initState() {
@@ -134,7 +138,7 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                     onTap: () {
                       Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationsScreen()));
                     },
-                    child: Icon(Icons.notifications_none, color: Colors.grey.shade600, size: 24.sp),
+                    child: Icon(SolarIconsBold.bell, color: Colors.grey.shade600, size: 24.sp),
                   ),
                   Positioned(
                     right: 0,
@@ -160,6 +164,27 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                     // Extract avatar URL from state
                     if (state is ProfileLoaded) {
                       avatarUrl = state.user.avatar;
+
+                      // Fetch signed URL if we have an S3 path and haven't fetched it yet
+                      if (avatarUrl != null &&
+                          avatarUrl.isNotEmpty &&
+                          !avatarUrl.startsWith('http') &&
+                          _avatarSignedUrl == null) {
+                        // Fetch signed URL in background
+                        context
+                            .read<ProfileCubit>()
+                            .getImageUrl(avatarUrl)
+                            .then((signedUrl) {
+                              if (mounted) {
+                                setState(() {
+                                  _avatarSignedUrl = signedUrl;
+                                });
+                              }
+                            })
+                            .catchError((error) {
+                              debugPrint('Failed to fetch avatar signed URL: $error');
+                            });
+                      }
                     } else if (state is ProfileLoading) {
                       isLoading = true;
                     }
@@ -169,9 +194,11 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                         // Profile Avatar
                         CircleAvatar(
                           radius: 16.r,
-                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(avatarUrl)
-                              : const AssetImage('assets/icon/icon.png') as ImageProvider,
+                          backgroundImage: _avatarSignedUrl != null && _avatarSignedUrl!.isNotEmpty
+                              ? NetworkImage(_avatarSignedUrl!)
+                              : (avatarUrl != null && avatarUrl.startsWith('http')
+                                    ? NetworkImage(avatarUrl)
+                                    : const AssetImage('assets/icon/icon.png') as ImageProvider),
                           backgroundColor: Colors.grey.shade300,
                           onBackgroundImageError: (exception, stackTrace) {
                             debugPrint('Profile image load error: $exception');

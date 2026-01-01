@@ -30,7 +30,7 @@ class JobItemsModel {
 class Item {
   String? sId;
   String? productName;
-  String? itemNumber;
+  dynamic itemNumber;
   int? stockValue;
   String? stockUnit;
   String? manufacturer;
@@ -200,9 +200,9 @@ class SupplierList {
   String? fullName;
   String? id;
   String? supplierName;
-  int? salePriceExlVat;
+  dynamic salePriceExlVat;
   double? salePriceIncVat;
-  int? purchasePriceExlVat;
+  dynamic purchasePriceExlVat;
   double? purchasePriceIncVat;
   String? profitMarkupSymbol;
   int? profitMarkup;

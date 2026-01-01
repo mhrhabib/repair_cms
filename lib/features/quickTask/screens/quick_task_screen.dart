@@ -223,7 +223,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
                 'assets/images/empty_todos.svg',
                 width: 150.w,
                 height: 150.h,
-                color: AppColors.lightFontColor.withValues(alpha: 0.5),
+                colorFilter: ColorFilter.mode(AppColors.lightFontColor.withValues(alpha: 0.5), BlendMode.srcIn),
               ),
               SizedBox(height: 24.h),
               Text(
@@ -273,8 +273,8 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
       decoration: BoxDecoration(
         color: AppColors.whiteColor,
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
-        border: Border.all(color: AppColors.borderColor.withOpacity(0.2)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -341,7 +341,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
           // Delete button with better styling
           Container(
             decoration: BoxDecoration(
-              color: AppColors.warningColor.withOpacity(0.1),
+              color: AppColors.warningColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: IconButton(
@@ -487,7 +487,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> with SingleTickerProv
               Container(
                 width: 60.w,
                 height: 60.h,
-                decoration: BoxDecoration(color: AppColors.warningColor.withOpacity(0.1), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.warningColor.withValues(alpha: 0.1), shape: BoxShape.circle),
                 child: Icon(Icons.delete_outline, size: 30.sp, color: AppColors.warningColor),
               ),
               SizedBox(height: 16.h),

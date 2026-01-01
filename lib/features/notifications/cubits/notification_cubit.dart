@@ -27,4 +27,22 @@ class NotificationCubit extends Cubit<NotificationState> {
       emit(NotificationError(message: 'Unexpected error occurred'));
     }
   }
+
+  Future<void> deleteNotification({required String notificationId, required String userId}) async {
+    debugPrint('🚀 [NotificationCubit] Deleting notification: $notificationId');
+
+    try {
+      await notificationRepository.deleteNotification(notificationId: notificationId);
+      debugPrint('✅ [NotificationCubit] Notification deleted successfully');
+
+      // Refresh the notifications list after deletion
+      await getNotifications(userId: userId);
+    } on NotificationException catch (e) {
+      debugPrint('❌ [NotificationCubit] Error deleting notification: ${e.message}');
+      emit(NotificationError(message: e.message));
+    } catch (e) {
+      debugPrint('💥 [NotificationCubit] Unexpected error during delete: $e');
+      emit(NotificationError(message: 'Failed to delete notification'));
+    }
+  }
 }

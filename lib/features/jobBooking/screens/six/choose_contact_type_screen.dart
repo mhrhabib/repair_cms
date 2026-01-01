@@ -228,9 +228,17 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   void _navigateToNextScreen() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
             JobBookingAddressScreen(isNewProfile: !isExistingProfileSelected, selectedProfile: selectedProfile),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var offsetAnimation = animation.drive(tween);
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
       ),
     );
   }
@@ -287,7 +295,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                 child: Row(
                   children: [
                     GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => Navigator.of(context).popUntil(ModalRoute.withName(RouteNames.home)),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
@@ -409,7 +417,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -794,7 +802,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.grey.shade100,
+                color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: isSelected ? Colors.blue : Colors.grey.shade600, size: 24),

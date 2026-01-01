@@ -2,6 +2,7 @@
 
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
@@ -21,7 +22,6 @@ class JobBookingDeviceModelScreen extends StatefulWidget {
 
 class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScreen> {
   String _selectedModel = '';
-  String? _selectedModelId;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   late String _userId;
@@ -68,7 +68,6 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
   void _selectModel(String modelName, String modelId) {
     setState(() {
       _selectedModel = modelName;
-      _selectedModelId = modelId;
       _searchController.text = modelName;
     });
     context.read<JobBookingCubit>().updateDeviceInfo(model: modelName);
@@ -105,13 +104,9 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
         orElse: () => ModelsModel(),
       );
       _selectModel(modelName, newModel.sId ?? '');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Model "$modelName" added successfully!'), backgroundColor: Colors.green));
+      SnackbarDemo(message: 'Model "$modelName" added successfully!').showCustomSnackbar(context);
     } else if (state is ModelsError) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to add model: ${state.message}'), backgroundColor: Colors.red));
+      SnackbarDemo(message: 'Failed to add model: ${state.message}').showCustomSnackbar(context);
     }
 
     setState(() => _isAddingModel = false);
@@ -121,7 +116,6 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
     if (!mounted) return;
     setState(() {
       _selectedModel = '';
-      _selectedModelId = null;
       _isAddingModel = false;
       _searchController.clear();
     });
@@ -414,7 +408,6 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                 onTap: () {
                                   setState(() {
                                     _selectedModel = '';
-                                    _selectedModelId = null;
                                     _searchController.clear();
                                   });
                                   context.read<JobBookingCubit>().updateDeviceInfo(model: '');
@@ -481,9 +474,19 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
               child: BottomButtonsGroup(
                 onPressed: hasSelectedModel
                     ? () {
-                        Navigator.of(
-                          context,
-                        ).push(MaterialPageRoute(builder: (context) => JobBookingAccessoriesScreen()));
+                        Navigator.of(context).push(
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => JobBookingAccessoriesScreen(),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(0.0, 1.0);
+                              const end = Offset.zero;
+                              const curve = Curves.easeInOut;
+                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                              var offsetAnimation = animation.drive(tween);
+                              return SlideTransition(position: offsetAnimation, child: child);
+                            },
+                          ),
+                        );
                       }
                     : null,
               ),

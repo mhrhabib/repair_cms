@@ -265,6 +265,7 @@ class File {
   String? id;
   String? fileName;
   int? size;
+  String? url;
 
   File({this.file, this.id, this.fileName, this.size});
 
@@ -272,6 +273,7 @@ class File {
     if (json['file'] != null) {
       file = json['file'];
     }
+    url = json['url'];
     id = json['id'];
     fileName = json['fileName'];
     size = json['size'];
@@ -285,20 +287,27 @@ class File {
     data['id'] = id;
     data['fileName'] = fileName;
     data['size'] = size;
+    data['url'] = url;
     return data;
   }
 
   // Getter to construct full image URL
   String? get imageUrl {
+    // Priority 1: Use the S3 signed URL if available
+    if (url != null && url!.isNotEmpty) {
+      return url;
+    }
+
+    // Priority 2: If file path is null, return null
     if (file == null) return null;
 
-    // If the file path is already a complete URL, return it as is
+    // Priority 3: If the file path is already a complete URL, return it as is
     if (file!.startsWith('http://') || file!.startsWith('https://')) {
       return file;
     }
 
-    // Otherwise, construct the full URL using the staging API endpoint
-    return 'https://staging-api.repaircms.com/file-upload/images?imagePath=$file';
+    // Priority 4: Construct the API URL to get signed URL
+    return 'https://api.repaircms.com/file-upload/images?imagePath=$file';
   }
 }
 

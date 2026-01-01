@@ -82,94 +82,96 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
           appBar: AppBar(iconTheme: IconThemeData(color: AppColors.primary, weight: 800, fill: 0.4)),
           body: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: 20.h),
-                Text('Check Your Email!', textAlign: TextAlign.center, style: AppTypography.sfProHeadLineTextStyle28),
-                SizedBox(height: 8.h),
-                Text(
-                  'Please fill in the code which has been sent to your email',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.sfProText15,
-                ),
-                SizedBox(height: 8.h),
-                Text(
-                  widget.email,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.sfProText15.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
-                SizedBox(height: 60.h),
-                Text(
-                  'Verification Code',
-                  style: AppTypography.sfProHeadLineTextStyle28.copyWith(color: AppColors.primary, fontSize: 22.sp),
-                ),
-                SizedBox(height: 16.h),
-                Pinput(
-                  controller: _otpController,
-                  enabled: (_timer?.isActive ?? false) && !isLoading,
-                  length: 4,
-                  defaultPinTheme: PinTheme(
-                    width: 80.w,
-                    height: 62.h,
-                    textStyle: AppTypography.sfProHeadLineTextStyle28.copyWith(
-                      color: AppColors.fontMainColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 42.sp,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary,
-                      borderRadius: BorderRadius.circular(20.r),
-                      border: Border.all(color: AppColors.secondary, width: 1.w),
-                    ),
-                  ),
-                  showCursor: true,
-                  onChanged: (value) {
-                    cubit.updateOtp(value);
-                    if (value.length == 4) {
-                      cubit.verifyOtp(widget.email, value);
-                    }
-                  },
-                  onCompleted: (pin) {
-                    cubit.verifyOtp(widget.email, pin);
-                  },
-                ),
-                SizedBox(height: 24.h),
-
-                // Timer and Resend Section
-                if (_timer?.isActive ?? false)
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(height: 20.h),
+                  Text('Check Your Email!', textAlign: TextAlign.center, style: AppTypography.sfProHeadLineTextStyle28),
+                  SizedBox(height: 8.h),
                   Text(
-                    'Code expires in ${_formatTime(_secondsRemaining)}',
-                    style: AppTypography.sfProText15.copyWith(color: AppColors.secondary),
-                  )
-                else
-                  Column(
-                    children: [
-                      Text(
-                        'Didn\'t receive the code? Please check your spam folder',
-                        textAlign: TextAlign.center,
-                        style: AppTypography.sfProText15.copyWith(color: AppColors.secondary),
+                    'Please fill in the code which has been sent to your email',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.sfProText15,
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    widget.email,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.sfProText15.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  ),
+                  SizedBox(height: 60.h),
+                  Text(
+                    'Verification Code',
+                    style: AppTypography.sfProHeadLineTextStyle28.copyWith(color: AppColors.primary, fontSize: 22.sp),
+                  ),
+                  SizedBox(height: 16.h),
+                  Pinput(
+                    controller: _otpController,
+                    enabled: (_timer?.isActive ?? false) && !isLoading,
+                    length: 4,
+                    defaultPinTheme: PinTheme(
+                      width: 80.w,
+                      height: 62.h,
+                      textStyle: AppTypography.sfProHeadLineTextStyle28.copyWith(
+                        color: AppColors.fontMainColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 42.sp,
                       ),
-                      SizedBox(height: 8.h),
-                      TextButton(
-                        onPressed: _resendOtp,
-                        child: Text(
-                          'Resend verification code',
-                          style: AppTypography.sfProText15.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary,
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(color: AppColors.secondary, width: 1.w),
+                      ),
+                    ),
+                    showCursor: true,
+                    onChanged: (value) {
+                      cubit.updateOtp(value);
+                      if (value.length == 4) {
+                        cubit.verifyOtp(widget.email, value);
+                      }
+                    },
+                    onCompleted: (pin) {
+                      cubit.verifyOtp(widget.email, pin);
+                    },
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // Timer and Resend Section
+                  if (_timer?.isActive ?? false)
+                    Text(
+                      'Code expires in ${_formatTime(_secondsRemaining)}',
+                      style: AppTypography.sfProText15.copyWith(color: AppColors.secondary),
+                    )
+                  else
+                    Column(
+                      children: [
+                        Text(
+                          'Didn\'t receive the code? Please check your spam folder',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.sfProText15.copyWith(color: AppColors.secondary),
+                        ),
+                        SizedBox(height: 8.h),
+                        TextButton(
+                          onPressed: _resendOtp,
+                          child: Text(
+                            'Resend verification code',
+                            style: AppTypography.sfProText15.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
 
-                SizedBox(height: 32.h),
-                if (isLoading)
-                  CircularProgressIndicator(color: AppColors.primary)
-                else if (currentOtp.length == 4 && (_timer?.isActive ?? false))
-                  Text('Verifying...', style: AppTypography.sfProText15.copyWith(color: AppColors.primary)),
-              ],
+                  SizedBox(height: 32.h),
+                  if (isLoading)
+                    CircularProgressIndicator(color: AppColors.primary)
+                  else if (currentOtp.length == 4 && (_timer?.isActive ?? false))
+                    Text('Verifying...', style: AppTypography.sfProText15.copyWith(color: AppColors.primary)),
+                ],
+              ),
             ),
           ),
         );

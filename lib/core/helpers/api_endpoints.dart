@@ -48,6 +48,7 @@ class ApiEndpoints {
   static const String updateBusiness = '$baseUrl/customer-or-supplier/<id>';
   //job types
   static const String jobTypeListUrl = '$baseUrl/job-type/user/<id>';
+  static const String createJobType = '$baseUrl/job-type';
   //items
   static const String itemsListUrl = '$baseUrl/auth/item/user/<id>';
 
@@ -55,4 +56,9 @@ class ApiEndpoints {
 
   //notifications
   static const String getAllNotifications = '$baseUrl/notification/user/<id>';
+  static const String deleteNotification = '$baseUrl/notification/<id>';
+
+  //messages
+
+  static const String getConversation = '$baseUrl/message/<conversationId>';
 }

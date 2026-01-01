@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter/rendering.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
@@ -8,7 +10,13 @@ class QuickTaskRepository {
     dio.Response response = await BaseClient.get(url: ApiEndpoints.getAllQuickTasks.replaceAll('<id>', userId));
 
     if (response.statusCode == 200) {
-      final data = QuickTask.fromJson(response.data);
+      // Handle JSON string parsing
+      dynamic jsonData = response.data;
+      if (response.data is String) {
+        debugPrint('   🔄 Response is String, parsing JSON...');
+        jsonData = jsonDecode(response.data as String);
+      }
+      final data = QuickTask.fromJson(jsonData);
       return data.data!.map((task) => task).toList();
     } else {
       throw Exception('Failed to load todos');
@@ -38,7 +46,7 @@ class QuickTaskRepository {
     try {
       dio.Response response = await BaseClient.post(url: ApiEndpoints.createTodo, payload: todo);
 
-      print(response.data);
+      debugPrint(response.data);
 
       if (response.statusCode == 201) {
         return response.data;
@@ -48,8 +56,8 @@ class QuickTaskRepository {
         throw Exception('Failed to create todo');
       }
     } catch (e, trace) {
-      print('Error creating todo: $e');
-      print('Stack trace: $trace');
+      debugPrint('Error creating todo: $e');
+      debugPrint('Stack trace: $trace');
       throw Exception('Failed to create todo');
     }
   }
