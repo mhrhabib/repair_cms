@@ -48,13 +48,11 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
       debugPrint('🚀 [ContactTypeCubit] Creating new profile');
       final newBusiness = await contactTypeRepository.createBusiness(payload: payload);
       debugPrint('✅ [ContactTypeCubit] Profile created successfully');
-      if (newBusiness != null) {
-        try {
-          storage.write('customerId', newBusiness.sId);
-          debugPrint('💾 [ContactTypeCubit] Stored created customerId: ${newBusiness.sId}');
-        } catch (e) {
-          debugPrint('⚠️ [ContactTypeCubit] Failed to write customerId to storage: $e');
-        }
+      try {
+        storage.write('customerId', newBusiness.sId);
+        debugPrint('💾 [ContactTypeCubit] Stored created customerId: ${newBusiness.sId}');
+      } catch (e) {
+        debugPrint('⚠️ [ContactTypeCubit] Failed to write customerId to storage: $e');
       }
       emit(ContactTypeSuccess(message: 'Profile created successfully', createdBusiness: newBusiness));
       return newBusiness;
@@ -79,13 +77,11 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
       debugPrint('🚀 [ContactTypeCubit] Updating profile with ID: $profileId');
       final updatedBusiness = await contactTypeRepository.updateBusiness(profileId: profileId, payload: payload);
       debugPrint('✅ [ContactTypeCubit] Profile updated successfully');
-      if (updatedBusiness != null) {
-        try {
-          storage.write('customerId', updatedBusiness.sId);
-          debugPrint('💾 [ContactTypeCubit] Stored updated customerId: ${updatedBusiness.sId}');
-        } catch (e) {
-          debugPrint('⚠️ [ContactTypeCubit] Failed to write customerId to storage: $e');
-        }
+      try {
+        storage.write('customerId', updatedBusiness.sId);
+        debugPrint('💾 [ContactTypeCubit] Stored updated customerId: ${updatedBusiness.sId}');
+      } catch (e) {
+        debugPrint('⚠️ [ContactTypeCubit] Failed to write customerId to storage: $e');
       }
       emit(ContactTypeSuccess(message: 'Profile updated successfully', createdBusiness: updatedBusiness));
       return updatedBusiness;

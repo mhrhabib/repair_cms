@@ -324,7 +324,6 @@ class MessageCubit extends Cubit<MessageState> {
         debugPrint('💬 [MessageCubit] Processing comment part: ${comment.messageId}');
 
         // For now, just log the comment. You can emit a specific state or handle it differently
-        // TODO: Add comment-specific handling, e.g., emit a CommentReceived state
         debugPrint('💬 [MessageCubit] Comment received: ${comment.text} by ${comment.authorId}');
         // Attach comment to existing conversation if possible
         try {

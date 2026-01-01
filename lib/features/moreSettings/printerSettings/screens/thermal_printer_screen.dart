@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'dart:io';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
@@ -108,6 +109,37 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
       _selectedProtocol = 'TCP';
       _setAsDefault = false;
     });
+  }
+
+  Future<void> _testConnection() async {
+    final ip = _ipController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 9100;
+
+    if (ip.isEmpty) {
+      SnackbarDemo(message: 'Please enter IP address to test connection').showCustomSnackbar(context);
+      return;
+    }
+
+    SnackbarDemo(message: 'Testing connection to $ip:$port...').showCustomSnackbar(context);
+
+    try {
+      debugPrint('🔍 [ConnectionTest] Attempting to connect to $ip:$port');
+      final socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
+      socket.destroy();
+      debugPrint('✅ [ConnectionTest] Successfully connected to $ip:$port');
+      SnackbarDemo(message: '✅ Connection successful! Printer is reachable.').showCustomSnackbar(context);
+    } catch (e) {
+      debugPrint('❌ [ConnectionTest] Failed to connect: $e');
+      String errorMsg = '❌ Connection failed: ';
+      if (e.toString().contains('timeout')) {
+        errorMsg += 'Timeout. Check if printer is on and IP is correct.';
+      } else if (e.toString().contains('refused')) {
+        errorMsg += 'Connection refused. Check port number or firewall.';
+      } else {
+        errorMsg += 'Check network, IP address, and printer power.';
+      }
+      SnackbarDemo(message: errorMsg).showCustomSnackbar(context);
+    }
   }
 
   Future<void> _deletePrinter(PrinterConfigModel printer) async {
@@ -428,7 +460,31 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
               contentPadding: EdgeInsets.zero,
             ),
             SizedBox(height: 24.h),
-
+            // Connection Test Button
+            if (_ipController.text.trim().isNotEmpty)
+              SizedBox(
+                width: double.infinity,
+                height: 48.h,
+                child: OutlinedButton(
+                  onPressed: _testConnection,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                    side: const BorderSide(color: Colors.blue),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.network_check, color: Colors.blue),
+                      SizedBox(width: 8.w),
+                      Text(
+                        'Test Connection',
+                        style: TextStyle(fontSize: 16.sp, color: Colors.blue),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_ipController.text.trim().isNotEmpty) SizedBox(height: 12.h),
             // Save Button
             SizedBox(
               width: double.infinity,

@@ -46,6 +46,7 @@ import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,9 @@ void main() async {
   // Initialize local notifications
   await SetUpDI.getIt<LocalNotificationService>().initialize();
   await SetUpDI.getIt<LocalNotificationService>().requestPermissions();
+
+  // Log Talker initialization
+  SetUpDI.getIt<Talker>().info('RepairCMS App Started');
 
   runApp(OKToast(child: const MyApp()));
 }

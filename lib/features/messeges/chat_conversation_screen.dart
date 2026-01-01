@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -180,7 +178,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     debugPrint('💬 Sending internal comment with mentions: $_mentionIds');
 
     // Build HTML text for the comment: replace plain @mentions with styled spans and exclude raw @names
-    String _buildCommentHtmlText(String text) {
+    String buildCommentHtmlText(String text) {
       // Build mention spans from _mentionIds using _subUsers lookup
       final List<String> spans = [];
       for (final id in _mentionIds) {
@@ -189,7 +187,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           orElse: () => SubUser(),
         );
         final displayName = sub.fullName ?? sub.email ?? id;
-        spans.add('<span style="color:#ffe500;" class="internal-user input__mod1">@${displayName}</span>');
+        spans.add('<span style="color:#ffe500;" class="internal-user input__mod1">@$displayName</span>');
         // Remove the plain @DisplayName occurrence from the text (first occurrence)
         final plain = '@$displayName';
         if (text.contains(plain)) {
@@ -201,12 +199,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final remaining = text.trim();
 
       // Join spans and remaining text with non-breaking space as in examples
-      final joinedSpans = spans.isNotEmpty ? spans.join('&nbsp;') + '&nbsp;' : '';
+      final joinedSpans = spans.isNotEmpty ? '${spans.join('&nbsp;')}&nbsp;' : '';
       return '$joinedSpans$remaining';
     }
 
     // Determine target message id (message being commented on) and parentCommentId if replying to a comment
-    String? _getTargetMessageId() {
+    String? getTargetMessageId() {
       try {
         // Find most recent conversation entry that has a message with an id
         for (var i = _messages.length - 1; i >= 0; i--) {
@@ -217,11 +215,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       return null;
     }
 
-    final targetMessageId = _getTargetMessageId() ?? widget.conversationId;
+    final targetMessageId = getTargetMessageId() ?? widget.conversationId;
     // For now we don't support replying to a specific comment in UI; parentCommentId == targetMessageId
     final parentCommentId = targetMessageId;
 
-    final htmlText = _buildCommentHtmlText(messageText);
+    final htmlText = buildCommentHtmlText(messageText);
 
     // Build combined payload (message + comment) to send via socket
     final participants = _fallbackRecipientEmail ?? userEmail;
@@ -241,6 +239,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         'authorId': userId,
         'userId': userId,
         'messageId': targetMessageId,
+        'parentCommentId': parentCommentId,
         'conversationId': widget.conversationId,
         'mentions': _mentionIds,
       },
@@ -352,8 +351,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
         // Debug: log messages count to help diagnose empty UI
         debugPrint('📊 [ChatConversationScreen] Resolved messages count: ${messages.length}');
-        if (messages.isNotEmpty)
+        if (messages.isNotEmpty) {
           debugPrint('   First message id: ${messages.first.sId}, conversationId: ${messages.first.conversationId}');
+        }
 
         // Determine participant name for the app bar
         String participantName = _fallbackRecipientName ?? 'Conversation';

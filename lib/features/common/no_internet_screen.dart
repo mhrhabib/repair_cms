@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -31,7 +29,7 @@ class _NoInternetScreenState extends State<NoInternetScreen> {
         widget.onRetry!();
       } else {
         final result = await Connectivity().checkConnectivity();
-        if (result != ConnectivityResult.none) {
+        if (result.isNotEmpty && !result.contains(ConnectivityResult.none)) {
           if (mounted) Navigator.of(context).pop(true);
         } else {
           if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Still offline')));

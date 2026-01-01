@@ -24,6 +24,11 @@ class PrinterServiceFactory {
         return XprinterPrinterService();
       case 'dymo':
         return DymoPrinterService();
+      case 'generic':
+      case 'hp':
+      case 'canon':
+        // Generic A4 printers (HP, Canon, etc.) use A4NetworkPrinterService
+        return A4NetworkPrinterService();
       default:
         // For unknown brands, try Brother as fallback (most compatible)
         return BrotherSDKPrinterService();
@@ -56,13 +61,13 @@ class PrinterServiceFactory {
 
   /// Check if a brand is supported
   static bool isBrandSupported(String brand) {
-    final supportedBrands = ['brother', 'epson', 'star', 'xprinter', 'dymo'];
+    final supportedBrands = ['brother', 'epson', 'star', 'xprinter', 'dymo', 'generic', 'hp', 'canon'];
     return supportedBrands.contains(brand.toLowerCase());
   }
 
   /// Get list of supported brands
   static List<String> getSupportedBrands() {
-    return ['Brother', 'Epson', 'Star', 'Xprinter', 'Dymo'];
+    return ['Brother', 'Epson', 'Star', 'Xprinter', 'Dymo', 'Generic', 'HP', 'Canon'];
   }
 
   /// Attempt to print a label using SDK first (if available) and fall back to raw TCP.

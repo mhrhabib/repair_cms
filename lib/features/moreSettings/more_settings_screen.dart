@@ -195,6 +195,26 @@ class MoreSettingsScreen extends StatelessWidget {
               ),
             ),
 
+            // Debug Logs - For remote troubleshooting
+            _buildSettingsItem(
+              icon: SolarIconsOutline.bug,
+              iconColor: Colors.purple,
+              title: 'Debug Logs',
+              subtitle: 'Printer troubleshooting',
+              onTap: () {
+                context.push(RouteNames.logsViewer);
+              },
+            ),
+
+            Container(
+              height: 1,
+              alignment: Alignment.centerRight,
+              width: MediaQuery.of(context).size.width * .78,
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+              ),
+            ),
+
             // Logout Button - Added at the bottom
             _buildLogoutItem(context),
           ],
@@ -207,6 +227,7 @@ class MoreSettingsScreen extends StatelessWidget {
     required IconData icon,
     required Color iconColor,
     required String title,
+    String? subtitle,
     required VoidCallback onTap,
   }) {
     return Material(
@@ -225,9 +246,15 @@ class MoreSettingsScreen extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                    if (subtitle != null) Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                  ],
                 ),
               ),
               const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),

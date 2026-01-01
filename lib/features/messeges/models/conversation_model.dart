@@ -84,9 +84,9 @@ class Conversation {
     if (json['comments'] != null) {
       comments = <Comment>[];
       try {
-        (json['comments'] as List).forEach((v) {
+        for (var v in (json['comments'] as List)) {
           comments!.add(Comment.fromJson(v as Map<String, dynamic>));
-        });
+        }
       } catch (_) {
         // ignore malformed comments
       }
@@ -260,49 +260,49 @@ class Comment {
 
   Comment.fromJson(Map<String, dynamic> json) {
     // Flexible parsing: API may return nested objects for some fields.
-    dynamic _text = json['text'];
-    if (_text is String) {
-      text = _text;
-    } else if (_text is Map) {
-      text = _text['text'] ?? _text['message'] ?? _text['html'] ?? _text.toString();
-    } else if (_text != null) {
-      text = _text.toString();
+    dynamic text = json['text'];
+    if (text is String) {
+      text = text;
+    } else if (text is Map) {
+      text = text['text'] ?? text['message'] ?? text['html'] ?? text.toString();
+    } else if (text != null) {
+      text = text.toString();
     }
 
-    dynamic _author = json['authorId'];
-    if (_author is String) {
-      authorId = _author;
-    } else if (_author is Map) {
-      authorId = _author['_id'] ?? _author['id'] ?? _author['sId'] ?? _author['userId'] ?? _author['email']?.toString();
+    dynamic author = json['authorId'];
+    if (author is String) {
+      authorId = author;
+    } else if (author is Map) {
+      authorId = author['_id'] ?? author['id'] ?? author['sId'] ?? author['userId'] ?? author['email']?.toString();
     }
 
-    dynamic _user = json['userId'];
-    if (_user is String) {
-      userId = _user;
-    } else if (_user is Map) {
-      userId = _user['_id'] ?? _user['id'] ?? _user['sId'] ?? _user['userId'] ?? _user['email']?.toString();
+    dynamic user = json['userId'];
+    if (user is String) {
+      userId = user;
+    } else if (user is Map) {
+      userId = user['_id'] ?? user['id'] ?? user['sId'] ?? user['userId'] ?? user['email']?.toString();
     }
 
-    dynamic _messageId = json['messageId'];
-    if (_messageId is String) {
-      messageId = _messageId;
-    } else if (_messageId is Map) {
-      messageId = _messageId['_id'] ?? _messageId['id'] ?? _messageId['sId'] ?? _messageId.toString();
+    dynamic messageId = json['messageId'];
+    if (messageId is String) {
+      messageId = messageId;
+    } else if (messageId is Map) {
+      messageId = messageId['_id'] ?? messageId['id'] ?? messageId['sId'] ?? messageId.toString();
     }
 
-    dynamic _conversationId = json['conversationId'];
-    if (_conversationId is String) {
-      conversationId = _conversationId;
-    } else if (_conversationId is Map) {
+    dynamic conversationId = json['conversationId'];
+    if (conversationId is String) {
+      conversationId = conversationId;
+    } else if (conversationId is Map) {
       conversationId =
-          _conversationId['_id'] ?? _conversationId['id'] ?? _conversationId['sId'] ?? _conversationId.toString();
+          conversationId['_id'] ?? conversationId['id'] ?? conversationId['sId'] ?? conversationId.toString();
     }
 
-    dynamic _parent = json['parentCommentId'];
-    if (_parent is String) {
-      parentCommentId = _parent;
-    } else if (_parent is Map) {
-      parentCommentId = _parent['_id'] ?? _parent['id'] ?? _parent['sId'] ?? _parent.toString();
+    dynamic parent = json['parentCommentId'];
+    if (parent is String) {
+      parentCommentId = parent;
+    } else if (parent is Map) {
+      parentCommentId = parent['_id'] ?? parent['id'] ?? parent['sId'] ?? parent.toString();
     }
 
     // Mentions may be list of ids or list of objects

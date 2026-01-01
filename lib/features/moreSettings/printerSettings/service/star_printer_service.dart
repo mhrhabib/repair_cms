@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:talker_flutter/talker_flutter.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 import 'base_printer_service.dart';
 
@@ -10,6 +12,8 @@ class StarPrinterService implements BasePrinterService {
   factory StarPrinterService() => _instance;
   StarPrinterService._internal();
 
+  Talker get _talker => SetUpDI.getIt<Talker>();
+
   @override
   Future<PrinterResult> printThermalReceipt({
     required String ipAddress,
@@ -18,6 +22,7 @@ class StarPrinterService implements BasePrinterService {
     Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
+      _talker.info('[ThermalPrinter: $ipAddress] Starting Star thermal print');
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
 
       // Star ESC/POS commands (similar to Epson)
@@ -40,8 +45,10 @@ class StarPrinterService implements BasePrinterService {
       await socket.flush();
       socket.destroy();
 
+      _talker.info('[ThermalPrinter: $ipAddress] ✅ Star receipt printed successfully');
       return PrinterResult(success: true, message: 'Star receipt printed successfully', code: 0);
     } catch (e) {
+      _talker.error('[ThermalPrinter: $ipAddress] ❌ Star print error: $e');
       return PrinterResult(success: false, message: 'Star print error: $e', code: -1);
     }
   }

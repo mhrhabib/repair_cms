@@ -9,6 +9,7 @@ import 'package:repair_cms/features/auth/signin/sign_in_screen.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/home/home_screen.dart';
 import 'package:repair_cms/features/splash/splash_screen.dart';
+import 'package:repair_cms/features/moreSettings/logs/logs_viewer_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -35,6 +36,7 @@ class AppRouter {
         path: RouteNames.setNewPassword,
         builder: (context, state) => SetNewPasswordScreen(email: state.extra as String),
       ),
+      GoRoute(path: RouteNames.logsViewer, builder: (context, state) => const LogsViewerScreen()),
     ],
   );
 }

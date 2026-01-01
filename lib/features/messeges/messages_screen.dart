@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:repair_cms/core/helpers/notification_navigation_helper.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
@@ -22,6 +23,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Set up notification navigation callback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationNavigationHelper.setupNavigationCallback(context);
+    });
+
     // Load conversations when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MessageCubit>().loadConversations();

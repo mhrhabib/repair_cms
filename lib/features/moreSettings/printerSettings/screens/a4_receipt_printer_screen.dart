@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
+import '../service/protocol_detection_services.dart';
 import '../widgets/wifi_printer_scanner.dart';
 
 class A4PrinterScreen extends StatefulWidget {
@@ -23,7 +25,7 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
   final TextEditingController _printerNameController = TextEditingController();
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _portController = TextEditingController(text: '9100');
-  String _selectedProtocol = 'TCP';
+  String _selectedProtocol = 'RAW/TCP';
   bool _setAsDefault = false;
   bool _isSaving = false;
 
@@ -78,7 +80,7 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
   }
 
   Future<void> _saveSettings() async {
-    if (_ipController.text.isEmpty && _selectedProtocol == 'TCP') {
+    if (_ipController.text.isEmpty && _selectedProtocol == 'RAW/TCP') {
       SnackbarDemo(message: 'Please enter IP address').showCustomSnackbar(context);
       return;
     }
@@ -143,12 +145,269 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
     }
   }
 
+  Future<void> _autoDetectProtocol() async {
+    var ip = _ipController.text.trim();
+
+    // If no IP provided, open the WiFi scanner to let user pick a printer first
+    if (ip.isEmpty) {
+      await _scanForPrinters();
+      // _scanForPrinters will fill the controllers when a printer is selected.
+      ip = _ipController.text.trim();
+      if (ip.isEmpty) {
+        SnackbarDemo(message: 'Please enter or select a printer IP first').showCustomSnackbar(context);
+        return;
+      }
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final detector = PrinterProtocolDetector();
+      final result = await detector.detectProtocols(ip);
+
+      if (!result.isReachable) {
+        SnackbarDemo(message: '❌ Printer not reachable at $ip').showCustomSnackbar(context);
+        return;
+      }
+
+      if (result.recommendedProtocol != null) {
+        final protocol = result.recommendedProtocol!;
+        final description = PrinterProtocolDetector.getProtocolDescription(protocol);
+
+        setState(() {
+          _portController.text = protocol.port.toString();
+          _selectedProtocol = protocol.name;
+        });
+
+        // Show protocol recommendation
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Protocol Detected'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Detected: ${protocol.name} (Port ${protocol.port})'),
+                SizedBox(height: 8.h),
+                Text(
+                  description,
+                  style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                ),
+                SizedBox(height: 12.h),
+                if (result.availableProtocols.length > 1)
+                  Text(
+                    'Also available: ${result.availableProtocols.where((p) => p != protocol).map((p) => p.name).join(', ')}',
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Use This')),
+              if (result.availableProtocols.length > 1)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showProtocolSelector(result.availableProtocols);
+                  },
+                  child: const Text('Choose Another'),
+                ),
+            ],
+          ),
+        );
+
+        SnackbarDemo(message: '✅ Auto-detected ${protocol.name}').showCustomSnackbar(context);
+      } else {
+        SnackbarDemo(message: '⚠️ No printing protocols detected').showCustomSnackbar(context);
+      }
+    } catch (e) {
+      debugPrint('❌ Protocol detection error: $e');
+      SnackbarDemo(message: 'Detection failed: ${e.toString()}').showCustomSnackbar(context);
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+
+  void _showProtocolSelector(List<PrinterProtocol> protocols) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Protocol'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: protocols.length,
+            itemBuilder: (context, index) {
+              final protocol = protocols[index];
+              return ListTile(
+                title: Text('${protocol.name} (Port ${protocol.port})'),
+                subtitle: Text(PrinterProtocolDetector.getProtocolDescription(protocol)),
+                onTap: () {
+                  setState(() {
+                    _portController.text = protocol.port.toString();
+                    _selectedProtocol = protocol.name;
+                  });
+                  Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendTestPrintWithProtocol() async {
+    final ip = _ipController.text.trim();
+    final protocolName = _selectedProtocol;
+
+    if (ip.isEmpty) {
+      SnackbarDemo(message: 'Please enter printer IP').showCustomSnackbar(context);
+      return;
+    }
+
+    SnackbarDemo(message: 'Sending test print via $protocolName...').showCustomSnackbar(context);
+
+    try {
+      switch (protocolName) {
+        case 'TCP':
+        case 'RAW/TCP':
+          await _sendRawTestPrint();
+          break;
+        case 'IPP':
+          await _sendIPPTestPrint(ip);
+          break;
+        case 'LPR/LPD':
+          await _sendLPRTestPrint(ip);
+          break;
+        case 'HTTP':
+          await _sendHTTPTestPrint(ip, false);
+          break;
+        case 'HTTPS':
+          await _sendHTTPTestPrint(ip, true);
+          break;
+        default:
+          await _sendRawTestPrint(); // Fallback
+      }
+    } catch (e) {
+      SnackbarDemo(message: 'Test print failed: $e').showCustomSnackbar(context);
+    }
+  }
+
+  Future<void> _sendIPPTestPrint(String ip) async {
+    try {
+      // Simple IPP request (basic header)
+      final ippRequest = Uint8List.fromList([
+        0x01, 0x01, // Version 1.1
+        0x00, 0x02, // Operation Print-Job
+        0x00, 0x00, 0x00, 0x01, // Request ID
+        0x01, // Operation attributes tag
+        0x47, // charset tag
+        0x00, 0x12, // name length
+        ...utf8.encode('attributes-charset'),
+        0x00, 0x05, // value length
+        ...utf8.encode('utf-8'),
+      ]);
+
+      final socket = await Socket.connect(ip, 631, timeout: const Duration(seconds: 5));
+      socket.add(ippRequest);
+      await socket.flush();
+      socket.destroy();
+
+      SnackbarDemo(message: 'IPP test sent to $ip:631').showCustomSnackbar(context);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> _sendLPRTestPrint(String ip) async {
+    try {
+      final socket = await Socket.connect(ip, 515, timeout: const Duration(seconds: 5));
+      socket.add(utf8.encode('RepairCMS LPR Test\n'));
+      await socket.flush();
+      socket.destroy();
+      SnackbarDemo(message: 'LPR test attempted to $ip:515').showCustomSnackbar(context);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> _sendHTTPTestPrint(String ip, bool secure) async {
+    try {
+      final protocol = secure ? 'https' : 'http';
+      final client = HttpClient();
+      final request = await client.getUrl(Uri.parse('$protocol://$ip:${secure ? 443 : 80}/'));
+      final response = await request.close().timeout(const Duration(seconds: 5));
+      SnackbarDemo(message: 'HTTP ${response.statusCode} from $ip').showCustomSnackbar(context);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Widget _getProtocolRecommendationWidget() {
+    final protocol = _selectedProtocol;
+    // port is not needed here; recommendation is based on protocol string
+
+    String recommendation = '';
+    Color color = Colors.blue;
+
+    switch (protocol) {
+      case 'IPP':
+        recommendation = '✅ Best choice! IPP is modern, secure, and supports duplex, color, and status reporting.';
+        color = Colors.green;
+        break;
+      case 'RAW/TCP':
+      case 'TCP':
+        recommendation = '⚠️ Raw TCP works but lacks features. Consider switching to IPP if available.';
+        color = Colors.orange;
+        break;
+      case 'LPR/LPD':
+        recommendation = 'ℹ️ LPR is common in corporate networks. Check firewall allows port 515.';
+        color = Colors.blue;
+        break;
+      case 'HTTP':
+        recommendation = '⚠️ HTTP is unencrypted. Use HTTPS if available for security.';
+        color = Colors.orange;
+        break;
+    }
+
+    if (recommendation.isNotEmpty) {
+      return Container(
+        margin: EdgeInsets.only(top: 8.h),
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: color, size: 20.sp),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                recommendation,
+                style: TextStyle(fontSize: 12.sp, color: color),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox.shrink();
+  }
+
   void _clearForm() {
     setState(() {
       _printerNameController.clear();
       _ipController.clear();
       _portController.text = '9100';
-      _selectedProtocol = 'TCP';
+      _selectedProtocol = 'RAW/TCP';
       _setAsDefault = false;
     });
   }
@@ -347,7 +606,7 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
             ),
             SizedBox(height: 16.h),
 
-            // IP Address with Scan WiFi button
+            // IP Address with Scan WiFi and Auto-Detect buttons
             Row(
               children: [
                 Expanded(
@@ -362,6 +621,14 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
                   label: Text('Scan WiFi', style: TextStyle(fontSize: 14.sp)),
                   style: TextButton.styleFrom(foregroundColor: AppColors.primary),
                 ),
+                SizedBox(width: 8.w),
+                if (_ipController.text.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: _autoDetectProtocol,
+                    icon: Icon(Icons.auto_awesome, size: 18.sp),
+                    label: Text('Auto-Detect', style: TextStyle(fontSize: 14.sp)),
+                    style: TextButton.styleFrom(foregroundColor: Colors.orange),
+                  ),
               ],
             ),
             SizedBox(height: 8.h),
@@ -406,12 +673,14 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
               ),
-              items: ['TCP', 'USB', 'System Default'].map((protocol) {
+              items: ['RAW/TCP', 'IPP', 'LPR/LPD', 'HTTP', 'HTTPS', 'USB', 'System Default'].map((protocol) {
                 return DropdownMenuItem(value: protocol, child: Text(protocol));
               }).toList(),
               onChanged: (value) => setState(() => _selectedProtocol = value!),
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
+            _getProtocolRecommendationWidget(),
+            SizedBox(height: 8.h),
 
             // Set as Default
             CheckboxListTile(
@@ -443,18 +712,34 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
             ),
             SizedBox(height: 12.h),
 
-            // Test Raw Print Button (visible when IP is provided)
+            // Test Print Buttons (visible when IP is provided)
             if (_ipController.text.trim().isNotEmpty)
-              SizedBox(
-                width: double.infinity,
-                height: 48.h,
-                child: OutlinedButton(
-                  onPressed: _sendRawTestPrint,
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48.h,
+                    child: OutlinedButton(
+                      onPressed: _sendTestPrintWithProtocol,
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                      ),
+                      child: Text('Test Print (Selected Protocol)', style: TextStyle(fontSize: 16.sp)),
+                    ),
                   ),
-                  child: Text('Test Raw Print', style: TextStyle(fontSize: 16.sp)),
-                ),
+                  SizedBox(height: 8.h),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48.h,
+                    child: OutlinedButton(
+                      onPressed: _sendRawTestPrint,
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                      ),
+                      child: Text('Test Raw Print', style: TextStyle(fontSize: 16.sp)),
+                    ),
+                  ),
+                ],
               ),
           ],
         ),

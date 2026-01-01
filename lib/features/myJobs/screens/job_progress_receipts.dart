@@ -206,10 +206,7 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                       icon: SolarIconsOutline.documentText,
                       title: 'Quote',
                       isEnabled: true,
-                      onTap: () {
-                        // TODO: Navigate to quote print
-                        debugPrint('Quote tapped');
-                      },
+                      onTap: () => debugPrint('Quote tapped'),
                     ),
                     _buildDivider(),
                     _buildPrintOption(
@@ -217,10 +214,7 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                       icon: SolarIconsOutline.documentText,
                       title: 'Invoice',
                       isEnabled: true,
-                      onTap: () {
-                        // TODO: Navigate to invoice print
-                        debugPrint('Invoice tapped');
-                      },
+                      onTap: () => debugPrint('Invoice tapped'),
                     ),
                     _buildDivider(),
                     _buildPrintOption(

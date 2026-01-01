@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:talker_flutter/talker_flutter.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 import 'base_printer_service.dart';
 
@@ -14,6 +16,8 @@ class BrotherPrinterService implements BasePrinterService {
   factory BrotherPrinterService() => _instance;
   BrotherPrinterService._internal();
 
+  Talker get _talker => SetUpDI.getIt<Talker>();
+
   @override
   Future<PrinterResult> printThermalReceipt({
     required String ipAddress,
@@ -22,6 +26,7 @@ class BrotherPrinterService implements BasePrinterService {
     Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
+      _talker.info('[ThermalPrinter: $ipAddress] Starting Brother raw TCP print');
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
       socket.add(utf8.encode(text));
       // A few line feeds to ensure the printer advances paper
@@ -29,8 +34,10 @@ class BrotherPrinterService implements BasePrinterService {
       await socket.flush();
       socket.destroy();
 
+      _talker.info('[ThermalPrinter: $ipAddress] ✅ Printed successfully (raw TCP)');
       return PrinterResult(success: true, message: 'Printed (raw TCP)', code: 0);
     } catch (e) {
+      _talker.error('[ThermalPrinter: $ipAddress] ❌ Print error: $e');
       return PrinterResult(success: false, message: 'Print error: $e', code: -1);
     }
   }

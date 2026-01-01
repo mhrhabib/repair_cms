@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+/// Callback type for handling notification navigation
+typedef NotificationNavigationCallback = void Function(String conversationId, String? jobId);
+
 /// Service for managing local notifications throughout the app.
 /// Handles initialization, permission requests, and showing notifications.
 class LocalNotificationService {
@@ -10,6 +13,10 @@ class LocalNotificationService {
 
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
+
+  /// Navigation callback for handling notification taps
+  /// Set this from your app's navigation context
+  NotificationNavigationCallback? _onNavigateToConversation;
 
   /// Initialize the notification service
   Future<void> initialize() async {
@@ -38,6 +45,13 @@ class LocalNotificationService {
     } catch (e) {
       debugPrint('❌ [LocalNotificationService] Initialization error: $e');
     }
+  }
+
+  /// Set the callback for handling navigation when notifications are tapped
+  /// This should be called from your app's main context where navigation is available
+  void setNavigationCallback(NotificationNavigationCallback callback) {
+    _onNavigateToConversation = callback;
+    debugPrint('✅ [LocalNotificationService] Navigation callback registered');
   }
 
   /// Request notification permissions (iOS specific, Android auto-grants)
@@ -173,9 +187,15 @@ class LocalNotificationService {
 
       if (conversationId != null) {
         debugPrint('🚀 [LocalNotificationService] Navigate to conversation: $conversationId (job: $jobId)');
-        // TODO: Implement navigation to conversation screen
-        // This should be handled via a callback or navigation service
-        // For now, just log the action
+
+        // Use the callback to navigate if it's set
+        if (_onNavigateToConversation != null) {
+          _onNavigateToConversation!(conversationId, jobId);
+        } else {
+          debugPrint(
+            '⚠️ [LocalNotificationService] Navigation callback not set. Call setNavigationCallback() from your app.',
+          );
+        }
       }
     } catch (e) {
       debugPrint('❌ [LocalNotificationService] Error parsing payload: $e');

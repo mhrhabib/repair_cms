@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:talker_flutter/talker_flutter.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 import 'base_printer_service.dart';
 
@@ -10,6 +12,8 @@ class EpsonPrinterService implements BasePrinterService {
   factory EpsonPrinterService() => _instance;
   EpsonPrinterService._internal();
 
+  Talker get _talker => SetUpDI.getIt<Talker>();
+
   @override
   Future<PrinterResult> printThermalReceipt({
     required String ipAddress,
@@ -18,6 +22,7 @@ class EpsonPrinterService implements BasePrinterService {
     Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
+      _talker.info('[ThermalPrinter: $ipAddress] Starting Epson thermal print');
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
 
       // Epson ESC/POS commands
@@ -40,8 +45,10 @@ class EpsonPrinterService implements BasePrinterService {
       await socket.flush();
       socket.destroy();
 
+      _talker.info('[ThermalPrinter: $ipAddress] ✅ Thermal receipt printed successfully');
       return PrinterResult(success: true, message: 'Epson receipt printed successfully', code: 0);
     } catch (e) {
+      _talker.error('[ThermalPrinter: $ipAddress] ❌ Epson print error: $e');
       return PrinterResult(success: false, message: 'Epson print error: $e', code: -1);
     }
   }

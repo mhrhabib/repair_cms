@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
 import 'package:repair_cms/features/auth/forgotPassword/repo/forgot_password_repo.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
@@ -53,6 +54,11 @@ class SetUpDI {
   static SetUpDI get instance => _instance;
 
   Future<void> init() async {
+    // Register Talker for logging (singleton)
+    _getIt.registerLazySingleton<Talker>(
+      () => TalkerFlutter.init(settings: TalkerSettings(maxHistoryItems: 1000, useConsoleLogs: true)),
+    );
+
     // Register SignInRepository
     _getIt.registerLazySingleton<SignInRepository>(() => SignInRepository());
     // Register SignInCubit with the repository dependency
