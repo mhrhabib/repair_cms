@@ -88,6 +88,7 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
   }
 
   /// Map our app's `LabelSize` (from settings) to `BrotherLabelSize` used by the SDK
+  /// Note: This is only for QL and PT series. TD series should use customPaperSize instead.
   BrotherLabelSize _mapLabelSizeToBrother(LabelSize? labelSize, String modelString) {
     if (labelSize == null) return BrotherLabelSize.QLRollW62;
 
@@ -108,6 +109,7 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     if (w == 50) return BrotherLabelSize.QLRollW50;
     if (w == 62 && name.contains('rb')) return BrotherLabelSize.QLRollW62RB;
     if (w == 62) return BrotherLabelSize.QLRollW62;
+    if (w == 102 && (h == 150 || h == 152)) return BrotherLabelSize.QLRollW102;
     if (w == 102) return BrotherLabelSize.QLRollW102;
 
     // PT tape widths
@@ -150,6 +152,8 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
   }) async {
     // Retry logic: attempt up to 3 times with delays
     int maxRetries = 3;
+    LabelSize? cfgLabelSize; // Declare outside try block so accessible in catch
+
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         _talker.info('[LabelPrinter: $ipAddress] Starting Brother SDK label print (Attempt $attempt/$maxRetries)');
@@ -165,12 +169,11 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
 
         // Create a small PDF from the text and print via SDK
         final pdfPath = await _createPdfFromText(text);
-        final cfgLabelSize = _settingsService.getDefaultPrinter('label')?.labelSize;
-        final brotherLabel = _mapLabelSizeToBrother(cfgLabelSize, modelString);
+        cfgLabelSize = _settingsService.getDefaultPrinter('label')?.labelSize;
+
         debugPrint(
           '🛠️ Brother SDK — label size config: ${cfgLabelSize?.name} (${cfgLabelSize?.width}x${cfgLabelSize?.height}mm)',
         );
-        debugPrint('🛠️ Brother SDK — mapped to Brother labelSize: $brotherLabel');
         debugPrint('🛠️ Brother SDK — sending PDF at $pdfPath');
 
         // Verify PDF exists before printing
@@ -181,9 +184,26 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
         debugPrint('🛠️ Brother SDK — PDF file size: ${await pdfFile.length()} bytes');
 
         _talker.info('[LabelPrinter] Sending to Brother printer: ${await pdfFile.length()} bytes');
+
+        // TD series printers are not fully supported by the Brother SDK - skip to raw TCP fallback
+        if (modelString.toUpperCase().startsWith('TD-')) {
+          debugPrint('🛠️ Brother SDK — TD printer detected, SDK not supported - will use raw TCP fallback');
+          _talker.debug('[LabelPrinter] TD printer: SDK not supported, triggering raw TCP fallback');
+          throw Exception('TD series printers require raw TCP mode. Brother SDK does not support TD series.');
+        }
+
+        // QL and PT series use labelSize enum
+        final brotherLabel = _mapLabelSizeToBrother(cfgLabelSize, modelString);
+        debugPrint('🛠️ Brother SDK — QL/PT printer: labelSize=$brotherLabel');
+        _talker.debug('[LabelPrinter] QL/PT printer: labelSize=$brotherLabel');
+
         await BrotherPrinter.printPDF(path: pdfPath, device: device, labelSize: brotherLabel);
+
         _talker.info('[LabelPrinter: $ipAddress] ✅ Label printed successfully');
         debugPrint('✅ Brother SDK — printPDF completed successfully');
+        debugPrint(
+          '💡 If printer starts but nothing prints, check: 1) Label size in app matches physical labels, 2) Printer media sensor calibrated, 3) Labels loaded correctly',
+        );
 
         // cleanup
         try {
@@ -214,13 +234,22 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
         } else if (e.toString().contains('model')) {
           errorMsg +=
               'Model mismatch: ${_getModelForIp(ipAddress)} may not be supported. Try switching between SDK and Raw TCP modes.';
-        } else if (e.toString().contains('label') || e.toString().contains('size')) {
-          errorMsg += 'Label size issue: Check if selected label size matches the labels loaded in printer.';
+        } else if (e.toString().contains('label') ||
+            e.toString().contains('size') ||
+            e.toString().contains('paper') ||
+            e.toString().contains('media') ||
+            e.toString().contains('CustomPaperSize')) {
+          errorMsg +=
+              'LABEL SIZE MISMATCH: Selected label size (${cfgLabelSize?.name ?? "N/A"}) does not match labels in printer. Check: 1) Labels physically loaded, 2) Correct size selected in app, 3) Run printer media sensor calibration.';
         } else if (e.toString().contains('PDF')) {
           errorMsg += 'PDF generation failed. This is a software issue.';
+        } else if (e.toString().toLowerCase().contains('no output') ||
+            e.toString().toLowerCase().contains('nothing print')) {
+          errorMsg +=
+              'Printer starts but no output: LABEL SIZE ISSUE - The selected label size does not match physical labels. Try: 1) Different label size in settings, 2) Calibrate printer media sensor, 3) Switch to Raw TCP mode.';
         } else {
           errorMsg +=
-              'Unexpected error. Check: 1) Printer power, 2) Network connection, 3) Printer ready status, 4) Label loaded correctly.';
+              'Check: 1) Label size in app matches physical labels in printer, 2) Printer media sensor calibrated, 3) Labels loaded correctly with correct orientation, 4) Try Raw TCP mode instead of SDK.';
         }
 
         return base.PrinterResult(success: false, message: errorMsg, code: -1);
@@ -292,8 +321,18 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
       // Create PDF from image and send to SDK
       final pdfPath = await _createPdfFromImage(await tempFile.readAsBytes());
       final cfgLabelSizeImg = _settingsService.getDefaultPrinter('label')?.labelSize;
+      debugPrint('🛠️ Brother SDK (image) — sending PDF at $pdfPath');
+
+      // TD series printers are not fully supported by the Brother SDK
+      if (modelString.toUpperCase().startsWith('TD-')) {
+        debugPrint('🛠️ Brother SDK (image) — TD printer detected, SDK not supported');
+        throw Exception('TD series printers require raw TCP mode. Brother SDK does not support TD series.');
+      }
+
+      // QL and PT series use labelSize enum
       final brotherLabelImg = _mapLabelSizeToBrother(cfgLabelSizeImg, modelString);
-      debugPrint('🛠️ Brother SDK (image) — sending PDF at $pdfPath with labelSize=$brotherLabelImg');
+      debugPrint('🛠️ Brother SDK (image) — QL/PT printer: labelSize=$brotherLabelImg');
+
       await BrotherPrinter.printPDF(path: pdfPath, device: device, labelSize: brotherLabelImg);
 
       try {

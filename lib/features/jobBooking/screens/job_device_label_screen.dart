@@ -66,27 +66,26 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       SnackbarDemo(message: 'Sending to printer...').showCustomSnackbar(context);
 
-      // Use printer service factory to get appropriate service (may prefer SDK or raw TCP)
-      final printerService = PrinterServiceFactory.getPrinterServiceForConfig(printer);
-
       // Try generating image PDF for high-fidelity label (barcode + QR)
       if (canPrintImage) {
         final pdf = await _generateLabelPdf();
 
-        // Convert PDF to bytes and attempt image printing via service
+        // Convert PDF to bytes and attempt image printing
         final pdfBytes = await pdf.save();
 
-        // Try image printing first via configured service
-        final imageResult = await printerService.printLabelImage(
-          ipAddress: printer.ipAddress,
+        // Try image printing with fallback handling for TD series printers
+        final imageResult = await PrinterServiceFactory.printLabelImageWithFallback(
+          config: printer,
           imageBytes: pdfBytes,
-          port: printer.port ?? 9100,
         );
 
         if (imageResult.success) {
           SnackbarDemo(message: imageResult.message).showCustomSnackbar(context);
           return;
         }
+
+        // If image printing not supported (TD series), fall back to text
+        debugPrint('⚠️ Image print not supported: ${imageResult.message}, trying text fallback');
 
         // Fallback: attempt structured/device label via SDK/raw fallback
         final labelText = _buildLabelText();

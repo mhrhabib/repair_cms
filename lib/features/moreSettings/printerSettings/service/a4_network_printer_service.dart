@@ -25,44 +25,44 @@ class A4NetworkPrinterService implements BasePrinterService {
     int port = 9100,
     Duration timeout = const Duration(seconds: 10),
   }) async {
-    _talker.info('[PrinterIP: $ipAddress:$port] Starting A4 print job with ${pdfBytes.length} bytes');
+    _talker.info('[A4Printer: $ipAddress:$port] Starting A4 print job with ${pdfBytes.length} bytes');
 
     // Try each strategy with retry logic (2 full attempts of all 3 strategies)
     for (int attempt = 1; attempt <= 2; attempt++) {
       if (attempt > 1) {
-        _talker.debug('[PrinterIP: $ipAddress] Retry attempt $attempt after 2 second delay');
+        _talker.debug('[A4Printer: $ipAddress] Retry attempt $attempt after 2 second delay');
         await Future.delayed(const Duration(seconds: 2));
       }
 
       // Strategy 1: Pure PDF (works with most modern HP printers)
-      _talker.debug('[PrinterIP: $ipAddress] Trying Strategy 1: Pure PDF (Attempt $attempt/2)');
+      _talker.debug('[A4Printer: $ipAddress] Trying Strategy 1: Pure PDF (Attempt $attempt/2)');
       debugPrint('📄 [A4NetworkPrinter] Trying Strategy 1: Pure PDF');
       final result1 = await _printWithStrategy1(ipAddress, pdfBytes, port, timeout);
       if (result1.success) {
-        _talker.info('[PrinterIP: $ipAddress] ✅ SUCCESS with Strategy 1');
+        _talker.info('[A4Printer: $ipAddress] ✅ SUCCESS with Strategy 1');
         return result1;
       }
 
-      _talker.warning('[PrinterIP: $ipAddress] Strategy 1 failed, trying Strategy 2');
+      _talker.warning('[A4Printer: $ipAddress] Strategy 1 failed, trying Strategy 2');
       debugPrint('⚠️ [A4NetworkPrinter] Strategy 1 failed, trying Strategy 2: PDF with PCL wrapper');
       // Strategy 2: PDF with PCL wrapper (for printers that need mode switching)
       final result2 = await _printWithStrategy2(ipAddress, pdfBytes, port, timeout);
       if (result2.success) {
-        _talker.info('[PrinterIP: $ipAddress] ✅ SUCCESS with Strategy 2');
+        _talker.info('[A4Printer: $ipAddress] ✅ SUCCESS with Strategy 2');
         return result2;
       }
 
-      _talker.warning('[PrinterIP: $ipAddress] Strategy 2 failed, trying Strategy 3');
+      _talker.warning('[A4Printer: $ipAddress] Strategy 2 failed, trying Strategy 3');
       debugPrint('⚠️ [A4NetworkPrinter] Strategy 2 failed, trying Strategy 3: PDF with minimal commands');
       // Strategy 3: PDF with minimal commands
       final result3 = await _printWithStrategy3(ipAddress, pdfBytes, port, timeout);
       if (result3.success) {
-        _talker.info('[PrinterIP: $ipAddress] ✅ SUCCESS with Strategy 3');
+        _talker.info('[A4Printer: $ipAddress] ✅ SUCCESS with Strategy 3');
         return result3;
       }
     }
 
-    _talker.error('[PrinterIP: $ipAddress] ❌ ALL STRATEGIES FAILED after 2 attempts');
+    _talker.error('[A4Printer: $ipAddress] ❌ ALL STRATEGIES FAILED after 2 attempts');
     debugPrint('❌ [A4NetworkPrinter] All strategies failed after retries');
     return PrinterResult(
       success: false,
@@ -75,10 +75,10 @@ class A4NetworkPrinterService implements BasePrinterService {
   /// Strategy 1: Send only PDF data (cleanest, works with modern HP)
   Future<PrinterResult> _printWithStrategy1(String ipAddress, Uint8List pdfBytes, int port, Duration timeout) async {
     try {
-      _talker.debug('[Strategy1] Connecting to $ipAddress:$port');
+      _talker.debug('[A4Printer: $ipAddress] Strategy 1: Connecting...');
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
 
-      _talker.info('[Strategy1] Sending pure PDF (${pdfBytes.length} bytes)');
+      _talker.info('[A4Printer: $ipAddress] Strategy 1: Sending pure PDF (${pdfBytes.length} bytes)');
       debugPrint('📄 [A4NetworkPrinter] Strategy 1: Sending pure PDF (${pdfBytes.length} bytes)');
       socket.add(pdfBytes);
 
@@ -86,11 +86,11 @@ class A4NetworkPrinterService implements BasePrinterService {
       await Future.delayed(const Duration(milliseconds: 500)); // Give printer time to process
       socket.destroy();
 
-      _talker.info('[Strategy1] Completed successfully');
+      _talker.info('[A4Printer: $ipAddress] ✅ Strategy 1 completed successfully');
       debugPrint('✅ [A4NetworkPrinter] Strategy 1 completed');
       return PrinterResult(success: true, message: 'A4 receipt printed (Strategy 1)', code: 0);
     } catch (e) {
-      _talker.error('[Strategy1] Error: $e');
+      _talker.error('[A4Printer: $ipAddress] ❌ Strategy 1 error: $e');
       debugPrint('❌ [A4NetworkPrinter] Strategy 1 error: $e');
       return PrinterResult(success: false, message: 'Strategy 1 failed: $e', code: -1);
     }
@@ -99,10 +99,10 @@ class A4NetworkPrinterService implements BasePrinterService {
   /// Strategy 2: PDF with UEL and PCL commands (for older HP models)
   Future<PrinterResult> _printWithStrategy2(String ipAddress, Uint8List pdfBytes, int port, Duration timeout) async {
     try {
-      _talker.debug('[Strategy2] Connecting to $ipAddress:$port');
+      _talker.debug('[A4Printer: $ipAddress] Strategy 2: Connecting...');
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
 
-      _talker.info('[Strategy2] Sending PDF with PCL wrapper');
+      _talker.info('[A4Printer: $ipAddress] Strategy 2: Sending PDF with PCL wrapper');
       debugPrint('📄 [A4NetworkPrinter] Strategy 2: PDF with PCL wrapper');
 
       // UEL command to reset printer
@@ -118,11 +118,11 @@ class A4NetworkPrinterService implements BasePrinterService {
       await Future.delayed(const Duration(milliseconds: 500));
       socket.destroy();
 
-      _talker.info('[Strategy2] Completed successfully');
+      _talker.info('[A4Printer: $ipAddress] ✅ Strategy 2 completed successfully');
       debugPrint('✅ [A4NetworkPrinter] Strategy 2 completed');
       return PrinterResult(success: true, message: 'A4 receipt printed (Strategy 2)', code: 0);
     } catch (e) {
-      _talker.error('[Strategy2] Error: $e');
+      _talker.error('[A4Printer: $ipAddress] ❌ Strategy 2 error: $e');
       debugPrint('❌ [A4NetworkPrinter] Strategy 2 error: $e');
       return PrinterResult(success: false, message: 'Strategy 2 failed: $e', code: -1);
     }
@@ -131,10 +131,10 @@ class A4NetworkPrinterService implements BasePrinterService {
   /// Strategy 3: PDF with simple reset and form feed
   Future<PrinterResult> _printWithStrategy3(String ipAddress, Uint8List pdfBytes, int port, Duration timeout) async {
     try {
-      _talker.debug('[Strategy3] Connecting to $ipAddress:$port');
+      _talker.debug('[A4Printer: $ipAddress] Strategy 3: Connecting...');
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
 
-      _talker.info('[Strategy3] Sending PDF with minimal commands');
+      _talker.info('[A4Printer: $ipAddress] Strategy 3: Sending PDF with minimal commands');
       debugPrint('📄 [A4NetworkPrinter] Strategy 3: PDF with minimal commands');
 
       socket.add([0x1B, 0x40]); // ESC @ - Initialize (simpler than UEL)
@@ -146,11 +146,11 @@ class A4NetworkPrinterService implements BasePrinterService {
       await Future.delayed(const Duration(seconds: 1)); // Longer delay
       socket.destroy();
 
-      _talker.info('[Strategy3] Completed successfully');
+      _talker.info('[A4Printer: $ipAddress] ✅ Strategy 3 completed successfully');
       debugPrint('✅ [A4NetworkPrinter] Strategy 3 completed');
       return PrinterResult(success: true, message: 'A4 receipt printed (Strategy 3)', code: 0);
     } catch (e) {
-      _talker.error('[Strategy3] Error: $e');
+      _talker.error('[A4Printer: $ipAddress] ❌ Strategy 3 error: $e');
       debugPrint('❌ [A4NetworkPrinter] Strategy 3 error: $e');
       return PrinterResult(success: false, message: 'Strategy 3 failed: $e', code: -1);
     }
@@ -196,6 +196,7 @@ class A4NetworkPrinterService implements BasePrinterService {
     Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
+      _talker.info('[A4Printer: $ipAddress] Converting text to PDF for label printing');
       debugPrint('📄 [A4NetworkPrinter] Converting text to PDF for label printing');
 
       // Create a simple PDF from text
@@ -216,6 +217,7 @@ class A4NetworkPrinterService implements BasePrinterService {
       final pdfBytes = await pdf.save();
       return printA4Receipt(ipAddress: ipAddress, pdfBytes: pdfBytes, port: port, timeout: timeout);
     } catch (e) {
+      _talker.error('[A4Printer: $ipAddress] ❌ Failed to convert text to PDF: $e');
       debugPrint('❌ [A4NetworkPrinter] Failed to convert text to PDF: $e');
       return PrinterResult(success: false, message: 'Failed to generate PDF: $e', code: -1);
     }
@@ -229,6 +231,7 @@ class A4NetworkPrinterService implements BasePrinterService {
     Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
+      _talker.info('[A4Printer: $ipAddress] Creating formatted device label PDF');
       debugPrint('📄 [A4NetworkPrinter] Creating formatted device label PDF');
 
       // Format label data into text
@@ -248,6 +251,7 @@ class A4NetworkPrinterService implements BasePrinterService {
 
       return printLabel(ipAddress: ipAddress, text: buffer.toString(), port: port, timeout: timeout);
     } catch (e) {
+      _talker.error('[A4Printer: $ipAddress] ❌ Failed to create device label: $e');
       debugPrint('❌ [A4NetworkPrinter] Failed to create device label: $e');
       return PrinterResult(success: false, message: 'Failed to create device label: $e', code: -1);
     }

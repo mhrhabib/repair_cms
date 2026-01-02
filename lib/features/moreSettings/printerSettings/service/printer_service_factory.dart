@@ -125,4 +125,38 @@ class PrinterServiceFactory {
     final svc = getPrinterServiceForConfig(config);
     return await svc.printDeviceLabel(ipAddress: config.ipAddress, labelData: labelData, port: config.port ?? 9100);
   }
+
+  /// Attempt to print label image with SDK first then text fallback.
+  /// TD series printers don't support SDK image printing, so this will automatically fall back to text.
+  static Future<PrinterResult> printLabelImageWithFallback({
+    required PrinterConfigModel config,
+    required Uint8List imageBytes,
+  }) async {
+    final brand = config.printerBrand.toLowerCase();
+    if (brand == 'brother') {
+      final sdk = BrotherSDKPrinterService();
+      try {
+        final res = await sdk.printLabelImage(
+          ipAddress: config.ipAddress,
+          imageBytes: imageBytes,
+          port: config.port ?? 9100,
+        );
+        if (res.success) return res;
+        debugPrint('⚠️ Brother SDK image print failed: ${res.message} — image printing not supported, use text mode');
+      } catch (e) {
+        debugPrint('⚠️ Brother SDK image threw: $e — TD series printers need text/raw TCP mode');
+      }
+
+      // For TD series or when SDK fails, we can't print images via raw TCP easily
+      // Return failure so caller can fall back to text-based printing
+      return PrinterResult(
+        success: false,
+        message: 'Image printing not supported for this printer model. Please use text mode.',
+        code: -1,
+      );
+    }
+
+    final svc = getPrinterServiceForConfig(config);
+    return await svc.printLabelImage(ipAddress: config.ipAddress, imageBytes: imageBytes, port: config.port ?? 9100);
+  }
 }

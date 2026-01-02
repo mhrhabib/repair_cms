@@ -30,7 +30,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   String _selectedProtocol = 'TCP';
   bool _setAsDefault = false;
   bool _isSaving = false;
-  bool _useSdk = false;
 
   List<PrinterConfigModel> _savedPrinters = [];
 
@@ -51,12 +50,15 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       'TD-2125NWB',
       'TD-2135N',
       'TD-2135NWB',
-      // TD-4D Series (Desktop Label Printers) - May work with another_brother SDK
+      'TD-2350D', // Client's printer at 192.168.0.149
+      'TD-2350DA',
+      // TD-4D Series (Desktop Label Printers) - Requires Raw TCP mode
       'TD-4210D',
       'TD-4410D',
       'TD-4420DN',
       'TD-4520DN',
       'TD-4550DNWB',
+      'TD-455DNWB', // Client's printer at 192.168.0.7 (typo variant of TD-4550DNWB)
     ],
     'Xprinter': ['XP-420B', 'XP-470B', 'XP-DT425B'],
     'Dymo': ['LabelWriter 450', 'LabelWriter 4XL', 'LabelWriter 550'],
@@ -84,7 +86,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       _portController.text = printer.port?.toString() ?? '9100';
       _selectedProtocol = printer.protocol;
       _setAsDefault = printer.isDefault;
-      _useSdk = printer.useSdk ?? false;
     });
     SnackbarDemo(
       message: 'Form filled with ${printer.printerModel ?? printer.printerBrand} settings',
@@ -112,7 +113,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       protocol: _selectedProtocol,
       port: int.tryParse(_portController.text),
       isDefault: _setAsDefault,
-      useSdk: _useSdk,
       labelSize: _selectedLabelSize,
     );
 
@@ -137,7 +137,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       _portController.text = '9100';
       _selectedProtocol = 'TCP';
       _setAsDefault = false;
-      _useSdk = false;
     });
   }
 
@@ -311,7 +310,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                         ],
                       ),
                       subtitle: Text(
-                        '${printer.ipAddress}:${printer.port} (${printer.labelSize?.name ?? "N/A"}) • ${printer.useSdk == true ? 'SDK' : 'Raw TCP'}',
+                        '${printer.ipAddress}:${printer.port} (${printer.labelSize?.name ?? "N/A"}) • ${printer.protocol}',
                         style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
                       ),
                       trailing: PopupMenuButton<String>(
@@ -494,11 +493,67 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
               ),
-              items: ['TCP', 'USB'].map((protocol) {
+              items: ['TCP', 'IPP', 'USB'].map((protocol) {
                 return DropdownMenuItem(value: protocol, child: Text(protocol));
               }).toList(),
-              onChanged: (value) => setState(() => _selectedProtocol = value!),
+              onChanged: (value) {
+                setState(() {
+                  _selectedProtocol = value!;
+                  // Auto-update port based on protocol
+                  if (value == 'IPP') {
+                    _portController.text = '631';
+                  } else if (value == 'TCP') {
+                    _portController.text = '9100';
+                  }
+                });
+              },
             ),
+            // Protocol recommendation
+            if (_selectedProtocol == 'IPP') ...[
+              SizedBox(height: 8.h),
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green.shade700, size: 20.sp),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        '✅ IPP is recommended for Brother printers! More reliable than raw TCP.',
+                        style: TextStyle(fontSize: 13.sp, color: Colors.green.shade900),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (_selectedProtocol == 'TCP') ...[
+              SizedBox(height: 8.h),
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info, color: Colors.orange.shade700, size: 20.sp),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        'ℹ️ If TCP doesn\'t work, try IPP protocol instead (port 631).',
+                        style: TextStyle(fontSize: 13.sp, color: Colors.orange.shade900),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             SizedBox(height: 16.h),
 
             // Set as Default
@@ -509,14 +564,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
-            if (_selectedBrand == 'Brother')
-              CheckboxListTile(
-                title: const Text('Use Brother SDK (recommended for TD/QL series)'),
-                value: _useSdk,
-                onChanged: (value) => setState(() => _useSdk = value ?? false),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-              ),
             SizedBox(height: 24.h),
 
             // Save Button
@@ -585,7 +632,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                       port: int.tryParse(_portController.text),
                       isDefault: false,
                       labelSize: _selectedLabelSize,
-                      useSdk: _useSdk,
                     );
 
                     // Console debug: show payload and config for debugging
@@ -596,15 +642,14 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                     SnackbarDemo(message: 'Sending test print...').showCustomSnackbar(context);
 
                     try {
-                      final res = await PrinterServiceFactory.getPrinterServiceForConfig(
-                        temp,
-                      ).printLabel(ipAddress: temp.ipAddress, text: testText, port: temp.port ?? 9100);
+                      // Use printLabelWithFallback to handle TD series printers that need raw TCP
+                      final res = await PrinterServiceFactory.printLabelWithFallback(config: temp, text: testText);
 
                       debugPrint('🖨️ Print result: success=${res.success}, code=${res.code}, message=${res.message}');
                       SnackbarDemo(message: res.message).showCustomSnackbar(context);
                     } catch (e, st) {
                       debugPrint('❌ Test print failed: $e\n$st');
-                      SnackbarDemo(message: '❌ Test print failed').showCustomSnackbar(context);
+                      SnackbarDemo(message: '❌ Test print failed: $e').showCustomSnackbar(context);
                     }
                   },
                   style: OutlinedButton.styleFrom(
