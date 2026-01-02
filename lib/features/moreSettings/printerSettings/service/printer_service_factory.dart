@@ -127,13 +127,29 @@ class PrinterServiceFactory {
   }
 
   /// Attempt to print label image with SDK first then text fallback.
-  /// TD series printers don't support SDK image printing, so this will automatically fall back to text.
+  /// TD series printers will use raw TCP raster mode for proper QR code/label printing.
   static Future<PrinterResult> printLabelImageWithFallback({
     required PrinterConfigModel config,
     required Uint8List imageBytes,
   }) async {
     final brand = config.printerBrand.toLowerCase();
     if (brand == 'brother') {
+      // Check if it's a TD series printer
+      final modelString = config.printerModel?.toUpperCase() ?? '';
+      final isTDPrinter = modelString.startsWith('TD-');
+
+      if (isTDPrinter) {
+        // TD printers: Use raw TCP service with raster image printing
+        debugPrint('🖨️ TD printer detected: using raw TCP raster mode for image printing');
+        final raw = BrotherPrinterService();
+        return await raw.printLabelImage(
+          ipAddress: config.ipAddress,
+          imageBytes: imageBytes,
+          port: config.port ?? 9100,
+        );
+      }
+
+      // QL/PT series: Try SDK first
       final sdk = BrotherSDKPrinterService();
       try {
         final res = await sdk.printLabelImage(
@@ -142,18 +158,14 @@ class PrinterServiceFactory {
           port: config.port ?? 9100,
         );
         if (res.success) return res;
-        debugPrint('⚠️ Brother SDK image print failed: ${res.message} — image printing not supported, use text mode');
+        debugPrint('⚠️ Brother SDK image print failed: ${res.message} — trying raw TCP fallback');
       } catch (e) {
-        debugPrint('⚠️ Brother SDK image threw: $e — TD series printers need text/raw TCP mode');
+        debugPrint('⚠️ Brother SDK image threw: $e — trying raw TCP fallback');
       }
 
-      // For TD series or when SDK fails, we can't print images via raw TCP easily
-      // Return failure so caller can fall back to text-based printing
-      return PrinterResult(
-        success: false,
-        message: 'Image printing not supported for this printer model. Please use text mode.',
-        code: -1,
-      );
+      // SDK failed, try raw TCP as fallback
+      final raw = BrotherPrinterService();
+      return await raw.printLabelImage(ipAddress: config.ipAddress, imageBytes: imageBytes, port: config.port ?? 9100);
     }
 
     final svc = getPrinterServiceForConfig(config);

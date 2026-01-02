@@ -345,9 +345,16 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
     final barcodeData = _getBarcodeData();
     final qrData = _getQRCodeData();
 
+    // Get label size from printer config
+    final defaultPrinter = _getDefaultPrinter();
+    final labelWidth = defaultPrinter?.labelSize?.width ?? 62;
+    final labelHeight = defaultPrinter?.labelSize?.height ?? 100;
+
+    debugPrint('📐 PDF size: ${labelWidth}x${labelHeight}mm');
+
     doc.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, 50 * PdfPageFormat.mm),
+        pageFormat: PdfPageFormat(labelWidth * PdfPageFormat.mm, labelHeight * PdfPageFormat.mm),
         build: (context) {
           return pw.Container(
             padding: pw.EdgeInsets.all(6),

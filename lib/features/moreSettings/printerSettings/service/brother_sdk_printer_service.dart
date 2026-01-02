@@ -13,7 +13,11 @@ import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/set_up_di.dart';
 
 /// Service class to handle Brother printer operations using brother_printer SDK
-/// Supports TD-2D, TD-4D, QL, and PT series printers
+/// Supports QL and PT series printers
+///
+/// NOTE: TD series printers (TD-2135NWB, TD-4550DNWB, etc.) are NOT supported by the Brother SDK.
+/// This service will immediately throw an exception for TD printers, allowing the caller
+/// to fall back to raw TCP/IPP printing via BrotherPrinterService.
 class BrotherSDKPrinterService implements base.BasePrinterService {
   static final BrotherSDKPrinterService _instance = BrotherSDKPrinterService._internal();
   factory BrotherSDKPrinterService() => _instance;
@@ -150,6 +154,18 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
   }) async {
+    // Check for TD series printers BEFORE attempting any SDK calls
+    final modelString = _getModelForIp(ipAddress);
+    if (modelString.toUpperCase().startsWith('TD-')) {
+      debugPrint(
+        '🛠️ Brother SDK — TD printer detected ($modelString), SDK not supported - skipping to raw TCP fallback',
+      );
+      _talker.debug(
+        '[LabelPrinter: $ipAddress] TD series detected: $modelString - SDK not supported, triggering raw TCP fallback',
+      );
+      throw Exception('TD series printers require raw TCP mode. Brother SDK does not support TD series.');
+    }
+
     // Retry logic: attempt up to 3 times with delays
     int maxRetries = 3;
     LabelSize? cfgLabelSize; // Declare outside try block so accessible in catch
@@ -157,7 +173,6 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         _talker.info('[LabelPrinter: $ipAddress] Starting Brother SDK label print (Attempt $attempt/$maxRetries)');
-        final modelString = _getModelForIp(ipAddress);
         final device = _createNetworkDevice(ipAddress, modelString);
 
         // Debug info: log mapping and device details before opening SDK stream
@@ -184,13 +199,6 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
         debugPrint('🛠️ Brother SDK — PDF file size: ${await pdfFile.length()} bytes');
 
         _talker.info('[LabelPrinter] Sending to Brother printer: ${await pdfFile.length()} bytes');
-
-        // TD series printers are not fully supported by the Brother SDK - skip to raw TCP fallback
-        if (modelString.toUpperCase().startsWith('TD-')) {
-          debugPrint('🛠️ Brother SDK — TD printer detected, SDK not supported - will use raw TCP fallback');
-          _talker.debug('[LabelPrinter] TD printer: SDK not supported, triggering raw TCP fallback');
-          throw Exception('TD series printers require raw TCP mode. Brother SDK does not support TD series.');
-        }
 
         // QL and PT series use labelSize enum
         final brotherLabel = _mapLabelSizeToBrother(cfgLabelSize, modelString);
@@ -283,8 +291,17 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     required Uint8List imageBytes,
     int port = 9100,
   }) async {
+    // Check for TD series printers BEFORE attempting any SDK calls
+    final modelString = _getModelForIp(ipAddress);
+    if (modelString.toUpperCase().startsWith('TD-')) {
+      debugPrint(
+        '🛠️ Brother SDK (image) — TD printer detected ($modelString), SDK not supported - skipping to raw TCP fallback',
+      );
+      _talker.debug('[LabelPrinter: $ipAddress] TD series detected: $modelString - SDK image printing not supported');
+      throw Exception('TD series printers require raw TCP mode. Brother SDK does not support TD series.');
+    }
+
     try {
-      final modelString = _getModelForIp(ipAddress);
       final device = _createNetworkDevice(ipAddress, modelString);
       debugPrint('🛠️ Brother SDK (image) — device: ip=${device.ipAddress}, model=${device.modelName}');
 
@@ -322,12 +339,6 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
       final pdfPath = await _createPdfFromImage(await tempFile.readAsBytes());
       final cfgLabelSizeImg = _settingsService.getDefaultPrinter('label')?.labelSize;
       debugPrint('🛠️ Brother SDK (image) — sending PDF at $pdfPath');
-
-      // TD series printers are not fully supported by the Brother SDK
-      if (modelString.toUpperCase().startsWith('TD-')) {
-        debugPrint('🛠️ Brother SDK (image) — TD printer detected, SDK not supported');
-        throw Exception('TD series printers require raw TCP mode. Brother SDK does not support TD series.');
-      }
 
       // QL and PT series use labelSize enum
       final brotherLabelImg = _mapLabelSizeToBrother(cfgLabelSizeImg, modelString);

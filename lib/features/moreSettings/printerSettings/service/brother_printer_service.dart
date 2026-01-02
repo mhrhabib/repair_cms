@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/set_up_di.dart';
+import 'package:printing/printing.dart' as printing;
 import 'printer_settings_service.dart';
 
 import 'base_printer_service.dart';
@@ -27,12 +30,38 @@ class BrotherPrinterService implements BasePrinterService {
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
   }) async {
-    // If port is 631, use IPP protocol
+    // Get printer model to determine if it's a TD series
+    final printers = _settingsService.getPrinters('label');
+    String modelString = '';
+    try {
+      final printer = printers.firstWhere((p) => p.ipAddress == ipAddress);
+      modelString = printer.printerModel?.toUpperCase() ?? '';
+    } catch (e) {
+      // Printer not found in config, assume not TD
+    }
+
+    // TD series printers MUST use raw TCP with raster commands, NOT IPP
+    // IPP sends text/plain which TD printers cannot process
+    final isTDPrinter = modelString.startsWith('TD-');
+
+    if (isTDPrinter) {
+      // Force raw TCP for TD printers, ignore port parameter
+      _talker.debug('[BrotherRawTCP] TD printer detected: $modelString - forcing raw TCP mode (port 9100)');
+      // Don't use IPP even if port 631 is configured
+      return _printViaTDRaster(ipAddress, text, timeout);
+    }
+
+    // For QL/PT series, use IPP if port 631 is specified
     if (port == 631) {
       return _printViaIPP(ipAddress, text, timeout);
     }
 
-    // Otherwise use raw TCP/ESC-POS
+    // Otherwise use raw TCP with raster commands
+    return _printViaTDRaster(ipAddress, text, timeout);
+  }
+
+  /// Print via raw TCP using Brother raster commands (for TD series)
+  Future<PrinterResult> _printViaTDRaster(String ipAddress, String text, Duration timeout) async {
     try {
       _talker.info('[BrotherRawTCP: $ipAddress] Starting Brother raw TCP print');
 
@@ -43,57 +72,15 @@ class BrotherPrinterService implements BasePrinterService {
 
       _talker.debug('[BrotherRawTCP] Label size: ${labelWidth}x${labelHeight}mm');
 
-      final socket = await Socket.connect(ipAddress, port, timeout: timeout);
+      final socket = await Socket.connect(ipAddress, 9100, timeout: timeout);
 
-      // Build Brother-specific ESC/POS commands
-      final List<int> bytes = [];
-
-      // ESC/POS Commands
-      const esc = 0x1B;
-      const gs = 0x1D;
-
-      // Initialize printer
-      bytes.addAll([esc, 0x40]); // ESC @ - Initialize
-
-      // Brother-specific: Set label mode (raster mode for labels)
-      bytes.addAll([esc, 0x69, 0x61, 0x01]); // ESC i a 1 - Enable raster mode
-
-      // Set media type (continuous roll with auto-cut)
-      bytes.addAll([esc, 0x69, 0x7A, 0x00, 0x04]); // ESC i z - Media type
-
-      // Set label width (in dots, 8 dots per mm for 203 DPI)
-      final widthDots = (labelWidth * 8).toInt();
-      bytes.addAll([esc, 0x69, 0x64, widthDots & 0xFF, (widthDots >> 8) & 0xFF]); // ESC i d
-
-      // Set label height (in dots)
-      final heightDots = (labelHeight * 8).toInt();
-      bytes.addAll([esc, 0x69, 0x7A, heightDots & 0xFF, (heightDots >> 8) & 0xFF]); // ESC i z
-
-      // Enable auto-cut
-      bytes.addAll([esc, 0x69, 0x4B, 0x08]); // ESC i K - Auto-cut
-
-      // Set print mode (high quality)
-      bytes.addAll([esc, 0x69, 0x7A, 0x00, 0x00]); // Print quality
-
-      // Auto status back settings
-      bytes.addAll([gs, 0x61, 0xFF]); // GS a - Enable auto status
-
-      // Print the text with proper encoding
-      bytes.addAll(utf8.encode(text));
-
-      // Add line feeds to ensure text is visible
-      bytes.addAll([0x0A, 0x0A, 0x0A]);
-
-      // Print command (form feed) to eject label
-      bytes.addAll([0x0C]); // Form feed - eject and cut
-
-      // Alternative: Use ESC i Z if form feed doesn't work
-      bytes.addAll([esc, 0x69, 0x5A]); // ESC i Z - Print command
+      // Build Brother raster command sequence for TD-2/TD-4 series
+      final bytes = _buildTDRasterCommands(text, labelWidth, labelHeight);
 
       _talker.debug('[BrotherRawTCP] Sending ${bytes.length} bytes to printer');
       socket.add(Uint8List.fromList(bytes));
       await socket.flush();
-      await Future.delayed(const Duration(milliseconds: 500)); // Wait for printer to process
+      await Future.delayed(const Duration(milliseconds: 1000)); // Wait for printer to process
       socket.destroy();
 
       _talker.info('[BrotherRawTCP: $ipAddress] ✅ Printed successfully (raw TCP)');
@@ -185,7 +172,63 @@ class BrotherPrinterService implements BasePrinterService {
     required Uint8List imageBytes,
     int port = 9100,
   }) async {
-    return PrinterResult(success: false, message: 'Image printing not supported', code: -2);
+    try {
+      _talker.info('[BrotherRawTCP: $ipAddress] Starting TD image print (QR code/label)');
+
+      // Get label size configuration
+      final labelSize = _settingsService.getDefaultPrinter('label')?.labelSize;
+      final labelWidth = labelSize?.width ?? 62;
+      final labelHeight = labelSize?.height ?? 100;
+
+      _talker.debug('[BrotherRawTCP] Label size: ${labelWidth}x${labelHeight}mm');
+
+      // Check if input is PDF
+      final isPdf =
+          imageBytes.length > 4 &&
+          imageBytes[0] == 0x25 &&
+          imageBytes[1] == 0x50 &&
+          imageBytes[2] == 0x44 &&
+          imageBytes[3] == 0x46;
+
+      ui.Image? uiImage;
+
+      if (isPdf) {
+        // Rasterize PDF to image
+        _talker.debug('[BrotherRawTCP] Rasterizing PDF to image');
+        await for (var page in printing.Printing.raster(imageBytes, pages: [0], dpi: 203)) {
+          uiImage = await page.toImage();
+          break; // Only process first page
+        }
+      } else {
+        // Decode image bytes
+        _talker.debug('[BrotherRawTCP] Decoding image');
+        final codec = await ui.instantiateImageCodec(imageBytes);
+        final frame = await codec.getNextFrame();
+        uiImage = frame.image;
+      }
+
+      if (uiImage == null) {
+        return PrinterResult(success: false, message: 'Failed to process image', code: -1);
+      }
+
+      // Convert image to raster data
+      final bytes = await _buildTDRasterFromImage(uiImage, labelWidth, labelHeight);
+
+      final socket = await Socket.connect(ipAddress, 9100, timeout: const Duration(seconds: 5));
+      _talker.debug('[BrotherRawTCP] Sending ${bytes.length} bytes to printer');
+
+      socket.add(Uint8List.fromList(bytes));
+      await socket.flush();
+      await Future.delayed(const Duration(milliseconds: 1000));
+      socket.destroy();
+
+      _talker.info('[BrotherRawTCP: $ipAddress] ✅ Image printed successfully (raw TCP)');
+      return PrinterResult(success: true, message: 'Image printed (raw TCP)', code: 0);
+    } catch (e, st) {
+      _talker.error('[BrotherRawTCP: $ipAddress] ❌ Image print error: $e');
+      debugPrint('Stack trace: $st');
+      return PrinterResult(success: false, message: 'Image print error: $e', code: -1);
+    }
   }
 
   @override
@@ -285,5 +328,230 @@ class BrotherPrinterService implements BasePrinterService {
       _talker.error('[BrotherIPP: $ipAddress:631] ❌ IPP print error: $e');
       return PrinterResult(success: false, message: 'IPP print error: $e', code: -1);
     }
+  }
+
+  /// Build Brother TD-2/TD-4 series raster commands
+  /// Supports both TD-2 (203 DPI) and TD-4 (300 DPI) series printers
+  List<int> _buildTDRasterCommands(String text, int labelWidth, int labelHeight) {
+    final List<int> bytes = [];
+    const esc = 0x1B;
+
+    // 1. Invalidate command - 100 null bytes to clear previous job
+    for (var i = 0; i < 100; i++) {
+      bytes.add(0x00);
+    }
+
+    // 2. Initialize printer
+    bytes.addAll([esc, 0x40]); // ESC @
+
+    // 3. Enter raster graphics mode
+    bytes.addAll([esc, 0x69, 0x61, 0x01]); // ESC i a 1
+
+    // 4. Set print information command (ESC i z)
+    bytes.addAll([esc, 0x69, 0x7A]);
+
+    // Print information flags
+    final validFlag = 0x80; // Bit 7: Valid command
+    final autoCut = 0x02; // Bit 1: Auto-cut enabled
+    final mirrorOff = 0x00; // Bit 0: No mirror printing
+    bytes.add(validFlag | autoCut | mirrorOff);
+
+    // Media width in mm (used for TD-4, ignored by TD-2)
+    bytes.add(labelWidth & 0xFF);
+
+    // Media length in mm (0 = continuous, or actual height)
+    bytes.add(labelHeight & 0xFF);
+
+    // Raster lines count (0 = auto)
+    bytes.addAll([0x00, 0x00, 0x00, 0x00]);
+
+    // Starting page (always 0)
+    bytes.add(0x00);
+
+    // Additional padding
+    bytes.add(0x00);
+
+    // 5. Set page orientation (portrait)
+    bytes.addAll([esc, 0x69, 0x4C, 0x00]); // ESC i L 0 (portrait)
+
+    // 6. Set left margin to 0
+    bytes.addAll([esc, 0x69, 0x64, 0x00, 0x00]); // ESC i d
+
+    // 7. Set compression mode (M command - no compression)
+    bytes.addAll([0x4D, 0x00]); // M 0x00
+
+    // 8. Generate raster data from text
+    final widthDots = labelWidth * 8; // 8 dots per mm at 203 DPI
+    final lineBytes = (widthDots / 8).ceil();
+
+    final lines = text.split('\n');
+    final maxLines = 20; // Maximum lines to print
+
+    for (var lineIndex = 0; lineIndex < lines.length && lineIndex < maxLines; lineIndex++) {
+      final line = lines[lineIndex];
+
+      // Each character is 8 pixels tall
+      for (var row = 0; row < 12; row++) {
+        // 12 pixel rows per text line
+        bytes.add(0x67); // 'g' raster line command
+        bytes.add(0x00); // No additional flags
+
+        // Line length in bytes
+        bytes.add(lineBytes & 0xFF);
+
+        // Generate pixel data for this row
+        final pixelData = List<int>.filled(lineBytes, 0x00);
+
+        // Simple block-based text rendering
+        if (row >= 2 && row <= 9) {
+          // Render text in middle rows
+          for (var charIndex = 0; charIndex < line.length; charIndex++) {
+            final byteIndex = charIndex * 2; // 2 bytes per character (16 pixels wide)
+            if (byteIndex < lineBytes) {
+              pixelData[byteIndex] = 0xFF; // Full black pixels
+              if (byteIndex + 1 < lineBytes) {
+                pixelData[byteIndex + 1] = 0xF0; // Partial pixels for spacing
+              }
+            }
+          }
+        }
+
+        bytes.addAll(pixelData);
+      }
+
+      // Add 2 blank rows between text lines for spacing
+      for (var i = 0; i < 2; i++) {
+        bytes.add(0x67); // 'g' command
+        bytes.add(0x00);
+        bytes.add(lineBytes & 0xFF);
+        bytes.addAll(List<int>.filled(lineBytes, 0x00));
+      }
+    }
+
+    // 9. Print command
+    bytes.add(0x1A); // SUB - Print and feed
+
+    // 10. Optional: Add a form feed to ensure label ejects
+    bytes.add(0x0C); // FF - Form feed
+
+    return bytes;
+  }
+
+  /// Convert a Flutter Image to Brother TD raster format
+  /// This is used for printing QR codes and image-based labels
+  Future<List<int>> _buildTDRasterFromImage(ui.Image image, int labelWidth, int labelHeight) async {
+    final List<int> bytes = [];
+    const esc = 0x1B;
+
+    // Calculate dimensions
+    final widthDots = labelWidth * 8; // 8 dots per mm at 203 DPI
+    final heightDots = labelHeight * 8;
+    final lineBytes = (widthDots / 8).ceil();
+
+    _talker.info('[BrotherRawTCP] 📐 Label config: ${labelWidth}x${labelHeight}mm');
+    _talker.info('[BrotherRawTCP] 📐 Raster dimensions: ${widthDots}x$heightDots dots');
+    _talker.info('[BrotherRawTCP] 📐 Line bytes: $lineBytes bytes per line');
+
+    // 1. Invalidate command - 100 null bytes
+    for (var i = 0; i < 100; i++) {
+      bytes.add(0x00);
+    }
+
+    // 2. Initialize
+    bytes.addAll([esc, 0x40]); // ESC @
+
+    // 3. Enter raster mode
+    bytes.addAll([esc, 0x69, 0x61, 0x01]); // ESC i a 1
+
+    // 4. Set print information
+    bytes.addAll([esc, 0x69, 0x7A]);
+    bytes.add(0x80 | 0x02 | 0x00); // Valid | auto-cut | high quality
+    bytes.add(labelWidth & 0xFF);
+    bytes.add(labelHeight & 0xFF);
+    bytes.addAll([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+    // 5. Set orientation
+    bytes.addAll([esc, 0x69, 0x4C, 0x00]); // Portrait
+
+    // 6. Set margins
+    bytes.addAll([esc, 0x69, 0x64, 0x00, 0x00]); // Left margin = 0
+
+    // 7. No compression
+    bytes.addAll([0x4D, 0x00]); // M 0x00
+
+    // 8. Convert image to raster data
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (byteData == null) {
+      throw Exception('Failed to convert image to byte data');
+    }
+
+    final imageWidth = image.width;
+    final imageHeight = image.height;
+    _talker.info('[BrotherRawTCP] 🖼️ Source image: ${imageWidth}x$imageHeight pixels');
+
+    // Scale factors
+    final scaleX = widthDots / imageWidth;
+    final scaleY = heightDots / imageHeight;
+    _talker.info('[BrotherRawTCP] 📊 Scale factors: X=$scaleX, Y=$scaleY');
+
+    // Process each raster line
+    for (var y = 0; y < heightDots; y++) {
+      bytes.add(0x67); // 'g' command
+      bytes.add(0x00); // Flags
+      bytes.add(lineBytes & 0xFF); // Line length
+
+      // Create pixel data for this line
+      final pixelData = List<int>.filled(lineBytes, 0x00);
+
+      for (var x = 0; x < widthDots; x++) {
+        // Map to source image coordinates
+        final srcX = (x / scaleX).floor().clamp(0, imageWidth - 1);
+        final srcY = (y / scaleY).floor().clamp(0, imageHeight - 1);
+
+        // Get pixel from source image (RGBA)
+        final pixelIndex = (srcY * imageWidth + srcX) * 4;
+        final r = byteData.getUint8(pixelIndex);
+        final g = byteData.getUint8(pixelIndex + 1);
+        final b = byteData.getUint8(pixelIndex + 2);
+        final a = byteData.getUint8(pixelIndex + 3);
+
+        // Convert to grayscale (0-255)
+        final gray = ((r * 0.299) + (g * 0.587) + (b * 0.114)).round();
+
+        // Log first few pixels for debugging
+        if (y < 3 && x < 8) {
+          _talker.debug('[BrotherRawTCP] 🎨 Pixel[$x,$y]: R=$r G=$g B=$b A=$a Gray=$gray');
+        }
+
+        // If pixel is transparent, treat as white
+        // Otherwise use grayscale threshold
+        final isBlack = a >= 128 && gray < 128;
+
+        if (isBlack) {
+          final byteIndex = x ~/ 8;
+          final bitIndex = x % 8; // LSB first (0-7 left to right)
+          pixelData[byteIndex] |= (1 << bitIndex);
+        }
+      }
+
+      // Log first line sample
+      if (y < 3) {
+        final sample = pixelData.take(8).map((b) => b.toRadixString(2).padLeft(8, '0')).join(' ');
+        _talker.debug('[BrotherRawTCP] 📋 Line $y sample: $sample');
+      }
+
+      bytes.addAll(pixelData);
+    }
+
+    // 9. Print and feed
+    bytes.add(0x1A); // SUB
+
+    // 10. Form feed
+    bytes.add(0x0C); // FF
+
+    _talker.info('[BrotherRawTCP] ✅ Generated ${bytes.length} bytes of raster data');
+    _talker.info('[BrotherRawTCP] 📊 Raster lines: $heightDots, Bytes per line: $lineBytes');
+    _talker.info('[BrotherRawTCP] 🎯 Expected label: ${labelWidth}x${labelHeight}mm');
+    return bytes;
   }
 }

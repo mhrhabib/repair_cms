@@ -341,7 +341,7 @@ class JobStatus {
   final String colorCode;
   final String userName;
   final int createAtStatus;
-  final bool notifications;
+  final dynamic notifications;
   final String email;
   final String notes;
   final dynamic priority;
@@ -365,7 +365,7 @@ class JobStatus {
       colorCode: json['colorCode'] ?? '',
       userName: json['userName'] ?? '',
       createAtStatus: json['createAtStatus'] ?? 0,
-      notifications: json['notifications'] ?? false,
+      notifications: json['notifications'] ?? '',
       email: json['email'] ?? '',
       notes: json['notes'] ?? '',
       priority: json['priority'],
