@@ -968,13 +968,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     return _buildInfoCard(
       title: 'Financial Information',
       children: [
-        _buildInfoRow('Subtotal', '\$${job.data!.subTotal!.toStringAsFixed(2)}'),
+        _buildInfoRow('Subtotal', '\$${job.data!.subTotal!}'),
         SizedBox(height: 8.h),
-        _buildInfoRow('VAT', '\$${job.data!.vat!.toStringAsFixed(2)}'),
+        _buildInfoRow('VAT', '\$${job.data!.vat!}'),
         SizedBox(height: 8.h),
-        _buildInfoRow('Discount', '\$${job.data!.discount!.toStringAsFixed(2)}'),
+        _buildInfoRow('Discount', '\$${job.data!.discount!}'),
         SizedBox(height: 8.h),
-        _buildInfoRow('Total', '\$${job.data!.total!.toStringAsFixed(2)}', isTotal: true),
+        _buildInfoRow('Total', '\$${job.data!.total!}', isTotal: true),
       ],
     );
   }

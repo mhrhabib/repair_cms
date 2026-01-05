@@ -124,9 +124,11 @@ class LabelSize {
   // Predefined label sizes for different brands
   static List<LabelSize> getBrotherSizes() {
     return [
+      LabelSize(width: 50, height: 26, name: '50x26 (TD-2350D)'), // 591×307 dots @ 300 DPI
       LabelSize(width: 51, height: 26, name: '51x26'),
       LabelSize(width: 62, height: 29, name: '62x29'),
       LabelSize(width: 62, height: 100, name: '62x100'),
+      LabelSize(width: 100, height: 150, name: '100x150 (TD-4)'), // For TD-4 series
       LabelSize(width: 102, height: 150, name: '102x150'),
       LabelSize(width: 102, height: 152, name: '102x152'),
       LabelSize(width: 102, height: 51, name: '102x51'),

@@ -2,7 +2,7 @@ name: repair_cms
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.1.6+3
+version: 1.1.8+8
 
 environment:
   sdk: ^3.8.1
@@ -63,6 +63,7 @@ dependencies:
   printing: ^5.11.1
   qr_flutter: ^4.1.0
   barcode_widget: ^2.0.4
+  screenshot: ^3.0.0
   flutter_html: ^3.0.0-beta.2
   mobile_scanner: ^6.0.4
   # For Dymo printers

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:barcode_widget/barcode_widget.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class LabelContentScreen extends StatefulWidget {
   const LabelContentScreen({super.key});
@@ -11,6 +13,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
   // State variables for each toggle switch
   bool trackingPortalQR = false;
   bool jobQR = true;
+  bool barcode = true;
   bool jobNo = true;
   bool customerName = true;
   bool modelBrand = true;
@@ -38,9 +41,34 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
       ),
       body: Column(
         children: [
+          // Label Preview Section
+          Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300, width: 2),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Label Preview',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black54),
+                ),
+                const SizedBox(height: 12),
+                _buildLabelPreview(),
+              ],
+            ),
+          ),
+
           Expanded(
             child: Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -66,6 +94,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                           (value) => setState(() => trackingPortalQR = value),
                         ),
                         _buildToggleItem('QR-Code (Job)', jobQR, (value) => setState(() => jobQR = value)),
+                        _buildToggleItem('Barcode', barcode, (value) => setState(() => barcode = value)),
                         _buildToggleItem('Job No.', jobNo, (value) => setState(() => jobNo = value)),
                         _buildToggleItem(
                           'Customer Name /Company Name',
@@ -166,9 +195,6 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
               onPressed: () {
                 Navigator.pop(context);
                 // Handle print logic here
-                // ScaffoldMessenger.of(context).showSnackBar(
-                //   const SnackBar(content: Text('Test print started...'), backgroundColor: Color(0xFF4A90E2)),
-                // );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4A90E2),
@@ -180,6 +206,105 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildLabelPreview() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Barcode and QR Code Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Barcode Section
+              if (barcode || jobNo)
+                Expanded(
+                  flex: 6,
+                  child: Column(
+                    children: [
+                      if (barcode)
+                        SizedBox(
+                          height: 50,
+                          child: BarcodeWidget(barcode: Barcode.code128(), data: '0000123456789', drawText: false),
+                        ),
+                      if (barcode && jobNo) const SizedBox(height: 4),
+                      if (jobNo) const Text('JOB-12345', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              if ((barcode || jobNo) && (jobQR || trackingPortalQR)) const SizedBox(width: 12),
+              // QR Code Section
+              if (jobQR || trackingPortalQR)
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    children: [
+                      QrImageView(
+                        data: jobQR ? 'JOB-12345' : 'https://tracking.portal/12345',
+                        version: QrVersions.auto,
+                        size: 70,
+                        backgroundColor: Colors.white,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        jobQR ? 'Job QR' : 'Tracking QR',
+                        style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Text Information
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              if (customerName)
+                Text(
+                  'John Doe',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              if (modelBrand)
+                Text(
+                  'Apple iPhone 13 Pro',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              if (date)
+                Text(
+                  '05 Jan 2026',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              if (jobType)
+                Text(
+                  'Screen Repair',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              if (symptom)
+                Text(
+                  'Cracked screen, battery issue',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              if (physicalLocation)
+                Text(
+                  'BOX A-12',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

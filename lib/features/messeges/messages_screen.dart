@@ -42,10 +42,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        // leading: IconButton(
+        //   icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+        //   onPressed: () => Navigator.pop(context),
+        // ),
         title: Text(
           isSelectionMode ? 'Messages - remove selected' : 'Messages',
           style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),

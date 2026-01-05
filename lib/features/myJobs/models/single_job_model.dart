@@ -27,10 +27,10 @@ class Data {
   String? deviceId;
   String? jobContactId;
   String? defectId;
-  double? subTotal;
-  double? total;
-  double? vat;
-  double? discount;
+  dynamic subTotal;
+  dynamic total;
+  dynamic vat;
+  dynamic discount;
   String? jobNo;
   bool? emailConfirmation;
   List<File>? files;
@@ -116,10 +116,10 @@ class Data {
     deviceId = json['deviceId'];
     jobContactId = json['jobContactId'];
     defectId = json['defectId'];
-    subTotal = json['subTotal']?.toDouble();
-    total = json['total']?.toDouble();
-    vat = json['vat']?.toDouble();
-    discount = json['discount']?.toDouble();
+    subTotal = json['subTotal'];
+    total = json['total'];
+    vat = json['vat'];
+    discount = json['discount'];
     jobNo = json['jobNo'];
     emailConfirmation = json['emailConfirmation'];
     if (json['files'] != null) {
@@ -317,8 +317,8 @@ class JobStatus {
   String? colorCode;
   String? userName;
   int? createAtStatus;
-  bool? notifications;
-  String? email;
+  dynamic notifications;
+  dynamic email;
   String? notes;
   dynamic priority; // Can be String or int
 

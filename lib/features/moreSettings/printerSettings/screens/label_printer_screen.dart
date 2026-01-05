@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
@@ -612,50 +614,75 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               ),
             if (_ipController.text.trim().isNotEmpty) SizedBox(height: 8.h),
 
-            // Test Print Button
+            // Test Button with EXACT 591x307 dots (50x26mm @ 300 DPI)
             if (_ipController.text.trim().isNotEmpty)
-              SizedBox(
-                width: double.infinity,
-                height: 48.h,
-                child: OutlinedButton(
-                  onPressed: () async {
-                    // Build a simple test label text
-                    final testText = 'RepairCMS Label Test\n\nMODEL: ${_selectedModel ?? ''}';
+              Padding(
+                padding: EdgeInsets.only(top: 8.h),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48.h,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      SnackbarDemo(message: 'Generating 591×307 test...').showCustomSnackbar(context);
 
-                    // Prepare a temporary PrinterConfigModel for this test
-                    final temp = PrinterConfigModel(
-                      printerType: 'label',
-                      printerBrand: _selectedBrand,
-                      printerModel: _selectedModel,
-                      ipAddress: _ipController.text.trim(),
-                      protocol: _selectedProtocol,
-                      port: int.tryParse(_portController.text),
-                      isDefault: false,
-                      labelSize: _selectedLabelSize,
-                    );
+                      // Generate EXACT 591x307 border test
+                      final testImage = await _generateExact591x307BorderTest();
 
-                    // Console debug: show payload and config for debugging
-                    debugPrint('🖨️ Test Print — payload:\n$testText');
-                    debugPrint('🖨️ Test Print — config: ${temp.toJson()}');
-                    debugPrint('🖨️ Selected LabelSize: ${_selectedLabelSize?.toString() ?? 'N/A'}');
+                      if (testImage == null) {
+                        SnackbarDemo(message: '❌ Failed to generate test image').showCustomSnackbar(context);
+                        return;
+                      }
 
-                    SnackbarDemo(message: 'Sending test print...').showCustomSnackbar(context);
+                      // Prepare temporary printer config
+                      final temp = PrinterConfigModel(
+                        printerType: 'label',
+                        printerBrand: _selectedBrand,
+                        printerModel: _selectedModel,
+                        ipAddress: _ipController.text.trim(),
+                        protocol: _selectedProtocol,
+                        port: int.tryParse(_portController.text),
+                        isDefault: false,
+                        labelSize: LabelSize(width: 50, height: 26, name: '50x26'),
+                      );
 
-                    try {
-                      // Use printLabelWithFallback to handle TD series printers that need raw TCP
-                      final res = await PrinterServiceFactory.printLabelWithFallback(config: temp, text: testText);
+                      debugPrint('🖨️ [591x307 Test] Printing to ${_selectedModel ?? "unknown"}');
 
-                      debugPrint('🖨️ Print result: success=${res.success}, code=${res.code}, message=${res.message}');
-                      SnackbarDemo(message: res.message).showCustomSnackbar(context);
-                    } catch (e, st) {
-                      debugPrint('❌ Test print failed: $e\n$st');
-                      SnackbarDemo(message: '❌ Test print failed: $e').showCustomSnackbar(context);
-                    }
-                  },
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                      SnackbarDemo(message: 'Sending 591×307 test...').showCustomSnackbar(context);
+
+                      try {
+                        final res = await PrinterServiceFactory.printLabelImageWithFallback(
+                          config: temp,
+                          imageBytes: testImage,
+                        );
+
+                        if (res.success) {
+                          SnackbarDemo(
+                            message: '✅ ${res.message}\n🎯 Check: Border should touch all 4 edges',
+                          ).showCustomSnackbar(context);
+                        } else {
+                          SnackbarDemo(message: '❌ ${res.message}').showCustomSnackbar(context);
+                        }
+                      } catch (e, st) {
+                        debugPrint('❌ 591x307 test failed: $e\n$st');
+                        SnackbarDemo(message: '❌ Test failed: $e').showCustomSnackbar(context);
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                      side: const BorderSide(color: Colors.orange),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.crop_square, color: Colors.orange),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Test 591×307 (50×26mm @300DPI)',
+                          style: TextStyle(fontSize: 14.sp, color: Colors.orange),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Text('Test Print (Label)', style: TextStyle(fontSize: 16.sp)),
                 ),
               ),
           ],
@@ -675,6 +702,186 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
         return LabelSize.getXprinterSizes();
       default:
         return LabelSize.getBrotherSizes();
+    }
+  }
+
+  /// Generate test border image to verify full label dimensions
+  /// Creates a 4-dot black border around the label edges at NATIVE printer resolution
+  Future<Uint8List?> _generateBorderTestImage(String printerModel, int widthMm, int heightMm) async {
+    try {
+      // Determine DPI based on printer model
+      final isTD4 = printerModel.toUpperCase().startsWith('TD-4');
+      final dotsPerMm = isTD4 ? 11.811 : 8.0;
+      final dpi = isTD4 ? 300 : 203;
+
+      // Calculate pixel dimensions at NATIVE resolution (1x - no multiplier!)
+      // TD-2: 51x26mm @ 8 dots/mm = 408x208 dots
+      // TD-4: 100x150mm @ 11.811 dots/mm = 1181x1772 dots
+      final widthPx = (widthMm * dotsPerMm).round();
+      final heightPx = (heightMm * dotsPerMm).round();
+
+      debugPrint('🎨 [Border Test] Model: $printerModel, DPI: $dpi');
+      debugPrint('🎨 [Border Test] Label: ${widthMm}x${heightMm}mm → ${widthPx}x${heightPx}px (NATIVE 1x)');
+
+      // Create canvas
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()));
+
+      // White background
+      final bgPaint = Paint()..color = Colors.white;
+      canvas.drawRect(Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()), bgPaint);
+
+      // Draw 4-dot black border (thinner for native resolution)
+      final borderPaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.0;
+
+      canvas.drawRect(Rect.fromLTWH(2, 2, widthPx - 4.0, heightPx - 4.0), borderPaint);
+
+      // Add text in center for debugging
+      final textStyle = ui.TextStyle(color: Colors.black, fontSize: heightPx * 0.08, fontWeight: FontWeight.bold);
+
+      final paragraphStyle = ui.ParagraphStyle(textAlign: TextAlign.center);
+      final paragraphBuilder = ui.ParagraphBuilder(paragraphStyle)
+        ..pushStyle(textStyle)
+        ..addText('BORDER TEST\n${widthMm}×${heightMm}mm\n$dpi DPI\n${widthPx}×${heightPx}px');
+
+      final paragraph = paragraphBuilder.build()..layout(ui.ParagraphConstraints(width: widthPx.toDouble()));
+
+      canvas.drawParagraph(paragraph, Offset((widthPx - paragraph.width) / 2, (heightPx - paragraph.height) / 2));
+
+      // Convert to image
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(widthPx, heightPx);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+      image.dispose();
+
+      if (byteData == null) {
+        debugPrint('❌ Failed to convert border test image to bytes');
+        return null;
+      }
+
+      final imageBytes = byteData.buffer.asUint8List();
+      debugPrint('✅ [Border Test] Generated ${widthPx}×${heightPx} image (${imageBytes.length} bytes)');
+      debugPrint('🎯 [Border Test] If border touches all edges → label size is correct!');
+
+      return imageBytes;
+    } catch (e, st) {
+      debugPrint('❌ Error generating border test image: $e');
+      debugPrint('Stack trace: $st');
+      return null;
+    }
+  }
+
+  /// Generate EXACT 591x307 dots image (50x26mm @ 300 DPI)
+  /// This is the exact resolution for TD-2350D at 300 DPI
+  Future<Uint8List?> _generateExact591x307BorderTest() async {
+    try {
+      // EXACT dimensions: 591 x 307 dots = 50mm x 26mm @ 300 DPI
+      const int widthPx = 591;
+      const int heightPx = 307;
+
+      debugPrint('🎨 [591x307 Test] EXACT: ${widthPx}x${heightPx} dots');
+      debugPrint('🎨 [591x307 Test] = 50×26mm @ 300 DPI (11.82 dots/mm)');
+
+      // Create canvas at EXACT dimensions
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()));
+
+      // White background
+      final bgPaint = Paint()..color = Colors.white;
+      canvas.drawRect(Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()), bgPaint);
+
+      // Shift the canvas origin to compensate for printer's unprintable margins
+      // Adjust offsets: move content down more to center vertically
+      const double offsetX = 50.0; // Shift right
+      const double offsetY = 50.0; // Shift down very little (reduced from 15 to move content DOWN more)
+      canvas.translate(offsetX, offsetY);
+
+      // Now all drawing is offset from the shifted origin
+      // Calculate center position for debugging (in shifted coordinates)
+      final centerX = (widthPx - offsetX) / 2;
+      final centerY = (heightPx - offsetY) / 2;
+
+      // Expand borders MUCH closer to actual label edges (borderInset pushes OUTSIDE translated area)
+      const double borderInset = 16.0; // Push borders 16px closer to physical edges
+
+      // Draw thick black lines at edges (in shifted coordinate system)
+      final borderPaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.fill;
+
+      // Top edge - 8 dots thick, close to edge
+      canvas.drawRect(Rect.fromLTWH(-borderInset, -borderInset, widthPx - offsetX + borderInset * 2, 8), borderPaint);
+
+      // Bottom edge - 8 dots thick, close to edge
+      canvas.drawRect(
+        Rect.fromLTWH(-borderInset, heightPx - offsetY - 8.0 + borderInset, widthPx - offsetX + borderInset * 2, 8),
+        borderPaint,
+      );
+
+      // Left edge - 8 dots thick, close to edge
+      canvas.drawRect(Rect.fromLTWH(-borderInset, -borderInset, 8, heightPx - offsetY + borderInset * 2), borderPaint);
+
+      // Right edge - 8 dots thick, close to edge
+      canvas.drawRect(
+        Rect.fromLTWH(widthPx - offsetX - 8.0 + borderInset, -borderInset, 8, heightPx - offsetY + borderInset * 2),
+        borderPaint,
+      );
+
+      // Add corner markers (24x24 squares) at shifted coordinates
+      // Top-Left: TL
+      canvas.drawRect(Rect.fromLTWH(-borderInset, -borderInset, 24, 24), borderPaint);
+
+      // Top-Right: TR
+      canvas.drawRect(Rect.fromLTWH(widthPx - offsetX - 24.0 + borderInset, -borderInset, 24, 24), borderPaint);
+
+      // Bottom-Left: BL
+      canvas.drawRect(Rect.fromLTWH(-borderInset, heightPx - offsetY - 24.0 + borderInset, 24, 24), borderPaint);
+
+      // Bottom-Right: BR
+      canvas.drawRect(
+        Rect.fromLTWH(widthPx - offsetX - 24.0 + borderInset, heightPx - offsetY - 24.0 + borderInset, 24, 24),
+        borderPaint,
+      );
+
+      // Add centered text showing CENTER position
+      final textStyle = ui.TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold);
+
+      final paragraphStyle = ui.ParagraphStyle(textAlign: TextAlign.center);
+      final paragraphBuilder = ui.ParagraphBuilder(paragraphStyle)
+        ..pushStyle(textStyle)
+        ..addText('591×307\nCenter: ${centerX.toInt()},${centerY.toInt()}\nTL TR\nBL BR');
+
+      final paragraph = paragraphBuilder.build()..layout(ui.ParagraphConstraints(width: widthPx - offsetX));
+
+      canvas.drawParagraph(
+        paragraph,
+        Offset((widthPx - offsetX - paragraph.width) / 2, (heightPx - offsetY - paragraph.height) / 2),
+      );
+
+      // Convert to image
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(widthPx, heightPx);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+      image.dispose();
+
+      if (byteData == null) {
+        debugPrint('❌ Failed to convert 591x307 image to bytes');
+        return null;
+      }
+
+      final imageBytes = byteData.buffer.asUint8List();
+      debugPrint('✅ [591x307 Test] Generated EXACT ${widthPx}×${heightPx} image (${imageBytes.length} bytes)');
+
+      return imageBytes;
+    } catch (e, st) {
+      debugPrint('❌ Error generating 591x307 test: $e');
+      debugPrint('Stack trace: $st');
+      return null;
     }
   }
 

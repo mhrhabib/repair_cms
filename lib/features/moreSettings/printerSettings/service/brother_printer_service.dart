@@ -5,7 +5,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/set_up_di.dart';
-import 'package:printing/printing.dart' as printing;
 import 'printer_settings_service.dart';
 
 import 'base_printer_service.dart';
@@ -22,6 +21,38 @@ class BrotherPrinterService implements BasePrinterService {
 
   final _settingsService = PrinterSettingsService();
   Talker get _talker => SetUpDI.getIt<Talker>();
+
+  /// Get DPI (dots per inch) based on printer model
+  /// TD-2350D/DA: 300 DPI (11.82 dots per mm) - 50mm = 591 dots
+  /// Other TD-2 series: 203 DPI (8 dots per mm)
+  /// TD-4 series: 300 DPI (11.811 dots per mm)
+  double _getDotsPerMm(String modelString) {
+    final model = modelString.toUpperCase();
+
+    // TD-2350D and TD-2350DA are 300 DPI printers
+    if (model.contains('TD-2350')) {
+      return 11.82; // 300 DPI: 591 dots / 50mm = 11.82 dots/mm
+    }
+
+    // TD-4 series are 300 DPI
+    if (model.startsWith('TD-4')) {
+      return 11.811; // 300 DPI exact
+    }
+
+    // Other TD-2 series are 203 DPI
+    return 8.0; // 203 DPI (TD-2 default)
+  }
+
+  /// Get printer model from IP address
+  String _getModelForIp(String ipAddress) {
+    try {
+      final printers = _settingsService.getPrinters('label');
+      final printer = printers.firstWhere((p) => p.ipAddress == ipAddress);
+      return printer.printerModel?.toUpperCase() ?? '';
+    } catch (e) {
+      return '';
+    }
+  }
 
   @override
   Future<PrinterResult> printThermalReceipt({
@@ -65,17 +96,22 @@ class BrotherPrinterService implements BasePrinterService {
     try {
       _talker.info('[BrotherRawTCP: $ipAddress] Starting Brother raw TCP print');
 
+      // Get printer model and DPI
+      final modelString = _getModelForIp(ipAddress);
+      final dotsPerMm = _getDotsPerMm(modelString);
+
       // Get label size configuration
       final labelSize = _settingsService.getDefaultPrinter('label')?.labelSize;
       final labelWidth = labelSize?.width ?? 62; // Default to 62mm
       final labelHeight = labelSize?.height ?? 100; // Default to 100mm
 
+      _talker.debug('[BrotherRawTCP] Model: $modelString, DPI: ${dotsPerMm == 12 ? 300 : 203}');
       _talker.debug('[BrotherRawTCP] Label size: ${labelWidth}x${labelHeight}mm');
 
       final socket = await Socket.connect(ipAddress, 9100, timeout: timeout);
 
       // Build Brother raster command sequence for TD-2/TD-4 series
-      final bytes = _buildTDRasterCommands(text, labelWidth, labelHeight);
+      final bytes = _buildTDRasterCommands(text, labelWidth, labelHeight, dotsPerMm);
 
       _talker.debug('[BrotherRawTCP] Sending ${bytes.length} bytes to printer');
       socket.add(Uint8List.fromList(bytes));
@@ -175,44 +211,40 @@ class BrotherPrinterService implements BasePrinterService {
     try {
       _talker.info('[BrotherRawTCP: $ipAddress] Starting TD image print (QR code/label)');
 
-      // Get label size configuration
-      final labelSize = _settingsService.getDefaultPrinter('label')?.labelSize;
+      // Get printer model and DPI
+      final modelString = _getModelForIp(ipAddress);
+      final dotsPerMm = _getDotsPerMm(modelString);
+
+      // Get label size configuration from this printer's settings
+      final printer = _settingsService
+          .getPrinters('label')
+          .firstWhere((p) => p.ipAddress == ipAddress, orElse: () => _settingsService.getDefaultPrinter('label')!);
+      final labelSize = printer.labelSize;
       final labelWidth = labelSize?.width ?? 62;
       final labelHeight = labelSize?.height ?? 100;
 
-      _talker.debug('[BrotherRawTCP] Label size: ${labelWidth}x${labelHeight}mm');
+      final dpi = dotsPerMm > 10 ? 300 : 203;
+      _talker.info('[BrotherRawTCP] 🖨️ Printer: $modelString @ $ipAddress');
+      _talker.info('[BrotherRawTCP] 📐 DPI: $dpi (${dotsPerMm.toStringAsFixed(3)} dots/mm)');
+      _talker.info('[BrotherRawTCP] 📏 Label configured: ${labelWidth}x${labelHeight}mm');
 
-      // Check if input is PDF
-      final isPdf =
-          imageBytes.length > 4 &&
-          imageBytes[0] == 0x25 &&
-          imageBytes[1] == 0x50 &&
-          imageBytes[2] == 0x44 &&
-          imageBytes[3] == 0x46;
+      if (modelString.contains('TD-2') && (labelWidth != 51 || labelHeight != 26)) {
+        _talker.warning('[BrotherRawTCP] ⚠️ TD-2 typically uses 51x26mm labels');
+      }
+      if (modelString.contains('TD-4') && (labelWidth != 100 || labelHeight != 150)) {
+        _talker.warning('[BrotherRawTCP] ⚠️ TD-4 typically uses 100x150mm labels');
+      }
 
+      // Decode image bytes (PNG or JPEG)
       ui.Image? uiImage;
 
-      if (isPdf) {
-        // Rasterize PDF to image
-        _talker.debug('[BrotherRawTCP] Rasterizing PDF to image');
-        await for (var page in printing.Printing.raster(imageBytes, pages: [0], dpi: 203)) {
-          uiImage = await page.toImage();
-          break; // Only process first page
-        }
-      } else {
-        // Decode image bytes
-        _talker.debug('[BrotherRawTCP] Decoding image');
-        final codec = await ui.instantiateImageCodec(imageBytes);
-        final frame = await codec.getNextFrame();
-        uiImage = frame.image;
-      }
-
-      if (uiImage == null) {
-        return PrinterResult(success: false, message: 'Failed to process image', code: -1);
-      }
+      _talker.debug('[BrotherRawTCP] Decoding image');
+      final codec = await ui.instantiateImageCodec(imageBytes);
+      final frame = await codec.getNextFrame();
+      uiImage = frame.image;
 
       // Convert image to raster data
-      final bytes = await _buildTDRasterFromImage(uiImage, labelWidth, labelHeight);
+      final bytes = await _buildTDRasterFromImage(uiImage, labelWidth, labelHeight, dotsPerMm);
 
       final socket = await Socket.connect(ipAddress, 9100, timeout: const Duration(seconds: 5));
       _talker.debug('[BrotherRawTCP] Sending ${bytes.length} bytes to printer');
@@ -332,7 +364,7 @@ class BrotherPrinterService implements BasePrinterService {
 
   /// Build Brother TD-2/TD-4 series raster commands
   /// Supports both TD-2 (203 DPI) and TD-4 (300 DPI) series printers
-  List<int> _buildTDRasterCommands(String text, int labelWidth, int labelHeight) {
+  List<int> _buildTDRasterCommands(String text, int labelWidth, int labelHeight, double dotsPerMm) {
     final List<int> bytes = [];
     const esc = 0x1B;
 
@@ -381,7 +413,7 @@ class BrotherPrinterService implements BasePrinterService {
     bytes.addAll([0x4D, 0x00]); // M 0x00
 
     // 8. Generate raster data from text
-    final widthDots = labelWidth * 8; // 8 dots per mm at 203 DPI
+    final widthDots = (labelWidth * dotsPerMm).round(); // Use DPI-aware dots per mm
     final lineBytes = (widthDots / 8).ceil();
 
     final lines = text.split('\n');
@@ -439,17 +471,20 @@ class BrotherPrinterService implements BasePrinterService {
 
   /// Convert a Flutter Image to Brother TD raster format
   /// This is used for printing QR codes and image-based labels
-  Future<List<int>> _buildTDRasterFromImage(ui.Image image, int labelWidth, int labelHeight) async {
+  Future<List<int>> _buildTDRasterFromImage(ui.Image image, int labelWidth, int labelHeight, double dotsPerMm) async {
     final List<int> bytes = [];
     const esc = 0x1B;
 
-    // Calculate dimensions
-    final widthDots = labelWidth * 8; // 8 dots per mm at 203 DPI
-    final heightDots = labelHeight * 8;
+    // Calculate dimensions at NATIVE printer resolution (no 2x multiplier)
+    // TD-2: 51x26mm @ 8 dots/mm = 408x208 dots
+    // TD-4: 100x150mm @ 11.811 dots/mm = 1181x1772 dots
+    final widthDots = (labelWidth * dotsPerMm).round();
+    final heightDots = (labelHeight * dotsPerMm).round();
     final lineBytes = (widthDots / 8).ceil();
 
     _talker.info('[BrotherRawTCP] 📐 Label config: ${labelWidth}x${labelHeight}mm');
-    _talker.info('[BrotherRawTCP] 📐 Raster dimensions: ${widthDots}x$heightDots dots');
+    _talker.info('[BrotherRawTCP] 📐 DPI: ${dotsPerMm > 10 ? 300 : 203}, Dots/mm: ${dotsPerMm.toStringAsFixed(3)}');
+    _talker.info('[BrotherRawTCP] 📐 Raster dimensions: ${widthDots}x$heightDots dots (NATIVE 1x)');
     _talker.info('[BrotherRawTCP] 📐 Line bytes: $lineBytes bytes per line');
 
     // 1. Invalidate command - 100 null bytes
@@ -488,11 +523,11 @@ class BrotherPrinterService implements BasePrinterService {
     final imageWidth = image.width;
     final imageHeight = image.height;
     _talker.info('[BrotherRawTCP] 🖼️ Source image: ${imageWidth}x$imageHeight pixels');
+    _talker.info('[BrotherRawTCP] 🎯 Target raster: ${widthDots}x$heightDots dots');
 
-    // Scale factors
-    final scaleX = widthDots / imageWidth;
-    final scaleY = heightDots / imageHeight;
-    _talker.info('[BrotherRawTCP] 📊 Scale factors: X=$scaleX, Y=$scaleY');
+    // Image is already generated at 2x resolution to match raster dimensions
+    // No scaling needed - direct 1:1 mapping
+    _talker.info('[BrotherRawTCP] 📊 Using 1:1 mapping (image already at correct resolution)');
 
     // Process each raster line
     for (var y = 0; y < heightDots; y++) {
@@ -504,11 +539,15 @@ class BrotherPrinterService implements BasePrinterService {
       final pixelData = List<int>.filled(lineBytes, 0x00);
 
       for (var x = 0; x < widthDots; x++) {
-        // Map to source image coordinates
-        final srcX = (x / scaleX).floor().clamp(0, imageWidth - 1);
-        final srcY = (y / scaleY).floor().clamp(0, imageHeight - 1);
+        // Direct 1:1 mapping with Y-flip for correct text orientation
+        if (x >= imageWidth || y >= imageHeight) {
+          // Outside image bounds - leave as white (0)
+          continue;
+        }
 
-        // Get pixel from source image (RGBA)
+        // Get pixel from source image (RGBA), flip Y axis for correct text orientation
+        final srcX = x;
+        final srcY = imageHeight - 1 - y; // Flip Y for correct orientation
         final pixelIndex = (srcY * imageWidth + srcX) * 4;
         final r = byteData.getUint8(pixelIndex);
         final g = byteData.getUint8(pixelIndex + 1);
@@ -523,13 +562,12 @@ class BrotherPrinterService implements BasePrinterService {
           _talker.debug('[BrotherRawTCP] 🎨 Pixel[$x,$y]: R=$r G=$g B=$b A=$a Gray=$gray');
         }
 
-        // If pixel is transparent, treat as white
-        // Otherwise use grayscale threshold
+        // Treat transparent as white, opaque dark as black
         final isBlack = a >= 128 && gray < 128;
 
         if (isBlack) {
           final byteIndex = x ~/ 8;
-          final bitIndex = x % 8; // LSB first (0-7 left to right)
+          final bitIndex = 7 - (x % 8); // MSB first (7-0 right to left) - fixes mirroring
           pixelData[byteIndex] |= (1 << bitIndex);
         }
       }

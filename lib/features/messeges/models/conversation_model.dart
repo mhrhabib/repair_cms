@@ -1103,7 +1103,7 @@ class DefectId {
 class InternalNote {
   String? text;
   String? userId;
-  String? createdAt;
+  dynamic createdAt;
   String? userName;
   String? id;
 
