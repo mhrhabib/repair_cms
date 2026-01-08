@@ -93,29 +93,23 @@ class BrandCubit extends Cubit<BrandState> {
 // brand_state.dart
 part of 'brand_cubit.dart';
 
-abstract class BrandState extends Equatable {
-  const BrandState();
-  @override
-  List<Object> get props => [];
-}
+abstract class BrandState {}
 
 class BrandInitial extends BrandState {}
 class BrandLoading extends BrandState {}
 class BrandLoaded extends BrandState {
   final List<Brand> brands;
   const BrandLoaded({required this.brands});
-  @override
-  List<Object> get props => [brands];
 }
 class BrandError extends BrandState {
   final String message;
   const BrandError({required this.message});
-  @override
-  List<Object> get props => [message];
 }
 ```
 
 **State Emission Order:** Loading → Success/Error (UI expects this sequence)
+
+**Note:** While the example shows Equatable, many existing states in the codebase don't extend Equatable. Follow the pattern that exists in your feature area.
 
 ### 3. Repository Pattern
 **New features:** Use interface + implementation pattern.
@@ -156,6 +150,9 @@ class BrandRepositoryImpl implements BrandRepository {
   }
 }
 ```
+
+**Interface + Impl pattern (recommended for new features):**
+- `CompanyRepository`, `BrandRepository`, `ModelsRepository`, `AccessoriesRepository`, `ServiceRepository`, `JobTypeRepository`, `ContactTypeRepository`, `JobItemRepository`, `JobBookingRepository`, `JobBookingFileUploadRepository`, `NotificationRepository`, `MessageRepository`
 
 **Legacy repositories (DO NOT refactor without approval):**
 - `AuthRepository`, `ProfileRepository`, `JobRepository`, `QuickTaskRepository`, `DashboardRepository` — these use concrete classes without interfaces.
@@ -232,14 +229,18 @@ debugPrint('❌ [BrandCubit] Error: ${e.message}');
 ## Platform-Specific Features
 
 ### Printing
-- **Brother printers** (TD-2D, TD-4D): `brother_printer: ^0.2.6` package
+- **Brother printers** (TD-2D, TD-4D): `brother_printer: ^0.2.6` package with native SDK support
 - **Dymo printers:** `escp_printer: ^1.0.2` package
+- **Network A4 printers:** Raw TCP printing with multiple fallback strategies
 - Services: `lib/features/moreSettings/printerSettings/service/`
-  - `BrotherPrinterService` (singleton)
+  - `BrotherPrinterService` & `BrotherSdkPrinterService` (singletons)
   - `DymoPrinterService` (singleton)
+  - `A4NetworkPrinterService` (with Talker logging for diagnostics)
   - `PrinterServiceFactory` for abstraction
+  - Additional services: `EpsonPrinterService`, `StarPrinterService`, `XPrinterService`
 - **Native dependencies:** Changes require `pod install` (iOS) or Gradle sync (Android)
 - **Testing:** Must test on physical device/simulator — emulators may not work
+- **Troubleshooting:** Check `BROTHER_*.md` and `PRINTER_*.md` files in project root for known issues
 
 ### Real-Time Features
 - **Socket.IO:** `lib/core/services/socket_service.dart`
@@ -255,6 +256,9 @@ debugPrint('❌ [BrandCubit] Error: ${e.message}');
 - Registered as singleton in `set_up_di.dart`
 - View logs: Navigate to `/logsViewer` route
 - Usage: `SetUpDI.getIt<Talker>().info('Message')`
+- Access via: More Settings → Debug Logs (for end-users)
+- Share logs: Tap share button to export logs via WhatsApp/Email/Telegram
+- Use Talker for diagnosing printer issues remotely (see `TALKER_IMPLEMENTATION_SUMMARY.md`)
 
 ## Development Constraints
 

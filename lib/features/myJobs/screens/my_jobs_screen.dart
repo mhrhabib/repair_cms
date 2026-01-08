@@ -17,15 +17,32 @@ class MyJobsScreen extends StatefulWidget {
 class _MyJobsScreenState extends State<MyJobsScreen> {
   late int _selectedTabIndex;
   bool _showSearchOverlay = false;
+  bool _hasLoadedInitially = false;
 
   // Updated tab configuration with all status filters
   final List<TabConfig> _tabs = [
     TabConfig(title: 'All\nJobs', color: Colors.blue, status: ''),
-    TabConfig(title: 'Repair in\nProgress', color: Colors.orange, status: 'in_progress'),
+    TabConfig(
+      title: 'Repair in\nProgress',
+      color: Colors.orange,
+      status: 'in_progress',
+    ),
     TabConfig(title: 'Rejected\nQuotes', color: Colors.red, status: 'rejected'),
-    TabConfig(title: 'Quotation\nAccepted', color: Colors.green, status: 'accepted_quotes'),
-    TabConfig(title: 'Parts Not\nAvailable', color: Colors.purple, status: 'parts_not_available'),
-    TabConfig(title: 'Ready To\nReturn', color: Colors.teal, status: 'ready_to_return'),
+    TabConfig(
+      title: 'Quotation\nAccepted',
+      color: Colors.green,
+      status: 'accepted_quotes',
+    ),
+    TabConfig(
+      title: 'Parts Not\nAvailable',
+      color: Colors.purple,
+      status: 'parts_not_available',
+    ),
+    TabConfig(
+      title: 'Ready To\nReturn',
+      color: Colors.teal,
+      status: 'ready_to_return',
+    ),
     TabConfig(title: 'Archive', color: Colors.grey, status: 'archive'),
   ];
 
@@ -36,7 +53,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     // Initialize selected tab based on initialStatus
     _selectedTabIndex = 0;
     if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
-      final index = _tabs.indexWhere((tab) => tab.status == widget.initialStatus);
+      final index = _tabs.indexWhere(
+        (tab) => tab.status == widget.initialStatus,
+      );
       if (index != -1) {
         _selectedTabIndex = index;
       }
@@ -44,12 +63,36 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
     // Load initial jobs when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
-        context.read<JobCubit>().filterJobsByStatus(widget.initialStatus!);
-      } else {
-        context.read<JobCubit>().getJobs();
-      }
+      _loadJobs();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload jobs whenever the screen becomes visible again (but not on first load)
+    // This ensures fresh data when navigating back from job details
+    if (_hasLoadedInitially && ModalRoute.of(context)?.isCurrent == true) {
+      debugPrint('🔄 [MyJobsScreen] Screen is now active, reloading jobs');
+      _loadJobs();
+    }
+    _hasLoadedInitially = true;
+  }
+
+  void _loadJobs() {
+    debugPrint(
+      '📋 [MyJobsScreen] Loading jobs for tab index: $_selectedTabIndex',
+    );
+    if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
+      context.read<JobCubit>().filterJobsByStatus(widget.initialStatus!);
+    } else {
+      final statusFilter = _tabs[_selectedTabIndex].status;
+      if (statusFilter.isEmpty) {
+        context.read<JobCubit>().getJobs();
+      } else {
+        context.read<JobCubit>().filterJobsByStatus(statusFilter);
+      }
+    }
   }
 
   void _onTabChanged(int index) {
@@ -82,7 +125,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                       if (Navigator.of(context).canPop())
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+                          icon: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.black87,
+                          ),
                         ),
                       IconButton(
                         onPressed: () {
@@ -97,7 +143,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 ),
                 title: const Text(
                   'My Jobs',
-                  style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 centerTitle: true,
                 actions: [
@@ -145,20 +195,34 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                           return GestureDetector(
                             onTap: () => _onTabChanged(index),
                             child: Container(
-                              margin: EdgeInsets.only(top: 1.h, bottom: 1.h, left: 4.w, right: 4.w),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              margin: EdgeInsets.only(
+                                top: 1.h,
+                                bottom: 1.h,
+                                left: 4.w,
+                                right: 4.w,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : Colors.transparent,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: isSelected
                                     ? [
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.1),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.1,
+                                          ),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.1),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.1,
+                                          ),
                                           blurRadius: 8,
                                           offset: const Offset(2, 2),
                                         ),
@@ -170,11 +234,17 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 8,
+                                    ),
                                     height: 40.h,
                                     width: 40.w,
                                     alignment: Alignment.center,
-                                    decoration: BoxDecoration(shape: BoxShape.circle, color: tab.color),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: tab.color,
+                                    ),
                                     child: Text(
                                       count.toString(),
                                       style: GoogleFonts.roboto(
@@ -191,7 +261,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                       tab.title,
                                       style: GoogleFonts.roboto(
                                         fontSize: 14.sp,
-                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
                                         color: Colors.black87,
                                       ),
                                       textAlign: TextAlign.center,
@@ -232,20 +304,31 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                           Expanded(
                             child: Container(
                               height: 40.h,
-                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8.r)),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
                               child: TextField(
                                 autofocus: true,
                                 textAlignVertical: TextAlignVertical.center,
                                 decoration: InputDecoration(
                                   hintText: 'Search job',
-                                  hintStyle: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
-                                  prefixIcon: Icon(FeatherIcons.search, color: Colors.black, size: 22.sp),
+                                  hintStyle: AppTypography.fontSize16.copyWith(
+                                    color: AppColors.lightFontColor,
+                                  ),
+                                  prefixIcon: Icon(
+                                    FeatherIcons.search,
+                                    color: Colors.black,
+                                    size: 22.sp,
+                                  ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
                                   isDense: true,
                                 ),
                                 onChanged: (query) {
-                                  debugPrint('🔍 [MyJobsScreen] Search query: $query');
+                                  debugPrint(
+                                    '🔍 [MyJobsScreen] Search query: $query',
+                                  );
                                   if (query.isNotEmpty) {
                                     context.read<JobCubit>().searchJobs(query);
                                   }
@@ -276,10 +359,15 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     Expanded(
                       child: BlocBuilder<JobCubit, JobStates>(
                         builder: (context, state) {
-                          if (state is JobLoading || state is JobActionLoading) {
+                          if (state is JobLoading ||
+                              state is JobActionLoading) {
                             return Container(
                               color: Colors.white,
-                              child: Center(child: CircularProgressIndicator(color: AppColors.fontMainColor)),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.fontMainColor,
+                                ),
+                              ),
                             );
                           }
 
@@ -291,7 +379,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                 child: Center(
                                   child: Text(
                                     'No jobs found',
-                                    style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                                    style: AppTypography.fontSize16.copyWith(
+                                      color: AppColors.lightFontColor,
+                                    ),
                                   ),
                                 ),
                               );
@@ -302,54 +392,85 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                 itemCount: jobs.length,
                                 itemBuilder: (context, index) {
                                   final job = jobs[index];
-                                  final formattedDate = intl.DateFormat('dd.MM.yyyy').format(job.createdAt);
+                                  final formattedDate = intl.DateFormat(
+                                    'dd.MM.yyyy',
+                                  ).format(job.createdAt);
                                   final customerName =
-                                      '${job.customerDetails.firstName} ${job.customerDetails.lastName}'.trim();
-                                  final deviceBrand = job.deviceData.brand ?? '';
-                                  final deviceModel = job.deviceData.model ?? '';
-                                  final deviceInfo = '$deviceBrand $deviceModel'.trim();
+                                      '${job.customerDetails.firstName} ${job.customerDetails.lastName}'
+                                          .trim();
+                                  final deviceBrand =
+                                      job.deviceData.brand ?? '';
+                                  final deviceModel =
+                                      job.deviceData.model ?? '';
+                                  final deviceInfo = '$deviceBrand $deviceModel'
+                                      .trim();
 
                                   return GestureDetector(
                                     onTap: () {
-                                      debugPrint('🔍 [MyJobsScreen] Navigating to job: ${job.id}');
+                                      debugPrint(
+                                        '🔍 [MyJobsScreen] Navigating to job: ${job.id}',
+                                      );
                                       setState(() {
                                         _showSearchOverlay = false;
                                       });
-                                      Navigator.of(
-                                        context,
-                                      ).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              JobDetailsScreen(jobId: job.id),
+                                        ),
+                                      );
                                     },
                                     child: Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 16.w,
+                                        vertical: 12.h,
+                                      ),
                                       decoration: BoxDecoration(
-                                        border: Border(bottom: BorderSide(color: const Color(0xFFDEE3E8), width: 1)),
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: const Color(0xFFDEE3E8),
+                                            width: 1,
+                                          ),
+                                        ),
                                       ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
                                               Text(
                                                 job.jobNo,
-                                                style: AppTypography.fontSize16.copyWith(
-                                                  fontWeight: FontWeight.w500,
-                                                  color: AppColors.fontMainColor,
-                                                ),
+                                                style: AppTypography.fontSize16
+                                                    .copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: AppColors
+                                                          .fontMainColor,
+                                                    ),
                                               ),
                                               if (customerName.isNotEmpty)
                                                 Text(
                                                   ' | $customerName',
-                                                  style: AppTypography.fontSize16.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                    color: AppColors.fontMainColor,
-                                                  ),
+                                                  style: AppTypography
+                                                      .fontSize16
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: AppColors
+                                                            .fontMainColor,
+                                                      ),
                                                 ),
                                             ],
                                           ),
                                           SizedBox(height: 2.h),
                                           Text(
                                             '$formattedDate${deviceInfo.isNotEmpty ? ' | $deviceInfo' : ''}',
-                                            style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
+                                            style: AppTypography.fontSize14
+                                                .copyWith(
+                                                  color:
+                                                      AppColors.lightFontColor,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -366,7 +487,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                               child: Center(
                                 child: Text(
                                   'Error: ${state.message}',
-                                  style: AppTypography.fontSize14.copyWith(color: Colors.red),
+                                  style: AppTypography.fontSize14.copyWith(
+                                    color: Colors.red,
+                                  ),
                                 ),
                               ),
                             );
@@ -447,7 +570,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
               child: Center(
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: Text('No jobs found', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  child: Text(
+                    'No jobs found',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
                 ),
               ),
             );
@@ -466,7 +592,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
               final job = jobs[index];
               return Padding(
-                padding: EdgeInsets.only(top: index == 0 ? 16.h : 0, bottom: 16.h),
+                padding: EdgeInsets.only(
+                  top: index == 0 ? 16.h : 0,
+                  bottom: 16.h,
+                ),
                 child: JobCardWidget(job: job),
               );
             }, childCount: state.hasMore ? jobs.length + 1 : jobs.length),
@@ -477,7 +606,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
           child: Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
-              child: Text('No jobs available', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              child: Text(
+                'No jobs available',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
             ),
           ),
         );
@@ -495,7 +627,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Filter Jobs', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Filter Jobs',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 16.h),
               // Add filter options here (date range, status, etc.)
               ElevatedButton(

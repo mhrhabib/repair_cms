@@ -28,7 +28,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   String? _selectedModel;
   LabelSize? _selectedLabelSize;
   final TextEditingController _ipController = TextEditingController();
-  final TextEditingController _portController = TextEditingController(text: '9100');
+  final TextEditingController _portController = TextEditingController(
+    text: '9100',
+  );
   String _selectedProtocol = 'TCP';
   bool _setAsDefault = false;
   bool _isSaving = false;
@@ -90,18 +92,23 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       _setAsDefault = printer.isDefault;
     });
     SnackbarDemo(
-      message: 'Form filled with ${printer.printerModel ?? printer.printerBrand} settings',
+      message:
+          'Form filled with ${printer.printerModel ?? printer.printerBrand} settings',
     ).showCustomSnackbar(context);
   }
 
   Future<void> _saveSettings() async {
     if (_ipController.text.isEmpty) {
-      SnackbarDemo(message: 'Please enter IP address').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Please enter IP address',
+      ).showCustomSnackbar(context);
       return;
     }
 
     if (_selectedLabelSize == null) {
-      SnackbarDemo(message: 'Please select label size').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Please select label size',
+      ).showCustomSnackbar(context);
       return;
     }
 
@@ -120,11 +127,15 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
 
     try {
       await _settingsService.savePrinterConfig(config);
-      SnackbarDemo(message: '✅ Settings saved successfully!').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: '✅ Settings saved successfully!',
+      ).showCustomSnackbar(context);
       _loadSavedPrinters(); // Refresh the list
       _clearForm();
     } catch (e) {
-      SnackbarDemo(message: '❌ Failed to save settings').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: '❌ Failed to save settings',
+      ).showCustomSnackbar(context);
     } finally {
       setState(() => _isSaving = false);
     }
@@ -147,18 +158,28 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
     final port = int.tryParse(_portController.text.trim()) ?? 9100;
 
     if (ip.isEmpty) {
-      SnackbarDemo(message: 'Please enter IP address to test connection').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Please enter IP address to test connection',
+      ).showCustomSnackbar(context);
       return;
     }
 
-    SnackbarDemo(message: 'Testing connection to $ip:$port...').showCustomSnackbar(context);
+    SnackbarDemo(
+      message: 'Testing connection to $ip:$port...',
+    ).showCustomSnackbar(context);
 
     try {
       debugPrint('🔍 [ConnectionTest] Attempting to connect to $ip:$port');
-      final socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
+      final socket = await Socket.connect(
+        ip,
+        port,
+        timeout: const Duration(seconds: 5),
+      );
       socket.destroy();
       debugPrint('✅ [ConnectionTest] Successfully connected to $ip:$port');
-      SnackbarDemo(message: '✅ Connection successful! Printer is reachable.').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: '✅ Connection successful! Printer is reachable.',
+      ).showCustomSnackbar(context);
     } catch (e) {
       debugPrint('❌ [ConnectionTest] Failed to connect: $e');
       String errorMsg = '❌ Connection failed: ';
@@ -178,9 +199,14 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Printer'),
-        content: Text('Delete ${printer.printerModel ?? printer.printerBrand}?'),
+        content: Text(
+          'Delete ${printer.printerModel ?? printer.printerBrand}?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -196,7 +222,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
         SnackbarDemo(message: 'Printer deleted').showCustomSnackbar(context);
         _loadSavedPrinters();
       } catch (e) {
-        SnackbarDemo(message: 'Failed to delete printer').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Failed to delete printer',
+        ).showCustomSnackbar(context);
       }
     }
   }
@@ -205,10 +233,14 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
     try {
       final updatedPrinter = printer.copyWith(isDefault: true);
       await _settingsService.savePrinterConfig(updatedPrinter);
-      SnackbarDemo(message: '✅ Set as default printer').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: '✅ Set as default printer',
+      ).showCustomSnackbar(context);
       _loadSavedPrinters();
     } catch (e) {
-      SnackbarDemo(message: 'Failed to set default').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Failed to set default',
+      ).showCustomSnackbar(context);
     }
   }
 
@@ -230,7 +262,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
 
     if (result != null) {
       debugPrint('✅ Selected printer: ${result['ip']}:${result['port']}');
-      SnackbarDemo(message: 'Printer selected: ${result['ip']}').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Printer selected: ${result['ip']}',
+      ).showCustomSnackbar(context);
     }
   }
 
@@ -245,11 +279,18 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(CupertinoIcons.back, size: 28.r, color: const Color(0xFF007AFF)),
+              Icon(
+                CupertinoIcons.back,
+                size: 28.r,
+                color: const Color(0xFF007AFF),
+              ),
               SizedBox(width: 4.w),
               Text(
                 'Back',
-                style: TextStyle(fontSize: 17.sp, color: const Color(0xFF007AFF)),
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  color: const Color(0xFF007AFF),
+                ),
               ),
             ],
           ),
@@ -283,12 +324,16 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                       leading: Container(
                         padding: EdgeInsets.all(8.w),
                         decoration: BoxDecoration(
-                          color: printer.isDefault ? Colors.green.shade50 : Colors.grey.shade50,
+                          color: printer.isDefault
+                              ? Colors.green.shade50
+                              : Colors.grey.shade50,
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Icon(
                           Icons.label,
-                          color: printer.isDefault ? Colors.green.shade700 : Colors.grey.shade700,
+                          color: printer.isDefault
+                              ? Colors.green.shade700
+                              : Colors.grey.shade700,
                           size: 24.sp,
                         ),
                       ),
@@ -297,23 +342,39 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                           Expanded(
                             child: Text(
                               '${printer.printerBrand} ${printer.printerModel ?? ""}',
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15.sp,
+                              ),
                             ),
                           ),
                           if (printer.isDefault)
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4.r)),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 2.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
                               child: Text(
                                 'DEFAULT',
-                                style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                         ],
                       ),
                       subtitle: Text(
                         '${printer.ipAddress}:${printer.port} (${printer.labelSize?.name ?? "N/A"}) • ${printer.protocol}',
-                        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
@@ -327,10 +388,17 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                         },
                         itemBuilder: (context) => [
                           const PopupMenuItem(value: 'use', child: Text('Use')),
-                          if (!printer.isDefault) const PopupMenuItem(value: 'default', child: Text('Set as Default')),
+                          if (!printer.isDefault)
+                            const PopupMenuItem(
+                              value: 'default',
+                              child: Text('Set as Default'),
+                            ),
                           const PopupMenuItem(
                             value: 'delete',
-                            child: Text('Delete', style: TextStyle(color: Colors.red)),
+                            child: Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
                           ),
                         ],
                       ),
@@ -359,8 +427,13 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             DropdownButtonFormField<String>(
               initialValue: _selectedBrand,
               decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 12.h,
+                ),
               ),
               items: _supportedBrands.map((brand) {
                 return DropdownMenuItem(value: brand, child: Text(brand));
@@ -369,7 +442,8 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 setState(() {
                   _selectedBrand = value!;
                   _selectedModel = null;
-                  _selectedLabelSize = null; // Reset label size when brand changes
+                  _selectedLabelSize =
+                      null; // Reset label size when brand changes
                 });
               },
             ),
@@ -385,8 +459,13 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               initialValue: _selectedModel,
               hint: const Text('Select Model'),
               decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 12.h,
+                ),
               ),
               items: _brandModels[_selectedBrand]?.map((model) {
                 return DropdownMenuItem(value: model, child: Text(model));
@@ -405,12 +484,20 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               initialValue: _selectedLabelSize,
               hint: const Text('Select Label Size'),
               decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 12.h,
+                ),
                 prefixIcon: Icon(Icons.aspect_ratio, color: AppColors.primary),
               ),
               items: _getLabelSizesForBrand().map((size) {
-                return DropdownMenuItem(value: size, child: Text('${size.name} (${size.width}×${size.height} mm)'));
+                return DropdownMenuItem(
+                  value: size,
+                  child: Text('${size.name} (${size.width}×${size.height} mm)'),
+                );
               }).toList(),
               onChanged: (value) => setState(() => _selectedLabelSize = value),
             ),
@@ -425,11 +512,19 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green.shade700, size: 20.sp),
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green.shade700,
+                      size: 20.sp,
+                    ),
                     SizedBox(width: 8.w),
                     Text(
                       'Selected: ${_selectedLabelSize!.width}mm × ${_selectedLabelSize!.height}mm',
-                      style: TextStyle(fontSize: 13.sp, color: Colors.green.shade900, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: Colors.green.shade900,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -442,14 +537,19 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               children: [
                 Text(
                   'IP Address',
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: () => _showWiFiScanner(),
                   icon: Icon(Icons.wifi_find, size: 18.sp),
                   label: const Text('Scan WiFi'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                  ),
                 ),
               ],
             ),
@@ -458,8 +558,13 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               controller: _ipController,
               decoration: InputDecoration(
                 hintText: 'e.g., 192.168.1.100',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 12.h,
+                ),
                 suffixIcon: Icon(Icons.router, color: Colors.grey.shade400),
               ),
               keyboardType: TextInputType.text,
@@ -476,8 +581,13 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               controller: _portController,
               decoration: InputDecoration(
                 hintText: 'Default: 9100',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 12.h,
+                ),
               ),
               keyboardType: TextInputType.number,
             ),
@@ -492,8 +602,13 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
             DropdownButtonFormField<String>(
               initialValue: _selectedProtocol,
               decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 12.h,
+                ),
               ),
               items: ['TCP', 'IPP', 'USB'].map((protocol) {
                 return DropdownMenuItem(value: protocol, child: Text(protocol));
@@ -522,12 +637,19 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green.shade700, size: 20.sp),
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green.shade700,
+                      size: 20.sp,
+                    ),
                     SizedBox(width: 8.w),
                     Expanded(
                       child: Text(
                         '✅ IPP is recommended for Brother printers! More reliable than raw TCP.',
-                        style: TextStyle(fontSize: 13.sp, color: Colors.green.shade900),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.green.shade900,
+                        ),
                       ),
                     ),
                   ],
@@ -544,12 +666,19 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info, color: Colors.orange.shade700, size: 20.sp),
+                    Icon(
+                      Icons.info,
+                      color: Colors.orange.shade700,
+                      size: 20.sp,
+                    ),
                     SizedBox(width: 8.w),
                     Expanded(
                       child: Text(
                         'ℹ️ If TCP doesn\'t work, try IPP protocol instead (port 631).',
-                        style: TextStyle(fontSize: 13.sp, color: Colors.orange.shade900),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.orange.shade900,
+                        ),
                       ),
                     ),
                   ],
@@ -576,7 +705,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 onPressed: _isSaving ? null : _saveSettings,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
                 ),
                 child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
@@ -596,7 +727,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                 child: OutlinedButton(
                   onPressed: _testConnection,
                   style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
                     side: const BorderSide(color: Colors.blue),
                   ),
                   child: Row(
@@ -623,13 +756,17 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                   height: 48.h,
                   child: OutlinedButton(
                     onPressed: () async {
-                      SnackbarDemo(message: 'Generating 591×307 test...').showCustomSnackbar(context);
+                      SnackbarDemo(
+                        message: 'Generating 591×307 test...',
+                      ).showCustomSnackbar(context);
 
                       // Generate EXACT 591x307 border test
                       final testImage = await _generateExact591x307BorderTest();
 
                       if (testImage == null) {
-                        SnackbarDemo(message: '❌ Failed to generate test image').showCustomSnackbar(context);
+                        SnackbarDemo(
+                          message: '❌ Failed to generate test image',
+                        ).showCustomSnackbar(context);
                         return;
                       }
 
@@ -642,33 +779,49 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                         protocol: _selectedProtocol,
                         port: int.tryParse(_portController.text),
                         isDefault: false,
-                        labelSize: LabelSize(width: 50, height: 26, name: '50x26'),
+                        labelSize: LabelSize(
+                          width: 50,
+                          height: 26,
+                          name: '50x26',
+                        ),
                       );
 
-                      debugPrint('🖨️ [591x307 Test] Printing to ${_selectedModel ?? "unknown"}');
+                      debugPrint(
+                        '🖨️ [591x307 Test] Printing to ${_selectedModel ?? "unknown"}',
+                      );
 
-                      SnackbarDemo(message: 'Sending 591×307 test...').showCustomSnackbar(context);
+                      SnackbarDemo(
+                        message: 'Sending 591×307 test...',
+                      ).showCustomSnackbar(context);
 
                       try {
-                        final res = await PrinterServiceFactory.printLabelImageWithFallback(
-                          config: temp,
-                          imageBytes: testImage,
-                        );
+                        final res =
+                            await PrinterServiceFactory.printLabelImageWithFallback(
+                              config: temp,
+                              imageBytes: testImage,
+                            );
 
                         if (res.success) {
                           SnackbarDemo(
-                            message: '✅ ${res.message}\n🎯 Check: Border should touch all 4 edges',
+                            message:
+                                '✅ ${res.message}\n🎯 Check: Border should touch all 4 edges',
                           ).showCustomSnackbar(context);
                         } else {
-                          SnackbarDemo(message: '❌ ${res.message}').showCustomSnackbar(context);
+                          SnackbarDemo(
+                            message: '❌ ${res.message}',
+                          ).showCustomSnackbar(context);
                         }
                       } catch (e, st) {
                         debugPrint('❌ 591x307 test failed: $e\n$st');
-                        SnackbarDemo(message: '❌ Test failed: $e').showCustomSnackbar(context);
+                        SnackbarDemo(
+                          message: '❌ Test failed: $e',
+                        ).showCustomSnackbar(context);
                       }
                     },
                     style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
                       side: const BorderSide(color: Colors.orange),
                     ),
                     child: Row(
@@ -678,7 +831,10 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                         SizedBox(width: 8.w),
                         Text(
                           'Test 591×307 (50×26mm @300DPI)',
-                          style: TextStyle(fontSize: 14.sp, color: Colors.orange),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Colors.orange,
+                          ),
                         ),
                       ],
                     ),
@@ -707,73 +863,6 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
 
   /// Generate test border image to verify full label dimensions
   /// Creates a 4-dot black border around the label edges at NATIVE printer resolution
-  Future<Uint8List?> _generateBorderTestImage(String printerModel, int widthMm, int heightMm) async {
-    try {
-      // Determine DPI based on printer model
-      final isTD4 = printerModel.toUpperCase().startsWith('TD-4');
-      final dotsPerMm = isTD4 ? 11.811 : 8.0;
-      final dpi = isTD4 ? 300 : 203;
-
-      // Calculate pixel dimensions at NATIVE resolution (1x - no multiplier!)
-      // TD-2: 51x26mm @ 8 dots/mm = 408x208 dots
-      // TD-4: 100x150mm @ 11.811 dots/mm = 1181x1772 dots
-      final widthPx = (widthMm * dotsPerMm).round();
-      final heightPx = (heightMm * dotsPerMm).round();
-
-      debugPrint('🎨 [Border Test] Model: $printerModel, DPI: $dpi');
-      debugPrint('🎨 [Border Test] Label: ${widthMm}x${heightMm}mm → ${widthPx}x${heightPx}px (NATIVE 1x)');
-
-      // Create canvas
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()));
-
-      // White background
-      final bgPaint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()), bgPaint);
-
-      // Draw 4-dot black border (thinner for native resolution)
-      final borderPaint = Paint()
-        ..color = Colors.black
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4.0;
-
-      canvas.drawRect(Rect.fromLTWH(2, 2, widthPx - 4.0, heightPx - 4.0), borderPaint);
-
-      // Add text in center for debugging
-      final textStyle = ui.TextStyle(color: Colors.black, fontSize: heightPx * 0.08, fontWeight: FontWeight.bold);
-
-      final paragraphStyle = ui.ParagraphStyle(textAlign: TextAlign.center);
-      final paragraphBuilder = ui.ParagraphBuilder(paragraphStyle)
-        ..pushStyle(textStyle)
-        ..addText('BORDER TEST\n${widthMm}×${heightMm}mm\n$dpi DPI\n${widthPx}×${heightPx}px');
-
-      final paragraph = paragraphBuilder.build()..layout(ui.ParagraphConstraints(width: widthPx.toDouble()));
-
-      canvas.drawParagraph(paragraph, Offset((widthPx - paragraph.width) / 2, (heightPx - paragraph.height) / 2));
-
-      // Convert to image
-      final picture = recorder.endRecording();
-      final image = await picture.toImage(widthPx, heightPx);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-
-      image.dispose();
-
-      if (byteData == null) {
-        debugPrint('❌ Failed to convert border test image to bytes');
-        return null;
-      }
-
-      final imageBytes = byteData.buffer.asUint8List();
-      debugPrint('✅ [Border Test] Generated ${widthPx}×${heightPx} image (${imageBytes.length} bytes)');
-      debugPrint('🎯 [Border Test] If border touches all edges → label size is correct!');
-
-      return imageBytes;
-    } catch (e, st) {
-      debugPrint('❌ Error generating border test image: $e');
-      debugPrint('Stack trace: $st');
-      return null;
-    }
-  }
 
   /// Generate EXACT 591x307 dots image (50x26mm @ 300 DPI)
   /// This is the exact resolution for TD-2350D at 300 DPI
@@ -788,16 +877,23 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
 
       // Create canvas at EXACT dimensions
       final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()));
+      final canvas = Canvas(
+        recorder,
+        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+      );
 
       // White background
       final bgPaint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()), bgPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+        bgPaint,
+      );
 
       // Shift the canvas origin to compensate for printer's unprintable margins
       // Adjust offsets: move content down more to center vertically
       const double offsetX = 50.0; // Shift right
-      const double offsetY = 50.0; // Shift down very little (reduced from 15 to move content DOWN more)
+      const double offsetY =
+          50.0; // Shift down very little (reduced from 15 to move content DOWN more)
       canvas.translate(offsetX, offsetY);
 
       // Now all drawing is offset from the shifted origin
@@ -806,7 +902,8 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       final centerY = (heightPx - offsetY) / 2;
 
       // Expand borders MUCH closer to actual label edges (borderInset pushes OUTSIDE translated area)
-      const double borderInset = 16.0; // Push borders 16px closer to physical edges
+      const double borderInset =
+          16.0; // Push borders 16px closer to physical edges
 
       // Draw thick black lines at edges (in shifted coordinate system)
       final borderPaint = Paint()
@@ -814,52 +911,112 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
         ..style = PaintingStyle.fill;
 
       // Top edge - 8 dots thick, close to edge
-      canvas.drawRect(Rect.fromLTWH(-borderInset, -borderInset, widthPx - offsetX + borderInset * 2, 8), borderPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(
+          -borderInset,
+          -borderInset,
+          widthPx - offsetX + borderInset * 2,
+          8,
+        ),
+        borderPaint,
+      );
 
       // Bottom edge - 8 dots thick, close to edge
       canvas.drawRect(
-        Rect.fromLTWH(-borderInset, heightPx - offsetY - 8.0 + borderInset, widthPx - offsetX + borderInset * 2, 8),
+        Rect.fromLTWH(
+          -borderInset,
+          heightPx - offsetY - 8.0 + borderInset,
+          widthPx - offsetX + borderInset * 2,
+          8,
+        ),
         borderPaint,
       );
 
       // Left edge - 8 dots thick, close to edge
-      canvas.drawRect(Rect.fromLTWH(-borderInset, -borderInset, 8, heightPx - offsetY + borderInset * 2), borderPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(
+          -borderInset,
+          -borderInset,
+          8,
+          heightPx - offsetY + borderInset * 2,
+        ),
+        borderPaint,
+      );
 
       // Right edge - 8 dots thick, close to edge
       canvas.drawRect(
-        Rect.fromLTWH(widthPx - offsetX - 8.0 + borderInset, -borderInset, 8, heightPx - offsetY + borderInset * 2),
+        Rect.fromLTWH(
+          widthPx - offsetX - 8.0 + borderInset,
+          -borderInset,
+          8,
+          heightPx - offsetY + borderInset * 2,
+        ),
         borderPaint,
       );
 
       // Add corner markers (24x24 squares) at shifted coordinates
       // Top-Left: TL
-      canvas.drawRect(Rect.fromLTWH(-borderInset, -borderInset, 24, 24), borderPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(-borderInset, -borderInset, 24, 24),
+        borderPaint,
+      );
 
       // Top-Right: TR
-      canvas.drawRect(Rect.fromLTWH(widthPx - offsetX - 24.0 + borderInset, -borderInset, 24, 24), borderPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(
+          widthPx - offsetX - 24.0 + borderInset,
+          -borderInset,
+          24,
+          24,
+        ),
+        borderPaint,
+      );
 
       // Bottom-Left: BL
-      canvas.drawRect(Rect.fromLTWH(-borderInset, heightPx - offsetY - 24.0 + borderInset, 24, 24), borderPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(
+          -borderInset,
+          heightPx - offsetY - 24.0 + borderInset,
+          24,
+          24,
+        ),
+        borderPaint,
+      );
 
       // Bottom-Right: BR
       canvas.drawRect(
-        Rect.fromLTWH(widthPx - offsetX - 24.0 + borderInset, heightPx - offsetY - 24.0 + borderInset, 24, 24),
+        Rect.fromLTWH(
+          widthPx - offsetX - 24.0 + borderInset,
+          heightPx - offsetY - 24.0 + borderInset,
+          24,
+          24,
+        ),
         borderPaint,
       );
 
       // Add centered text showing CENTER position
-      final textStyle = ui.TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold);
+      final textStyle = ui.TextStyle(
+        color: Colors.black,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      );
 
       final paragraphStyle = ui.ParagraphStyle(textAlign: TextAlign.center);
       final paragraphBuilder = ui.ParagraphBuilder(paragraphStyle)
         ..pushStyle(textStyle)
-        ..addText('591×307\nCenter: ${centerX.toInt()},${centerY.toInt()}\nTL TR\nBL BR');
+        ..addText(
+          '591×307\nCenter: ${centerX.toInt()},${centerY.toInt()}\nTL TR\nBL BR',
+        );
 
-      final paragraph = paragraphBuilder.build()..layout(ui.ParagraphConstraints(width: widthPx - offsetX));
+      final paragraph = paragraphBuilder.build()
+        ..layout(ui.ParagraphConstraints(width: widthPx - offsetX));
 
       canvas.drawParagraph(
         paragraph,
-        Offset((widthPx - offsetX - paragraph.width) / 2, (heightPx - offsetY - paragraph.height) / 2),
+        Offset(
+          (widthPx - offsetX - paragraph.width) / 2,
+          (heightPx - offsetY - paragraph.height) / 2,
+        ),
       );
 
       // Convert to image
@@ -875,7 +1032,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       }
 
       final imageBytes = byteData.buffer.asUint8List();
-      debugPrint('✅ [591x307 Test] Generated EXACT ${widthPx}×${heightPx} image (${imageBytes.length} bytes)');
+      debugPrint(
+        '✅ [591x307 Test] Generated EXACT ${widthPx}×${heightPx} image (${imageBytes.length} bytes)',
+      );
 
       return imageBytes;
     } catch (e, st) {

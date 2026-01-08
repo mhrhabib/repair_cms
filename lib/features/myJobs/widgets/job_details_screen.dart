@@ -30,12 +30,22 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
   @override
   void initState() {
+    super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('Initialized Job Details Screen for Job ID: ${widget.jobId}');
+      debugPrint(
+        '🔍 [JobDetailsScreen] Loading job details for ID: ${widget.jobId}',
+      );
       context.read<JobCubit>().getJobById(widget.jobId);
     });
+  }
 
-    super.initState();
+  @override
+  void dispose() {
+    // Reload the job list when leaving job details to reflect any changes
+    debugPrint(
+      '⬅️ [JobDetailsScreen] Leaving job details, will trigger job list refresh',
+    );
+    super.dispose();
   }
 
   void _onNavItemSelected(int index) {
@@ -51,12 +61,16 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       listener: (context, state) {
         if (state is JobError) {
           // Show top overlay snackbar for errors
-          SnackbarDemo(message: 'Error: ${state.message}').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Error: ${state.message}',
+          ).showCustomSnackbar(context);
         }
 
         if (state is JobStatusUpdated) {
           // Centralized success notification (use top overlay)
-          SnackbarDemo(message: 'Job status updated successfully').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Job status updated successfully',
+          ).showCustomSnackbar(context);
 
           // Update the cached job data immediately
           setState(() {
@@ -121,7 +135,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 _currentJob = state.job;
                 return _buildCurrentScreen(state.job);
               } else if (state is JobError) {
-                return Center(child: Text('Error loading job: ${state.message}'));
+                return Center(
+                  child: Text('Error loading job: ${state.message}'),
+                );
               }
 
               // Default fallback (should be rare) - show loader while awaiting JobDetailSuccess
@@ -146,12 +162,16 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       case 1:
         final customer = job.data!.customerDetails;
         final recipientEmail = customer?.email;
-        final recipientName = customer != null ? '${customer.firstName ?? ''} ${customer.lastName ?? ''}'.trim() : null;
+        final recipientName = customer != null
+            ? '${customer.firstName ?? ''} ${customer.lastName ?? ''}'.trim()
+            : null;
 
         return ChatConversationScreen(
           conversationId: job.data!.sId!,
           recipientEmail: recipientEmail,
-          recipientName: recipientName?.isNotEmpty == true ? recipientName : 'Customer',
+          recipientName: recipientName?.isNotEmpty == true
+              ? recipientName
+              : 'Customer',
         );
       case 2:
         return StatusScreen(jobId: job);
@@ -221,14 +241,19 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       if (assignUser is Map) {
         // Extract the ID from the user object
         assignUserId = assignUser['_id']?.toString() ?? '';
-        assigneeName = assignUser['fullName'] ?? assignUser['email'] ?? 'Unknown User';
-        debugPrint('🔄 AssignUser is a Map, extracted ID: $assignUserId, Name: $assigneeName');
+        assigneeName =
+            assignUser['fullName'] ?? assignUser['email'] ?? 'Unknown User';
+        debugPrint(
+          '🔄 AssignUser is a Map, extracted ID: $assignUserId, Name: $assigneeName',
+        );
       } else if (assignUser is String) {
         // It's already a string ID - find the name from available users
         assignUserId = assignUser;
         final user = _findUserById(assignUserId);
         assigneeName = user?.fullName ?? user?.email ?? 'Unknown User';
-        debugPrint('🔄 AssignUser is a String ID: $assignUserId, Found Name: $assigneeName');
+        debugPrint(
+          '🔄 AssignUser is a String ID: $assignUserId, Found Name: $assigneeName',
+        );
       } else {
         assignUserId = assignUser.toString();
         assigneeName = 'Unknown User';
@@ -241,7 +266,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           _selectedUserId = assignUserId; // Store ID for dropdown value
         });
 
-        debugPrint('✅ Current assignee set - Display: $selectedAssignee, ID: $_selectedUserId');
+        debugPrint(
+          '✅ Current assignee set - Display: $selectedAssignee, ID: $_selectedUserId',
+        );
       } else {
         debugPrint('❌ Empty assignee ID found');
         setState(() {
@@ -284,24 +311,38 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         debugPrint('✅ User selected - Display: $userName, ID: $newUserId');
 
         // Pass the ID to the API
-        context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, userName);
+        context.read<JobCubit>().updateJobAssignee(
+          widget.job.data!.sId!,
+          newUserId,
+          userName,
+        );
       } else {
         debugPrint('❌ User not found with ID: $newUserId');
-        debugPrint('Available user IDs: ${_availableUsers.map((u) => u.id).join(", ")}');
+        debugPrint(
+          'Available user IDs: ${_availableUsers.map((u) => u.id).join(", ")}',
+        );
 
         // Fallback: still update with the ID
         setState(() {
           _selectedUserId = newUserId;
-          selectedAssignee = 'User ($newUserId)'; // Show ID in name if user not found
+          selectedAssignee =
+              'User ($newUserId)'; // Show ID in name if user not found
         });
 
         // Pass the ID to the API even if user not found locally
-        context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, newUserId, 'Unknown User');
+        context.read<JobCubit>().updateJobAssignee(
+          widget.job.data!.sId!,
+          newUserId,
+          'Unknown User',
+        );
 
         // Keep inline notification for fallback assignment behavior
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Assigned to user ID: $newUserId'), backgroundColor: Colors.orange));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Assigned to user ID: $newUserId'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     } else {
       debugPrint('ℹ️ No user selected or empty user ID');
@@ -316,16 +357,19 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     final jobData = widget.job.data!;
 
     // Initialize job complete status
-    isJobComplete = jobData.isJobCompleted != null && jobData.isJobCompleted! == true;
+    isJobComplete =
+        jobData.isJobCompleted != null && jobData.isJobCompleted! == true;
 
     // Initialize return device status
-    returnDevice = jobData.isDeviceReturned != null && jobData.isDeviceReturned! == true;
+    returnDevice =
+        jobData.isDeviceReturned != null && jobData.isDeviceReturned! == true;
 
     // Initialize due date from job data
     if (jobData.dueDate != null && jobData.dueDate!.isNotEmpty) {
       try {
         final parsedDate = DateTime.parse(jobData.dueDate!);
-        selectedDueDate = "${parsedDate.day}. ${_getMonthName(parsedDate.month)} ${parsedDate.year}";
+        selectedDueDate =
+            "${parsedDate.day}. ${_getMonthName(parsedDate.month)} ${parsedDate.year}";
       } catch (e) {
         selectedDueDate = 'Select due date';
       }
@@ -378,7 +422,8 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     // Update when job prop changes or job data is updated
     if (oldWidget.job.data!.sId != widget.job.data!.sId ||
         oldWidget.job.data!.isJobCompleted != widget.job.data!.isJobCompleted ||
-        oldWidget.job.data!.isDeviceReturned != widget.job.data!.isDeviceReturned) {
+        oldWidget.job.data!.isDeviceReturned !=
+            widget.job.data!.isDeviceReturned) {
       _initializeJobStatus();
     }
   }
@@ -413,12 +458,18 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
             _isLoadingUsers = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to load users: ${state.message}'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Failed to load users: ${state.message}'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       },
 
-      child: Scaffold(appBar: _buildCustomAppBar(), body: _buildJobDetailsScreen(widget.job)),
+      child: Scaffold(
+        appBar: _buildCustomAppBar(),
+        body: _buildJobDetailsScreen(widget.job),
+      ),
     );
   }
 
@@ -445,7 +496,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            widget.job.data!.contact!.isEmpty ? 'Job Details' : widget.job.data!.contact![0].firstName ?? 'Job Details',
+            widget.job.data!.contact!.isEmpty
+                ? 'Job Details'
+                : widget.job.data!.contact![0].firstName ?? 'Job Details',
             style: TextStyle(
               fontSize: 17.sp,
               fontWeight: FontWeight.w600,
@@ -467,10 +520,17 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         children: [
           CupertinoButton(
             padding: EdgeInsets.zero,
-            onPressed: () => Navigator.of(
-              context,
-            ).push(CupertinoPageRoute(builder: (context) => JobProgressReceiptsScreen(job: widget.job))),
-            child: Icon(SolarIconsOutline.printer, size: 24.r, color: figmaBlue),
+            onPressed: () => Navigator.of(context).push(
+              CupertinoPageRoute(
+                builder: (context) =>
+                    JobProgressReceiptsScreen(job: widget.job),
+              ),
+            ),
+            child: Icon(
+              SolarIconsOutline.printer,
+              size: 24.r,
+              color: figmaBlue,
+            ),
           ),
         ],
       ),
@@ -492,7 +552,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                 children: [
                   Text(
                     'Set Job Complete',
-                    style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                    style: GoogleFonts.roboto(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                   ),
                   CupertinoSwitch(
                     value: isJobComplete,
@@ -514,7 +578,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                 children: [
                   Text(
                     'Return device',
-                    style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                    style: GoogleFonts.roboto(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                   ),
                   CupertinoSwitch(
                     value: returnDevice,
@@ -590,14 +658,21 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       onTap: _showDatePicker,
                       child: Container(
                         height: 40.h,
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 4.h,
+                        ),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.blue, width: 1.5),
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.calendar_today_outlined, color: Colors.blue, size: 20),
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
@@ -633,12 +708,19 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                             height: 40.h,
                             padding: EdgeInsets.symmetric(horizontal: 12.w),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 1.5,
+                              ),
                               borderRadius: BorderRadius.circular(8.r),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.person_outline, color: Colors.grey, size: 20),
+                                Icon(
+                                  Icons.person_outline,
+                                  color: Colors.grey,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 8.w),
                                 Expanded(
                                   child: Text(
@@ -650,7 +732,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 20.w, height: 20.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                                SizedBox(
+                                  width: 20.w,
+                                  height: 20.h,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                               ],
                             ),
                           )
@@ -680,17 +768,24 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCardInfoRow('Physical location:', job.data!.physicalLocation ?? 'Not specified'),
+        _buildCardInfoRow(
+          'Physical location:',
+          job.data!.physicalLocation ?? 'Not specified',
+        ),
         SizedBox(height: 12.h),
         _buildCardInfoRow('Defect type:', _getDefectType(job)),
         SizedBox(height: 12.h),
-        _buildCardInfoSection('Problem Description:', _getProblemDescription(job)),
+        _buildCardInfoSection(
+          'Problem Description:',
+          _getProblemDescription(job),
+        ),
       ],
     );
   }
 
   String _getDefectType(SingleJobModel job) {
-    if (job.data!.defect!.isNotEmpty && job.data!.defect!.first.defect!.isNotEmpty) {
+    if (job.data!.defect!.isNotEmpty &&
+        job.data!.defect!.first.defect!.isNotEmpty) {
       return job.data!.defect!.first.defect!.first.value!;
     }
     return 'Not specified';
@@ -704,8 +799,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         SizedBox(height: 12.h),
         _buildCardInfoRow('IMEI/SN:', job.data!.deviceData!.serialNo ?? 'N/A'),
         SizedBox(height: 12.h),
-        if (job.data!.deviceData!.model != null) _buildCardInfoRow('Model:', job.data!.deviceData!.model!),
-        if (job.data!.deviceData!.brand != null) _buildCardInfoRow('Brand:', job.data!.deviceData!.brand!),
+        if (job.data!.deviceData!.model != null)
+          _buildCardInfoRow('Model:', job.data!.deviceData!.model!),
+        if (job.data!.deviceData!.brand != null)
+          _buildCardInfoRow('Brand:', job.data!.deviceData!.brand!),
         SizedBox(height: 12.h),
         Align(
           alignment: Alignment.center,
@@ -742,7 +839,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
               // Notes input field
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-                decoration: BoxDecoration(color: CupertinoColors.systemGrey6, borderRadius: BorderRadius.circular(8.r)),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemGrey6,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
                 child: CupertinoTextField(
                   controller: notesController,
                   placeholder: 'Add notes about job completion...',
@@ -755,15 +855,25 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
               // Send notification toggle
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                decoration: BoxDecoration(color: CupertinoColors.systemGrey6, borderRadius: BorderRadius.circular(8.r)),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemGrey6,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        Icon(CupertinoIcons.mail, size: 18.sp, color: const Color(0xFF007AFF)),
+                        Icon(
+                          CupertinoIcons.mail,
+                          size: 18.sp,
+                          color: const Color(0xFF007AFF),
+                        ),
                         SizedBox(width: 8.w),
-                        Text('Send email to customer', style: TextStyle(fontSize: 15.sp)),
+                        Text(
+                          'Send email to customer',
+                          style: TextStyle(fontSize: 15.sp),
+                        ),
                       ],
                     ),
                     CupertinoSwitch(
@@ -800,7 +910,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                 });
               },
               isDefaultAction: true,
-              child: Text('Confirm Complete', style: TextStyle(fontSize: 17.sp)),
+              child: Text(
+                'Confirm Complete',
+                style: TextStyle(fontSize: 17.sp),
+              ),
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
@@ -877,7 +990,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
               isDefaultAction: true,
               child: Text(
                 'Mark Returned',
-                style: TextStyle(fontSize: 17.sp, color: CupertinoColors.systemGreen),
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  color: CupertinoColors.systemGreen,
+                ),
               ),
             ),
           ],
@@ -930,7 +1046,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
               isDefaultAction: true,
               child: Text(
                 'Mark Incomplete',
-                style: TextStyle(fontSize: 17.sp, color: CupertinoColors.systemOrange),
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  color: CupertinoColors.systemOrange,
+                ),
               ),
             ),
           ],
@@ -950,15 +1069,26 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
     return _buildInfoCard(
       title: 'Customer Information',
       children: [
-        _buildInfoRow('Name', '${job.data!.customerDetails!.firstName} ${job.data!.customerDetails!.lastName}'),
+        _buildInfoRow(
+          'Name',
+          '${job.data!.customerDetails!.firstName} ${job.data!.customerDetails!.lastName}',
+        ),
         SizedBox(height: 12.h),
-        _buildInfoRow('Email', job.data!.customerDetails!.email ?? 'No email provided'),
+        _buildInfoRow(
+          'Email',
+          job.data!.customerDetails!.email ?? 'No email provided',
+        ),
         SizedBox(height: 12.h),
-        _buildInfoRow('Phone', '${job.data!.customerDetails!.telephonePrefix} ${job.data!.customerDetails!.telephone}'),
+        _buildInfoRow(
+          'Phone',
+          '${job.data!.customerDetails!.telephonePrefix} ${job.data!.customerDetails!.telephone}',
+        ),
         SizedBox(height: 12.h),
         _buildInfoSection(
           'Address',
-          job.data!.customerDetails!.shippingAddress != null ? _getCustomerAddress(job) : 'No address provided',
+          job.data!.customerDetails!.shippingAddress != null
+              ? _getCustomerAddress(job)
+              : 'No address provided',
         ),
       ],
     );
@@ -991,13 +1121,21 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w700, color: const Color(0xFF3A4A67)),
+          style: GoogleFonts.roboto(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF3A4A67),
+          ),
         ),
         SizedBox(width: 6.h),
         Expanded(
           child: Text(
             value,
-            style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+            style: GoogleFonts.roboto(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
           ),
         ),
       ],
@@ -1010,7 +1148,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w700, color: const Color(0xFF3A4A67)),
+          style: GoogleFonts.roboto(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF3A4A67),
+          ),
         ),
         SizedBox(height: 6.h),
         Text(
@@ -1033,7 +1175,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1041,7 +1189,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           if (title != null) ...[
             Text(
               title,
-              style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+              style: GoogleFonts.roboto(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
             SizedBox(height: 12.h),
           ],
@@ -1057,7 +1209,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+          style: GoogleFonts.roboto(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+          ),
         ),
         Text(
           value,
@@ -1077,12 +1233,20 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+          style: GoogleFonts.roboto(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+          ),
         ),
         SizedBox(height: 4.h),
         Text(
           value,
-          style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: Colors.black87),
+          style: GoogleFonts.roboto(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ),
         ),
       ],
     );
@@ -1119,7 +1283,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       backgroundColor: Colors.green,
                       child: Text(
                         item.split(' ').map((word) => word[0]).join(),
-                        style: GoogleFonts.roboto(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.roboto(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     SizedBox(width: 8.w),
@@ -1130,7 +1298,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                   Expanded(
                     child: Text(
                       item,
-                      style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                      style: GoogleFonts.roboto(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
                 ],
@@ -1148,7 +1320,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -1172,7 +1350,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       color: Colors.transparent,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(index == 0 ? 12.r : 0),
-                        topRight: Radius.circular(index == _tabTitles.length - 1 ? 12.r : 0),
+                        topRight: Radius.circular(
+                          index == _tabTitles.length - 1 ? 12.r : 0,
+                        ),
                       ),
                     ),
                     child: Column(
@@ -1181,8 +1361,12 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                           title,
                           style: GoogleFonts.roboto(
                             fontSize: 14.sp,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: isSelected ? Colors.blue : Colors.grey.shade600,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                            color: isSelected
+                                ? Colors.blue
+                                : Colors.grey.shade600,
                           ),
                         ),
                         SizedBox(height: 8.h),
@@ -1190,7 +1374,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                           height: 3.h,
                           width: 60.w,
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.blue : Colors.transparent,
+                            color: isSelected
+                                ? Colors.blue
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(4.r),
                           ),
                         ),
@@ -1207,7 +1393,9 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           // Content area with real data
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            child: _selectedTabIndex == 0 ? _jobDetailsCardContent(job) : _deviceDetailsCardContent(job),
+            child: _selectedTabIndex == 0
+                ? _jobDetailsCardContent(job)
+                : _deviceDetailsCardContent(job),
           ),
         ],
       ),
@@ -1228,7 +1416,8 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
 
       // Update local state
       setState(() {
-        selectedDueDate = "${picked.day}. ${_getMonthName(picked.month)} ${picked.year}";
+        selectedDueDate =
+            "${picked.day}. ${_getMonthName(picked.month)} ${picked.year}";
       });
     }
   }
@@ -1261,7 +1450,10 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
       // Convert to lowercase for API
       final priorityValue = newValue.toLowerCase();
 
-      context.read<JobCubit>().updateJobPriority(widget.job.data!.sId!, priorityValue);
+      context.read<JobCubit>().updateJobPriority(
+        widget.job.data!.sId!,
+        priorityValue,
+      );
     }
   }
 
@@ -1281,7 +1473,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
           isExpanded: true,
           hint: Text(
             'Select assignee',
-            style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+            style: GoogleFonts.roboto(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
           ),
           items: _availableUsers.map((User user) {
             final userName = user.fullName ?? user.email;
@@ -1296,7 +1492,11 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                     backgroundColor: Colors.blue,
                     child: Text(
                       userInitials,
-                      style: GoogleFonts.roboto(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.roboto(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   SizedBox(width: 8.w),

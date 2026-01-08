@@ -18,7 +18,12 @@ class JobDeviceLabelScreen extends StatefulWidget {
   final String printOption;
   final String? jobNo;
 
-  const JobDeviceLabelScreen({super.key, required this.jobResponse, required this.printOption, this.jobNo});
+  const JobDeviceLabelScreen({
+    super.key,
+    required this.jobResponse,
+    required this.printOption,
+    this.jobNo,
+  });
 
   @override
   State<JobDeviceLabelScreen> createState() => _JobDeviceLabelScreenState();
@@ -46,7 +51,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
     try {
       SnackbarDemo(message: 'Preparing label...').showCustomSnackbar(context);
 
-      debugPrint('🖨️ Printing with ${printer.printerBrand} ${printer.printerType}');
+      debugPrint(
+        '🖨️ Printing with ${printer.printerBrand} ${printer.printerType}',
+      );
 
       // Build label data
       final labelData = {
@@ -64,7 +71,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       debugPrint('📱 Device: ${labelData['deviceName']}');
       debugPrint('🔢 IMEI: ${labelData['imei']}');
 
-      SnackbarDemo(message: 'Sending to printer...').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Sending to printer...',
+      ).showCustomSnackbar(context);
 
       // Try capturing label widget as image for high-fidelity label (barcode + QR)
       if (canPrintImage) {
@@ -76,29 +85,40 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         }
 
         // Try image printing with fallback handling for TD series printers
-        final imageResult = await PrinterServiceFactory.printLabelImageWithFallback(
-          config: printer,
-          imageBytes: imageBytes,
-        );
+        final imageResult =
+            await PrinterServiceFactory.printLabelImageWithFallback(
+              config: printer,
+              imageBytes: imageBytes,
+            );
 
         if (imageResult.success) {
-          SnackbarDemo(message: imageResult.message).showCustomSnackbar(context);
+          SnackbarDemo(
+            message: imageResult.message,
+          ).showCustomSnackbar(context);
           return;
         }
 
         // If image printing not supported (TD series), fall back to text
-        debugPrint('⚠️ Image print not supported: ${imageResult.message}, trying text fallback');
+        debugPrint(
+          '⚠️ Image print not supported: ${imageResult.message}, trying text fallback',
+        );
 
         // Fallback: attempt structured/device label via SDK/raw fallback
         final labelText = _buildLabelText();
-        final textResult = await PrinterServiceFactory.printLabelWithFallback(config: printer, text: labelText);
+        final textResult = await PrinterServiceFactory.printLabelWithFallback(
+          config: printer,
+          text: labelText,
+        );
         if (textResult.success) {
           SnackbarDemo(message: textResult.message).showCustomSnackbar(context);
         } else {
           throw Exception(textResult.message);
         }
       } else {
-        final result = await PrinterServiceFactory.printDeviceLabelWithFallback(config: printer, labelData: labelData);
+        final result = await PrinterServiceFactory.printDeviceLabelWithFallback(
+          config: printer,
+          labelData: labelData,
+        );
 
         if (result.success) {
           SnackbarDemo(message: result.message).showCustomSnackbar(context);
@@ -201,7 +221,10 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
     final selectedPrinter = await showCupertinoModalPopup<PrinterConfigModel>(
       context: context,
-      builder: (context) => _PrinterSelectionDialog(printers: labelPrinters, onPrint: _printLabel),
+      builder: (context) => _PrinterSelectionDialog(
+        printers: labelPrinters,
+        onPrint: _printLabel,
+      ),
     );
 
     // If a printer was selected from the dialog, trigger printing
@@ -214,14 +237,24 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: CupertinoNavigationBar(
         backgroundColor: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1)),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
         leading: GestureDetector(
           onTap: () => Navigator.of(context).pop(),
-          child: Icon(CupertinoIcons.xmark, size: 24.r, color: Colors.grey.shade800),
+          child: Icon(
+            CupertinoIcons.xmark,
+            size: 24.r,
+            color: Colors.grey.shade800,
+          ),
         ),
         middle: Text(
           'Device Label',
-          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
+          style: TextStyle(
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade800,
+          ),
         ),
         trailing: GestureDetector(
           onTap: _handlePrintTap,
@@ -239,7 +272,13 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(8.r),
               border: Border.all(color: Colors.grey.shade300, width: 2),
-              boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, 2))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.shade300,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Container(
               // Let content size itself naturally
@@ -266,12 +305,20 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                                 barcode: Barcode.code128(),
                                 data: _getBarcodeData(),
                                 drawText: false,
-                                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
                             Text(
                               _getJobNumber(),
-                              style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                              style: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.black,
+                              ),
                               textAlign: TextAlign.left,
                             ),
                           ],
@@ -304,7 +351,12 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                   // Job information - single line
                   Text(
                     '${_getJobNumber()} | ${_getCustomerName()} | ${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
-                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      height: 1.3,
+                    ),
                     textAlign: TextAlign.left,
                   ),
 
@@ -313,7 +365,12 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                   // Defect and location - single line
                   Text(
                     '${_getDefect()} | BOX: ${_getPhysicalLocation()}',
-                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      height: 1.3,
+                    ),
                     textAlign: TextAlign.left,
                   ),
                 ],
@@ -385,16 +442,26 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final widthPx = (labelWidthMm * dotsPerMm).round();
       final heightPx = (labelHeightMm * dotsPerMm).round();
 
-      debugPrint('📐 Printer: ${defaultPrinter?.printerModel ?? "unknown"}, DPI: $dpi');
-      debugPrint('📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${widthPx}x${heightPx}px (NATIVE 1x)');
+      debugPrint(
+        '📐 Printer: ${defaultPrinter?.printerModel ?? "unknown"}, DPI: $dpi',
+      );
+      debugPrint(
+        '📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${widthPx}x${heightPx}px (NATIVE 1x)',
+      );
 
       // Create a picture recorder and canvas at exact printer resolution
       final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()));
+      final canvas = Canvas(
+        recorder,
+        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+      );
 
       // White background
       final bgPaint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()), bgPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+        bgPaint,
+      );
 
       // Apply printer margin compensation (same as test border)
       // Shift canvas origin to account for unprintable margins
@@ -410,7 +477,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // Use percentage of drawable dimensions so layout scales with resolution
       final padding = drawableWidth * 0.02; // 2% padding
       final contentWidth = drawableWidth - (padding * 2);
-      final barcodeWidth = contentWidth * 0.65; // 65% of content width for barcode
+      final barcodeWidth =
+          contentWidth * 0.65; // 65% of content width for barcode
       final barcodeHeight = drawableHeight * 0.24; // 24% of height for barcode
       final qrSize = contentWidth * 0.22; // 22% for QR code (reduced from 28%)
 
@@ -418,23 +486,40 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final barcodeData = _getBarcodeData();
 
       // Draw barcode as rectangles
-      _drawBarcode(canvas, barcodeData, padding, padding, barcodeWidth, barcodeHeight);
+      _drawBarcode(
+        canvas,
+        barcodeData,
+        padding,
+        padding,
+        barcodeWidth,
+        barcodeHeight,
+      );
 
       // Font sizes - fixed 18 for base, others proportional
       const double baseFontSize = 18.0; // Fixed size as requested
-      const double smallFontSize = 14.0; // Slightly smaller for details
+      // const double smallFontSize = 14.0; // Slightly smaller for details
       final lineSpacing = baseFontSize + 4.0; // Space between lines
 
       // Draw job number under barcode
       final textPainter = TextPainter(
         text: TextSpan(
           text: _getJobNumber(),
-          style: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         textDirection: TextDirection.ltr,
       );
       textPainter.layout(maxWidth: barcodeWidth);
-      textPainter.paint(canvas, Offset(padding + (barcodeWidth - textPainter.width) / 2, padding + barcodeHeight + 4));
+      textPainter.paint(
+        canvas,
+        Offset(
+          padding + (barcodeWidth - textPainter.width) / 2,
+          padding + barcodeHeight + 4,
+        ),
+      );
 
       // Draw QR code at same top position as barcode (aligned)
       final qrPainter = QrPainter(
@@ -453,16 +538,23 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       canvas.restore();
 
       // Draw info text BELOW both barcode and QR (after tallest element)
-      final barcodeBottomY = padding + barcodeHeight + 24; // Job number + spacing
+      final barcodeBottomY =
+          padding + barcodeHeight + 24; // Job number + spacing
       final qrBottomY = padding + qrSize;
-      final contentStartY = (barcodeBottomY > qrBottomY ? barcodeBottomY : qrBottomY) + 8;
+      final contentStartY =
+          (barcodeBottomY > qrBottomY ? barcodeBottomY : qrBottomY) + 8;
 
       // First line: Job | Customer | Device
-      final infoText = '${_getJobNumber()} | ${_getCustomerName()} | ${_getDeviceName()}';
+      final infoText =
+          '${_getJobNumber()} | ${_getCustomerName()} | ${_getDeviceName()}';
       final infoPainter = TextPainter(
         text: TextSpan(
           text: infoText,
-          style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -473,7 +565,11 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final imeiPainter = TextPainter(
         text: TextSpan(
           text: 'IMEI: ${_getDeviceIMEI()}',
-          style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -484,12 +580,19 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final defectPainter = TextPainter(
         text: TextSpan(
           text: '${_getDefect()} | BOX: ${_getPhysicalLocation()}',
-          style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         textDirection: TextDirection.ltr,
       );
       defectPainter.layout(maxWidth: contentWidth);
-      defectPainter.paint(canvas, Offset(padding, contentStartY + lineSpacing * 2));
+      defectPainter.paint(
+        canvas,
+        Offset(padding, contentStartY + lineSpacing * 2),
+      );
 
       // End recording and create image
       final picture = recorder.endRecording();
@@ -516,10 +619,22 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   }
 
   /// Draw Code128 barcode manually using the barcode package
-  void _drawBarcode(Canvas canvas, String data, double x, double y, double width, double height) {
+  void _drawBarcode(
+    Canvas canvas,
+    String data,
+    double x,
+    double y,
+    double width,
+    double height,
+  ) {
     // Use barcode_widget's Barcode class (same as BarcodeWidget uses)
     final barcodeGen = Barcode.code128();
-    final elements = barcodeGen.make(data, width: width, height: height, drawText: false);
+    final elements = barcodeGen.make(
+      data,
+      width: width,
+      height: height,
+      drawText: false,
+    );
 
     final blackPaint = Paint()..color = Colors.black;
 
@@ -527,7 +642,15 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // BarcodeElement has left, top, width, height properties
       // BarcodeBar extends BarcodeElement and has a 'black' property
       if (element is BarcodeBar && element.black) {
-        canvas.drawRect(Rect.fromLTWH(x + element.left, y + element.top, element.width, element.height), blackPaint);
+        canvas.drawRect(
+          Rect.fromLTWH(
+            x + element.left,
+            y + element.top,
+            element.width,
+            element.height,
+          ),
+          blackPaint,
+        );
       }
     }
   }
@@ -538,7 +661,10 @@ class _PrinterSelectionDialog extends StatelessWidget {
   final List<PrinterConfigModel> printers;
   final Future<void> Function(PrinterConfigModel) onPrint;
 
-  const _PrinterSelectionDialog({required this.printers, required this.onPrint});
+  const _PrinterSelectionDialog({
+    required this.printers,
+    required this.onPrint,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -563,7 +689,11 @@ class _PrinterSelectionDialog extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(CupertinoIcons.printer, size: 24.r, color: AppColors.fontMainColor),
+              Icon(
+                CupertinoIcons.printer,
+                size: 24.r,
+                color: AppColors.fontMainColor,
+              ),
               SizedBox(width: 12.w),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,17 +701,27 @@ class _PrinterSelectionDialog extends StatelessWidget {
                 children: [
                   Text(
                     '${printer.printerBrand} ${printer.printerModel ?? ""}',
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF007AFF)),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF007AFF),
+                    ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     printer.ipAddress,
-                    style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                   if (printer.labelSize != null)
                     Text(
                       'Size: ${printer.labelSize!.width}mm × ${printer.labelSize!.height}mm',
-                      style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                 ],
               ),
