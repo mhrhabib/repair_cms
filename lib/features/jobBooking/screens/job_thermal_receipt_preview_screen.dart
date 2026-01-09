@@ -144,7 +144,6 @@ class _JobThermalReceiptPreviewScreenState
     );
 
     try {
-      // TODO: Implement actual thermal printing
       if (mounted) {
         Navigator.of(context).pop();
         SnackbarDemo(

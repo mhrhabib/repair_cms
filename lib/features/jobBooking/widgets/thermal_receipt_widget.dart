@@ -226,7 +226,6 @@ class ThermalReceiptWidget extends StatelessWidget {
           _buildText('${address!.street ?? ''} ${address.num ?? ''}'.trim()),
         if (address?.zip != null || address?.city != null)
           _buildText('${address?.zip ?? ''} ${address?.city ?? ''}'.trim()),
-        // TODO: Add VAT ID and Registration Number when available in model
         // These fields should come from company tax details
       ],
     );
