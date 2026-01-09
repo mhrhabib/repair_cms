@@ -11,7 +11,12 @@ class ChatConversationScreen extends StatefulWidget {
   final String? recipientEmail;
   final String? recipientName;
 
-  const ChatConversationScreen({super.key, required this.conversationId, this.recipientEmail, this.recipientName});
+  const ChatConversationScreen({
+    super.key,
+    required this.conversationId,
+    this.recipientEmail,
+    this.recipientName,
+  });
 
   @override
   State<ChatConversationScreen> createState() => _ChatConversationScreenState();
@@ -38,14 +43,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     _loggedUserEmail = storage.read('email');
     _fallbackRecipientEmail = widget.recipientEmail;
     _fallbackRecipientName = widget.recipientName;
-    debugPrint('🚀 [ChatConversationScreen] Loading messages for conversation: ${widget.conversationId}');
+    debugPrint(
+      '🚀 [ChatConversationScreen] Loading messages for conversation: ${widget.conversationId}',
+    );
     if (_fallbackRecipientEmail != null) {
-      debugPrint('ℹ️ [ChatConversationScreen] Using fallback recipient: $_fallbackRecipientEmail');
+      debugPrint(
+        'ℹ️ [ChatConversationScreen] Using fallback recipient: $_fallbackRecipientEmail',
+      );
     }
 
     // Load messages for this conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MessageCubit>().loadConversation(conversationId: widget.conversationId);
+      context.read<MessageCubit>().loadConversation(
+        conversationId: widget.conversationId,
+      );
 
       // Load sub users for mentions
       final userId = storage.read('userId');
@@ -87,7 +98,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     if (atIndex != -1 && _isInternalMode) {
       // Extract search query after @
-      final searchText = text.substring(atIndex + 1, cursorPosition).toLowerCase();
+      final searchText = text
+          .substring(atIndex + 1, cursorPosition)
+          .toLowerCase();
       setState(() {
         _mentionStartIndex = atIndex;
         _searchQuery = searchText;
@@ -112,69 +125,132 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   void _insertMention(SubUser user) {
-    final text = _messageController.text;
-    final beforeMention = text.substring(0, _mentionStartIndex);
-    final afterMention = text.substring(_messageController.selection.baseOffset);
-    final displayName = user.fullName ?? user.email ?? 'Unknown';
-    final newText = '$beforeMention@$displayName $afterMention';
-
-    _messageController.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: beforeMention.length + displayName.length + 2),
-    );
-
-    // Add to mentions list
-    final mentionId = user.sId ?? user.email!;
-    if (mentionId.isNotEmpty && !_mentionIds.contains(mentionId)) {
-      _mentionIds.add(mentionId);
+    if (!mounted) {
+      debugPrint(
+        '⚠️ [ChatConversationScreen] Widget not mounted, skipping mention',
+      );
+      return;
     }
 
-    setState(() {
-      _showMentionSuggestions = false;
-      _searchQuery = '';
-      _mentionStartIndex = -1;
-    });
+    try {
+      final text = _messageController.text;
+      final beforeMention = text.substring(0, _mentionStartIndex);
+      final afterMention = text.substring(
+        _messageController.selection.baseOffset,
+      );
+      final displayName = user.fullName ?? user.email ?? 'Unknown';
+      final newText = '$beforeMention@$displayName $afterMention';
+
+      _messageController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: beforeMention.length + displayName.length + 2,
+        ),
+      );
+
+      // Add to mentions list
+      final mentionId = user.sId ?? user.email!;
+      if (mentionId.isNotEmpty && !_mentionIds.contains(mentionId)) {
+        _mentionIds.add(mentionId);
+        debugPrint('👤 [ChatConversationScreen] Added mention: $displayName');
+      }
+
+      if (mounted) {
+        setState(() {
+          _showMentionSuggestions = false;
+          _searchQuery = '';
+          _mentionStartIndex = -1;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ [ChatConversationScreen] Error inserting mention: $e');
+    }
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    if (!mounted) {
+      debugPrint(
+        '⚠️ [ChatConversationScreen] Widget not mounted, skipping scroll',
+      );
+      return;
+    }
+
+    try {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [ChatConversationScreen] Error scrolling: $e');
     }
   }
 
   void _sendMessage(List<Conversation> currentMessages) {
+    if (!mounted) {
+      debugPrint(
+        '⚠️ [ChatConversationScreen] Widget not mounted, skipping send',
+      );
+      return;
+    }
+
     final messageText = _messageController.text.trim();
     if (messageText.isEmpty) return;
 
-    debugPrint('📤 [ChatConversationScreen] Sending message: $messageText');
-    debugPrint('🔒 [ChatConversationScreen] Internal mode: $_isInternalMode');
-    debugPrint('👥 [ChatConversationScreen] Mentions: $_mentionIds');
+    try {
+      debugPrint('📤 [ChatConversationScreen] Sending message: $messageText');
+      debugPrint('🔒 [ChatConversationScreen] Internal mode: $_isInternalMode');
+      debugPrint('👥 [ChatConversationScreen] Mentions: $_mentionIds');
 
-    final userEmail = storage.read('email') ?? '';
-    final userName = storage.read('fullName') ?? '';
-    final userId = storage.read('userId') ?? '';
+      final userEmail = storage.read('email') ?? '';
+      final userName = storage.read('fullName') ?? '';
+      final userId = storage.read('userId') ?? '';
 
-    if (_isInternalMode) {
-      // Send internal comment (not visible to regular receiver)
-      _sendInternalComment(messageText, userEmail, userName, userId);
-    } else {
-      // Send regular message
-      _sendRegularMessage(messageText, userEmail, userName, userId, currentMessages);
+      if (_isInternalMode) {
+        // Send internal comment (not visible to regular receiver)
+        _sendInternalComment(messageText, userEmail, userName, userId);
+      } else {
+        // Send regular message
+        _sendRegularMessage(
+          messageText,
+          userEmail,
+          userName,
+          userId,
+          currentMessages,
+        );
+      }
+
+      _messageController.clear();
+      _mentionIds.clear();
+
+      // Reset internal mode after sending
+      if (mounted) {
+        setState(() {
+          _isInternalMode = false;
+        });
+      }
+
+      // Scroll to bottom after sending
+      Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+    } catch (e, stackTrace) {
+      debugPrint('❌ [ChatConversationScreen] Error sending message: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        SnackbarDemo(
+          message: 'Failed to send message',
+        ).showCustomSnackbar(context);
+      }
     }
-
-    _messageController.clear();
-    _mentionIds.clear();
-
-    // Reset internal mode after sending
-    setState(() {
-      _isInternalMode = false;
-    });
-
-    // Scroll to bottom after sending
-    Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 
-  void _sendInternalComment(String messageText, String userEmail, String userName, String userId) {
+  void _sendInternalComment(
+    String messageText,
+    String userEmail,
+    String userName,
+    String userId,
+  ) {
     debugPrint('💬 Sending internal comment with mentions: $_mentionIds');
 
     // Build HTML text for the comment: replace plain @mentions with styled spans and exclude raw @names
@@ -183,11 +259,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final List<String> spans = [];
       for (final id in _mentionIds) {
         final sub = _subUsers.firstWhere(
-          (s) => (s.sId != null && s.sId == id) || (s.email != null && s.email == id),
+          (s) =>
+              (s.sId != null && s.sId == id) ||
+              (s.email != null && s.email == id),
           orElse: () => SubUser(),
         );
         final displayName = sub.fullName ?? sub.email ?? id;
-        spans.add('<span style="color:#ffe500;" class="internal-user input__mod1">@$displayName</span>');
+        spans.add(
+          '<span style="color:#ffe500;" class="internal-user input__mod1">@$displayName</span>',
+        );
         // Remove the plain @DisplayName occurrence from the text (first occurrence)
         final plain = '@$displayName';
         if (text.contains(plain)) {
@@ -199,7 +279,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final remaining = text.trim();
 
       // Join spans and remaining text with non-breaking space as in examples
-      final joinedSpans = spans.isNotEmpty ? '${spans.join('&nbsp;')}&nbsp;' : '';
+      final joinedSpans = spans.isNotEmpty
+          ? '${spans.join('&nbsp;')}&nbsp;'
+          : '';
       return '$joinedSpans$remaining';
     }
 
@@ -228,7 +310,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       'message': {
         'sender': {'email': userEmail, 'name': userName},
         'seen': true,
-        'message': {'message': '', 'messageType': 'comment', 'jobId': widget.conversationId},
+        'message': {
+          'message': '',
+          'messageType': 'comment',
+          'jobId': widget.conversationId,
+        },
         'conversationId': widget.conversationId,
         'userId': userId,
         'participants': participants,
@@ -265,12 +351,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     for (var message in currentMessages) {
       // Check sender: if they sent a message and it's not me, they're the other participant
       if (message.sender?.email != null && message.sender?.email != userEmail) {
-        otherParticipant = SenderReceiver(email: message.sender!.email, name: message.sender!.name);
+        otherParticipant = SenderReceiver(
+          email: message.sender!.email,
+          name: message.sender!.name,
+        );
         break;
       }
       // Check receiver: if they received a message and it's not me, they're the other participant
-      if (message.receiver?.email != null && message.receiver?.email != userEmail) {
-        otherParticipant = SenderReceiver(email: message.receiver!.email, name: message.receiver!.name);
+      if (message.receiver?.email != null &&
+          message.receiver?.email != userEmail) {
+        otherParticipant = SenderReceiver(
+          email: message.receiver!.email,
+          name: message.receiver!.name,
+        );
         break;
       }
     }
@@ -278,10 +371,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     // Fallback if no messages exist yet (empty conversation)
     if (otherParticipant == null) {
       if (_fallbackRecipientEmail != null) {
-        debugPrint('ℹ️ [ChatConversationScreen] Using fallback recipient for sending: $_fallbackRecipientEmail');
-        otherParticipant = SenderReceiver(email: _fallbackRecipientEmail!, name: _fallbackRecipientName ?? 'User');
+        debugPrint(
+          'ℹ️ [ChatConversationScreen] Using fallback recipient for sending: $_fallbackRecipientEmail',
+        );
+        otherParticipant = SenderReceiver(
+          email: _fallbackRecipientEmail!,
+          name: _fallbackRecipientName ?? 'User',
+        );
       } else {
-        SnackbarDemo(message: 'Cannot determine conversation participant').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Cannot determine conversation participant',
+        ).showCustomSnackbar(context);
         return;
       }
     }
@@ -308,7 +408,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
           // Mark unread messages as read
           for (var message in _messages) {
-            if (message.seen == false && message.receiver?.email == _loggedUserEmail) {
+            if (message.seen == false &&
+                message.receiver?.email == _loggedUserEmail) {
               context.read<MessageCubit>().markAsRead(message);
             }
           }
@@ -317,7 +418,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         if (state is MessageReceived) {
           // New message received via socket
           if (state.message.conversationId == widget.conversationId) {
-            debugPrint('✅ [ChatConversationScreen] New message received via socket');
+            debugPrint(
+              '✅ [ChatConversationScreen] New message received via socket',
+            );
             // Update local messages
             setState(() => _messages = List.from(state.messages));
             Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
@@ -338,11 +441,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           setState(() {
             _subUsers = state.subUsers;
           });
-          debugPrint('✅ [ChatConversationScreen] Loaded ${state.subUsers.length} sub users for mentions');
+          debugPrint(
+            '✅ [ChatConversationScreen] Loaded ${state.subUsers.length} sub users for mentions',
+          );
         }
 
         if (state is SubUsersError) {
-          debugPrint('❌ [ChatConversationScreen] Failed to load sub users: ${state.message}');
+          debugPrint(
+            '❌ [ChatConversationScreen] Failed to load sub users: ${state.message}',
+          );
         }
       },
       builder: (context, state) {
@@ -350,19 +457,25 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         final messages = _messages;
 
         // Debug: log messages count to help diagnose empty UI
-        debugPrint('📊 [ChatConversationScreen] Resolved messages count: ${messages.length}');
+        debugPrint(
+          '📊 [ChatConversationScreen] Resolved messages count: ${messages.length}',
+        );
         if (messages.isNotEmpty) {
-          debugPrint('   First message id: ${messages.first.sId}, conversationId: ${messages.first.conversationId}');
+          debugPrint(
+            '   First message id: ${messages.first.sId}, conversationId: ${messages.first.conversationId}',
+          );
         }
 
         // Determine participant name for the app bar
         String participantName = _fallbackRecipientName ?? 'Conversation';
         for (var message in messages) {
-          if (message.sender?.email != null && message.sender?.email != _loggedUserEmail) {
+          if (message.sender?.email != null &&
+              message.sender?.email != _loggedUserEmail) {
             participantName = message.sender!.name ?? participantName;
             break;
           }
-          if (message.receiver?.email != null && message.receiver?.email != _loggedUserEmail) {
+          if (message.receiver?.email != null &&
+              message.receiver?.email != _loggedUserEmail) {
             participantName = message.receiver!.name ?? participantName;
             break;
           }
@@ -374,7 +487,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             backgroundColor: Colors.white,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+              icon: const Icon(
+                Icons.arrow_back_ios,
+                color: Colors.black87,
+                size: 20,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             title: Column(
@@ -382,20 +499,35 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               children: [
                 Text(
                   participantName,
-                  style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
                   'Online',
-                  style: TextStyle(color: Colors.green[600], fontSize: 12, fontWeight: FontWeight.w400),
+                  style: TextStyle(
+                    color: Colors.green[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),
             actions: [
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                decoration: BoxDecoration(color: const Color(0xFF4A90E2), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4A90E2),
+                  shape: BoxShape.circle,
+                ),
                 child: IconButton(
-                  icon: const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                  icon: const Icon(
+                    Icons.info_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   padding: EdgeInsets.zero,
                   onPressed: () {},
                 ),
@@ -418,16 +550,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                               itemBuilder: (context, index) {
                                 // With reverse: true, index 0 is the last item (latest message)
                                 // So we need to access messages in reverse order
-                                final reversedIndex = messages.length - 1 - index;
+                                final reversedIndex =
+                                    messages.length - 1 - index;
                                 final message = messages[reversedIndex];
-                                final isMe = message.sender?.email == _loggedUserEmail;
+                                final isMe =
+                                    message.sender?.email == _loggedUserEmail;
 
                                 return _buildMessageBubble(message, isMe);
                               },
                             ),
                     ),
                     // Mention suggestions overlay
-                    if (_showMentionSuggestions && _isInternalMode) _buildMentionSuggestions(),
+                    if (_showMentionSuggestions && _isInternalMode)
+                      _buildMentionSuggestions(),
                     _buildMessageInput(messages),
                   ],
                 ),
@@ -448,7 +583,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey[300]!)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, -2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: ListView.builder(
         shrinkWrap: true,
@@ -457,23 +598,37 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           final user = filteredUsers[index];
           final displayName = user.fullName ?? user.email ?? 'Unknown';
           final displayEmail = user.email ?? '';
-          final avatarText = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?';
+          final avatarText = displayName.isNotEmpty
+              ? displayName.substring(0, 1).toUpperCase()
+              : '?';
 
           return ListTile(
             dense: true,
             leading: CircleAvatar(
               radius: 18,
               backgroundColor: const Color(0xFF4A90E2),
-              backgroundImage: user.avatar != null && user.avatar!.isNotEmpty ? NetworkImage(user.avatar!) : null,
+              backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
+                  ? NetworkImage(user.avatar!)
+                  : null,
               child: user.avatar == null || user.avatar!.isEmpty
                   ? Text(
                       avatarText,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     )
                   : null,
             ),
-            title: Text(displayName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            subtitle: Text(displayEmail, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            title: Text(
+              displayName,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              displayEmail,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
             onTap: () => _insertMention(user),
           );
         },
@@ -493,22 +648,37 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [const Color(0xFF4A90E2).withValues(alpha: 0.3), const Color(0xFF4A90E2)],
+                colors: [
+                  const Color(0xFF4A90E2).withValues(alpha: 0.3),
+                  const Color(0xFF4A90E2),
+                ],
               ),
               borderRadius: BorderRadius.circular(50),
             ),
-            child: Icon(Icons.chat_bubble_outline, size: 50, color: Colors.white),
+            child: Icon(
+              Icons.chat_bubble_outline,
+              size: 50,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 24),
           const Text(
             'Empty Inbox',
-            style: TextStyle(fontSize: 20, color: Colors.black87, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'You have no messages\nin your inbox',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -518,19 +688,27 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   Widget _buildMessageBubble(Conversation message, bool isMe) {
     final messageText = message.message?.message ?? '';
     final messageType = message.message?.messageType ?? 'standard';
-    final hasAttachments = false; // Conversation model doesn't have attachments field
-    final hasQuotation = messageType == 'quotation' && message.message?.quotation != null;
-    final hasComment = message.comment != null || (message.comments != null && message.comments!.isNotEmpty);
+    final hasAttachments =
+        false; // Conversation model doesn't have attachments field
+    final hasQuotation =
+        messageType == 'quotation' && message.message?.quotation != null;
+    final hasComment =
+        message.comment != null ||
+        (message.comments != null && message.comments!.isNotEmpty);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isMe
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+              mainAxisAlignment: isMe
+                  ? MainAxisAlignment.end
+                  : MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!isMe) ...[
@@ -538,32 +716,50 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     radius: 16,
                     backgroundColor: const Color(0xFF4A90E2),
                     child: Text(
-                      message.sender?.name?.substring(0, 1).toUpperCase() ?? '?',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      message.sender?.name?.substring(0, 1).toUpperCase() ??
+                          '?',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                 ],
                 Column(
-                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: isMe
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     if (!isMe)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
                           message.sender?.name ?? 'Unknown',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
                     if (hasComment) ...[
-                      if (message.comments != null && message.comments!.isNotEmpty)
+                      if (message.comments != null &&
+                          message.comments!.isNotEmpty)
                         for (var c in message.comments!) _buildCommentMessage(c)
                       else if (message.comment != null)
                         _buildCommentMessage(message.comment!),
                     ] else if (hasQuotation)
                       _buildQuotationCard(message.message!.quotation!, isMe)
                     else
-                      _buildStandardMessage(messageText, messageType, hasAttachments, message, isMe),
+                      _buildStandardMessage(
+                        messageText,
+                        messageType,
+                        hasAttachments,
+                        message,
+                        isMe,
+                      ),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -574,21 +770,31 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         ],
                         Text(
                           messageText.isNotEmpty || hasQuotation || hasComment
-                              ? (messageText.isNotEmpty || hasComment ? 'Today' : 'Today')
+                              ? (messageText.isNotEmpty || hasComment
+                                    ? 'Today'
+                                    : 'Today')
                               : '',
-                          style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 11,
+                          ),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           _formatTimeOnly(_parseDateTime(message.createdAt)),
-                          style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 11,
+                          ),
                         ),
                         if (isMe) ...[
                           const SizedBox(width: 4),
                           Icon(
                             message.seen == true ? Icons.done_all : Icons.done,
                             size: 12,
-                            color: message.seen == true ? const Color(0xFF4A90E2) : Colors.grey[400],
+                            color: message.seen == true
+                                ? const Color(0xFF4A90E2)
+                                : Colors.grey[400],
                           ),
                         ],
                       ],
@@ -615,14 +821,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
         ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.7,
+          ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: isMe ? const Color(0xFFD6E8FF) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Column(
@@ -631,16 +843,23 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 if (messageType == 'comment')
                   Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: isMe ? Colors.white.withValues(alpha: 0.5) : Colors.orange[50],
+                      color: isMe
+                          ? Colors.white.withValues(alpha: 0.5)
+                          : Colors.orange[50],
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       'Internal Comment',
                       style: TextStyle(
                         fontSize: 10,
-                        color: isMe ? const Color(0xFF4A90E2) : Colors.orange[700],
+                        color: isMe
+                            ? const Color(0xFF4A90E2)
+                            : Colors.orange[700],
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -648,7 +867,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 if (messageText.isNotEmpty)
                   Text(
                     messageText,
-                    style: TextStyle(color: isMe ? const Color(0xFF1E3A5F) : Colors.black87, fontSize: 14, height: 1.4),
+                    style: TextStyle(
+                      color: isMe ? const Color(0xFF1E3A5F) : Colors.black87,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
                   ),
               ],
             ),
@@ -670,7 +893,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
         ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.7,
+          ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -678,7 +903,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.orange[200]!, width: 1),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Column(
@@ -687,8 +916,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 // Comment header
                 Container(
                   margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.orange[100], borderRadius: BorderRadius.circular(4)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[100],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -696,7 +931,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       const SizedBox(width: 4),
                       Text(
                         'Internal Comment',
-                        style: TextStyle(fontSize: 10, color: Colors.orange[700], fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.orange[700],
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -719,7 +958,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           //   ),
                           TextSpan(
                             text: cleaned,
-                            style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.4),
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
                           ),
                         ],
                       ),
@@ -742,7 +985,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         color: isMe ? const Color(0xFFD6E8FF) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[200]!, width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -751,7 +1000,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             children: [
               Text(
                 'Quotation',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800]),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
               ),
               const Spacer(),
               Text(
@@ -768,7 +1021,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 flex: 3,
                 child: Text(
                   'Service',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
                 ),
               ),
               const Expanded(
@@ -776,7 +1033,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 child: Text(
                   'Unit',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
                 ),
               ),
               const Expanded(
@@ -784,7 +1045,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 child: Text(
                   'Price',
                   textAlign: TextAlign.right,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
                 ),
               ),
             ],
@@ -801,12 +1066,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   children: [
                     Text(
                       quotation.quotationName ?? 'Service',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     if (quotation.text != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: Text(quotation.text!, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                        child: Text(
+                          quotation.text!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -836,7 +1110,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Subtotal excl. VAT', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const Text(
+                'Subtotal excl. VAT',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+              ),
               Text(
                 '€${((quotation.subTotal ?? 0) / 100).toStringAsFixed(2)}',
                 style: const TextStyle(fontSize: 12, color: Colors.black87),
@@ -847,7 +1124,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('VAT', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              Text(
+                'VAT',
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
               Text(
                 '€${((quotation.vat?.toInt() ?? 0) / 100).toStringAsFixed(2)}',
                 style: const TextStyle(fontSize: 12, color: Colors.black87),
@@ -861,11 +1141,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             children: [
               const Text(
                 'Total Amount',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
               ),
               Text(
                 '€${((quotation.total?.toInt() ?? 0) / 100).toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
               ),
             ],
           ),
@@ -873,15 +1161,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 16),
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF4CAF50),
+                    size: 16,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     'Quotation Accepted',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2E7D32),
+                    ),
                   ),
                 ],
               ),
@@ -892,32 +1191,51 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
-                color: quotation.paymentStatus == 'Paid' ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
+                color: quotation.paymentStatus == 'Paid'
+                    ? const Color(0xFFE8F5E9)
+                    : const Color(0xFFFFEBEE),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    quotation.paymentStatus == 'Paid' ? Icons.credit_card : Icons.credit_card_off,
-                    color: quotation.paymentStatus == 'Paid' ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+                    quotation.paymentStatus == 'Paid'
+                        ? Icons.credit_card
+                        : Icons.credit_card_off,
+                    color: quotation.paymentStatus == 'Paid'
+                        ? const Color(0xFF4CAF50)
+                        : const Color(0xFFE53935),
                     size: 16,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     'Online Payment Status',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: quotation.paymentStatus == 'Paid' ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+                      color: quotation.paymentStatus == 'Paid'
+                          ? const Color(0xFF4CAF50)
+                          : const Color(0xFFE53935),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       quotation.paymentStatus!,
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -935,10 +1253,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
         ],
       ),
-      padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.only(
+        left: 8,
+        right: 8,
+        top: 8,
+        bottom: 8 + MediaQuery.of(context).padding.bottom,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -950,7 +1277,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               height: 40,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: _isInternalMode ? const Color(0xFF5B6B7D) : Colors.grey[100],
+                color: _isInternalMode
+                    ? const Color(0xFF5B6B7D)
+                    : Colors.grey[100],
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -959,9 +1288,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     child: TextField(
                       controller: _messageController,
                       focusNode: _messageFocusNode,
-                      style: TextStyle(color: _isInternalMode ? Colors.white : Colors.black87, fontSize: 14),
+                      style: TextStyle(
+                        color: _isInternalMode ? Colors.white : Colors.black87,
+                        fontSize: 14,
+                      ),
                       decoration: InputDecoration(
-                        hintText: _isInternalMode ? 'Internal message... @mention' : 'Write a message...',
+                        hintText: _isInternalMode
+                            ? 'Internal message... @mention'
+                            : 'Write a message...',
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -974,7 +1308,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   IconButton(
                     icon: Icon(
                       _isInternalMode ? Icons.lock : Icons.lock_open,
-                      color: _isInternalMode ? Colors.yellow[700] : Colors.grey[600],
+                      color: _isInternalMode
+                          ? Colors.yellow[700]
+                          : Colors.grey[600],
                       size: 20,
                     ),
                     onPressed: () {
@@ -993,7 +1329,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     },
                   ),
                   IconButton(
-                    icon: Icon(Icons.attach_file, color: _isInternalMode ? Colors.white70 : Colors.grey[600], size: 20),
+                    icon: Icon(
+                      Icons.attach_file,
+                      color: _isInternalMode
+                          ? Colors.white70
+                          : Colors.grey[600],
+                      size: 20,
+                    ),
                     onPressed: _showAttachmentOptions,
                   ),
                 ],
@@ -1039,10 +1381,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             Container(
               width: 40,
               height: 4,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(height: 20),
-            const Text('Attach Files', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const Text(
+              'Attach Files',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1096,7 +1444,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           Container(
             width: 60,
             height: 60,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color, size: 28),
           ),
           const SizedBox(height: 8),

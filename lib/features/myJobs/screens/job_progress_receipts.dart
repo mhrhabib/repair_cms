@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:repair_cms/features/jobBooking/models/create_job_request.dart' as job_booking;
+import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
+    as job_booking;
 import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
+import 'package:repair_cms/features/jobBooking/screens/job_thermal_receipt_preview_screen.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/myJobs/screens/receipt_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -11,7 +13,8 @@ class JobProgressReceiptsScreen extends StatefulWidget {
   const JobProgressReceiptsScreen({super.key, required this.job});
 
   @override
-  State<JobProgressReceiptsScreen> createState() => _JobProgressReceiptsScreenState();
+  State<JobProgressReceiptsScreen> createState() =>
+      _JobProgressReceiptsScreenState();
 }
 
 class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
@@ -19,7 +22,39 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
     debugPrint('🏷️ Navigating to device label screen');
 
     // Convert SingleJobModel to CreateJobResponse format
-    final jobResponse = job_booking.CreateJobResponse(
+    final jobResponse = _convertToJobResponse(job);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JobDeviceLabelScreen(
+          jobResponse: jobResponse,
+          printOption: 'Device Label',
+          jobNo: job.data?.jobNo,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToThermalReceipt(SingleJobModel job) {
+    debugPrint('🖨️ Navigating to thermal receipt screen');
+
+    // Convert SingleJobModel to CreateJobResponse format
+    final jobResponse = _convertToJobResponse(job);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JobThermalReceiptPreviewScreen(
+          jobResponse: jobResponse,
+          printOption: 'Thermal Receipt',
+        ),
+      ),
+    );
+  }
+
+  job_booking.CreateJobResponse _convertToJobResponse(SingleJobModel job) {
+    return job_booking.CreateJobResponse(
       success: job.success ?? true,
       data: job_booking.JobData(
         sId: job.data?.sId,
@@ -33,6 +68,10 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
         signatureFilePath: job.data?.signatureFilePath,
         printOption: job.data?.printOption,
         printDeviceLabel: job.data?.printDeviceLabel,
+        jobNo: job.data?.jobNo,
+        jobTrackingNumber: job.data?.jobTrackingNumber,
+        salutationHTMLmarkup: job.data?.salutationHTMLmarkup,
+        termsAndConditionsHTMLmarkup: job.data?.termsAndConditionsHTMLmarkup,
         jobStatus: job.data?.jobStatus
             ?.map(
               (js) => job_booking.JobStatus(
@@ -69,7 +108,12 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                 model: d.model,
                 imei: d.serialNo,
                 condition: d.condition
-                    ?.map((c) => job_booking.ConditionItem(value: c.value ?? '', id: c.id ?? ''))
+                    ?.map(
+                      (c) => job_booking.ConditionItem(
+                        value: c.value ?? '',
+                        id: c.id ?? '',
+                      ),
+                    )
                     .toList(),
                 createdAt: d.createdAt,
                 updatedAt: d.updatedAt,
@@ -96,7 +140,12 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
               (d) => job_booking.DefectData(
                 sId: d.sId,
                 defect: d.defect
-                    ?.map((item) => job_booking.DefectItem(value: item.value ?? '', id: item.id ?? ''))
+                    ?.map(
+                      (item) => job_booking.DefectItem(
+                        value: item.value ?? '',
+                        id: item.id ?? '',
+                      ),
+                    )
                     .toList(),
                 description: d.description,
                 createdAt: d.createdAt,
@@ -104,14 +153,122 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
               ),
             )
             .toList(),
-      ),
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            JobDeviceLabelScreen(jobResponse: jobResponse, printOption: 'Device Label', jobNo: job.data?.jobNo),
+        receiptFooter: job.data?.receiptFooter != null
+            ? job_booking.ReceiptFooter(
+                companyLogo: job.data!.receiptFooter!.companyLogo ?? '',
+                companyLogoURL: job.data!.receiptFooter!.companyLogoURL ?? '',
+                address: job_booking.CompanyAddress(
+                  companyName:
+                      job.data!.receiptFooter!.address?.companyName ?? '',
+                  street: job.data!.receiptFooter!.address?.street ?? '',
+                  num: job.data!.receiptFooter!.address?.num ?? '',
+                  zip: job.data!.receiptFooter!.address?.zip ?? '',
+                  city: job.data!.receiptFooter!.address?.city ?? '',
+                  country: job.data!.receiptFooter!.address?.country ?? '',
+                ),
+                contact: job_booking.CompanyContact(
+                  ceo: job.data!.receiptFooter!.contact?.ceo ?? '',
+                  telephone: job.data!.receiptFooter!.contact?.telephone ?? '',
+                  email: job.data!.receiptFooter!.contact?.email ?? '',
+                  website: job.data!.receiptFooter!.contact?.website ?? '',
+                ),
+                bank: job_booking.BankDetails(
+                  bankName: job.data!.receiptFooter!.bank?.bankName ?? '',
+                  iban: job.data!.receiptFooter!.bank?.iban ?? '',
+                  bic: job.data!.receiptFooter!.bank?.bic ?? '',
+                ),
+              )
+            : null,
+        customerDetails: job.data?.customerDetails != null
+            ? job_booking.CustomerDetails(
+                customerId: job.data!.customerDetails!.customerId ?? '',
+                type: job.data!.customerDetails!.type ?? 'Personal',
+                type2: job.data!.customerDetails!.type2 ?? 'personal',
+                organization: job.data!.customerDetails!.organization ?? '',
+                customerNo: job.data!.customerDetails!.customerNo ?? '',
+                email: job.data!.customerDetails!.email ?? '',
+                telephone: job.data!.customerDetails!.telephone ?? '',
+                telephonePrefix:
+                    job.data!.customerDetails!.telephonePrefix ?? '',
+                salutation: job.data!.customerDetails!.salutation ?? '',
+                firstName: job.data!.customerDetails!.firstName ?? '',
+                lastName: job.data!.customerDetails!.lastName ?? '',
+                position: job.data!.customerDetails!.position ?? '',
+                vatNo: job.data!.customerDetails!.vatNo ?? '',
+                reverseCharge:
+                    job.data!.customerDetails!.reverseCharge ?? false,
+                shippingAddress:
+                    job.data!.customerDetails!.shippingAddress != null
+                    ? job_booking.CustomerAddress(
+                        street:
+                            job
+                                .data!
+                                .customerDetails!
+                                .shippingAddress!
+                                .street ??
+                            '',
+                        no:
+                            job.data!.customerDetails!.shippingAddress!.zip ??
+                            '',
+                        zip:
+                            job.data!.customerDetails!.shippingAddress!.zip ??
+                            '',
+                        city:
+                            job.data!.customerDetails!.shippingAddress!.city ??
+                            '',
+                        state: '',
+                        country:
+                            job
+                                .data!
+                                .customerDetails!
+                                .shippingAddress!
+                                .country ??
+                            '',
+                      )
+                    : job_booking.CustomerAddress(
+                        street: '',
+                        no: '',
+                        zip: '',
+                        city: '',
+                        state: '',
+                        country: '',
+                      ),
+                billingAddress:
+                    job.data!.customerDetails!.billingAddress != null
+                    ? job_booking.CustomerAddress(
+                        street:
+                            job.data!.customerDetails!.billingAddress!.street ??
+                            '',
+                        no:
+                            job.data!.customerDetails!.billingAddress!.zip ??
+                            '',
+                        zip:
+                            job.data!.customerDetails!.billingAddress!.zip ??
+                            '',
+                        city:
+                            job.data!.customerDetails!.billingAddress!.city ??
+                            '',
+                        state:
+                            job.data!.customerDetails!.billingAddress!.state ??
+                            '',
+                        country:
+                            job
+                                .data!
+                                .customerDetails!
+                                .billingAddress!
+                                .country ??
+                            '',
+                      )
+                    : job_booking.CustomerAddress(
+                        street: '',
+                        no: '',
+                        zip: '',
+                        city: '',
+                        state: '',
+                        country: '',
+                      ),
+              )
+            : null,
       ),
     );
   }
@@ -124,12 +281,20 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black87,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Print',
-          style: TextStyle(color: Colors.black87, fontSize: 17, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
@@ -144,7 +309,11 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
 
@@ -152,27 +321,44 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                   onTap: () => _navigateToDeviceLabel(widget.job),
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     child: Row(
                       children: [
                         Container(
                           width: 28,
                           height: 28,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF007AFF).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF007AFF,
+                            ).withValues(alpha: 0.1),
 
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Icon(SolarIconsOutline.tagHorizontal, color: const Color(0xFF007AFF), size: 18),
+                          child: Icon(
+                            SolarIconsOutline.tagHorizontal,
+                            color: const Color(0xFF007AFF),
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Job Label',
-                            style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w400),
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios, color: Colors.grey.shade400, size: 16),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.grey.shade400,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -183,7 +369,11 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -196,9 +386,20 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => ReceiptScreen(job: widget.job)),
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ReceiptScreen(job: widget.job),
+                          ),
                         );
                       },
+                    ),
+                    _buildDivider(),
+                    _buildPrintOption(
+                      context: context,
+                      icon: SolarIconsOutline.printerMinimalistic,
+                      title: 'Thermal Receipt',
+                      isEnabled: true,
+                      onTap: () => _navigateToThermalReceipt(widget.job),
                     ),
                     _buildDivider(),
                     _buildPrintOption(
@@ -251,10 +452,16 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: isEnabled ? const Color(0xFF007AFF).withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+                color: isEnabled
+                    ? const Color(0xFF007AFF).withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(icon, color: isEnabled ? const Color(0xFF007AFF) : Colors.grey, size: 18),
+              child: Icon(
+                icon,
+                color: isEnabled ? const Color(0xFF007AFF) : Colors.grey,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -267,7 +474,11 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: isEnabled ? Colors.grey.shade400 : Colors.grey.shade300, size: 16),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: isEnabled ? Colors.grey.shade400 : Colors.grey.shade300,
+              size: 16,
+            ),
           ],
         ),
       ),

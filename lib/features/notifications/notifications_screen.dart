@@ -19,12 +19,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    final userId = storage.read('userId') ?? '';
-    if (userId != null && userId.toString().isNotEmpty) {
-      // Trigger cubit to fetch notifications
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<NotificationCubit>().getNotifications(userId: userId.toString());
-      });
+    try {
+      final userId = storage.read('userId') ?? '';
+      if (userId != null && userId.toString().isNotEmpty) {
+        debugPrint(
+          '🔄 [NotificationsScreen] Loading notifications for user: $userId',
+        );
+        // Trigger cubit to fetch notifications
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.read<NotificationCubit>().getNotifications(
+              userId: userId.toString(),
+            );
+          }
+        });
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ [NotificationsScreen] Error in initState: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
     }
   }
 
@@ -36,38 +48,74 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         backgroundColor: Colors.white,
         border: null,
         leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
+          onTap: () {
+            if (!mounted) return;
+            try {
+              debugPrint('🔄 [NotificationsScreen] Navigating back');
+              Navigator.pop(context);
+            } catch (e) {
+              debugPrint('❌ [NotificationsScreen] Error navigating back: $e');
+            }
+          },
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(CupertinoIcons.back, size: 28.r, color: AppColors.fontMainColor),
+              Icon(
+                CupertinoIcons.back,
+                size: 28.r,
+                color: AppColors.fontMainColor,
+              ),
               SizedBox(width: 4.w),
               Text(
                 'Back',
-                style: TextStyle(fontSize: 17.sp, color: AppColors.fontMainColor),
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  color: AppColors.fontMainColor,
+                ),
               ),
             ],
           ),
         ),
         middle: Text(
           'Notifications',
-          style: TextStyle(color: AppColors.fontMainColor, fontSize: 17.sp, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: AppColors.fontMainColor,
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        trailing: GestureDetector(
-          onTap: _showNotificationSettings,
-          child: Icon(SolarIconsBold.settings, size: 24.r, color: AppColors.fontMainColor),
-        ),
+        trailing: _notifications.isEmpty
+            ? null
+            : GestureDetector(
+                onTap: _showNotificationSettings,
+                child: Icon(
+                  SolarIconsBold.settings,
+                  size: 24.r,
+                  color: AppColors.fontMainColor,
+                ),
+              ),
       ),
       body: BlocConsumer<NotificationCubit, NotificationState>(
         listener: (context, state) {
-          if (state is NotificationLoaded) {
-            setState(() => _notifications = state.notifications);
-          }
-          if (state is NotificationError) {
-            // optionally show a snackbar on error
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: Colors.red));
+          if (!mounted) return;
+          try {
+            if (state is NotificationLoaded) {
+              setState(() => _notifications = state.notifications);
+              debugPrint(
+                '✅ [NotificationsScreen] Loaded ${state.notifications.length} notifications',
+              );
+            }
+            if (state is NotificationError) {
+              debugPrint('❌ [NotificationsScreen] Error: ${state.message}');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('❌ [NotificationsScreen] Error in listener: $e');
           }
         },
         builder: (context, state) {
@@ -99,12 +147,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           SizedBox(
             width: 220.w,
             height: 170.h,
-            child: SvgPicture.asset(AssetsConstant.noNotificationIconsSVG, width: 60, height: 60),
+            child: SvgPicture.asset(
+              AssetsConstant.noNotificationIconsSVG,
+              width: 60,
+              height: 60,
+            ),
           ),
           const SizedBox(height: 32),
           Text(
             'No Notifications Yet',
-            style: AppTypography.sfProHeadLineTextStyle28.copyWith(fontWeight: FontWeight.w500),
+            style: AppTypography.sfProHeadLineTextStyle28.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -130,7 +184,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           children: [
             Text(
               'Failed to load notifications',
-              style: AppTypography.sfProHeadLineTextStyle22.copyWith(fontWeight: FontWeight.w600),
+              style: AppTypography.sfProHeadLineTextStyle22.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -139,7 +195,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               style: TextStyle(color: Colors.red[700]),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: _refreshNotifications, child: const Text('Retry')),
+            ElevatedButton(
+              onPressed: _refreshNotifications,
+              child: const Text('Retry'),
+            ),
           ],
         ),
       ),
@@ -147,9 +206,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _refreshNotifications() {
-    final userId = storage.read('userId') ?? '';
-    if (userId != null && userId.toString().isNotEmpty) {
-      context.read<NotificationCubit>().getNotifications(userId: userId.toString());
+    if (!mounted) {
+      debugPrint(
+        '⚠️ [NotificationsScreen] Widget not mounted, skipping refresh',
+      );
+      return;
+    }
+
+    try {
+      final userId = storage.read('userId') ?? '';
+      if (userId != null && userId.toString().isNotEmpty) {
+        debugPrint('🔄 [NotificationsScreen] Refreshing notifications');
+        context.read<NotificationCubit>().getNotifications(
+          userId: userId.toString(),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [NotificationsScreen] Error refreshing: $e');
     }
   }
 
@@ -161,7 +234,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           padding: EdgeInsets.all(16),
           child: Text(
             'App Notification',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
           ),
         ),
         Expanded(
@@ -203,34 +280,63 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               children: [
                 Text(
                   notification.message ?? '',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87, height: 1.3),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                    height: 1.3,
+                  ),
                 ),
-                if ((notification.quotationNo ?? '').isNotEmpty || (notification.conversationId ?? '').isNotEmpty) ...[
+                if ((notification.quotationNo ?? '').isNotEmpty ||
+                    (notification.conversationId ?? '').isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
-                    notification.quotationNo ?? notification.conversationId ?? '',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                    notification.quotationNo ??
+                        notification.conversationId ??
+                        '',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 8),
-                Text(_formatDate(notification.createdAt), style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                Text(
+                  _formatDate(notification.createdAt),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
               ],
             ),
           ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_horiz, color: Colors.grey[400], size: 20),
             onSelected: (value) {
-              if (value == 'delete') {
-                _showNotificationOptions(notification);
-              } else if (value == 'mark_read') {
-                setState(() {
-                  notification.isRead = true;
-                });
+              if (!mounted) return;
+              try {
+                if (value == 'delete') {
+                  _showNotificationOptions(notification);
+                } else if (value == 'mark_read') {
+                  debugPrint(
+                    '✅ [NotificationsScreen] Marking notification as read',
+                  );
+                  setState(() {
+                    notification.isRead = true;
+                  });
+                }
+              } catch (e) {
+                debugPrint('❌ [NotificationsScreen] Error in popup menu: $e');
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem<String>(value: 'mark_read', child: Text('Mark as Read')),
-              const PopupMenuItem<String>(value: 'delete', child: Text('Delete')),
+              const PopupMenuItem<String>(
+                value: 'mark_read',
+                child: Text('Mark as Read'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Text('Delete'),
+              ),
             ],
           ),
         ],
@@ -242,13 +348,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final type = (notification.messageType ?? '').toLowerCase();
     switch (type) {
       case 'stock':
-        return const Icon(Icons.inventory_2_outlined, size: 20, color: Colors.black);
+        return const Icon(
+          Icons.inventory_2_outlined,
+          size: 20,
+          color: Colors.black,
+        );
       case 'job':
         return const Icon(Icons.layers_outlined, size: 20, color: Colors.black);
       case 'message':
-        return const Icon(Icons.message_outlined, size: 20, color: Colors.black);
+        return const Icon(
+          Icons.message_outlined,
+          size: 20,
+          color: Colors.black,
+        );
       default:
-        return const Icon(Icons.notifications_none, size: 20, color: Colors.black);
+        return const Icon(
+          Icons.notifications_none,
+          size: 20,
+          color: Colors.black,
+        );
     }
   }
 
@@ -285,7 +403,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 width: 40,
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -300,7 +421,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       child: Text(
                         notification.message ?? '',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
                   ),
@@ -313,22 +438,47 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            Navigator.pop(context);
-                            final userId = storage.read('userId') ?? '';
-                            final notificationId = notification.sId ?? '';
+                            if (!mounted) return;
+                            try {
+                              debugPrint(
+                                '🗑️ [NotificationsScreen] Deleting notification',
+                              );
+                              Navigator.pop(context);
+                              final userId = storage.read('userId') ?? '';
+                              final notificationId = notification.sId ?? '';
 
-                            if (notificationId.isNotEmpty && userId.toString().isNotEmpty) {
-                              context.read<NotificationCubit>().deleteNotification(
-                                notificationId: notificationId,
-                                userId: userId.toString(),
+                              if (notificationId.isNotEmpty &&
+                                  userId.toString().isNotEmpty) {
+                                context
+                                    .read<NotificationCubit>()
+                                    .deleteNotification(
+                                      notificationId: notificationId,
+                                      userId: userId.toString(),
+                                    );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Notification deleted'),
+                                      backgroundColor: Colors.green,
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              }
+                            } catch (e) {
+                              debugPrint(
+                                '❌ [NotificationsScreen] Error deleting notification: $e',
                               );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Notification deleted'),
-                                  backgroundColor: Colors.green,
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Failed to delete notification',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
                           },
                           child: Row(
@@ -337,13 +487,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               Container(
                                 width: 24.h,
                                 height: 24.h,
-                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-                                child: Image.asset('assets/icon/xmark.bin.fill.png'),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Image.asset(
+                                  'assets/icon/xmark.bin.fill.png',
+                                ),
                               ),
                               const SizedBox(width: 12),
                               const Text(
                                 'Delete this notification',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           ),
@@ -382,7 +539,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 width: 40,
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -394,18 +554,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      Navigator.pop(context);
-                      setState(() {
-                        for (var n in _notifications) {
-                          n.isRead = true;
+                      if (!mounted) return;
+                      try {
+                        debugPrint(
+                          '✅ [NotificationsScreen] Marking all as read',
+                        );
+                        Navigator.pop(context);
+                        if (mounted) {
+                          setState(() {
+                            for (var n in _notifications) {
+                              n.isRead = true;
+                            }
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('All notifications marked as read'),
+                              backgroundColor: Color(0xFF4A90E2),
+                            ),
+                          );
                         }
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('All notifications marked as read'),
-                          backgroundColor: Color(0xFF4A90E2),
-                        ),
-                      );
+                      } catch (e) {
+                        debugPrint(
+                          '❌ [NotificationsScreen] Error marking all as read: $e',
+                        );
+                      }
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -414,13 +586,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           width: 24.h,
                           height: 24.h,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF4A90E2,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Image.asset('assets/icon/checkmark.bubble.fill (1).png'),
+                          child: Image.asset(
+                            'assets/icon/checkmark.bubble.fill (1).png',
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        const Text('Mark all as "Read"', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                        const Text(
+                          'Mark all as "Read"',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -437,13 +619,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         Container(
                           width: 24.h,
                           height: 24.h,
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: Image.asset('assets/icon/xmark.bin.fill.png'),
                         ),
                         const SizedBox(width: 12),
                         const Text(
                           'Delete all notifications',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -463,7 +650,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Delete All Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Delete All Notifications',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
         content: const Text(
           'Are you sure you want to delete all notifications? This action cannot be undone.',
           style: TextStyle(fontSize: 16),
@@ -471,22 +661,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                _notifications.clear();
-              });
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('All notifications deleted'), backgroundColor: Colors.red));
+              if (!mounted) return;
+              try {
+                debugPrint(
+                  '🗑️ [NotificationsScreen] Deleting all notifications',
+                );
+                Navigator.pop(context);
+                if (mounted) {
+                  setState(() {
+                    _notifications.clear();
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('All notifications deleted'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } catch (e) {
+                debugPrint('❌ [NotificationsScreen] Error deleting all: $e');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Delete', style: TextStyle(fontSize: 16)),
           ),

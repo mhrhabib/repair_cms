@@ -40,15 +40,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   // Models for each brand
   final Map<String, List<String>> _brandModels = {
     'Brother': [
-      // QL Series (Label Printers)
-      'QL-820NWB',
-      'QL-1110NWB',
-      'QL-700',
-      'QL-800',
-      // PT Series (Label Makers)
-      'PT-P750W',
-      'PT-P300BT',
-      // TD-2D Series (Desktop Label Printers) - Supported by another_brother SDK
+      // TD-2D Series (Desktop Label Printers) - 50×26mm labels @ 300 DPI
       'TD-2030A',
       'TD-2125N',
       'TD-2125NWB',
@@ -56,7 +48,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       'TD-2135NWB',
       'TD-2350D', // Client's printer at 192.168.0.149
       'TD-2350DA',
-      // TD-4D Series (Desktop Label Printers) - Requires Raw TCP mode
+      // TD-4D Series (Desktop Label Printers) - 100×150mm labels @ 300 DPI
       'TD-4210D',
       'TD-4410D',
       'TD-4420DN',
@@ -470,7 +462,31 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               items: _brandModels[_selectedBrand]?.map((model) {
                 return DropdownMenuItem(value: model, child: Text(model));
               }).toList(),
-              onChanged: (value) => setState(() => _selectedModel = value),
+              onChanged: (value) {
+                setState(() {
+                  _selectedModel = value;
+                  // Auto-select correct label size based on printer model
+                  if (value != null && _selectedBrand == 'Brother') {
+                    if (value.startsWith('TD-4')) {
+                      // TD-4 series: 100×150mm labels
+                      _selectedLabelSize = LabelSize(
+                        width: 100,
+                        height: 150,
+                        name: '100x150 (TD-4)',
+                      );
+                      debugPrint('🔧 Auto-selected TD-4 label size: 100×150mm');
+                    } else if (value.startsWith('TD-2')) {
+                      // TD-2 series: 50×26mm labels
+                      _selectedLabelSize = LabelSize(
+                        width: 50,
+                        height: 26,
+                        name: '50x26 (TD-2350D)',
+                      );
+                      debugPrint('🔧 Auto-selected TD-2 label size: 50×26mm');
+                    }
+                  }
+                });
+              },
             ),
             SizedBox(height: 16.h),
 
@@ -872,7 +888,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       const int widthPx = 591;
       const int heightPx = 307;
 
-      debugPrint('🎨 [591x307 Test] EXACT: ${widthPx}x${heightPx} dots');
+      debugPrint('🎨 [591x307 Test] EXACT: $widthPx×$heightPx dots');
       debugPrint('🎨 [591x307 Test] = 50×26mm @ 300 DPI (11.82 dots/mm)');
 
       // Create canvas at EXACT dimensions
@@ -1032,8 +1048,9 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       }
 
       final imageBytes = byteData.buffer.asUint8List();
+      final bytesLength = imageBytes.length;
       debugPrint(
-        '✅ [591x307 Test] Generated EXACT ${widthPx}×${heightPx} image (${imageBytes.length} bytes)',
+        '✅ [591x307 Test] Generated EXACT $widthPx×$heightPx image ($bytesLength bytes)',
       );
 
       return imageBytes;

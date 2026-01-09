@@ -16,7 +16,9 @@ class MoreSettingsScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.logout, color: Colors.red),
@@ -24,11 +26,16 @@ class MoreSettingsScreen extends StatelessWidget {
               Text('Logout', style: TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),
-          content: const Text('Are you sure you want to logout?', style: TextStyle(fontSize: 16)),
+          content: const Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(fontSize: 16),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey.shade700,
+              ),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -36,7 +43,9 @@ class MoreSettingsScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('Logout'),
             ),
@@ -48,31 +57,44 @@ class MoreSettingsScreen extends StatelessWidget {
 
   // Method to perform logout
   void _performLogout(BuildContext context) {
-    // Close the dialog first
-    Navigator.of(context).pop();
+    try {
+      debugPrint('🚺 [Logout] Starting logout process');
 
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
+      // Close the dialog first
+      Navigator.of(context).pop();
 
-    // Perform logout operations
-    _clearUserData()
-        .then((_) {
-          // Navigate to login screen and remove all routes
-          GoRouter.of(context).go(
-            RouteNames.signIn, // Replace with your actual login route
-          );
-        })
-        .catchError((error) {
-          // Handle any errors during logout
-          Navigator.of(context).pop(); // Close loading dialog
-          _showLogoutError(context, error.toString());
-        });
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+
+      // Perform logout operations
+      _clearUserData()
+          .then((_) {
+            debugPrint('✅ [Logout] Logout successful, navigating to sign in');
+            // Navigate to login screen and remove all routes
+            GoRouter.of(context).go(
+              RouteNames.signIn, // Replace with your actual login route
+            );
+          })
+          .catchError((error) {
+            debugPrint('❌ [Logout] Error during logout: $error');
+            // Handle any errors during logout
+            try {
+              Navigator.of(context).pop(); // Close loading dialog
+              _showLogoutError(context, error.toString());
+            } catch (e) {
+              debugPrint('❌ [Logout] Error showing error dialog: $e');
+            }
+          });
+    } catch (e, stackTrace) {
+      debugPrint('❌ [Logout] Critical error in logout: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+    }
   }
 
   // Method to clear user data and tokens
@@ -105,7 +127,9 @@ class MoreSettingsScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.error_outline, color: Colors.orange),
@@ -114,7 +138,12 @@ class MoreSettingsScreen extends StatelessWidget {
             ],
           ),
           content: Text('There was an issue during logout: $error'),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         );
       },
     );
@@ -129,7 +158,11 @@ class MoreSettingsScreen extends StatelessWidget {
         elevation: 0,
         title: const Text(
           'More',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
         leading: Container(), // Empty container to hide back button
@@ -144,7 +177,20 @@ class MoreSettingsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Printer Settings',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
+                try {
+                  debugPrint(
+                    '🔄 [MoreSettings] Navigating to Printer Settings',
+                  );
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const PrinterSettingsScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint(
+                    '❌ [MoreSettings] Error navigating to Printer Settings: $e',
+                  );
+                }
               },
             ),
 
@@ -153,7 +199,9 @@ class MoreSettingsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
 
@@ -163,7 +211,18 @@ class MoreSettingsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Label Content',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => LabelContentScreen()));
+                try {
+                  debugPrint('🔄 [MoreSettings] Navigating to Label Content');
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => LabelContentScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint(
+                    '❌ [MoreSettings] Error navigating to Label Content: $e',
+                  );
+                }
               },
             ),
 
@@ -172,7 +231,9 @@ class MoreSettingsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
 
@@ -182,7 +243,20 @@ class MoreSettingsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Notification Settings',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationSettingsScreen()));
+                try {
+                  debugPrint(
+                    '🔄 [MoreSettings] Navigating to Notification Settings',
+                  );
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => NotificationSettingsScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint(
+                    '❌ [MoreSettings] Error navigating to Notification Settings: $e',
+                  );
+                }
               },
             ),
 
@@ -191,7 +265,9 @@ class MoreSettingsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
 
@@ -202,7 +278,14 @@ class MoreSettingsScreen extends StatelessWidget {
               title: 'Debug Logs',
               subtitle: 'Printer troubleshooting',
               onTap: () {
-                context.push(RouteNames.logsViewer);
+                try {
+                  debugPrint('🔄 [MoreSettings] Navigating to Debug Logs');
+                  context.push(RouteNames.logsViewer);
+                } catch (e) {
+                  debugPrint(
+                    '❌ [MoreSettings] Error navigating to Debug Logs: $e',
+                  );
+                }
               },
             ),
 
@@ -211,7 +294,9 @@ class MoreSettingsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
 
@@ -241,7 +326,9 @@ class MoreSettingsScreen extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Icon(icon, color: iconColor, size: 24),
               ),
               const SizedBox(width: 16),
@@ -251,13 +338,28 @@ class MoreSettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    if (subtitle != null) Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                    if (subtitle != null)
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.fontMainColor,
+                size: 24,
+              ),
             ],
           ),
         ),
@@ -277,14 +379,24 @@ class MoreSettingsScreen extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-                child: const Icon(SolarIconsOutline.logout, color: Colors.red, size: 24),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  SolarIconsOutline.logout,
+                  color: Colors.red,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
                 child: Text(
                   'Logout',
-                  style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               const Icon(Icons.chevron_right, color: Colors.red, size: 24),

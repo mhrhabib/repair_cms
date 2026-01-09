@@ -80,29 +80,49 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   }
 
   void _loadJobs() {
-    debugPrint(
-      '📋 [MyJobsScreen] Loading jobs for tab index: $_selectedTabIndex',
-    );
-    if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
-      context.read<JobCubit>().filterJobsByStatus(widget.initialStatus!);
-    } else {
-      final statusFilter = _tabs[_selectedTabIndex].status;
-      if (statusFilter.isEmpty) {
-        context.read<JobCubit>().getJobs();
+    if (!mounted) {
+      debugPrint('⚠️ [MyJobsScreen] Widget not mounted, skipping load');
+      return;
+    }
+
+    try {
+      debugPrint(
+        '📋 [MyJobsScreen] Loading jobs for tab index: $_selectedTabIndex',
+      );
+      if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
+        context.read<JobCubit>().filterJobsByStatus(widget.initialStatus!);
       } else {
-        context.read<JobCubit>().filterJobsByStatus(statusFilter);
+        final statusFilter = _tabs[_selectedTabIndex].status;
+        if (statusFilter.isEmpty) {
+          context.read<JobCubit>().getJobs();
+        } else {
+          context.read<JobCubit>().filterJobsByStatus(statusFilter);
+        }
       }
+    } catch (e, stackTrace) {
+      debugPrint('❌ [MyJobsScreen] Error loading jobs: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
     }
   }
 
   void _onTabChanged(int index) {
-    setState(() {
-      _selectedTabIndex = index;
-    });
+    if (!mounted) {
+      debugPrint('⚠️ [MyJobsScreen] Widget not mounted, skipping tab change');
+      return;
+    }
 
-    // Filter jobs based on selected tab
-    final statusFilter = _tabs[index].status;
-    context.read<JobCubit>().filterJobsByStatus(statusFilter);
+    try {
+      debugPrint('🔄 [MyJobsScreen] Tab changed to index: $index');
+      setState(() {
+        _selectedTabIndex = index;
+      });
+
+      // Filter jobs based on selected tab
+      final statusFilter = _tabs[index].status;
+      context.read<JobCubit>().filterJobsByStatus(statusFilter);
+    } catch (e) {
+      debugPrint('❌ [MyJobsScreen] Error changing tab: $e');
+    }
   }
 
   @override
@@ -407,18 +427,25 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
                                   return GestureDetector(
                                     onTap: () {
-                                      debugPrint(
-                                        '🔍 [MyJobsScreen] Navigating to job: ${job.id}',
-                                      );
-                                      setState(() {
-                                        _showSearchOverlay = false;
-                                      });
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              JobDetailsScreen(jobId: job.id),
-                                        ),
-                                      );
+                                      if (!mounted) return;
+                                      try {
+                                        debugPrint(
+                                          '🔍 [MyJobsScreen] Navigating to job: ${job.id}',
+                                        );
+                                        setState(() {
+                                          _showSearchOverlay = false;
+                                        });
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                JobDetailsScreen(jobId: job.id),
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        debugPrint(
+                                          '❌ [MyJobsScreen] Error navigating: $e',
+                                        );
+                                      }
                                     },
                                     child: Container(
                                       padding: EdgeInsets.symmetric(

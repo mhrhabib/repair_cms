@@ -1204,26 +1204,29 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   }
 
   Widget _buildInfoRow(String label, String value, {bool isTotal = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.roboto(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade600,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.roboto(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
           ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.roboto(
-            fontSize: 16.sp,
-            fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
-            color: isTotal ? Colors.green : Colors.black87,
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: 16.sp,
+              fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
+              color: isTotal ? Colors.green : Colors.black87,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

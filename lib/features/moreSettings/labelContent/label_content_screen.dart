@@ -113,9 +113,10 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                           trackingPortalQR,
                           (value) => setState(() {
                             trackingPortalQR = value;
-                            if (value)
+                            if (value) {
                               jobQR =
                                   false; // Turn off Job QR when Tracking is enabled
+                            }
                           }),
                         ),
                         _buildToggleItem(
@@ -123,9 +124,10 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                           jobQR,
                           (value) => setState(() {
                             jobQR = value;
-                            if (value)
+                            if (value) {
                               trackingPortalQR =
                                   false; // Turn off Tracking QR when Job is enabled
+                            }
                           }),
                         ),
                         _buildToggleItem(

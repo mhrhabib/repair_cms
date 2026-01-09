@@ -3,67 +3,136 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter/foundation.dart';
 import 'package:mime/mime.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/profile/models/profile_response_model.dart';
 
+class ProfileException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  ProfileException({required this.message, this.statusCode});
+
+  @override
+  String toString() => 'ProfileException: $message';
+}
+
 class ProfileRepository {
   Future<ProfileResponseModel> getProfile() async {
+    debugPrint('🚀 [ProfileRepository] Fetching user profile');
     try {
       final url = ApiEndpoints.getProfile;
-
-      // Print which endpoint is being called
+      debugPrint('🌐 [ProfileRepository] API endpoint: $url');
 
       dio.Response response = await BaseClient.get(url: url);
+      debugPrint(
+        '📊 [ProfileRepository] Response status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200) {
         // Parse JSON string to Map if needed
-        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+        final responseData = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
+        debugPrint('✅ [ProfileRepository] Profile fetched successfully');
 
         return ProfileResponseModel.fromJson(responseData);
       } else {
-        throw Exception('Failed to fetch user: ${response.statusCode}');
+        debugPrint(
+          '❌ [ProfileRepository] Failed with status: ${response.statusCode}',
+        );
+        throw ProfileException(
+          message: 'Failed to fetch user: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
       }
     } on dio.DioException catch (e) {
+      debugPrint('💥 [ProfileRepository] DioException: ${e.type}');
+      debugPrint('📍 [ProfileRepository] Error details: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.statusCode}');
+        debugPrint(
+          '📊 [ProfileRepository] Response status: ${e.response?.statusCode}',
+        );
+        throw ProfileException(
+          message: 'Server error: ${e.response?.statusCode}',
+          statusCode: e.response?.statusCode,
+        );
       } else {
-        throw Exception('Network error: ${e.message}');
+        throw ProfileException(message: 'Network error: ${e.message}');
       }
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ProfileRepository] Unexpected error: $e');
+      debugPrint('📋 [ProfileRepository] Stack trace: $stackTrace');
+      throw ProfileException(message: 'Unexpected error: $e');
     }
   }
 
-  Future<UserData> updateUserProfile(String userId, Map<String, dynamic> updateData) async {
+  Future<UserData> updateUserProfile(
+    String userId,
+    Map<String, dynamic> updateData,
+  ) async {
+    debugPrint('🚀 [ProfileRepository] Updating user profile');
+    debugPrint('👤 [ProfileRepository] User ID: $userId');
+    debugPrint('📝 [ProfileRepository] Update data: $updateData');
     try {
       final url = ApiEndpoints.updateProfileById.replaceFirst('<id>', userId);
+      debugPrint('🌐 [ProfileRepository] API endpoint: $url');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: updateData);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: updateData,
+      );
+      debugPrint(
+        '📊 [ProfileRepository] Response status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200) {
         // Parse JSON string to Map if needed
-        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+        final responseData = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
+        debugPrint('✅ [ProfileRepository] Profile updated successfully');
 
         return UserData.fromJson(responseData);
       } else {
-        throw Exception('Failed to update user: ${response.statusCode}');
+        debugPrint(
+          '❌ [ProfileRepository] Failed with status: ${response.statusCode}',
+        );
+        throw ProfileException(
+          message: 'Failed to update user: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
       }
     } on dio.DioException catch (e) {
+      debugPrint('💥 [ProfileRepository] DioException: ${e.type}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        debugPrint(
+          '📊 [ProfileRepository] Response status: ${e.response?.statusCode}',
+        );
+        throw ProfileException(
+          message:
+              e.response?.data['message'] ??
+              'Server error: ${e.response?.statusCode}',
+          statusCode: e.response?.statusCode,
+        );
       } else {
-        throw Exception('Network error: ${e.message}');
+        throw ProfileException(message: 'Network error: ${e.message}');
       }
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ProfileRepository] Unexpected error: $e');
+      debugPrint('📋 [ProfileRepository] Stack trace: $stackTrace');
+      throw ProfileException(message: 'Unexpected error: $e');
     }
   }
 
   Future<dynamic> updateUserAvatar(String userId, String imagePath) async {
     try {
-      final url = ApiEndpoints.uploadProfileAvatar.replaceFirst('<userId>', userId);
+      final url = ApiEndpoints.uploadProfileAvatar.replaceFirst(
+        '<userId>',
+        userId,
+      );
 
       // Validate file
       final file = File(imagePath);
@@ -89,12 +158,16 @@ class ProfileRepository {
 
       if (response.statusCode == 201) {
         // Parse JSON string to Map if needed
-        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+        final responseData = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
 
         // Return the parsed data as a Map with file path and URL
         return responseData;
       } else {
-        throw Exception('Server returned ${response.statusCode}: ${response.data}');
+        throw Exception(
+          'Server returned ${response.statusCode}: ${response.data}',
+        );
       }
     } on dio.DioException catch (e) {
       if (e.response != null) {}
@@ -105,10 +178,12 @@ class ProfileRepository {
       String errorMessage;
       switch (e.type) {
         case dio.DioExceptionType.connectionTimeout:
-          errorMessage = 'Connection timeout. Please check your internet connection.';
+          errorMessage =
+              'Connection timeout. Please check your internet connection.';
           break;
         case dio.DioExceptionType.sendTimeout:
-          errorMessage = 'Upload timeout. The server is taking too long to respond.';
+          errorMessage =
+              'Upload timeout. The server is taking too long to respond.';
           break;
         case dio.DioExceptionType.receiveTimeout:
           errorMessage = 'Server response timeout.';
@@ -123,7 +198,8 @@ class ProfileRepository {
           errorMessage = 'Request was cancelled.';
           break;
         case dio.DioExceptionType.connectionError:
-          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+          errorMessage =
+              'Cannot connect to server. Please check your internet connection.';
           break;
         case dio.DioExceptionType.unknown:
           errorMessage = 'Network error: ${e.message ?? "Unknown error"}';
@@ -140,101 +216,230 @@ class ProfileRepository {
   }
 
   Future<String> getImageUrl(String imagePath) async {
+    debugPrint('🚀 [ProfileRepository] Getting image URL');
+    debugPrint('📁 [ProfileRepository] Image path: $imagePath');
     try {
-      dio.Response response = await BaseClient.get(url: ApiEndpoints.getAnImage, payload: {'imagePath': imagePath});
+      dio.Response response = await BaseClient.get(
+        url: ApiEndpoints.getAnImage,
+        payload: {'imagePath': imagePath},
+      );
+      debugPrint(
+        '📊 [ProfileRepository] Response status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200) {
         // Parse JSON string to Map if needed
-        final data = response.data is String ? jsonDecode(response.data) : response.data;
+        final data = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
 
         // Handle different possible structures
         if (data is String && data.isNotEmpty) {
+          debugPrint('✅ [ProfileRepository] Image URL retrieved (String)');
           return data;
         } else if (data is Map && data['data'] is String) {
+          debugPrint('✅ [ProfileRepository] Image URL retrieved (Map[data])');
           return data['data'];
         } else if (data is Map && data['url'] is String) {
+          debugPrint('✅ [ProfileRepository] Image URL retrieved (Map[url])');
           return data['url'];
         } else {
-          throw Exception('Invalid or empty image URL in response: $data');
+          debugPrint('❌ [ProfileRepository] Invalid response structure: $data');
+          throw ProfileException(
+            message: 'Invalid or empty image URL in response: $data',
+          );
         }
       } else {
-        throw Exception('Failed to get image URL: ${response.statusCode}');
+        debugPrint(
+          '❌ [ProfileRepository] Failed with status: ${response.statusCode}',
+        );
+        throw ProfileException(
+          message: 'Failed to get image URL: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
       }
     } on dio.DioException catch (e) {
-      throw Exception('Network error while getting image URL: ${e.message}');
-    } catch (e) {
-      throw Exception('Unexpected error while getting image URL: $e');
+      debugPrint('💥 [ProfileRepository] DioException: ${e.type}');
+      throw ProfileException(
+        message: 'Network error while getting image URL: ${e.message}',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ProfileRepository] Unexpected error: $e');
+      debugPrint('📋 [ProfileRepository] Stack trace: $stackTrace');
+      throw ProfileException(
+        message: 'Unexpected error while getting image URL: $e',
+      );
     }
   }
 
-  Future<bool> changePassword(String userId, String currentPassword, String newPassword) async {
+  Future<bool> changePassword(
+    String userId,
+    String currentPassword,
+    String newPassword,
+  ) async {
+    debugPrint('🚀 [ProfileRepository] Changing password');
+    debugPrint('👤 [ProfileRepository] User ID: $userId');
     try {
-      final url = ApiEndpoints.updateProfilePassword.replaceFirst('<id>', userId);
+      final url = ApiEndpoints.updateProfilePassword.replaceFirst(
+        '<id>',
+        userId,
+      );
+      debugPrint('🌐 [ProfileRepository] API endpoint: $url');
 
-      final payload = {"password": currentPassword, "updatedPassword": newPassword};
+      final payload = {
+        "password": currentPassword,
+        "updatedPassword": newPassword,
+      };
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
+      debugPrint(
+        '📊 [ProfileRepository] Response status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200) {
+        debugPrint('✅ [ProfileRepository] Password changed successfully');
         return true;
       } else {
-        throw Exception('Failed to change password: ${response.statusCode}');
+        debugPrint(
+          '❌ [ProfileRepository] Failed with status: ${response.statusCode}',
+        );
+        throw ProfileException(
+          message: 'Failed to change password: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
       }
     } on dio.DioException catch (e) {
+      debugPrint('💥 [ProfileRepository] DioException: ${e.type}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        debugPrint(
+          '📊 [ProfileRepository] Response status: ${e.response?.statusCode}',
+        );
+        throw ProfileException(
+          message:
+              e.response?.data['message'] ??
+              'Server error: ${e.response?.statusCode}',
+          statusCode: e.response?.statusCode,
+        );
       } else {
-        throw Exception('Network error: ${e.message}');
+        throw ProfileException(message: 'Network error: ${e.message}');
       }
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ProfileRepository] Unexpected error: $e');
+      debugPrint('📋 [ProfileRepository] Stack trace: $stackTrace');
+      throw ProfileException(message: 'Unexpected error: $e');
     }
   }
 
-  Future<bool> updateUserEmail(String userId, String email, String password) async {
+  Future<bool> updateUserEmail(
+    String userId,
+    String email,
+    String password,
+  ) async {
+    debugPrint('🚀 [ProfileRepository] Updating user email');
+    debugPrint('👤 [ProfileRepository] User ID: $userId');
+    debugPrint('📧 [ProfileRepository] New email: $email');
     try {
       final url = ApiEndpoints.updateProfileEmail.replaceFirst('<id>', userId);
+      debugPrint('🌐 [ProfileRepository] API endpoint: $url');
 
       final payload = {"password": password, "email": email};
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
+      debugPrint(
+        '📊 [ProfileRepository] Response status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200) {
+        debugPrint('✅ [ProfileRepository] Email updated successfully');
         return true;
       } else {
-        throw Exception('Failed to update email: ${response.statusCode}');
+        debugPrint(
+          '❌ [ProfileRepository] Failed with status: ${response.statusCode}',
+        );
+        throw ProfileException(
+          message: 'Failed to update email: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
       }
     } on dio.DioException catch (e) {
+      debugPrint('💥 [ProfileRepository] DioException: ${e.type}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        debugPrint(
+          '📊 [ProfileRepository] Response status: ${e.response?.statusCode}',
+        );
+        throw ProfileException(
+          message:
+              e.response?.data['message'] ??
+              'Server error: ${e.response?.statusCode}',
+          statusCode: e.response?.statusCode,
+        );
       } else {
-        throw Exception('Network error: ${e.message}');
+        throw ProfileException(message: 'Network error: ${e.message}');
       }
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ProfileRepository] Unexpected error: $e');
+      debugPrint('📋 [ProfileRepository] Stack trace: $stackTrace');
+      throw ProfileException(message: 'Unexpected error: $e');
     }
   }
 
   // Method to update specific fields like language preference
-  Future<UserData> updateUserPreferences(String userId, Map<String, dynamic> preferences) async {
+  Future<UserData> updateUserPreferences(
+    String userId,
+    Map<String, dynamic> preferences,
+  ) async {
+    debugPrint('🚀 [ProfileRepository] Updating user preferences');
+    debugPrint('👤 [ProfileRepository] User ID: $userId');
+    debugPrint('📝 [ProfileRepository] Preferences: $preferences');
     try {
       final url = ApiEndpoints.updateProfileById.replaceFirst('<id>', userId);
+      debugPrint('🌐 [ProfileRepository] API endpoint: $url');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: preferences);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: preferences,
+      );
+      debugPrint(
+        '📊 [ProfileRepository] Response status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200) {
+        debugPrint('✅ [ProfileRepository] Preferences updated successfully');
         return UserData.fromJson(response.data);
       } else {
-        throw Exception('Failed to update preferences: ${response.statusCode}');
+        debugPrint(
+          '❌ [ProfileRepository] Failed with status: ${response.statusCode}',
+        );
+        throw ProfileException(
+          message: 'Failed to update preferences: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
       }
     } on dio.DioException catch (e) {
+      debugPrint('💥 [ProfileRepository] DioException: ${e.type}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        debugPrint(
+          '📊 [ProfileRepository] Response status: ${e.response?.statusCode}',
+        );
+        throw ProfileException(
+          message:
+              e.response?.data['message'] ??
+              'Server error: ${e.response?.statusCode}',
+          statusCode: e.response?.statusCode,
+        );
       } else {
-        throw Exception('Network error: ${e.message}');
+        throw ProfileException(message: 'Network error: ${e.message}');
       }
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ProfileRepository] Unexpected error: $e');
+      debugPrint('📋 [ProfileRepository] Stack trace: $stackTrace');
+      throw ProfileException(message: 'Unexpected error: $e');
     }
   }
 }

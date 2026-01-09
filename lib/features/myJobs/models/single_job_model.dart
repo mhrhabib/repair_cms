@@ -136,13 +136,19 @@ class Data {
         jobStatus!.add(JobStatus.fromJson(v));
       });
     }
-    customerDetails = json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null;
-    deviceData = json['deviceData'] != null ? DeviceData.fromJson(json['deviceData']) : null;
+    customerDetails = json['customerDetails'] != null
+        ? CustomerDetails.fromJson(json['customerDetails'])
+        : null;
+    deviceData = json['deviceData'] != null
+        ? DeviceData.fromJson(json['deviceData'])
+        : null;
     status = json['status'];
     location = json['location'];
     salutationHTMLmarkup = json['salutationHTMLmarkup'];
     termsAndConditionsHTMLmarkup = json['termsAndConditionsHTMLmarkup'];
-    receiptFooter = json['receipt_footer'] != null ? ReceiptFooter.fromJson(json['receipt_footer']) : null;
+    receiptFooter = json['receipt_footer'] != null
+        ? ReceiptFooter.fromJson(json['receipt_footer'])
+        : null;
     if (json['loggedUserId'] != null) {
       loggedUserId = <LoggedUser>[];
       json['loggedUserId'].forEach((v) {
@@ -417,8 +423,12 @@ class CustomerDetails {
     email = json['email'];
     telephone = json['telephone'];
     telephonePrefix = json['telephone_prefix'];
-    billingAddress = json['billing_address'] != null ? BillingAddress.fromJson(json['billing_address']) : null;
-    shippingAddress = json['shipping_address'] != null ? ShippingAddress.fromJson(json['shipping_address']) : null;
+    billingAddress = json['billing_address'] != null
+        ? BillingAddress.fromJson(json['billing_address'])
+        : null;
+    shippingAddress = json['shipping_address'] != null
+        ? ShippingAddress.fromJson(json['shipping_address'])
+        : null;
     vatNo = json['vatNo'];
     reverseCharge = json['reverseCharge'];
   }
@@ -563,7 +573,14 @@ class DeviceData {
   List<Condition>? condition;
   String? serialNo;
 
-  DeviceData({this.brand, this.brandId, this.model, this.type, this.condition, this.serialNo});
+  DeviceData({
+    this.brand,
+    this.brandId,
+    this.model,
+    this.type,
+    this.condition,
+    this.serialNo,
+  });
 
   DeviceData.fromJson(Map<String, dynamic> json) {
     brand = json['brand'];
@@ -618,15 +635,28 @@ class ReceiptFooter {
   Address? address;
   ContactInfo? contact;
   Bank? bank;
+  String? openingHours;
 
-  ReceiptFooter({this.companyLogo, this.companyLogoURL, this.address, this.contact, this.bank});
+  ReceiptFooter({
+    this.companyLogo,
+    this.companyLogoURL,
+    this.address,
+    this.contact,
+    this.bank,
+    this.openingHours,
+  });
 
   ReceiptFooter.fromJson(Map<String, dynamic> json) {
     companyLogo = json['companyLogo'];
     companyLogoURL = json['companyLogoURL'];
-    address = json['address'] != null ? Address.fromJson(json['address']) : null;
-    contact = json['contact'] != null ? ContactInfo.fromJson(json['contact']) : null;
+    address = json['address'] != null
+        ? Address.fromJson(json['address'])
+        : null;
+    contact = json['contact'] != null
+        ? ContactInfo.fromJson(json['contact'])
+        : null;
     bank = json['bank'] != null ? Bank.fromJson(json['bank']) : null;
+    openingHours = json['openingHours'];
   }
 
   Map<String, dynamic> toJson() {
@@ -642,6 +672,7 @@ class ReceiptFooter {
     if (bank != null) {
       data['bank'] = bank!.toJson();
     }
+    data['openingHours'] = openingHours;
     return data;
   }
 }
@@ -654,7 +685,14 @@ class Address {
   String? city;
   String? country;
 
-  Address({this.companyName, this.street, this.num, this.zip, this.city, this.country});
+  Address({
+    this.companyName,
+    this.street,
+    this.num,
+    this.zip,
+    this.city,
+    this.country,
+  });
 
   Address.fromJson(Map<String, dynamic> json) {
     companyName = json['companyName'];
@@ -751,15 +789,26 @@ class UserData {
   Currency? currency;
   DateFormat? dateFormat;
 
-  UserData({this.email, this.fullName, this.avatar, this.position, this.currency, this.dateFormat});
+  UserData({
+    this.email,
+    this.fullName,
+    this.avatar,
+    this.position,
+    this.currency,
+    this.dateFormat,
+  });
 
   UserData.fromJson(Map<String, dynamic> json) {
     email = json['email'];
     fullName = json['fullName'];
     avatar = json['avatar'];
     position = json['position'];
-    currency = json['currency'] != null ? Currency.fromJson(json['currency']) : null;
-    dateFormat = json['dateFormat'] != null ? DateFormat.fromJson(json['dateFormat']) : null;
+    currency = json['currency'] != null
+        ? Currency.fromJson(json['currency'])
+        : null;
+    dateFormat = json['dateFormat'] != null
+        ? DateFormat.fromJson(json['dateFormat'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -1053,7 +1102,13 @@ class InternalNote {
   String? userName;
   String? id;
 
-  InternalNote({this.text, this.userId, this.createdAt, this.userName, this.id});
+  InternalNote({
+    this.text,
+    this.userId,
+    this.createdAt,
+    this.userName,
+    this.id,
+  });
 
   InternalNote.fromJson(Map<String, dynamic> json) {
     text = json['text'] is List

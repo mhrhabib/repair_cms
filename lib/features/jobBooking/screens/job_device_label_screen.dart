@@ -526,8 +526,14 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         data: _getQRCodeData(),
         version: QrVersions.auto,
         errorCorrectionLevel: QrErrorCorrectLevel.M,
-        color: Colors.black,
-        emptyColor: Colors.white,
+        eyeStyle: const QrEyeStyle(
+          eyeShape: QrEyeShape.square,
+          color: Colors.black,
+        ),
+        dataModuleStyle: const QrDataModuleStyle(
+          dataModuleShape: QrDataModuleShape.square,
+          color: Colors.black,
+        ),
       );
 
       final qrX = drawableWidth - padding - qrSize;
@@ -608,7 +614,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       final imageBytes = byteData.buffer.asUint8List();
       debugPrint(
-        '✅ Generated ${widthPx}x${heightPx} image (${imageBytes.length} bytes) at ${dotsPerMm == 12 ? 300 : 203} DPI',
+        '✅ Generated ${widthPx}x$heightPx image (${imageBytes.length} bytes) at ${dotsPerMm == 12 ? 300 : 203} DPI',
       );
       return imageBytes;
     } catch (e, st) {

@@ -42,8 +42,10 @@ class _SignInScreenState extends State<SignInScreen> {
 
   void _checkBiometricOnStart() async {
     try {
-      final isBiometricEnabled = await BiometricStorageService.isBiometricEnabled();
-      final hasCredentials = await BiometricStorageService.hasBiometricCredentials();
+      final isBiometricEnabled =
+          await BiometricStorageService.isBiometricEnabled();
+      final hasCredentials =
+          await BiometricStorageService.hasBiometricCredentials();
 
       setState(() {
         _showBiometricOption = isBiometricEnabled && hasCredentials;
@@ -113,7 +115,9 @@ class _SignInScreenState extends State<SignInScreen> {
     if (!_hasCheckedBiometric) {
       return Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -134,7 +138,9 @@ class _SignInScreenState extends State<SignInScreen> {
                       //SnackbarDemo(message: state.message).showCustomSnackbar(context);
                       _navigateToPasswordScreen(state.email);
                     } else if (state is SignInError) {
-                      SnackbarDemo(message: state.message).showCustomSnackbar(context);
+                      SnackbarDemo(
+                        message: state.message,
+                      ).showCustomSnackbar(context);
                     }
                   },
                   builder: (context, state) {
@@ -157,43 +163,68 @@ class _SignInScreenState extends State<SignInScreen> {
                           // Responsive spacing: smaller when keyboard is visible
                           // Use keyboard visibility only so auto-focus doesn't force small gap when idle
                           SizedBox(
-                            height: (MediaQuery.of(context).viewInsets.bottom > 0)
+                            height:
+                                (MediaQuery.of(context).viewInsets.bottom > 0)
                                 ? screenHeight *
                                       0.02 // small gap when keyboard shown
-                                : screenHeight * 0.12, // reasonable large gap when idle
+                                : screenHeight *
+                                      0.12, // reasonable large gap when idle
                           ),
 
                           // Email Input
                           Container(
                             decoration: BoxDecoration(
-                              border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: AppColors.deviderColor,
+                                ),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Text('Email', style: AppTypography.sfProHintTextStyle17),
+                                Text(
+                                  'Email',
+                                  style: AppTypography.sfProHintTextStyle17,
+                                ),
                                 Expanded(
                                   child: TextFormField(
                                     controller: _emailController,
                                     focusNode: _emailFocusNode,
                                     style: AppTypography.sfProHintTextStyle17,
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
                                     decoration: InputDecoration(
                                       hintText: 'your@business.com',
-                                      hintStyle: AppTypography.sfProHintTextStyle17,
+                                      hintStyle:
+                                          AppTypography.sfProHintTextStyle17,
 
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 14,
+                                          ),
                                       suffixIcon: _isEmailValid
                                           ? Container(
-                                              margin: EdgeInsets.only(right: RadiusConstants.md),
-                                              child: Icon(Icons.check_circle, color: AppColors.greenColor, size: 30.w),
+                                              margin: EdgeInsets.only(
+                                                right: RadiusConstants.md,
+                                              ),
+                                              child: Icon(
+                                                Icons.check_circle,
+                                                color: AppColors.greenColor,
+                                                size: 30.w,
+                                              ),
                                             )
                                           : null,
                                       // hide default InputDecorator error text because we show a custom widget below
-                                      errorStyle: const TextStyle(color: Colors.transparent, fontSize: 0, height: 0),
+                                      errorStyle: const TextStyle(
+                                        color: Colors.transparent,
+                                        fontSize: 0,
+                                        height: 0,
+                                      ),
                                     ),
                                     // Ensure caret and focus behavior are explicit so cursor is visible
                                     autofocus: true,
@@ -204,8 +235,13 @@ class _SignInScreenState extends State<SignInScreen> {
                                     textInputAction: TextInputAction.done,
                                     validator: _emailValidator,
                                     onFieldSubmitted: (_) {
-                                      if (_formKey.currentState!.validate() && _isEmailValid) {
-                                        context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
+                                      if (_formKey.currentState!.validate() &&
+                                          _isEmailValid) {
+                                        context
+                                            .read<SignInCubit>()
+                                            .findUserByEmail(
+                                              _emailController.text.trim(),
+                                            );
                                       } else {
                                         _validateEmail();
                                       }
@@ -223,14 +259,16 @@ class _SignInScreenState extends State<SignInScreen> {
                               alignment: AlignmentGeometry.center,
                               child: Text(
                                 _emailError!,
-                                style: AppTypography.sfProHintTextStyle17.copyWith(color: Colors.red),
+                                style: AppTypography.sfProHintTextStyle17
+                                    .copyWith(color: Colors.red),
                               ),
                             ),
                           ],
 
                           // Responsive spacing based on keyboard visibility
                           SizedBox(
-                            height: (MediaQuery.of(context).viewInsets.bottom > 0)
+                            height:
+                                (MediaQuery.of(context).viewInsets.bottom > 0)
                                 ? screenHeight * 0.05
                                 : screenHeight * 0.18,
                           ),
@@ -248,7 +286,12 @@ class _SignInScreenState extends State<SignInScreen> {
 
         // Bottom Button
         bottomNavigationBar: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16, left: 16, right: 16, top: 8),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            left: 16,
+            right: 16,
+            top: 8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
@@ -269,8 +312,11 @@ class _SignInScreenState extends State<SignInScreen> {
                           onPressed: state is SignInLoading
                               ? null
                               : () {
-                                  if (_formKey.currentState!.validate() && _isEmailValid) {
-                                    context.read<SignInCubit>().findUserByEmail(_emailController.text.trim());
+                                  if (_formKey.currentState!.validate() &&
+                                      _isEmailValid) {
+                                    context.read<SignInCubit>().findUserByEmail(
+                                      _emailController.text.trim(),
+                                    );
                                   } else {
                                     _validateEmail();
                                   }
@@ -281,7 +327,9 @@ class _SignInScreenState extends State<SignInScreen> {
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.whiteColor,
+                                    ),
                                   ),
                                 )
                               : null,
@@ -292,10 +340,17 @@ class _SignInScreenState extends State<SignInScreen> {
                   if (_showBiometricOption) ...[
                     const SizedBox(width: 12),
                     Container(
-                      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: IconButton(
                         onPressed: _authenticateWithBiometric,
-                        icon: Icon(Icons.fingerprint, size: 28, color: Colors.white),
+                        icon: Icon(
+                          Icons.fingerprint,
+                          size: 28,
+                          color: Colors.white,
+                        ),
                         padding: const EdgeInsets.all(12),
                       ),
                     ),
@@ -319,14 +374,20 @@ class _SignInScreenState extends State<SignInScreen> {
       final bool isAvailable = await auth.canCheckBiometrics;
       final bool isDeviceSupported = await auth.isDeviceSupported();
 
-      debugPrint('📱 isAvailable: $isAvailable, isDeviceSupported: $isDeviceSupported');
+      debugPrint(
+        '📱 isAvailable: $isAvailable, isDeviceSupported: $isDeviceSupported',
+      );
 
       if (!isAvailable || !isDeviceSupported) {
-        SnackbarDemo(message: 'Biometric not available').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Biometric not available',
+        ).showCustomSnackbar(context);
         return;
       }
 
-      debugPrint('🚀 Calling authenticate - system prompt should appear now...');
+      debugPrint(
+        '🚀 Calling authenticate - system prompt should appear now...',
+      );
 
       // Call authenticate - THIS should show the system bottom sheet
       final bool didAuthenticate = await auth.authenticate(
@@ -340,7 +401,8 @@ class _SignInScreenState extends State<SignInScreen> {
         debugPrint('🎉 Authentication successful!');
 
         // Get saved credentials
-        final credentials = await BiometricStorageService.getBiometricCredentials();
+        final credentials =
+            await BiometricStorageService.getBiometricCredentials();
 
         if (credentials['email'] != null && credentials['password'] != null) {
           _emailController.text = credentials['email']!;
@@ -348,17 +410,23 @@ class _SignInScreenState extends State<SignInScreen> {
             _isEmailValid = true;
           });
 
-          SnackbarDemo(message: 'Login successful!').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Login successful!',
+          ).showCustomSnackbar(context);
 
           if (mounted) {
             context.push(RouteNames.home, extra: credentials['email']!);
           }
         } else {
-          SnackbarDemo(message: 'Credentials not found').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Credentials not found',
+          ).showCustomSnackbar(context);
         }
       } else {
         debugPrint('❌ Authentication failed or canceled');
-        SnackbarDemo(message: 'Authentication canceled').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Authentication canceled',
+        ).showCustomSnackbar(context);
       }
     } catch (e) {
       debugPrint('💥 Error: $e');

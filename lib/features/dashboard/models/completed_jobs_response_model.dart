@@ -39,7 +39,8 @@ class CompletedJobsResponseModel {
       partsNotAvailableJobs: json['partsNotAvailableJobs'] ?? 0,
       totalServiceRequestArchive: json['totalServiceRequestArchive'] ?? 0,
       completedJobs: json['completedJobs'] ?? 0,
-      completedJobsChangePercent: (json['completedJobsChangePercent'] ?? 0).toDouble(),
+      completedJobsChangePercent: (json['completedJobsChangePercent'] ?? 0)
+          .toDouble(),
       filterRange: FilterRange.fromJson(json['filterRange'] ?? {}),
     );
   }
@@ -52,6 +53,9 @@ class FilterRange {
   FilterRange({required this.startDate, required this.endDate});
 
   factory FilterRange.fromJson(Map<String, dynamic> json) {
-    return FilterRange(startDate: json['startDate'] ?? '', endDate: json['endDate'] ?? '');
+    return FilterRange(
+      startDate: json['startDate'] ?? '',
+      endDate: json['endDate'] ?? '',
+    );
   }
 }

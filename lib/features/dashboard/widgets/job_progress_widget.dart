@@ -32,7 +32,11 @@ class JobProgressWidget extends StatelessWidget {
             color: AppColors.whiteColor,
             borderRadius: BorderRadius.circular(12.r),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
           child: Column(
@@ -72,7 +76,10 @@ class JobProgressWidget extends StatelessWidget {
         Text('Job Progress', style: AppTypography.fontSize16Bold),
         Text(
           'Live Status',
-          style: AppTypography.fontSize14.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+          style: AppTypography.fontSize14.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -124,9 +131,17 @@ class JobProgressWidget extends StatelessWidget {
                 children: [
                   Text(
                     totalActiveJobs.toString(),
-                    style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600, color: AppColors.primary),
+                    style: AppTypography.fontSize28.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  Text('Active Jobs', style: AppTypography.fontSize10.copyWith(color: AppColors.primary)),
+                  Text(
+                    'Active Jobs',
+                    style: AppTypography.fontSize10.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -145,9 +160,19 @@ class JobProgressWidget extends StatelessWidget {
   }) {
     return Column(
       children: [
-        _buildLegendItem(context, 'On Hold ($onHoldJobs)', const Color(0xFFB84343), 'parts_not_available'),
+        _buildLegendItem(
+          context,
+          'On Hold ($onHoldJobs)',
+          const Color(0xFFB84343),
+          'parts_not_available',
+        ),
         SizedBox(height: 4.h),
-        _buildLegendItem(context, 'Repair in Progress ($repairInProgressJobs)', const Color(0xFFF39C12), 'in_progress'),
+        _buildLegendItem(
+          context,
+          'Repair in Progress ($repairInProgressJobs)',
+          const Color(0xFFF39C12),
+          'in_progress',
+        ),
         SizedBox(height: 4.h),
         _buildLegendItem(
           context,
@@ -156,16 +181,30 @@ class JobProgressWidget extends StatelessWidget {
           'accepted_quotes',
         ),
         SizedBox(height: 4.h),
-        _buildLegendItem(context, 'Quotation Rejected ($quotationRejectedJobs)', const Color(0xFFFF5F5F), 'rejected'),
+        _buildLegendItem(
+          context,
+          'Quotation Rejected ($quotationRejectedJobs)',
+          const Color(0xFFFF5F5F),
+          'rejected',
+        ),
       ],
     );
   }
 
-  Widget _buildLegendItem(BuildContext context, String label, Color color, String statusFilter) {
+  Widget _buildLegendItem(
+    BuildContext context,
+    String label,
+    Color color,
+    String statusFilter,
+  ) {
     return InkWell(
       onTap: () {
         // Navigate directly to MyJobsScreen with the respective status filter
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) => MyJobsScreen(initialStatus: statusFilter)));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MyJobsScreen(initialStatus: statusFilter),
+          ),
+        );
       },
       borderRadius: BorderRadius.circular(4.r),
       child: Padding(
@@ -175,7 +214,10 @@ class JobProgressWidget extends StatelessWidget {
             Container(
               width: 24.w,
               height: 12.h,
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             SizedBox(width: 8.w),
             Expanded(child: Text(label, style: AppTypography.fontSize16)),
@@ -214,7 +256,11 @@ class DonutChartPainter extends CustomPainter {
     }
 
     // Calculate total segments (sum of all job types)
-    final int totalSegments = onHoldJobs + repairInProgressJobs + quotationConfirmedJobs + quotationRejectedJobs;
+    final int totalSegments =
+        onHoldJobs +
+        repairInProgressJobs +
+        quotationConfirmedJobs +
+        quotationRejectedJobs;
 
     // If no segments, draw empty chart
     if (totalSegments == 0) {
@@ -225,9 +271,18 @@ class DonutChartPainter extends CustomPainter {
     // Create data with actual counts
     final data = [
       ChartData(value: onHoldJobs.toDouble(), color: const Color(0xFFB84343)),
-      ChartData(value: repairInProgressJobs.toDouble(), color: const Color(0xFFF39C12)),
-      ChartData(value: quotationConfirmedJobs.toDouble(), color: const Color(0xFF27AE60)),
-      ChartData(value: quotationRejectedJobs.toDouble(), color: const Color(0xFFFF5F5F)),
+      ChartData(
+        value: repairInProgressJobs.toDouble(),
+        color: const Color(0xFFF39C12),
+      ),
+      ChartData(
+        value: quotationConfirmedJobs.toDouble(),
+        color: const Color(0xFF27AE60),
+      ),
+      ChartData(
+        value: quotationRejectedJobs.toDouble(),
+        color: const Color(0xFFFF5F5F),
+      ),
     ];
 
     double startAngle = -math.pi / 2; // Start from top
@@ -264,14 +319,18 @@ class DonutChartPainter extends CustomPainter {
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              fontFamily: 'Roboto', // Optional: specify font family for consistency
+              fontFamily:
+                  'Roboto', // Optional: specify font family for consistency
             ),
           ),
           textDirection: TextDirection.ltr,
         );
 
         textPainter.layout();
-        textPainter.paint(canvas, Offset(textX - textPainter.width / 2, textY - textPainter.height / 2));
+        textPainter.paint(
+          canvas,
+          Offset(textX - textPainter.width / 2, textY - textPainter.height / 2),
+        );
 
         startAngle += sweepAngle;
       }
@@ -286,7 +345,13 @@ class DonutChartPainter extends CustomPainter {
     canvas.drawCircle(center, innerRadius - 12, innerCirclePaint);
   }
 
-  void _drawEmptyChart(Canvas canvas, Size size, Offset center, double radius, double innerRadius) {
+  void _drawEmptyChart(
+    Canvas canvas,
+    Size size,
+    Offset center,
+    double radius,
+    double innerRadius,
+  ) {
     // Draw empty gray circle
     final emptyPaint = Paint()
       ..color = Colors.grey.shade300
