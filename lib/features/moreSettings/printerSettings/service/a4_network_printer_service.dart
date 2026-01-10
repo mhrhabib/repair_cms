@@ -187,6 +187,7 @@ class A4NetworkPrinterService implements BasePrinterService {
     // A4 printers don't support thermal receipt printing
     return PrinterResult(success: false, message: 'A4 printer does not support thermal receipt format', code: -1);
   }
+  
 
   @override
   Future<PrinterResult> printLabel({
@@ -277,4 +278,6 @@ class A4NetworkPrinterService implements BasePrinterService {
       return PrinterStatus(isConnected: false, message: 'Cannot reach printer: $e', code: -1);
     }
   }
+  
+ 
 }

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'brother_sdk_printer_service.dart';
 import 'brother_printer_service.dart';
 import 'epson_printer_service.dart';
@@ -6,6 +7,7 @@ import 'xprinter_printer_service.dart';
 import 'dymo_printer_service.dart';
 import 'usb_printer_service.dart';
 import 'a4_network_printer_service.dart';
+import 'thermal_receipt_printer_service.dart';
 import 'base_printer_service.dart';
 import 'package:flutter/foundation.dart';
 import '../models/printer_config_model.dart';
@@ -37,7 +39,9 @@ class PrinterServiceFactory {
 
   /// Selects a printer service based on full `PrinterConfigModel`.
   /// For Brother printers this allows choosing between SDK and raw TCP implementations.
-  static BasePrinterService getPrinterServiceForConfig(PrinterConfigModel config) {
+  static BasePrinterService getPrinterServiceForConfig(
+    PrinterConfigModel config,
+  ) {
     final brand = config.printerBrand.toLowerCase();
     if (brand == 'brother') {
       if ((config.useSdk ?? false)) {
@@ -61,13 +65,31 @@ class PrinterServiceFactory {
 
   /// Check if a brand is supported
   static bool isBrandSupported(String brand) {
-    final supportedBrands = ['brother', 'epson', 'star', 'xprinter', 'dymo', 'generic', 'hp', 'canon'];
+    final supportedBrands = [
+      'brother',
+      'epson',
+      'star',
+      'xprinter',
+      'dymo',
+      'generic',
+      'hp',
+      'canon',
+    ];
     return supportedBrands.contains(brand.toLowerCase());
   }
 
   /// Get list of supported brands
   static List<String> getSupportedBrands() {
-    return ['Brother', 'Epson', 'Star', 'Xprinter', 'Dymo', 'Generic', 'HP', 'Canon'];
+    return [
+      'Brother',
+      'Epson',
+      'Star',
+      'Xprinter',
+      'Dymo',
+      'Generic',
+      'HP',
+      'Canon',
+    ];
   }
 
   /// Attempt to print a label using SDK first (if available) and fall back to raw TCP.
@@ -80,21 +102,35 @@ class PrinterServiceFactory {
     if (brand == 'brother') {
       final sdk = BrotherSDKPrinterService();
       try {
-        final res = await sdk.printLabel(ipAddress: config.ipAddress, text: text, port: config.port ?? 9100);
+        final res = await sdk.printLabel(
+          ipAddress: config.ipAddress,
+          text: text,
+          port: config.port ?? 9100,
+        );
         if (res.success) return res;
-        debugPrint('⚠️ Brother SDK print failed: ${res.message} — trying raw TCP fallback');
+        debugPrint(
+          '⚠️ Brother SDK print failed: ${res.message} — trying raw TCP fallback',
+        );
       } catch (e) {
         debugPrint('⚠️ Brother SDK threw: $e — trying raw TCP fallback');
       }
 
       // Try raw TCP implementation
       final raw = BrotherPrinterService();
-      return await raw.printLabel(ipAddress: config.ipAddress, text: text, port: config.port ?? 9100);
+      return await raw.printLabel(
+        ipAddress: config.ipAddress,
+        text: text,
+        port: config.port ?? 9100,
+      );
     }
 
     // Non-Brother: use configured service directly
     final svc = getPrinterServiceForConfig(config);
-    return await svc.printLabel(ipAddress: config.ipAddress, text: text, port: config.port ?? 9100);
+    return await svc.printLabel(
+      ipAddress: config.ipAddress,
+      text: text,
+      port: config.port ?? 9100,
+    );
   }
 
   /// Attempt to print device label (structured data) with SDK first then raw fallback.
@@ -112,18 +148,30 @@ class PrinterServiceFactory {
           port: config.port ?? 9100,
         );
         if (res.success) return res;
-        debugPrint('⚠️ Brother SDK deviceLabel failed: ${res.message} — trying raw TCP fallback');
+        debugPrint(
+          '⚠️ Brother SDK deviceLabel failed: ${res.message} — trying raw TCP fallback',
+        );
       } catch (e) {
-        debugPrint('⚠️ Brother SDK deviceLabel threw: $e — trying raw TCP fallback');
+        debugPrint(
+          '⚠️ Brother SDK deviceLabel threw: $e — trying raw TCP fallback',
+        );
       }
 
       // Fallback to raw text based device label
       final raw = BrotherPrinterService();
-      return await raw.printDeviceLabel(ipAddress: config.ipAddress, labelData: labelData, port: config.port ?? 9100);
+      return await raw.printDeviceLabel(
+        ipAddress: config.ipAddress,
+        labelData: labelData,
+        port: config.port ?? 9100,
+      );
     }
 
     final svc = getPrinterServiceForConfig(config);
-    return await svc.printDeviceLabel(ipAddress: config.ipAddress, labelData: labelData, port: config.port ?? 9100);
+    return await svc.printDeviceLabel(
+      ipAddress: config.ipAddress,
+      labelData: labelData,
+      port: config.port ?? 9100,
+    );
   }
 
   /// Attempt to print label image with SDK first then text fallback.
@@ -140,7 +188,9 @@ class PrinterServiceFactory {
 
       if (isTDPrinter) {
         // TD printers: Use raw TCP service with raster image printing
-        debugPrint('🖨️ TD printer detected: using raw TCP raster mode for image printing');
+        debugPrint(
+          '🖨️ TD printer detected: using raw TCP raster mode for image printing',
+        );
         final raw = BrotherPrinterService();
         return await raw.printLabelImage(
           ipAddress: config.ipAddress,
@@ -158,17 +208,53 @@ class PrinterServiceFactory {
           port: config.port ?? 9100,
         );
         if (res.success) return res;
-        debugPrint('⚠️ Brother SDK image print failed: ${res.message} — trying raw TCP fallback');
+        debugPrint(
+          '⚠️ Brother SDK image print failed: ${res.message} — trying raw TCP fallback',
+        );
       } catch (e) {
         debugPrint('⚠️ Brother SDK image threw: $e — trying raw TCP fallback');
       }
 
       // SDK failed, try raw TCP as fallback
       final raw = BrotherPrinterService();
-      return await raw.printLabelImage(ipAddress: config.ipAddress, imageBytes: imageBytes, port: config.port ?? 9100);
+      return await raw.printLabelImage(
+        ipAddress: config.ipAddress,
+        imageBytes: imageBytes,
+        port: config.port ?? 9100,
+      );
     }
 
     final svc = getPrinterServiceForConfig(config);
-    return await svc.printLabelImage(ipAddress: config.ipAddress, imageBytes: imageBytes, port: config.port ?? 9100);
+    return await svc.printLabelImage(
+      ipAddress: config.ipAddress,
+      imageBytes: imageBytes,
+      port: config.port ?? 9100,
+    );
+  }
+
+  /// Print thermal receipt as image (with logos, barcodes, QR codes)
+  /// Supports Epson, Star, Xprinter and other ESC/POS thermal printers
+  static Future<PrinterResult> printThermalReceiptImage({
+    required PrinterConfigModel config,
+    required Uint8List imageBytes,
+  }) async {
+    final brand = config.printerBrand.toLowerCase();
+
+    debugPrint(
+      '🖨️ [ThermalImage] Printing receipt image on $brand thermal printer',
+    );
+
+    // Use dedicated thermal receipt printer service (ESC/POS compatible)
+    final thermalService = ThermalReceiptPrinterService();
+
+    // Use paper width from config or default to 80mm
+    final paperWidth = config.paperWidth ?? 80;
+
+    return await thermalService.printThermalImage(
+      ipAddress: config.ipAddress,
+      imageBytes: imageBytes,
+      port: config.port ?? 9100,
+      paperWidth: paperWidth,
+    );
   }
 }

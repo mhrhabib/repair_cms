@@ -539,83 +539,83 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
 
   Widget _buildJobDetailsScreen(SingleJobModel job) {
     debugPrint('Building JobDetailsScreen for Job ID: ${job.data!.sId}');
-    return Column(
-      children: [
-        // Toggle Switches Section
-        Container(
-          color: Colors.white,
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Set Job Complete',
-                    style: GoogleFonts.roboto(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Toggle Switches Section
+          Container(
+            color: Colors.white,
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Set Job Complete',
+                      style: GoogleFonts.roboto(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  CupertinoSwitch(
-                    value: isJobComplete,
-                    onChanged: (value) {
-                      if (value) {
-                        // Setting job to complete - show bottom sheet for confirmation
-                        _showCompleteConfirmationBottomSheet();
-                      } else {
-                        // Setting job to incomplete - update immediately with confirmation dialog
-                        _showIncompleteConfirmationDialog();
-                      }
-                    },
-                    activeTrackColor: Colors.blue,
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Return device',
-                    style: GoogleFonts.roboto(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                    CupertinoSwitch(
+                      value: isJobComplete,
+                      onChanged: (value) {
+                        if (value) {
+                          // Setting job to complete - show bottom sheet for confirmation
+                          _showCompleteConfirmationBottomSheet();
+                        } else {
+                          // Setting job to incomplete - update immediately with confirmation dialog
+                          _showIncompleteConfirmationDialog();
+                        }
+                      },
+                      activeTrackColor: Colors.blue,
                     ),
-                  ),
-                  CupertinoSwitch(
-                    value: returnDevice,
-                    onChanged: (value) {
-                      if (value) {
-                        // Setting device as returned - show confirmation
-                        _showReturnDeviceConfirmationDialog();
-                      } else {
-                        // Setting device as not returned - update immediately
-                        _setDeviceAsNotReturned();
-                      }
-                    },
-                    activeTrackColor: Colors.blue,
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Return device',
+                      style: GoogleFonts.roboto(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    CupertinoSwitch(
+                      value: returnDevice,
+                      onChanged: (value) {
+                        if (value) {
+                          // Setting device as returned - show confirmation
+                          _showReturnDeviceConfirmationDialog();
+                        } else {
+                          // Setting device as not returned - update immediately
+                          _setDeviceAsNotReturned();
+                        }
+                      },
+                      activeTrackColor: Colors.blue,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
 
-        SizedBox(height: 8.h),
+          SizedBox(height: 8.h),
 
-        // Tab Card (redesigned to match image)
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: _buildTabCard(job),
-        ),
+          // Tab Card (redesigned to match image)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: _buildTabCard(job),
+          ),
 
-        SizedBox(height: 16.h),
+          SizedBox(height: 16.h),
 
-        // Content (Job Management etc)
-        Expanded(
-          child: SingleChildScrollView(
+          // Content (Job Management etc)
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -758,8 +758,8 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

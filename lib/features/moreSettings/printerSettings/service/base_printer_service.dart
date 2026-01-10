@@ -46,7 +46,11 @@ class PrinterResult {
   final String message;
   final int code;
 
-  PrinterResult({required this.success, required this.message, required this.code});
+  PrinterResult({
+    required this.success,
+    required this.message,
+    required this.code,
+  });
 }
 
 /// Printer reachability/status result
@@ -55,5 +59,9 @@ class PrinterStatus {
   final String message;
   final int code;
 
-  PrinterStatus({required this.isConnected, required this.message, required this.code});
+  PrinterStatus({
+    required this.isConnected,
+    required this.message,
+    required this.code,
+  });
 }

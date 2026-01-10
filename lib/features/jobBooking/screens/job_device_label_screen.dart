@@ -315,7 +315,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                             Text(
                               _getJobNumber(),
                               style: TextStyle(
-                                fontSize: 15.sp,
+                                fontSize: 18.sp,
                                 fontWeight: FontWeight.w400,
                                 color: Colors.black,
                               ),
@@ -352,7 +352,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                   Text(
                     '${_getJobNumber()} | ${_getCustomerName()} | ${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
                     style: TextStyle(
-                      fontSize: 12.sp,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                       height: 1.3,
@@ -366,7 +366,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                   Text(
                     '${_getDefect()} | BOX: ${_getPhysicalLocation()}',
                     style: TextStyle(
-                      fontSize: 12.sp,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                       height: 1.3,
@@ -504,9 +504,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final textPainter = TextPainter(
         text: TextSpan(
           text: _getJobNumber(),
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.black,
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -556,9 +556,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final infoPainter = TextPainter(
         text: TextSpan(
           text: infoText,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: 18.sp,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -571,9 +571,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final imeiPainter = TextPainter(
         text: TextSpan(
           text: 'IMEI: ${_getDeviceIMEI()}',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: 18.sp,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -586,9 +586,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final defectPainter = TextPainter(
         text: TextSpan(
           text: '${_getDefect()} | BOX: ${_getPhysicalLocation()}',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: 18.sp,
             fontWeight: FontWeight.w600,
           ),
         ),

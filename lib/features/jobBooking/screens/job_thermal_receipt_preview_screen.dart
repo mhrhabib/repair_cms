@@ -1,14 +1,20 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:repair_cms/set_up_di.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
     as job_booking;
 import 'package:repair_cms/features/jobBooking/widgets/thermal_receipt_widget.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
+import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart'
     as my_jobs;
@@ -31,8 +37,11 @@ class JobThermalReceiptPreviewScreen extends StatefulWidget {
 class _JobThermalReceiptPreviewScreenState
     extends State<JobThermalReceiptPreviewScreen> {
   final _settingsService = PrinterSettingsService();
+  final GlobalKey _receiptKey = GlobalKey();
   my_jobs.SingleJobModel? _completeJobData;
   bool _isLoadingCompleteData = false;
+
+  Talker get _talker => SetUpDI.getIt<Talker>();
 
   @override
   void initState() {
@@ -119,6 +128,14 @@ class _JobThermalReceiptPreviewScreenState
   }
 
   Future<void> _printThermalReceipt(PrinterConfigModel printer) async {
+    final startTime = DateTime.now();
+    _talker.info('🖨️ [JobThermalReceipt] Print request started');
+    _talker.debug(
+      'Printer: ${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}',
+    );
+    _talker.debug('IP: ${printer.ipAddress}:${printer.port ?? 9100}');
+    _talker.debug('Paper Width: ${printer.paperWidth ?? 80}mm');
+
     debugPrint(
       '🖨️ Printing thermal receipt to ${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}',
     );
@@ -135,7 +152,7 @@ class _JobThermalReceiptPreviewScreenState
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Printing...'),
+                Text('Capturing receipt...'),
               ],
             ),
           ),
@@ -144,22 +161,183 @@ class _JobThermalReceiptPreviewScreenState
     );
 
     try {
-      if (mounted) {
-        Navigator.of(context).pop();
-        SnackbarDemo(
-          message: 'Print functionality will be implemented here',
-        ).showCustomSnackbar(context);
+      // Wait longer for widget to fully render (especially QR/barcode generation)
+      _talker.debug('⏳ Waiting for widget render...');
+      
+      // Wait for frame to complete
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Force frames to complete and ensure widget is painted
+      for (int i = 0; i < 3; i++) {
+        await WidgetsBinding.instance.endOfFrame;
+        await Future.delayed(const Duration(milliseconds: 200));
+        _talker.debug('Frame $i completed');
+      }
+      
+      _talker.debug('✅ Widget should be fully rendered');
+
+      // Capture the receipt widget as image
+      _talker.debug('📷 Starting image capture...');
+      final Uint8List? imageBytes = await _captureReceiptAsImage();
+
+      if (imageBytes == null) {
+        _talker.error('❌ Image capture returned null');
+        throw Exception('Failed to capture receipt image');
       }
 
       debugPrint(
-        '🖨️ Thermal printer - Paper width: ${printer.paperWidth ?? 80}mm',
+        '📷 [ThermalPrint] Captured image: ${imageBytes.length} bytes',
       );
-    } catch (e) {
-      debugPrint('❌ Print error: $e');
+      _talker.info('✅ Image captured: ${imageBytes.length} bytes');
+
       if (mounted) {
+        // Update loading message
         Navigator.of(context).pop();
-        SnackbarDemo(message: 'Print failed: $e').showCustomSnackbar(context);
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Printing...'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
       }
+
+      // Print using image-based method with fallback
+      _talker.debug('📤 Sending to PrinterServiceFactory...');
+      final result = await PrinterServiceFactory.printThermalReceiptImage(
+        config: printer,
+        imageBytes: imageBytes,
+      );
+
+      final duration = DateTime.now().difference(startTime);
+      _talker.info('Print operation completed in ${duration.inMilliseconds}ms');
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+
+        if (result.success) {
+          debugPrint('✅ [ThermalPrint] Print successful');
+          _talker.info(
+            '✅ [JobThermalReceipt] Print successful! Duration: ${duration.inMilliseconds}ms',
+          );
+          SnackbarDemo(
+            message: '✅ Receipt printed successfully!',
+          ).showCustomSnackbar(context);
+        } else {
+          debugPrint('❌ [ThermalPrint] Print failed: ${result.message}');
+          _talker.error(
+            '❌ [JobThermalReceipt] Print failed: ${result.message} (code: ${result.code})',
+          );
+          SnackbarDemo(
+            message: '❌ Print failed: ${result.message}',
+          ).showCustomSnackbar(context);
+        }
+      }
+    } catch (e, st) {
+      debugPrint('❌ [ThermalPrint] Error: $e');
+      _talker.error('❌ [JobThermalReceipt] Exception: $e');
+      _talker.debug('Stack trace: $st');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        SnackbarDemo(message: '❌ Print error: $e').showCustomSnackbar(context);
+      }
+    }
+  }
+
+  /// Capture the thermal receipt widget as an image
+  Future<Uint8List?> _captureReceiptAsImage() async {
+    try {
+      _talker.debug('🔍 Finding RepaintBoundary...');
+      final boundary =
+          _receiptKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) {
+        debugPrint('❌ [ImageCapture] Render boundary not found');
+        _talker.error(
+          '❌ RepaintBoundary not found - widget may not be rendered',
+        );
+        return null;
+      }
+      _talker.debug('✅ RepaintBoundary found');
+
+      // Capture at high resolution for better print quality (2x pixel ratio)
+      _talker.debug('📸 Capturing image at 2x pixel ratio...');
+      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
+      _talker.debug('✅ Image captured: ${image.width}x${image.height}');
+
+      _talker.debug('🔄 Converting to PNG bytes...');
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+
+      if (byteData == null) {
+        debugPrint('❌ [ImageCapture] Failed to convert image to bytes');
+        _talker.error('❌ Failed to convert image to ByteData');
+        return null;
+      }
+
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
+      
+      // Analyze captured image for debugging
+      final rawByteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (rawByteData != null) {
+        int blackPixels = 0;
+        int whitePixels = 0;
+        int otherPixels = 0;
+        
+        // Sample first 1000 pixels
+        for (int i = 0; i < rawByteData.lengthInBytes && i < 4000; i += 4) {
+          final r = rawByteData.getUint8(i);
+          final g = rawByteData.getUint8(i + 1);
+          final b = rawByteData.getUint8(i + 2);
+          final a = rawByteData.getUint8(i + 3);
+          final gray = ((r * 0.299) + (g * 0.587) + (b * 0.114)).round();
+          
+          if (a < 128) continue; // Skip transparent
+          
+          if (gray < 128) {
+            blackPixels++;
+          } else if (gray > 200) {
+            whitePixels++;
+          } else {
+            otherPixels++;
+          }
+        }
+        
+        _talker.info(
+          '🎨 Image analysis (first 1000px): Black=$blackPixels, White=$whitePixels, Other=$otherPixels',
+        );
+        
+        if (blackPixels == 0) {
+          _talker.warning('⚠️ WARNING: No black pixels detected! Image may be blank or transparent');
+        }
+      }
+      
+      debugPrint(
+        '✅ [ImageCapture] Captured ${image.width}x${image.height} image (${pngBytes.length} bytes)',
+      );
+      _talker.info(
+        '✅ PNG encoded: ${pngBytes.length} bytes (${image.width}x${image.height})',
+      );
+
+      return pngBytes;
+    } catch (e, st) {
+      debugPrint('❌ [ImageCapture] Error: $e');
+      _talker.error('❌ Image capture error: $e');
+      _talker.debug('Stack trace: $st');
+      return null;
     }
   }
 
@@ -375,11 +553,14 @@ class _JobThermalReceiptPreviewScreenState
                         ),
                       ],
                     ),
-                    child: ThermalReceiptWidget(
-                      jobData: _completeJobData ?? _convertToSingleJobModel(),
-                      logoEnabled: true,
-                      qrCodeEnabled: true,
-                      enableTelephoneNumber: true,
+                    child: RepaintBoundary(
+                      key: _receiptKey,
+                      child: ThermalReceiptWidget(
+                        jobData: _completeJobData ?? _convertToSingleJobModel(),
+                        logoEnabled: true,
+                        qrCodeEnabled: true,
+                        enableTelephoneNumber: true,
+                      ),
                     ),
                   ),
                 ),

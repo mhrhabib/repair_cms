@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
+import '../service/printer_service_factory.dart';
 import '../widgets/wifi_printer_scanner.dart';
 
 class ThermalPrinterScreen extends StatefulWidget {
@@ -29,6 +30,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   String _selectedProtocol = 'TCP';
   bool _setAsDefault = false;
   bool _isSaving = false;
+  bool isPrinting = false;
 
   List<PrinterConfigModel> _savedPrinters = [];
 
@@ -200,6 +202,83 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
     if (result != null) {
       debugPrint('✅ Selected printer: ${result['ip']}:${result['port']}');
       SnackbarDemo(message: 'Printer selected: ${result['ip']}').showCustomSnackbar(context);
+    }
+  }
+
+  /// Test print functionality
+  Future<void> _testPrint() async {
+    final ip = _ipController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 9100;
+
+    if (ip.isEmpty) {
+      SnackbarDemo(message: 'Please enter IP address to test print').showCustomSnackbar(context);
+      return;
+    }
+
+    setState(() => isPrinting = true);
+
+    debugPrint('🖨️ [TestPrint] Starting test print to $ip:$port');
+
+    // Create a simple test receipt text
+    final testReceipt = '''
+========================================
+           TEST RECEIPT
+========================================
+
+Printer: $_selectedBrand ${_selectedModel ?? ''}
+Paper Width: ${_paperWidth}mm
+IP Address: $ip
+Port: $port
+Protocol: $_selectedProtocol
+
+========================================
+           TEST SUCCESSFUL
+========================================
+
+Date: ${DateTime.now().toString().split('.')[0]}
+
+This is a test print to verify your
+thermal printer configuration.
+
+========================================
+''';
+
+    try {
+      // Import the printer service factory
+      final config = PrinterConfigModel(
+        printerType: 'thermal',
+        printerBrand: _selectedBrand,
+        printerModel: _selectedModel,
+        ipAddress: ip,
+        protocol: _selectedProtocol,
+        port: port,
+        paperWidth: _paperWidth,
+        isDefault: false,
+      );
+
+      debugPrint('📋 [TestPrint] Using config: ${config.printerBrand} ${config.printerModel}');
+
+      // Use the printer service factory to get appropriate service
+      final printerService = PrinterServiceFactory.getPrinterServiceForConfig(config);
+      
+      final result = await printerService.printThermalReceipt(
+        ipAddress: ip,
+        text: testReceipt,
+        port: port,
+      );
+
+      if (result.success) {
+        debugPrint('✅ [TestPrint] Print successful');
+        SnackbarDemo(message: '✅ Test print successful!').showCustomSnackbar(context);
+      } else {
+        debugPrint('❌ [TestPrint] Print failed: ${result.message}');
+        SnackbarDemo(message: '❌ Test print failed: ${result.message}').showCustomSnackbar(context);
+      }
+    } catch (e) {
+      debugPrint('❌ [TestPrint] Error: $e');
+      SnackbarDemo(message: '❌ Test print error: $e').showCustomSnackbar(context);
+    } finally {
+      setState(() => isPrinting = false);
     }
   }
 
@@ -506,6 +585,56 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
             SizedBox(height: 12.h),
 
             // Test Print Button
+            Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: isPrinting ? null : _testPrint,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isPrinting
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text(
+                          'Test Print',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ),
+
           ],
         ),
       ),
