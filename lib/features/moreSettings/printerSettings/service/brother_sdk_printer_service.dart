@@ -360,51 +360,6 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
   }
 
   @override
-  Future<base.PrinterResult> printThermalImage({
-    required String ipAddress,
-    required Uint8List imageBytes,
-    int port = 9100,
-  }) async {
-    try {
-      debugPrint('🖨️ Brother SDK thermal image print - using PNG approach');
-      
-      // Save image to temporary file
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/thermal_receipt_${DateTime.now().millisecondsSinceEpoch}.png');
-      await tempFile.writeAsBytes(imageBytes);
-      
-      debugPrint('📁 Saved thermal image to: ${tempFile.path}');
-      
-      // Print the image using Brother SDK
-      final info = GenerateInfo(
-        ipAddress: ipAddress,
-        port: port,
-        paperSize: PaperSize.roll,
-        orientation: Orientation.portrait,
-      );
-      
-      final result = await BrotherPrinter.printImage(info: info, filePath: tempFile.path);
-      
-      // Cleanup
-      try {
-        await tempFile.delete();
-      } catch (_) {}
-      
-      if (result == PrinterStatus.success) {
-        debugPrint('✅ Brother SDK thermal image print successful');
-        return base.PrinterResult(success: true, message: 'Thermal image printed (SDK)', code: 0);
-      } else {
-        debugPrint('❌ Brother SDK thermal image print failed: $result');
-        return base.PrinterResult(success: false, message: 'SDK print failed: $result', code: -1);
-      }
-    } catch (e, st) {
-      debugPrint('❌ Brother SDK printThermalImage error: $e');
-      debugPrint(st.toString());
-      return base.PrinterResult(success: false, message: 'Error: $e', code: -1);
-    }
-  }
-
-  @override
   Future<base.PrinterStatus> getPrinterStatus({required String ipAddress, int port = 9100}) async {
     try {
       // Use brother_printer discovery to check for device presence
