@@ -1274,8 +1274,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           ),
           Expanded(
             child: Container(
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              constraints: BoxConstraints(minHeight: 40, maxHeight: 120),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: _isInternalMode
                     ? const Color(0xFF5B6B7D)
@@ -1283,6 +1283,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
                     child: TextField(
@@ -1298,11 +1299,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                             : 'Write a message...',
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
-                      maxLines: 1,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(currentMessages),
+                      maxLines: null,
+                      minLines: 1,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      //onSubmitted: (_) => _sendMessage(currentMessages),
                     ),
                   ),
                   IconButton(

@@ -10,25 +10,33 @@ import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/set_up_di.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
-import 'package:repair_cms/features/jobBooking/models/create_job_request.dart' as job_booking;
+import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
+    as job_booking;
 import 'package:repair_cms/features/jobBooking/widgets/thermal_receipt_widget.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
-import 'package:repair_cms/features/myJobs/models/single_job_model.dart' as my_jobs;
+import 'package:repair_cms/features/myJobs/models/single_job_model.dart'
+    as my_jobs;
 
 class JobThermalReceiptPreviewScreen extends StatefulWidget {
   final job_booking.CreateJobResponse jobResponse;
   final String printOption;
 
-  const JobThermalReceiptPreviewScreen({super.key, required this.jobResponse, required this.printOption});
+  const JobThermalReceiptPreviewScreen({
+    super.key,
+    required this.jobResponse,
+    required this.printOption,
+  });
 
   @override
-  State<JobThermalReceiptPreviewScreen> createState() => _JobThermalReceiptPreviewScreenState();
+  State<JobThermalReceiptPreviewScreen> createState() =>
+      _JobThermalReceiptPreviewScreenState();
 }
 
-class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPreviewScreen> {
+class _JobThermalReceiptPreviewScreenState
+    extends State<JobThermalReceiptPreviewScreen> {
   final _settingsService = PrinterSettingsService();
   final GlobalKey _receiptKey = GlobalKey();
   my_jobs.SingleJobModel? _completeJobData;
@@ -65,7 +73,8 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
       }
 
       // Precache signature image
-      if (data?.signatureFilePath != null && data!.signatureFilePath!.isNotEmpty) {
+      if (data?.signatureFilePath != null &&
+          data!.signatureFilePath!.isNotEmpty) {
         final signatureUrl = data.signatureFilePath!.startsWith('http')
             ? data.signatureFilePath!
             : '${ApiEndpoints.baseUrl}/file-upload/download/new?imagePath=${data.signatureFilePath}';
@@ -115,8 +124,15 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('No Thermal Printers'),
-          content: const Text('Please configure a thermal printer in Settings > Printer Settings.'),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          content: const Text(
+            'Please configure a thermal printer in Settings > Printer Settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
       return;
@@ -135,14 +151,21 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
               final printer = thermalPrinters[index];
               return ListTile(
                 leading: const Icon(Icons.print),
-                title: Text('${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}'),
+                title: Text(
+                  '${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}',
+                ),
                 subtitle: Text('${printer.ipAddress}:${printer.port}'),
                 onTap: () => Navigator.of(context).pop(printer),
               );
             },
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
     );
 
@@ -157,9 +180,9 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
       debugPrint('⏳ [ThermalPrint] Waiting for images to precache...');
       _talker.info('Waiting for images to load...');
 
-      // Wait up to 5 seconds for precaching
+      // Wait up to 1 second for precaching
       int attempts = 0;
-      while (!_isImagesPrecached && attempts < 50) {
+      while (!_isImagesPrecached && attempts < 10) {
         await Future.delayed(const Duration(milliseconds: 100));
         attempts++;
       }
@@ -171,11 +194,15 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
 
     final startTime = DateTime.now();
     _talker.info('🖨️ [JobThermalReceipt] Print request started');
-    _talker.debug('Printer: ${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}');
+    _talker.debug(
+      'Printer: ${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}',
+    );
     _talker.debug('IP: ${printer.ipAddress}:${printer.port ?? 9100}');
     _talker.debug('Paper Width: ${printer.paperWidth ?? 80}mm');
 
-    debugPrint('🖨️ Printing thermal receipt to ${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}');
+    debugPrint(
+      '🖨️ Printing thermal receipt to ${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}',
+    );
 
     showDialog(
       context: context,
@@ -186,7 +213,11 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
             padding: EdgeInsets.all(24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Capturing receipt...')],
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Capturing receipt...'),
+              ],
             ),
           ),
         ),
@@ -194,20 +225,14 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
     );
 
     try {
-      // Wait longer for widget to fully render (especially QR/barcode generation)
+      // Wait for widget to fully render (especially QR/barcode generation)
       _talker.debug('⏳ Waiting for widget render...');
 
-      // Wait for frame to complete
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Wait for single frame to complete
+      await WidgetsBinding.instance.endOfFrame;
+      await Future.delayed(const Duration(milliseconds: 100));
 
-      // Force frames to complete and ensure widget is painted
-      for (int i = 0; i < 3; i++) {
-        await WidgetsBinding.instance.endOfFrame;
-        await Future.delayed(const Duration(milliseconds: 200));
-        _talker.debug('Frame $i completed');
-      }
-
-      _talker.debug('✅ Widget should be fully rendered');
+      _talker.debug('✅ Widget rendered');
 
       // Capture the receipt widget as image
       _talker.debug('📷 Starting image capture...');
@@ -218,7 +243,9 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
         throw Exception('Failed to capture receipt image');
       }
 
-      debugPrint('📷 [ThermalPrint] Captured image: ${imageBytes.length} bytes');
+      debugPrint(
+        '📷 [ThermalPrint] Captured image: ${imageBytes.length} bytes',
+      );
       _talker.info('✅ Image captured: ${imageBytes.length} bytes');
 
       if (mounted) {
@@ -233,7 +260,11 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
                 padding: EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Printing...')],
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Printing...'),
+                  ],
                 ),
               ),
             ),
@@ -243,7 +274,10 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
 
       // Print using image-based method with fallback
       _talker.debug('📤 Sending to PrinterServiceFactory...');
-      final result = await PrinterServiceFactory.printThermalReceiptImage(config: printer, imageBytes: imageBytes);
+      final result = await PrinterServiceFactory.printThermalReceiptImage(
+        config: printer,
+        imageBytes: imageBytes,
+      );
 
       final duration = DateTime.now().difference(startTime);
       _talker.info('Print operation completed in ${duration.inMilliseconds}ms');
@@ -253,12 +287,20 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
 
         if (result.success) {
           debugPrint('✅ [ThermalPrint] Print successful');
-          _talker.info('✅ [JobThermalReceipt] Print successful! Duration: ${duration.inMilliseconds}ms');
-          SnackbarDemo(message: '✅ Receipt printed successfully!').showCustomSnackbar(context);
+          _talker.info(
+            '✅ [JobThermalReceipt] Print successful! Duration: ${duration.inMilliseconds}ms',
+          );
+          SnackbarDemo(
+            message: '✅ Receipt printed successfully!',
+          ).showCustomSnackbar(context);
         } else {
           debugPrint('❌ [ThermalPrint] Print failed: ${result.message}');
-          _talker.error('❌ [JobThermalReceipt] Print failed: ${result.message} (code: ${result.code})');
-          SnackbarDemo(message: '❌ Print failed: ${result.message}').showCustomSnackbar(context);
+          _talker.error(
+            '❌ [JobThermalReceipt] Print failed: ${result.message} (code: ${result.code})',
+          );
+          SnackbarDemo(
+            message: '❌ Print failed: ${result.message}',
+          ).showCustomSnackbar(context);
         }
       }
     } catch (e, st) {
@@ -276,21 +318,27 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
   Future<Uint8List?> _captureReceiptAsImage() async {
     try {
       _talker.debug('🔍 Finding RepaintBoundary...');
-      final boundary = _receiptKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _receiptKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) {
         debugPrint('❌ [ImageCapture] Render boundary not found');
-        _talker.error('❌ RepaintBoundary not found - widget may not be rendered');
+        _talker.error(
+          '❌ RepaintBoundary not found - widget may not be rendered',
+        );
         return null;
       }
       _talker.debug('✅ RepaintBoundary found');
 
-      // Capture at high resolution for better print quality (2x pixel ratio)
-      _talker.debug('📸 Capturing image at 2x pixel ratio...');
-      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
+      // Capture at native resolution for faster processing
+      _talker.debug('📸 Capturing image at 1x pixel ratio...');
+      final ui.Image image = await boundary.toImage(pixelRatio: 1.0);
       _talker.debug('✅ Image captured: ${image.width}x${image.height}');
 
       _talker.debug('🔄 Converting to PNG bytes...');
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
 
       if (byteData == null) {
         debugPrint('❌ [ImageCapture] Failed to convert image to bytes');
@@ -299,42 +347,14 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
       }
 
       final Uint8List pngBytes = byteData.buffer.asUint8List();
+      _talker.info('📦 PNG size: ${pngBytes.length} bytes');
 
-      // Analyze captured image for debugging
-      final rawByteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      if (rawByteData != null) {
-        int blackPixels = 0;
-        int whitePixels = 0;
-        int otherPixels = 0;
-
-        // Sample first 1000 pixels
-        for (int i = 0; i < rawByteData.lengthInBytes && i < 4000; i += 4) {
-          final r = rawByteData.getUint8(i);
-          final g = rawByteData.getUint8(i + 1);
-          final b = rawByteData.getUint8(i + 2);
-          final a = rawByteData.getUint8(i + 3);
-          final gray = ((r * 0.299) + (g * 0.587) + (b * 0.114)).round();
-
-          if (a < 128) continue; // Skip transparent
-
-          if (gray < 128) {
-            blackPixels++;
-          } else if (gray > 200) {
-            whitePixels++;
-          } else {
-            otherPixels++;
-          }
-        }
-
-        _talker.info('🎨 Image analysis (first 1000px): Black=$blackPixels, White=$whitePixels, Other=$otherPixels');
-
-        if (blackPixels == 0) {
-          _talker.warning('⚠️ WARNING: No black pixels detected! Image may be blank or transparent');
-        }
-      }
-
-      debugPrint('✅ [ImageCapture] Captured ${image.width}x${image.height} image (${pngBytes.length} bytes)');
-      _talker.info('✅ PNG encoded: ${pngBytes.length} bytes (${image.width}x${image.height})');
+      debugPrint(
+        '✅ [ImageCapture] Captured ${image.width}x${image.height} image (${pngBytes.length} bytes)',
+      );
+      _talker.info(
+        '✅ PNG encoded: ${pngBytes.length} bytes (${image.width}x${image.height})',
+      );
 
       return pngBytes;
     } catch (e, st) {
@@ -349,7 +369,9 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
   my_jobs.SingleJobModel _convertToSingleJobModel() {
     final data = widget.jobResponse.data;
 
-    debugPrint('📋 [ThermalReceiptPreview] Converting job response to SingleJobModel');
+    debugPrint(
+      '📋 [ThermalReceiptPreview] Converting job response to SingleJobModel',
+    );
 
     // Get data from JobBookingCubit state for receipt footer and customer details
     final jobBookingCubit = context.read<JobBookingCubit>();
@@ -369,7 +391,8 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
 
     // Use data from response where available, fallback to cubit data
     final finalReceiptFooter = data?.receiptFooter ?? receiptFooterFromCubit;
-    final finalCustomerDetails = data?.customerDetails ?? customerDetailsFromCubit;
+    final finalCustomerDetails =
+        data?.customerDetails ?? customerDetailsFromCubit;
     final finalSalutation = data?.salutationHTMLmarkup ?? salutationFromCubit;
     final finalTerms = data?.termsAndConditionsHTMLmarkup ?? termsFromCubit;
 
@@ -384,7 +407,11 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
 
     // Calculate totals from assigned items
     final calculatedSubTotal =
-        data?.assignedItems?.fold<double>(0.0, (sum, item) => sum + (item.salePriceIncVat ?? 0)) ?? 0.0;
+        data?.assignedItems?.fold<double>(
+          0.0,
+          (sum, item) => sum + (item.salePriceIncVat ?? 0),
+        ) ??
+        0.0;
 
     return my_jobs.SingleJobModel(
       success: widget.jobResponse.success,
@@ -401,7 +428,10 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
         total: calculatedSubTotal,
         subTotal: calculatedSubTotal,
         discount: 0.0,
-        jobTrackingNumber: _completeJobData?.data?.jobTrackingNumber ?? data?.jobTrackingNumber ?? data?.jobNo,
+        jobTrackingNumber:
+            _completeJobData?.data?.jobTrackingNumber ??
+            data?.jobTrackingNumber ??
+            data?.jobNo,
         assignedItems: assignedItemsList,
         device: data?.device
             ?.map(
@@ -409,7 +439,9 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
                 sId: d.sId,
                 brand: d.brand,
                 model: d.model,
-                condition: d.condition?.map((c) => my_jobs.Condition(value: c.value, id: c.id)).toList(),
+                condition: d.condition
+                    ?.map((c) => my_jobs.Condition(value: c.value, id: c.id))
+                    .toList(),
               ),
             )
             .toList(),
@@ -417,7 +449,12 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
             ?.map(
               (d) => my_jobs.Defect(
                 sId: d.sId,
-                defect: d.defect?.map((item) => my_jobs.DefectItem(value: item.value, id: item.id)).toList(),
+                defect: d.defect
+                    ?.map(
+                      (item) =>
+                          my_jobs.DefectItem(value: item.value, id: item.id),
+                    )
+                    .toList(),
                 description: d.description,
               ),
             )
@@ -476,7 +513,9 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         if (state is JobDetailSuccess) {
-          debugPrint('✅ [ThermalReceiptPreview] Got tracking: ${state.job.data?.jobTrackingNumber}');
+          debugPrint(
+            '✅ [ThermalReceiptPreview] Got tracking: ${state.job.data?.jobTrackingNumber}',
+          );
           setState(() {
             _completeJobData = state.job;
             _isLoadingCompleteData = false;
@@ -491,19 +530,36 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
         appBar: AppBar(
           backgroundColor: AppColors.whiteColor,
           elevation: 0,
-          leading: IconButton(icon: const Icon(Icons.close), onPressed: () => _goHome()),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => _goHome(),
+          ),
           title: Text(
             'Thermal Receipt Preview',
-            style: TextStyle(color: Colors.black87, fontSize: 18.sp, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           centerTitle: true,
-          actions: [IconButton(icon: const Icon(Icons.print), onPressed: _showPrinterSelection, tooltip: 'Print')],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.print),
+              onPressed: _showPrinterSelection,
+              tooltip: 'Print',
+            ),
+          ],
         ),
         body: _isLoadingCompleteData
             ? const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Loading receipt data...')],
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Loading receipt data...'),
+                  ],
                 ),
               )
             : SingleChildScrollView(
@@ -538,7 +594,11 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, -2)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, -2),
+              ),
             ],
           ),
           child: Row(
@@ -552,7 +612,11 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
                   ),
                   child: Text(
                     'Done',
-                    style: TextStyle(color: AppColors.primary, fontSize: 16.sp, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -566,7 +630,11 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
                   ),
                   child: Text(
                     'Print',
-                    style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart'
     hide DateFormat;
 
@@ -13,6 +14,8 @@ class ThermalReceiptWidget extends StatelessWidget {
   final bool logoEnabled;
   final bool qrCodeEnabled;
   final bool enableTelephoneNumber;
+  final double
+  fontScale; // Scale factor for all fonts (1.0 = normal, 0.8 = 20% smaller)
 
   const ThermalReceiptWidget({
     super.key,
@@ -20,6 +23,7 @@ class ThermalReceiptWidget extends StatelessWidget {
     this.logoEnabled = true,
     this.qrCodeEnabled = true,
     this.enableTelephoneNumber = true,
+    this.fontScale = 1.0,
   });
 
   String _formatDate(String? dateString) {
@@ -568,7 +572,7 @@ class ThermalReceiptWidget extends StatelessWidget {
   Widget _buildText(
     String text, {
     bool bold = false,
-    double fontSize = 14,
+    double fontSize = 12.0,
     Color? color,
     TextAlign align = TextAlign.center,
   }) {
