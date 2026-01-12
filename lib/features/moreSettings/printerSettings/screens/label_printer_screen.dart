@@ -908,7 +908,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       // Shift the canvas origin to compensate for printer's unprintable margins
       // Adjust offsets: move content down more to center vertically
       const double offsetX =
-          30.0; // Shift right (reduced from 50 to push content more to the right)
+          80.0; // Shift right (reduced from 50 to push content more to the right)
       const double offsetY =
           50.0; // Shift down very little (reduced from 15 to move content DOWN more)
       canvas.translate(offsetX, offsetY);

@@ -401,39 +401,14 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   }
 
   /// Build info text based on label settings
-  /// Build info text based on label settings
   Widget _buildInfoText() {
-    // Build first line: Job | Customer | Device | IMEI
-    final List<String> firstLine = [];
-    if (_labelSettings.showJobNo) firstLine.add(_getJobNumber());
-    if (_labelSettings.showCustomerName) firstLine.add(_getCustomerName());
-    if (_labelSettings.showModelBrand) firstLine.add(_getDeviceName());
-
-    // Build second line: Date | Job Type | Symptom | Location
-    final List<String> secondLine = [];
-    if (_labelSettings.showDate) {
-      final date = DateTime.now();
-      secondLine.add(
-        '${date.day.toString().padLeft(2, '0')} ${_getMonthName(date.month)} ${date.year}',
-      );
-    }
-    if (_labelSettings.showJobType) {
-      final jobType = widget.jobResponse.data?.jobType;
-      if (jobType != null && jobType.isNotEmpty) {
-        secondLine.add(jobType);
-      }
-    }
-    if (_labelSettings.showSymptom) secondLine.add(_getDefect());
-    if (_labelSettings.showPhysicalLocation) {
-      secondLine.add('BOX: ${_getPhysicalLocation()}');
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (firstLine.isNotEmpty)
+        // Line 1: Customer Name
+        if (_labelSettings.showCustomerName)
           Text(
-            firstLine.join(' | '),
+            _getCustomerName(),
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w600,
@@ -442,11 +417,32 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
             ),
             textAlign: TextAlign.left,
           ),
-        if (firstLine.isNotEmpty && secondLine.isNotEmpty)
+        if (_labelSettings.showCustomerName && _labelSettings.showModelBrand)
           SizedBox(height: 4.h),
-        if (secondLine.isNotEmpty)
+        
+        // Line 2: Device Model/Brand
+        if (_labelSettings.showModelBrand)
           Text(
-            secondLine.join(' | '),
+            _getDeviceName(),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+              height: 1.3,
+            ),
+            textAlign: TextAlign.left,
+          ),
+        if (_labelSettings.showModelBrand && 
+            (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation))
+          SizedBox(height: 4.h),
+        
+        // Line 3: Symptom/Defect and Location
+        if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation)
+          Text(
+            [
+              if (_labelSettings.showSymptom) _getDefect(),
+              if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+            ].join(' | '),
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w600,
@@ -580,7 +576,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // Apply printer margin compensation (same as test border)
       // Shift canvas origin to account for unprintable margins
       const double offsetX =
-          30.0; // Shift right (reduced from 50 to push content more to the right)
+          80.0; // Shift right (reduced from 50 to push content more to the right)
       const double offsetY = 50.0; // Shift down
       canvas.translate(offsetX, offsetY);
 
@@ -590,7 +586,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       // Calculate layout dimensions (percentage-based, using drawable area)
       // Use percentage of drawable dimensions so layout scales with resolution
-      final padding = drawableWidth * 0.02; // 2% padding
+      final padding = 12.0; // Fixed margin for canvas content
       final contentWidth = drawableWidth - (padding * 2);
       final barcodeWidth =
           contentWidth * 0.65; // 65% of content width for barcode
@@ -622,7 +618,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
             text: _getJobNumber(),
             style: TextStyle(
               color: Colors.black,
-              fontSize: 36.sp,
+              fontSize: 26.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -658,7 +654,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
           ),
         );
 
-        final qrX = drawableWidth - padding - qrSize;
+        final qrX = drawableWidth - padding - qrSize + 4.0; // Align right
         canvas.save();
         canvas.translate(qrX, padding); // Align with top
         canvas.scale(qrSize / 200); // QrPainter draws at ~200px
@@ -667,20 +663,17 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       }
 
       // Add spacing before text info
-      currentY += 8;
+      currentY += 6.0;
 
       // Font size for text info
-      final fontSize = 36.sp;
+      final fontSize = 26.sp;
+      final lineSpacing = 4.0; // Reduced gap between lines
 
-      // Build and draw first line of info
-      final List<String> firstLine = [];
-      if (_labelSettings.showCustomerName) firstLine.add(_getCustomerName());
-      if (_labelSettings.showModelBrand) firstLine.add(_getDeviceName());
-
-      if (firstLine.isNotEmpty) {
+      // Build and draw first line: Customer Name
+      if (_labelSettings.showCustomerName) {
         final infoPainter = TextPainter(
           text: TextSpan(
-            text: firstLine.join(' | '),
+            text: _getCustomerName(),
             style: TextStyle(
               color: Colors.black,
               fontSize: fontSize,
@@ -688,24 +681,43 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
             ),
           ),
           textDirection: TextDirection.ltr,
-          //maxLines: 1
+          maxLines: 1,
         );
         infoPainter.layout(maxWidth: contentWidth);
         infoPainter.paint(canvas, Offset(padding, currentY));
-        currentY += infoPainter.height + 8; // Use actual height + spacing
+        currentY += infoPainter.height + lineSpacing;
       }
 
-      // Build and draw second line (symptom/defect and location)
-      final List<String> secondLine = [];
-      if (_labelSettings.showSymptom) secondLine.add(_getDefect());
+      // Build and draw second line: Device Model/Brand
+      if (_labelSettings.showModelBrand) {
+        final devicePainter = TextPainter(
+          text: TextSpan(
+            text: _getDeviceName(),
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        );
+        devicePainter.layout(maxWidth: contentWidth);
+        devicePainter.paint(canvas, Offset(padding, currentY));
+        currentY += devicePainter.height + lineSpacing;
+      }
+
+      // Build and draw third line: Symptom/Defect and Location
+      final List<String> thirdLine = [];
+      if (_labelSettings.showSymptom) thirdLine.add(_getDefect());
       if (_labelSettings.showPhysicalLocation) {
-        secondLine.add('BOX: ${_getPhysicalLocation()}');
+        thirdLine.add('BOX: ${_getPhysicalLocation()}');
       }
 
-      if (secondLine.isNotEmpty) {
+      if (thirdLine.isNotEmpty) {
         final defectPainter = TextPainter(
           text: TextSpan(
-            text: secondLine.join(' | '),
+            text: thirdLine.join(' | '),
             style: TextStyle(
               color: Colors.black,
               fontSize: fontSize,
@@ -717,7 +729,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         );
         defectPainter.layout(maxWidth: contentWidth);
         defectPainter.paint(canvas, Offset(padding, currentY));
-        currentY += defectPainter.height; // Update position for next element
+        currentY += defectPainter.height + lineSpacing;
       }
 
       // End recording and create image
