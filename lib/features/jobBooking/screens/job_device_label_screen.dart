@@ -404,20 +404,31 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   /// Other TD-2: 203 DPI (8 dots/mm)
   /// TD-4: 300 DPI (11.811 dots/mm)
   double _getDotsPerMm(PrinterConfigModel? printer) {
-    final model = printer?.printerModel?.toUpperCase() ?? '';
-
-    // TD-2350D and TD-2350DA are 300 DPI printers
-    if (model.contains('TD-2350')) {
-      return 11.82; // 300 DPI: 591 dots / 50mm = 11.82 dots/mm
-    }
-
-    // TD-4 series are 300 DPI
-    if (model.startsWith('TD-4')) {
-      return 11.811; // 300 DPI exact
-    }
-
-    return 8.0; // 203 DPI (other TD-2 and default)
+  final model = printer?.printerModel?.toUpperCase() ?? '';
+  
+  debugPrint('🔍 Checking printer model: "$model"');
+  
+  // TD-4 series MUST be checked FIRST (before TD-2)
+  if (model.startsWith('TD-4')) {
+    debugPrint('✅ TD-4 series detected: 300 DPI (11.811 dots/mm)');
+    return 11.811; // 300 DPI for TD-4
   }
+  
+  // TD-2350D and TD-2350DA are 300 DPI printers
+  if (model.contains('TD-2350')) {
+    debugPrint('✅ TD-2350 series detected: 300 DPI (11.82 dots/mm)');
+    return 11.82;
+  }
+  
+  // Other TD-2 series (non-2350) are 203 DPI
+  if (model.startsWith('TD-2')) {
+    debugPrint('✅ Other TD-2 series detected: 203 DPI (8.0 dots/mm)');
+    return 8.0;
+  }
+  
+  debugPrint('⚠️ Unknown printer model, using default 203 DPI');
+  return 8.0;
+}
 
   /// Generate label image at exact printer resolution
   /// TD-2350D: 300 DPI (11.82 dots/mm) - 50×26mm = 591×307 dots

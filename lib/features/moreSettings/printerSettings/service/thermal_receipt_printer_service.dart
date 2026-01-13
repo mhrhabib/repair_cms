@@ -183,6 +183,68 @@ class ThermalReceiptPrinterService {
     return commands;
   }
 
+  /// Print raw ESC/POS bytes directly to thermal printer
+  /// No image generation - pure ESC/POS commands
+  Future<PrinterResult> printRawEscPos({
+    required String ipAddress,
+    required List<int> escposBytes,
+    int port = 9100,
+  }) async {
+    final startTime = DateTime.now();
+    _talker.info(
+      '🖨️ [RawESCPOS] Starting print to $ipAddress:$port',
+    );
+    _talker.debug('📦 ESC/POS data: ${escposBytes.length} bytes');
+
+    try {
+      debugPrint(
+        '🖨️ [RawESCPOS: $ipAddress] Printing ${escposBytes.length} bytes',
+      );
+
+      // Connect to printer
+      _talker.debug('🌐 Connecting to $ipAddress:$port...');
+      final socket = await Socket.connect(
+        ipAddress,
+        port,
+        timeout: const Duration(seconds: 5),
+      );
+      debugPrint('🌐 Connected to printer');
+      _talker.info('✅ Socket connected');
+
+      // Send raw ESC/POS bytes
+      _talker.debug('📤 Sending ESC/POS commands to printer...');
+      socket.add(escposBytes);
+      await socket.flush();
+      
+      // Wait briefly for printer to process
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      await socket.close();
+      _talker.debug('🔌 Socket closed');
+
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [RawESCPOS: $ipAddress] Print successful');
+      _talker.info(
+        '✅ Print completed successfully in ${duration.inMilliseconds}ms',
+      );
+      return PrinterResult(
+        success: true,
+        message: 'Thermal receipt printed successfully',
+        code: 0,
+      );
+    } catch (e, st) {
+      debugPrint('❌ [RawESCPOS: $ipAddress] Error: $e');
+      debugPrint('Stack trace: $st');
+      _talker.error('❌ Print failed: $e');
+      _talker.debug('Stack trace: $st');
+      return PrinterResult(
+        success: false,
+        message: 'Print error: $e',
+        code: -1,
+      );
+    }
+  }
+
   /// Check if printer is reachable
   Future<PrinterResult> checkConnection({
     required String ipAddress,

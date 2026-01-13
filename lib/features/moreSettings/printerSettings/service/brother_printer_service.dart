@@ -628,45 +628,34 @@ class BrotherPrinterService implements BasePrinterService {
     // 3. Enter raster mode
     bytes.addAll([esc, 0x69, 0x61, 0x01]); // ESC i a 1
 
-    // 4. TD-4 specific: Set media type (die-cut/variable length mode)
-    // This is critical for TD-4 to accept non-standard label sizes
-    if (dotsPerMm > 10) {
-      // TD-4 series needs this command
-      bytes.addAll([esc, 0x69, 0x7A]); // ESC i z - Extended media settings
+    // 4. Set media type and print information
+    bytes.addAll([esc, 0x69, 0x7A]); // ESC i z - Media settings
 
-      final validFlag = 0x80; // Bit 7: Valid command
-      final autoCut = 0x02; // Bit 1: Auto-cut
-      final highQuality = 0x04; // Bit 2: High quality (for TD-4)
-      final mirrorOff = 0x00; // Bit 0: No mirror
+    final validFlag = 0x80; // Bit 7: Valid command
+    final autoCut = 0x02; // Bit 1: Auto-cut
+    final highQuality = dotsPerMm > 10 ? 0x04 : 0x00; // Bit 2: High quality for TD-4
+    final mirrorOff = 0x00; // Bit 0: No mirror
 
-      bytes.add(validFlag | autoCut | highQuality | mirrorOff);
+    bytes.add(validFlag | autoCut | highQuality | mirrorOff);
 
-      // Media width in mm (TD-4 requires this)
-      bytes.add(labelWidth & 0xFF);
+    // Media width in mm
+    bytes.add(labelWidth & 0xFF);
 
-      // Media length in mm
-      bytes.add(labelHeight & 0xFF);
+    // Media length in mm
+    bytes.add(labelHeight & 0xFF);
 
-      // Raster line count (0 = auto-calculate)
-      bytes.addAll([0x00, 0x00, 0x00, 0x00]);
+    // Raster line count (0 = auto-calculate)
+    bytes.addAll([0x00, 0x00, 0x00, 0x00]);
 
-      // Page number (0 = single page)
-      bytes.add(0x00);
+    // Page number (0 = single page)
+    bytes.add(0x00);
 
-      // Reserved byte
-      bytes.add(0x00);
+    // Reserved byte
+    bytes.add(0x00);
 
-      _talker.debug(
-        '[BrotherRawTCP] TD-4: Set media ${labelWidth}x${labelHeight}mm, die-cut mode',
-      );
-    } else {
-      // 4. Set print information (TD-2 standard)
-      bytes.addAll([esc, 0x69, 0x7A]);
-      bytes.add(0x80 | 0x02 | 0x00); // Valid | auto-cut | normal quality
-      bytes.add(labelWidth & 0xFF);
-      bytes.add(labelHeight & 0xFF);
-      bytes.addAll([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-    }
+    _talker.debug(
+      '[BrotherRawTCP] Media settings: ${labelWidth}x${labelHeight}mm, ${dotsPerMm > 10 ? "high quality (TD-4)" : "normal (TD-2)"}',
+    );
 
     // 5. Set orientation
     bytes.addAll([esc, 0x69, 0x4C, 0x00]); // Portrait
@@ -674,18 +663,7 @@ class BrotherPrinterService implements BasePrinterService {
     // 6. Set margins
     bytes.addAll([esc, 0x69, 0x64, 0x00, 0x00]); // Left margin = 0
 
-    // 7. TD-4 specific: Set advanced mode for variable length labels
-    if (dotsPerMm > 10) {
-      bytes.addAll([
-        esc,
-        0x69,
-        0x4B,
-        0x08,
-      ]); // ESC i K 08 - Variable length mode
-      _talker.debug('[BrotherRawTCP] TD-4: Enabled variable length mode');
-    }
-
-    // 8. No compression
+    // 7. No compression
     bytes.addAll([0x4D, 0x00]); // M 0x00
 
     // 8. Convert image to raster data
@@ -760,11 +738,11 @@ class BrotherPrinterService implements BasePrinterService {
       bytes.addAll(pixelData);
     }
 
-    // 9. Print and feed
-    bytes.add(0x1A); // SUB
-
-    // 10. Form feed
-    bytes.add(0x0C); // FF
+    // 9. Print command
+    bytes.add(0x1A); // SUB - Print command
+    
+    // 10. Form feed to eject label
+    bytes.add(0x0C); // FF - Form feed
 
     _talker.info(
       '[BrotherRawTCP] ✅ Generated ${bytes.length} bytes of raster data',

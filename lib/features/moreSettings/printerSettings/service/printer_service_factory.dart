@@ -257,4 +257,25 @@ class PrinterServiceFactory {
       paperWidth: paperWidth,
     );
   }
+
+  /// Print raw ESC/POS bytes (pure commands, no image generation)
+  /// This method sends raw ESC/POS commands directly to the printer
+  /// Supports all ESC/POS compatible thermal printers
+  static Future<PrinterResult> printRawEscPos({
+    required PrinterConfigModel config,
+    required List<int> escposBytes,
+  }) async {
+    debugPrint(
+      '🖨️ [RawESCPOS] Printing ${escposBytes.length} bytes to ${config.printerBrand} thermal printer',
+    );
+
+    // Use dedicated thermal receipt printer service
+    final thermalService = ThermalReceiptPrinterService();
+
+    return await thermalService.printRawEscPos(
+      ipAddress: config.ipAddress,
+      escposBytes: escposBytes,
+      port: config.port ?? 9100,
+    );
+  }
 }

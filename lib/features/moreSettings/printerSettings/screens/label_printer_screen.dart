@@ -465,24 +465,29 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               onChanged: (value) {
                 setState(() {
                   _selectedModel = value;
-                  // Auto-select correct label size based on printer model
+                  // Auto-select 50x26mm label size for both TD-2 and TD-4
+                  // FIXED VERSION
                   if (value != null && _selectedBrand == 'Brother') {
                     if (value.startsWith('TD-4')) {
-                      // TD-4 series: 100×150mm labels
+                      // TD-4 series: use 100×150mm labels
                       _selectedLabelSize = LabelSize(
                         width: 100,
                         height: 150,
                         name: '100x150 (TD-4)',
                       );
-                      debugPrint('🔧 Auto-selected TD-4 label size: 100×150mm');
+                      debugPrint(
+                        '🔧 Auto-selected label size: 100×150mm for ${value}',
+                      );
                     } else if (value.startsWith('TD-2')) {
-                      // TD-2 series: 50×26mm labels
+                      // TD-2 series: use 50×26mm labels
                       _selectedLabelSize = LabelSize(
                         width: 50,
                         height: 26,
-                        name: '50x26 (TD-2350D)',
+                        name: '50x26 (TD-2)',
                       );
-                      debugPrint('🔧 Auto-selected TD-2 label size: 50×26mm');
+                      debugPrint(
+                        '🔧 Auto-selected label size: 50×26mm for ${value}',
+                      );
                     }
                   }
                 });
