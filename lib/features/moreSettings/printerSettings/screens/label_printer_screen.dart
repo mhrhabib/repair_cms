@@ -763,7 +763,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               ),
             if (_ipController.text.trim().isNotEmpty) SizedBox(height: 8.h),
 
-            // Test Button with EXACT 612x307 dots (52x26mm @ 300 DPI)
+            // Test Button with EXACT 591x307 dots (50x26mm @ 300 DPI)
             if (_ipController.text.trim().isNotEmpty)
               Padding(
                 padding: EdgeInsets.only(top: 8.h),
@@ -773,10 +773,10 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                   child: OutlinedButton(
                     onPressed: () async {
                       SnackbarDemo(
-                        message: 'Generating 612×307 test...',
+                        message: 'Generating 591×307 test...',
                       ).showCustomSnackbar(context);
 
-                      // Generate EXACT 612x307 border test
+                      // Generate EXACT 591x307 border test
                       final testImage = await _generateExact591x307BorderTest();
 
                       if (testImage == null) {
@@ -803,11 +803,11 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                       );
 
                       debugPrint(
-                        '🖨️ [612x307 Test] Printing to ${_selectedModel ?? "unknown"}',
+                        '🖨️ [591x307 Test] Printing to ${_selectedModel ?? "unknown"}',
                       );
 
                       SnackbarDemo(
-                        message: 'Sending 612×307 test...',
+                        message: 'Sending 591×307 test...',
                       ).showCustomSnackbar(context);
 
                       try {
@@ -828,7 +828,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                           ).showCustomSnackbar(context);
                         }
                       } catch (e, st) {
-                        debugPrint('❌ 612x307 test failed: $e\n$st');
+                        debugPrint('❌ 591x307 test failed: $e\n$st');
                         SnackbarDemo(
                           message: '❌ Test failed: $e',
                         ).showCustomSnackbar(context);
@@ -846,7 +846,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                         const Icon(Icons.crop_square, color: Colors.orange),
                         SizedBox(width: 8.w),
                         Text(
-                          'Test 612×307 (52×26mm @300DPI)',
+                          'Test 591×307 (50×26mm @300DPI)',
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: Colors.orange,
@@ -880,16 +880,16 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   /// Generate test border image to verify full label dimensions
   /// Creates a 4-dot black border around the label edges at NATIVE printer resolution
 
-  /// Generate EXACT 612x307 dots image (52x26mm @ 300 DPI)
+  /// Generate EXACT 591x307 dots image (50x26mm @ 300 DPI)
   /// This is the exact resolution for TD-2350D at 300 DPI
   Future<Uint8List?> _generateExact591x307BorderTest() async {
     try {
-      // EXACT dimensions: 612 x 307 dots = 52mm x 26mm @ 300 DPI
-      const int widthPx = 612;
+      // EXACT dimensions: 591 x 307 dots = 50mm x 26mm @ 300 DPI
+      const int widthPx = 591;
       const int heightPx = 307;
 
-      debugPrint('🎨 [612x307 Test] EXACT: $widthPx×$heightPx dots');
-      debugPrint('🎨 [612x307 Test] = 52×26mm @ 300 DPI (11.82 dots/mm)');
+      debugPrint('🎨 [591x307 Test] EXACT: $widthPx×$heightPx dots');
+      debugPrint('🎨 [591x307 Test] = 50×26mm @ 300 DPI (11.82 dots/mm)');
 
       // Create canvas at EXACT dimensions
       final recorder = ui.PictureRecorder();
@@ -907,8 +907,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
 
       // Shift the canvas origin to compensate for printer's unprintable margins
       // Adjust offsets: move content down more to center vertically
-      const double offsetX =
-          80.0; // Shift right (reduced from 50 to push content more to the right)
+      const double offsetX = 50.0; // Shift right
       const double offsetY =
           50.0; // Shift down very little (reduced from 15 to move content DOWN more)
       canvas.translate(offsetX, offsetY);
@@ -1022,7 +1021,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       final paragraphBuilder = ui.ParagraphBuilder(paragraphStyle)
         ..pushStyle(textStyle)
         ..addText(
-          '612×307\nCenter: ${centerX.toInt()},${centerY.toInt()}\nTL TR\nBL BR',
+          '591×307\nCenter: ${centerX.toInt()},${centerY.toInt()}\nTL TR\nBL BR',
         );
 
       final paragraph = paragraphBuilder.build()
@@ -1044,19 +1043,19 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       image.dispose();
 
       if (byteData == null) {
-        debugPrint('❌ Failed to convert 612x307 image to bytes');
+        debugPrint('❌ Failed to convert 591x307 image to bytes');
         return null;
       }
 
       final imageBytes = byteData.buffer.asUint8List();
       final bytesLength = imageBytes.length;
       debugPrint(
-        '✅ [612x307 Test] Generated EXACT $widthPx×$heightPx image ($bytesLength bytes)',
+        '✅ [591x307 Test] Generated EXACT $widthPx×$heightPx image ($bytesLength bytes)',
       );
 
       return imageBytes;
     } catch (e, st) {
-      debugPrint('❌ Error generating 612x307 test: $e');
+      debugPrint('❌ Error generating 591x307 test: $e');
       debugPrint('Stack trace: $st');
       return null;
     }
