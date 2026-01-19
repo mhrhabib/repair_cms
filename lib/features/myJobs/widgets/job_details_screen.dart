@@ -540,6 +540,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
   Widget _buildJobDetailsScreen(SingleJobModel job) {
     debugPrint('Building JobDetailsScreen for Job ID: ${job.data!.sId}');
     return SingleChildScrollView(
+      physics: NeverScrollableScrollPhysics(),
       child: Column(
         children: [
           // Toggle Switches Section
@@ -641,7 +642,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                       items: ['Neutral', 'High', 'Urgent'],
                       onChanged: _onPrioritySelected,
                     ),
-                    SizedBox(height: 20.h),
+                    SizedBox(height: 12.h),
 
                     // Due Date
                     Text(
@@ -689,7 +690,7 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 20.h),
+                    SizedBox(height: 12.h),
 
                     // Assignee
                     // Replace the assignee section with this:
@@ -746,13 +747,13 @@ class _JobDetailsContentState extends State<JobDetailsContent> {
                   ],
                 ),
 
-                // Customer Information
-                SizedBox(height: 16.h),
-                _buildCustomerInfoCard(job),
+                // // Customer Information
+                // SizedBox(height: 16.h),
+                // _buildCustomerInfoCard(job),
 
-                // Financial Information
-                SizedBox(height: 16.h),
-                _buildFinancialInfoCard(job),
+                // // Financial Information
+                // SizedBox(height: 16.h),
+                // _buildFinancialInfoCard(job),
 
                 SizedBox(height: 24.h),
               ],

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'dart:io' as io;
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
@@ -200,7 +201,13 @@ class _FilesScreenState extends State<FilesScreen> {
       return;
     }
 
-    // Non-image: show dialog with file info
+    // For PDFs: attempt to launch external viewer using the URL
+    if (_getFileExtension(fileName).toLowerCase() == 'pdf' && url != null && url.isNotEmpty) {
+      _launchExternalUrl(url);
+      return;
+    }
+
+    // Non-image (or PDF fallback): show dialog with file info
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -217,6 +224,22 @@ class _FilesScreenState extends State<FilesScreen> {
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
       ),
     );
+  }
+
+  Future<void> _launchExternalUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (!await canLaunchUrl(uri)) {
+        // fallback: show dialog
+        _showError('Cannot open file externally');
+        return;
+      }
+
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+      _showError('Failed to open file');
+    }
   }
 
   void _deleteFile(String filePath) {
@@ -666,7 +689,16 @@ class FullscreenImageViewer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black, elevation: 0),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close, color: Colors.white, size: 28),
+          tooltip: 'Close',
+        ),
+      ),
       body: Center(
         child: Image.network(
           imageUrl,

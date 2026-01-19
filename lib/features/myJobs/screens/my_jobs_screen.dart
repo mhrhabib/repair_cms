@@ -171,16 +171,16 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 ),
                 centerTitle: true,
                 actions: [
-                  IconButton(
-                    onPressed: () {
-                      _showFilterBottomSheet(context);
-                    },
-                    icon: const Icon(Icons.filter_list, color: Colors.black87),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.menu, color: Colors.black87),
-                  ),
+                  // IconButton(
+                  //   onPressed: () {
+                  //     _showFilterBottomSheet(context);
+                  //   },
+                  //   icon: const Icon(Icons.filter_list, color: Colors.black87),
+                  // ),
+                  // IconButton(
+                  //   onPressed: () {},
+                  //   icon: const Icon(Icons.menu, color: Colors.black87),
+                  // ),
                 ],
                 pinned: true,
                 floating: false,
@@ -393,19 +393,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
                           if (state is JobSuccess) {
                             final jobs = state.jobs;
-                            if (jobs.isEmpty) {
-                              return Container(
-                                color: Colors.white,
-                                child: Center(
-                                  child: Text(
-                                    'No jobs found',
-                                    style: AppTypography.fontSize16.copyWith(
-                                      color: AppColors.lightFontColor,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
+                           
                             return Container(
                               color: Colors.white,
                               child: ListView.builder(
@@ -506,7 +494,24 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                 },
                               ),
                             );
+                            
                           }
+                         if(state is JobSuccess){
+                          final jobs = state.jobs;
+                            if (jobs.isEmpty) {
+                              return Container(
+                                color: Colors.white,
+                                child: Center(
+                                  child: Text(
+                                    'No jobs found',
+                                    style: AppTypography.fontSize16.copyWith(
+                                      color: AppColors.lightFontColor,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                         }
 
                           if (state is JobError) {
                             return Container(
@@ -644,36 +649,36 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     );
   }
 
-  void _showFilterBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Filter Jobs',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16.h),
-              // Add filter options here (date range, status, etc.)
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  context.read<JobCubit>().clearFilters();
-                },
-                child: const Text('Clear Filters'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
+//   void _showFilterBottomSheet(BuildContext context) {
+//     showModalBottomSheet(
+//       context: context,
+//       builder: (context) {
+//         return Container(
+//           padding: const EdgeInsets.all(16),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               const Text(
+//                 'Filter Jobs',
+//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//               ),
+//               SizedBox(height: 16.h),
+//               // Add filter options here (date range, status, etc.)
+//               ElevatedButton(
+//                 onPressed: () {
+//                   Navigator.pop(context);
+//                   context.read<JobCubit>().clearFilters();
+//                 },
+//                 child: const Text('Clear Filters'),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+ }
 
 // Helper class for tab configuration
 class TabConfig {

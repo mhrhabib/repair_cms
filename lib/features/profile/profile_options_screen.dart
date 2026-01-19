@@ -1,5 +1,4 @@
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/profile/password&security/password_security_screen.dart';
 import 'package:repair_cms/features/profile/personalDetails/personal_details_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -83,18 +82,9 @@ class ProfileOptionsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Language & Region',
               onTap: () {
-                try {
-                  debugPrint(
-                    '🔄 [ProfileOptionsScreen] Language & Region tapped (logout action)',
-                  );
-                  storage.write('token', null);
-                  context.go(RouteNames.signIn);
-                } catch (e) {
-                  debugPrint(
-                    '❌ [ProfileOptionsScreen] Error in Language & Region action: $e',
-                  );
-                }
-              },
+                //coming soon feature on toast center 
+                showCustomToast('Coming Soon!', isError: false);
+              }
             ),
             Container(
               height: 1,
