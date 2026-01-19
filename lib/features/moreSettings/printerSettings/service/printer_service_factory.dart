@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+
 import 'brother_sdk_printer_service.dart';
 import 'brother_printer_service.dart';
 import 'epson_printer_service.dart';

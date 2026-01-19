@@ -76,7 +76,7 @@ class BiometricStorageService {
   }
 
   // Save credentials securely for biometric authentication
-  static Future<void> saveBiometricCredentials({required String email, required String password}) async {
+  static Future<void> saveBiometricCredentials({required String email, required String password, String? userId}) async {
     try {
       // Save email in secure storage
       await _secureStorage.write(
@@ -94,6 +94,16 @@ class BiometricStorageService {
         iOptions: _iosOptions,
       );
 
+      // Optionally save userId for convenience
+      if (userId != null && userId.isNotEmpty) {
+        await _secureStorage.write(
+          key: 'biometric_userId',
+          value: userId,
+          aOptions: _androidOptions,
+          iOptions: _iosOptions,
+        );
+      }
+
       debugPrint('Biometric credentials saved successfully for: $email');
     } catch (e) {
       debugPrint('Error saving biometric credentials: $e');
@@ -110,11 +120,12 @@ class BiometricStorageService {
         aOptions: _androidOptions,
         iOptions: _iosOptions,
       );
+      final userId = await _secureStorage.read(key: 'biometric_userId', aOptions: _androidOptions, iOptions: _iosOptions);
 
-      return {'email': email, 'password': password};
+      return {'email': email, 'password': password, 'userId': userId};
     } catch (e) {
       debugPrint('Error reading biometric credentials: $e');
-      return {'email': null, 'password': null};
+      return {'email': null, 'password': null, 'userId': null};
     }
   }
 
@@ -137,6 +148,7 @@ class BiometricStorageService {
     try {
       await _secureStorage.delete(key: 'biometric_email', aOptions: _androidOptions, iOptions: _iosOptions);
       await _secureStorage.delete(key: 'biometric_password', aOptions: _androidOptions, iOptions: _iosOptions);
+      await _secureStorage.delete(key: 'biometric_userId', aOptions: _androidOptions, iOptions: _iosOptions);
 
       debugPrint('Biometric authentication disabled');
     } catch (e) {

@@ -1,3 +1,4 @@
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/services/biometric_storage_service.dart';
 import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
@@ -58,9 +59,12 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
 
   Future<void> _saveBiometricCredentials() async {
     try {
+      final storage = GetStorage();
+      final userId = storage.read('userId')?.toString();
       await BiometricStorageService.saveBiometricCredentials(
         email: widget.email,
         password: _passwordController.text,
+        userId: userId,
       );
       showCustomToast('Biometric authentication enabled');
     } catch (e) {

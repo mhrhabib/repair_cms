@@ -82,14 +82,19 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
       );
     }
 
-    context.pushReplacement(RouteNames.home);
+    // Use GoRouter navigation to replace current location so the
+    // router's redirect logic sees the stored token and stays on home.
+    context.go(RouteNames.home);
   }
 
   Future<void> _saveBiometricCredentials() async {
     try {
+      final storage = GetStorage();
+      final userId = storage.read('userId')?.toString();
       await BiometricStorageService.saveBiometricCredentials(
         email: widget.email,
         password: _passwordController.text,
+        userId: userId,
       );
       SnackbarDemo(
         message: '$_biometricType authentication enabled',

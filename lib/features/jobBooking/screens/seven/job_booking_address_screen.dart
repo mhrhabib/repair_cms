@@ -453,11 +453,11 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                       ),
                       const Spacer(),
                       // Show profile info
-                      if (widget.isNewProfile)
-                        Text(
-                          'New ${widget.selectedProfile?.type2 ?? 'profile'}',
-                          style: TextStyle(color: Colors.green[600], fontWeight: FontWeight.w500),
-                        ),
+                      // if (widget.isNewProfile)
+                      //   Text(
+                      //     'New ${widget.selectedProfile?.type2 ?? 'profile'}',
+                      //     style: TextStyle(color: Colors.green[600], fontWeight: FontWeight.w500),
+                      //   ),
                       if (!widget.isNewProfile && widget.selectedProfile != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,

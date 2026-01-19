@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -12,7 +14,8 @@ class ForgotPasswordRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return SendOtpResponseModel.fromJson(response.data);
+         final Map<String, dynamic> responseData = json.decode(response.data);
+        return SendOtpResponseModel.fromJson(responseData);
       } else {
         throw Exception('Failed to send OTP: ${response.statusCode}');
       }

@@ -33,6 +33,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   Customersorsuppliers? selectedProfile;
   Timer? _searchDebounceTimer;
   bool _isSearching = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -60,6 +61,15 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
     setState(() {
       showSearchResults = true;
       _isSearching = true;
+    });
+
+    // Scroll to show search results
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     });
 
     _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
@@ -267,6 +277,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: CustomScrollView(
+          controller: _scrollController,
           slivers: [
             // Progress bar
             SliverToBoxAdapter(
@@ -828,6 +839,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   @override
   void dispose() {
     _searchDebounceTimer?.cancel();
+    _scrollController.dispose();
     searchController.dispose();
     firstNameController.dispose();
     lastNameController.dispose();

@@ -476,7 +476,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                         name: '100x150 (TD-4)',
                       );
                       debugPrint(
-                        '🔧 Auto-selected label size: 100×150mm for ${value}',
+                        '🔧 Auto-selected label size: 100×150mm for $value',
                       );
                     } else if (value.startsWith('TD-2')) {
                       // TD-2 series: use 50×26mm labels
@@ -486,7 +486,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                         name: '50x26 (TD-2)',
                       );
                       debugPrint(
-                        '🔧 Auto-selected label size: 50×26mm for ${value}',
+                        '🔧 Auto-selected label size: 50×26mm for $value',
                       );
                     }
                   }

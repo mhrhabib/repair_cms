@@ -109,8 +109,6 @@ class BrandError extends BrandState {
 
 **State Emission Order:** Loading → Success/Error (UI expects this sequence)
 
-**Note:** While the example shows Equatable, many existing states in the codebase don't extend Equatable. Follow the pattern that exists in your feature area.
-
 ### 3. Repository Pattern
 **New features:** Use interface + implementation pattern.
 ```dart
@@ -306,7 +304,7 @@ Adding a new feature (e.g., "Customers"):
    )),
    ```
 
-5. **Add route:** 
+5. **Add route:**
    - `lib/core/routes/route_names.dart`: `static const String customers = '/customers';`
    - `lib/core/routes/router.dart`: `GoRoute(path: RouteNames.customers, builder: ...)`
 
