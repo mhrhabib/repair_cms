@@ -343,7 +343,7 @@ class Services {
   dynamic vat;
   dynamic priceInclVat;
   String? id;
-  String? itemNumber;
+  dynamic itemNumber;
   dynamic unit;
   String? physicalLocation;
   dynamic stockQty;

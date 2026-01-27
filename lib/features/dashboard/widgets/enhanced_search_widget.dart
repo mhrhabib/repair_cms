@@ -95,9 +95,11 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget>
   void _deactivateSearch() {
     setState(() {
       _isSearchActive = false;
+  _searchController.clear();
+  
+  
     });
-    _searchController.clear();
-    _searchFocusNode.unfocus();
+      _searchFocusNode.unfocus();
   }
 
   @override
