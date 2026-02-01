@@ -584,6 +584,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: _addressController,
+                      textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
                         hintText: 'Street',
                         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
@@ -612,6 +613,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
                     TextField(
                       controller: _houseNumberController,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
                         hintText: '123',
                         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
@@ -636,6 +638,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _cityController,
+            textInputAction: TextInputAction.next,
             decoration: InputDecoration(
               hintText: 'City name',
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
@@ -672,6 +675,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
             TextField(
               controller: _postalCodeController,
               keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 hintText: 'Post code',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
@@ -691,6 +695,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
             const SizedBox(height: 8),
             TextField(
               controller: _provinceController,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 hintText: 'Province name',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
@@ -709,6 +714,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
             const SizedBox(height: 8),
             TextField(
               controller: _countryController,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 hintText: 'Country name',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),

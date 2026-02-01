@@ -117,3 +117,11 @@ class JobFileDeleteSuccess extends JobStates {
 
   List<Object> get props => [job];
 }
+
+class JobStatusSettingsLoaded extends JobStates {
+  final StatusSettingsResponse statusSettings;
+
+  JobStatusSettingsLoaded({required this.statusSettings});
+
+  List<Object> get props => [statusSettings];
+}

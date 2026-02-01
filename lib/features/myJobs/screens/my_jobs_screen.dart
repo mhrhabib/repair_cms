@@ -363,6 +363,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                               setState(() {
                                 _showSearchOverlay = false;
                               });
+                              // Clear search keyword when cancelling search
+                              context.read<JobCubit>().clearSearchKeyword();
                             },
                             child: Text(
                               'Cancel',
@@ -423,6 +425,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                         setState(() {
                                           _showSearchOverlay = false;
                                         });
+                                        // Clear search keyword when navigating to job details
+                                        context.read<JobCubit>().clearKeywordOnly();
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
                                             builder: (context) =>

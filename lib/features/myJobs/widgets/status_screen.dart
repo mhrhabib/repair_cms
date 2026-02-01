@@ -19,6 +19,7 @@ class StatusScreen extends StatefulWidget {
 
 class _StatusScreenState extends State<StatusScreen> {
   bool _isInitialized = false;
+  SingleJobModel? _cachedJobData;
 
   @override
   void initState() {
@@ -26,6 +27,8 @@ class _StatusScreenState extends State<StatusScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isInitialized) {
         _loadJobDataIfNeeded();
+        // Fetch status settings for the dropdown
+        context.read<JobCubit>().getStatusSettings();
         _isInitialized = true;
       }
     });
@@ -63,7 +66,13 @@ class _StatusScreenState extends State<StatusScreen> {
       },
       child: BlocBuilder<JobCubit, JobStates>(
         builder: (context, state) {
+          // Cache job data when available
           if (state is JobDetailSuccess) {
+            _cachedJobData = state.job;
+          }
+          
+          // If we have cached job data, show it regardless of current state
+          if (_cachedJobData != null) {
             return Scaffold(
               backgroundColor: AppColors.scaffoldBackgroundColor,
               appBar: CupertinoNavigationBar(
@@ -96,13 +105,21 @@ class _StatusScreenState extends State<StatusScreen> {
                   child: Icon(CupertinoIcons.add_circled_solid, color: figmaBlue, size: 28.r),
                 ),
               ),
-              body: _buildStatusScreen(context, state.job),
+              body: _buildStatusScreen(context, _cachedJobData!),
             );
-          } else if (state is JobLoading || state is JobActionLoading) {
+          }
+          
+          // Show loading for initial states
+          if (state is JobLoading || state is JobActionLoading || state is JobInitial) {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          } else if (state is JobError) {
+          } 
+          
+          // Show error
+          if (state is JobError) {
             return Scaffold(body: Center(child: Text('Error: ${state.message}')));
           }
+          
+          // No data available
           return const Scaffold(body: Center(child: Text('No job data available')));
         },
       ),
@@ -274,16 +291,6 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
   String? selectedNotification = 'Yes';
   final TextEditingController notesController = TextEditingController();
 
-  // Available statuses with colors
-  final List<Map<String, dynamic>> availableStatuses = [
-    {'value': 'repair_in_progress', 'label': 'Repair in Progress', 'color': Colors.blue},
-    {'value': 'quotation_sent', 'label': 'Quotation Sent', 'color': Colors.orange},
-    {'value': 'invoice_sent', 'label': 'Invoice Sent', 'color': Colors.purple},
-    {'value': 'ready_to_return', 'label': 'Ready to Return', 'color': Colors.green},
-    {'value': 'complete', 'label': 'Complete', 'color': Colors.green},
-    {'value': 'cancelled', 'label': 'Cancelled', 'color': Colors.red},
-  ];
-
   @override
   void dispose() {
     notesController.dispose();
@@ -333,6 +340,32 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
     return BlocBuilder<JobCubit, JobStates>(
       builder: (context, state) {
         final isLoading = state is JobActionLoading;
+        
+        // Get dynamic statuses from state
+        List<Map<String, dynamic>> availableStatuses = [];
+        
+        // Add hardcoded statuses first
+        availableStatuses = [
+          {'value': 'repair_in_progress', 'label': 'Repair in Progress', 'color': Colors.blue},
+          {'value': 'quotation_accepted', 'label': 'Quotation Accepted', 'color': Colors.orange},
+          {'value': 'rejected_quotes', 'label': 'Rejected Quotes', 'color': Colors.purple},
+          {'value': 'ready_to_return', 'label': 'Ready to Return', 'color': Colors.green},
+          {'value': 'parts_not_available', 'label': 'Parts Not Available', 'color': Colors.green},
+          {'value': 'booked', 'label': 'Booked', 'color': Colors.red},
+        ];
+        
+        // Add API statuses if loaded
+        if (state is JobStatusSettingsLoaded) {
+          final apiStatuses = state.statusSettings.status.map((statusSetting) {
+            return {
+              'value': statusSetting.statusName.toLowerCase().replaceAll(' ', '_'),
+              'label': statusSetting.statusName,
+              'color': _hexToColor(statusSetting.colorCode),
+            };
+          }).toList();
+          availableStatuses.addAll(apiStatuses);
+        }
+
         return Material(
           child: Container(
             padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -624,4 +657,12 @@ Color _getStatusColorForStatus(String status) {
   }
 
   return Colors.blue; // Default color
+}
+
+Color _hexToColor(String hexColor) {
+  hexColor = hexColor.replaceAll('#', '');
+  if (hexColor.length == 6) {
+    hexColor = 'FF$hexColor'; // Add alpha if not present
+  }
+  return Color(int.parse('0x$hexColor'));
 }

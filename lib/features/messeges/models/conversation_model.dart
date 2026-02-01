@@ -76,11 +76,11 @@ class Conversation {
 
   Conversation.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
-    sender = json['sender'] != null ? Sender.fromJson(json['sender']) : null;
-    receiver = json['receiver'] != null ? Sender.fromJson(json['receiver']) : null;
+    sender = json['sender'] != null && json['sender'] is Map ? Sender.fromJson(json['sender']) : null;
+    receiver = json['receiver'] != null && json['receiver'] is Map ? Sender.fromJson(json['receiver']) : null;
     conversationId = json['conversationId'];
-    message = json['message'] != null ? Message.fromJson(json['message']) : null;
-    comment = json['comment'] != null ? Comment.fromJson(json['comment']) : null;
+    message = json['message'] != null && json['message'] is Map ? Message.fromJson(json['message']) : null;
+    comment = json['comment'] != null && json['comment'] is Map ? Comment.fromJson(json['comment']) : null;
     if (json['comments'] != null) {
       comments = <Comment>[];
       try {
@@ -100,7 +100,7 @@ class Conversation {
     }
     participants = json['participants'];
     loggedUserId = json['loggedUserId'];
-    userId = json['userId'] != null ? UserId.fromJson(json['userId']) : null;
+    userId = json['userId'] != null && json['userId'] is Map ? UserId.fromJson(json['userId']) : null;
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
     iV = json['__v'];
@@ -203,12 +203,12 @@ class Message {
       });
     }
     file = json['file'];
-    invoice = json['invoice'] != null ? Invoice.fromJson(json['invoice']) : null;
+    invoice = json['invoice'] != null && json['invoice'] is Map ? Invoice.fromJson(json['invoice']) : null;
     quotationNo = json['quotationNo'];
     quotationId = json['quotationId'];
-    quotation = json['quotation'] != null ? Quotation.fromJson(json['quotation']) : null;
-    notification = json['notification'] != null ? Notification.fromJson(json['notification']) : null;
-    comment = json['comment'] != null ? Comment.fromJson(json['comment']) : null;
+    quotation = json['quotation'] != null && json['quotation'] is Map ? Quotation.fromJson(json['quotation']) : null;
+    notification = json['notification'] != null && json['notification'] is Map ? Notification.fromJson(json['notification']) : null;
+    comment = json['comment'] != null && json['comment'] is Map ? Comment.fromJson(json['comment']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -615,7 +615,7 @@ class Invoice {
 
   Invoice.fromJson(Map<String, dynamic> json) {
     companyId = json['companyId'];
-    jobId = json['jobId'] != null ? JobId.fromJson(json['jobId']) : null;
+    jobId = json['jobId'] != null && json['jobId'] is Map ? JobId.fromJson(json['jobId']) : null;
     jobNo = json['jobNo'];
     text = json['text'];
     subTotal = json['subTotal'];
@@ -647,7 +647,7 @@ class Invoice {
       });
     }
 
-    customerDetails = json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null;
+    customerDetails = json['customerDetails'] != null && json['customerDetails'] is Map ? CustomerDetails.fromJson(json['customerDetails']) : null;
     paymentNote = json['paymentNote'];
     paymentDueDate = json['paymentDueDate'];
     isSend = json['isSend'];
@@ -659,9 +659,9 @@ class Invoice {
     userName = json['userName'];
     salutationHTMLmarkup = json['salutationHTMLmarkup'];
     termsAndConditionsHTMLmarkup = json['termsAndConditionsHTMLmarkup'];
-    receiptFooter = json['receipt_footer'] != null ? ReceiptFooter.fromJson(json['receipt_footer']) : null;
+    receiptFooter = json['receipt_footer'] != null && json['receipt_footer'] is Map ? ReceiptFooter.fromJson(json['receipt_footer']) : null;
     location = json['location'];
-    loggedUserId = json['loggedUserId'] != null ? LoggedUserId.fromJson(json['loggedUserId']) : null;
+    loggedUserId = json['loggedUserId'] != null && json['loggedUserId'] is Map ? LoggedUserId.fromJson(json['loggedUserId']) : null;
     userId = json['userId'];
     isIncludingVat = json['isIncludingVat'];
     customerReference = json['customerReference'];
@@ -829,9 +829,9 @@ class JobId {
     jobTypes = json['jobTypes'];
     model = json['model'];
     servicesIds = json['servicesIds'].cast<String>();
-    deviceId = json['deviceId'] != null ? DeviceId.fromJson(json['deviceId']) : null;
+    deviceId = json['deviceId'] != null && json['deviceId'] is Map ? DeviceId.fromJson(json['deviceId']) : null;
     jobContactId = json['jobContactId'];
-    defectId = json['defectId'] != null ? DefectId.fromJson(json['defectId']) : null;
+    defectId = json['defectId'] != null && json['defectId'] is Map ? DefectId.fromJson(json['defectId']) : null;
     subTotal = json['subTotal'];
     total = json['total'];
     vat = json['vat'];
@@ -1376,8 +1376,8 @@ class ServiceItemList {
   dynamic priceExclVat;
   dynamic vat;
   dynamic priceInclVat;
-  String? id;
-  String? itemNumber;
+  dynamic id;
+  dynamic itemNumber;
   dynamic unit;
   String? physicalLocation;
   dynamic stockQty;
@@ -1508,9 +1508,9 @@ class ReceiptFooter {
   ReceiptFooter.fromJson(Map<String, dynamic> json) {
     companyLogo = json['companyLogo'];
     companyLogoURL = json['companyLogoURL'];
-    address = json['address'] != null ? Address.fromJson(json['address']) : null;
-    contact = json['contact'] != null ? Contact.fromJson(json['contact']) : null;
-    bank = json['bank'] != null ? Bank.fromJson(json['bank']) : null;
+    address = json['address'] != null && json['address'] is Map ? Address.fromJson(json['address']) : null;
+    contact = json['contact'] != null && json['contact'] is Map ? Contact.fromJson(json['contact']) : null;
+    bank = json['bank'] != null && json['bank'] is Map ? Bank.fromJson(json['bank']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -1739,7 +1739,7 @@ class Quotation {
       });
     }
     vat = json['vat'];
-    customerDetails = json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null;
+    customerDetails = json['customerDetails'] != null && json['customerDetails'] is Map ? CustomerDetails.fromJson(json['customerDetails']) : null;
     userName = json['userName'];
     onlinePaymentActived = json['onlinePaymentActived'];
     userId = json['userId'];
@@ -1832,8 +1832,8 @@ class Notification {
     isRead = json['isRead'];
     messageType = json['messageType'];
     conversationId = json['conversationId'];
-    senderDetails = json['sender_details'] != null ? Sender.fromJson(json['sender_details']) : null;
-    receiverDetails = json['receiver_details'] != null ? Sender.fromJson(json['receiver_details']) : null;
+    senderDetails = json['sender_details'] != null && json['sender_details'] is Map ? Sender.fromJson(json['sender_details']) : null;
+    receiverDetails = json['receiver_details'] != null && json['receiver_details'] is Map ? Sender.fromJson(json['receiver_details']) : null;
   }
 
   Map<String, dynamic> toJson() {

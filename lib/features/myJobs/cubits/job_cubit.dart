@@ -1,9 +1,10 @@
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
+import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
-import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
+import 'package:repair_cms/features/myJobs/models/status_settings_model.dart';
 part 'job_state.dart';
 
 class JobCubit extends Cubit<JobStates> {
@@ -449,6 +450,17 @@ class JobCubit extends Cubit<JobStates> {
     getJobs();
   }
 
+  void clearSearchKeyword() {
+    _currentKeyword = '';
+    _currentPage = 1;
+    getJobs();
+  }
+
+  void clearKeywordOnly() {
+    _currentKeyword = '';
+    _currentPage = 1;
+  }
+
   // Getters for current filter state
   String get currentStatusFilter => _currentStatusFilter;
   String get currentKeyword => _currentKeyword;
@@ -585,6 +597,29 @@ class JobCubit extends Cubit<JobStates> {
 
       if (!isClosed) {
         emit(JobFileDeleteSuccess(job: updatedJob));
+      }
+    } catch (e) {
+      if (!isClosed) {
+        emit(JobActionError(message: e.toString()));
+      }
+    }
+  }
+
+  Future<void> getStatusSettings() async {
+    if (isClosed) return;
+
+    emit(JobActionLoading());
+
+    try {
+      final userId = storage.read('userId');
+      if (userId == null) {
+        throw Exception('User ID not found');
+      }
+
+      final StatusSettingsResponse response = await repository.getStatusSettings(userId);
+
+      if (!isClosed) {
+        emit(JobStatusSettingsLoaded(statusSettings: response));
       }
     } catch (e) {
       if (!isClosed) {

@@ -254,19 +254,43 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
                         noItemsFoundBuilder: (context, pattern) {
                           if (pattern.isEmpty) return const SizedBox();
 
-                          return ListTile(
-                            leading: Icon(Icons.add_circle_outline, color: AppColors.primary),
-                            title: Text(
-                              'Create "$pattern"',
-                              style: AppTypography.fontSize14.copyWith(color: AppColors.primary),
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE3F2FD),
+                              border: Border.all(color: AppColors.primary, width: 1.5),
+                              borderRadius: BorderRadius.circular(8.r),
                             ),
-                            subtitle: Text(
-                              'Add as new accessory',
-                              style: AppTypography.fontSize12.copyWith(color: Colors.grey),
+                            child: ListTile(
+                              title: Row(
+                                children: [
+                                  Text(
+                                    pattern,
+                                    style: AppTypography.fontSize16.copyWith(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary,
+                                      borderRadius: BorderRadius.circular(4.r),
+                                    ),
+                                    child: Text(
+                                      'NEW',
+                                      style: AppTypography.fontSize12.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                _createNewAccessory(pattern);
+                              },
                             ),
-                            onTap: () {
-                              _createNewAccessory(pattern);
-                            },
                           );
                         },
                         customSuggestionBuilder: (context, pattern, filteredItems) {
@@ -274,29 +298,50 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
                             return Column(
                               children: [
                                 const Divider(height: 1),
-                                ListTile(
-                                  leading: Icon(Icons.add_circle_outline, color: AppColors.primary),
-                                  title: Text(
-                                    'Create "$pattern"',
-                                    style: AppTypography.fontSize14.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w500,
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE3F2FD),
+                                    border: Border.all(color: AppColors.primary, width: 1.5),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: ListTile(
+                                    title: Row(
+                                      children: [
+                                        Text(
+                                          pattern,
+                                          style: AppTypography.fontSize16.copyWith(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary,
+                                            borderRadius: BorderRadius.circular(4.r),
+                                          ),
+                                          child: Text(
+                                            'NEW',
+                                            style: AppTypography.fontSize12.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                    trailing: _isCreatingAccessory
+                                        ? SizedBox(
+                                            width: 16.w,
+                                            height: 16.h,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : null,
+                                    onTap: () {
+                                      _createNewAccessory(pattern);
+                                    },
                                   ),
-                                  subtitle: Text(
-                                    'Add as new accessory',
-                                    style: AppTypography.fontSize12.copyWith(color: Colors.grey),
-                                  ),
-                                  trailing: _isCreatingAccessory
-                                      ? SizedBox(
-                                          width: 16.w,
-                                          height: 16.h,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : Icon(Icons.arrow_forward_ios, size: 16.sp, color: AppColors.primary),
-                                  onTap: () {
-                                    _createNewAccessory(pattern);
-                                  },
                                 ),
                               ],
                             );

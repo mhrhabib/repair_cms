@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
+import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io' as io;
 import 'package:flutter/cupertino.dart';
@@ -12,7 +13,7 @@ import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/services/email_service.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart' hide InternalNote;
-import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
+import 'package:repair_cms/features/myJobs/models/status_settings_model.dart';
 
 class JobRepository {
   Future<JobListResponse> getJobs({
@@ -1097,6 +1098,38 @@ class JobRepository {
       debugPrint('❌ Error in deleteJobFile: $e');
       debugPrint('📋 Stack trace: $stackTrace');
       throw Exception('Failed to delete file: $e');
+    }
+  }
+
+  Future<StatusSettingsResponse> getStatusSettings(String userId) async {
+    try {
+      debugPrint('🚀 [JobRepository] Fetching status settings for user: $userId');
+
+      final dio.Response response = await BaseClient.get(
+        url: '${ApiEndpoints.baseUrl}/settings-status/user/$userId',
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+
+        debugPrint('✅ [JobRepository] Status settings fetched successfully');
+        debugPrint('📊 [JobRepository] Total statuses: ${responseData['totalStatus'] ?? 0}');
+
+        return StatusSettingsResponse.fromJson(responseData);
+      } else {
+        throw Exception('Failed to fetch status settings: ${response.statusCode} - ${response.data}');
+      }
+    } on dio.DioException catch (e) {
+      debugPrint('❌ Dio Error in getStatusSettings: ${e.message}');
+      if (e.response != null) {
+        throw Exception('Server error: ${e.response?.statusCode} - ${e.response?.data}');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Unexpected error in getStatusSettings: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      throw Exception('Unexpected error: $e');
     }
   }
 

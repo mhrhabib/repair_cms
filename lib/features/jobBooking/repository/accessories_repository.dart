@@ -69,10 +69,27 @@ class AccessoriesRepositoryImpl implements AccessoriesRepository {
 
       Response response = await BaseClient.post(url: ApiEndpoints.createAccessories, payload: payload);
 
+      debugPrint('✅ [AccessoriesRepository] Create accessory response received:');
+      debugPrint('   📊 Status Code: ${response.statusCode}');
+      debugPrint('   📊 Response Type: ${response.data.runtimeType}');
+      debugPrint('   📊 Response: ${response.data}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final newAccessory = Data.fromJson(response.data);
-        debugPrint('✅ [AccessoriesRepository] Accessory created successfully: ${newAccessory.label}');
-        return newAccessory;
+        // Handle both String and parsed JSON responses
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+
+        if (jsonData is Map<String, dynamic>) {
+          final newAccessory = Data.fromJson(jsonData);
+          debugPrint('✅ [AccessoriesRepository] Accessory created successfully: ${newAccessory.label}');
+          return newAccessory;
+        } else {
+          debugPrint('   ⚠️ Unexpected response format: $jsonData');
+          throw AccessoriesException(message: 'Unexpected response format from server');
+        }
       } else {
         throw AccessoriesException(
           message: 'Failed to create accessory: ${response.statusCode}',

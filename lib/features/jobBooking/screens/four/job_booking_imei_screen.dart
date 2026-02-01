@@ -185,54 +185,54 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                     // ),
 
                     // Show current IMEI from cubit
-                    BlocBuilder<JobBookingCubit, JobBookingState>(
-                      builder: (context, state) {
-                        if (state is JobBookingData && state.device.imei.isNotEmpty) {
-                          return Padding(
-                            padding: EdgeInsets.only(top: 16.h),
-                            child: Container(
-                              padding: EdgeInsets.all(12.w),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(8.r),
-                                border: Border.all(color: Colors.green.shade100),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.check_circle, color: Colors.green.shade600, size: 18.sp),
-                                  SizedBox(width: 8.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'IMEI Saved',
-                                          style: AppTypography.fontSize12.copyWith(color: Colors.green.shade800),
-                                        ),
-                                        Text(
-                                          state.device.imei,
-                                          style: AppTypography.fontSize12.copyWith(color: Colors.green.shade700),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      _imeiController.clear();
-                                      context.read<JobBookingCubit>().updateDeviceInfo(imei: '');
-                                    },
-                                    child: Icon(Icons.clear, color: Colors.green.shade600, size: 16.sp),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                        return SizedBox.shrink();
-                      },
-                    ),
+                    // BlocBuilder<JobBookingCubit, JobBookingState>(
+                    //   builder: (context, state) {
+                    //     if (state is JobBookingData && state.device.imei.isNotEmpty) {
+                    //       return Padding(
+                    //         padding: EdgeInsets.only(top: 16.h),
+                    //         child: Container(
+                    //           padding: EdgeInsets.all(12.w),
+                    //           decoration: BoxDecoration(
+                    //             color: Colors.green.shade50,
+                    //             borderRadius: BorderRadius.circular(8.r),
+                    //             border: Border.all(color: Colors.green.shade100),
+                    //           ),
+                    //           child: Row(
+                    //             children: [
+                    //               Icon(Icons.check_circle, color: Colors.green.shade600, size: 18.sp),
+                    //               SizedBox(width: 8.w),
+                    //               Expanded(
+                    //                 child: Column(
+                    //                   crossAxisAlignment: CrossAxisAlignment.start,
+                    //                   children: [
+                    //                     Text(
+                    //                       'IMEI Saved',
+                    //                       style: AppTypography.fontSize12.copyWith(color: Colors.green.shade800),
+                    //                     ),
+                    //                     Text(
+                    //                       state.device.imei,
+                    //                       style: AppTypography.fontSize12.copyWith(color: Colors.green.shade700),
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //               ),
+                    //               GestureDetector(
+                    //                 onTap: () {
+                    //                   _imeiController.clear();
+                    //                   context.read<JobBookingCubit>().updateDeviceInfo(imei: '');
+                    //                 },
+                    //                 child: Icon(Icons.clear, color: Colors.green.shade600, size: 16.sp),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //       );
+                    //     }
+                    //     return SizedBox.shrink();
+                    //   },
+                    // ),
 
-                    const Spacer(),
+                    // const Spacer(),
 
                     SizedBox(height: 32.h),
                   ],

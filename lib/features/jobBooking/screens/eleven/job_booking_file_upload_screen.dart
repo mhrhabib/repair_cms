@@ -7,6 +7,7 @@ import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/cubits/fileUpload/job_file_upload_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/twelve/job_booking_physical_locaiton_screen.dart';
+import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 
 class JobBookingFileUploadScreen extends StatefulWidget {
   final String? jobId;
@@ -305,80 +306,19 @@ class _JobBookingFileUploadScreenState
                                     },
                                   ),
                           ),
-                          const SizedBox(height: 24),
-
-                          // Navigation buttons
-                          Row(
-                            children: [
-                              GestureDetector(
-                                onTap: isUploading
-                                    ? null
-                                    : () => Navigator.pop(context),
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: isUploading
-                                        ? Colors.grey[100]
-                                        : Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Icon(
-                                    Icons.chevron_left,
-                                    color: isUploading
-                                        ? Colors.grey[400]
-                                        : Colors.grey,
-                                    size: 24,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.6,
-                                height: 48,
-                                child: ElevatedButton(
-                                  onPressed: !isUploading
-                                      ? _saveAndNavigate
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: !isUploading
-                                        ? Colors.blue
-                                        : Colors.grey,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: isUploading
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
-                                          ),
-                                        )
-                                      : Text(
-                                          uploadedFiles.isEmpty
-                                              ? 'Skip'
-                                              : 'Continue',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 32),
                         ],
                       ),
                     ),
+                  ),
+
+                  // Navigation buttons - Fixed at bottom
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: 
+                        BottomButtonsGroup(
+                          onPressed: !isUploading ? _saveAndNavigate : null,
+                          okButtonText: uploadedFiles.isEmpty ? 'Skip' : 'Continue',
+                        ),
                   ),
                 ],
               ),
