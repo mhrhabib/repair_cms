@@ -5,6 +5,8 @@ import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/core/constants/assets_constant.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/routes/route_names.dart';
+import 'package:repair_cms/features/profile/repository/profile_repository.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 /// Splash screen displayed on app launch
 /// Handles initial authentication check and navigation
@@ -80,13 +82,13 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  /// Check if user is authenticated by verifying stored token
+  /// Check if user is authenticated by verifying stored token and fetching profile
   Future<bool> _checkAuthentication() async {
     try {
       final token = storage.read('token');
       final userId = storage.read('userId');
 
-      // Validate token and userId exist
+      // Validate token and userId exist locally
       if (token == null || token.toString().isEmpty) {
         debugPrint('🔐 [SplashScreen] No token found');
         return false;
@@ -97,11 +99,48 @@ class _SplashScreenState extends State<SplashScreen>
         return false;
       }
 
-      debugPrint('🔐 [SplashScreen] Valid token found for userId: $userId');
+      debugPrint('🔐 [SplashScreen] Token found, verifying with server...');
+
+      // Verify token validity by fetching user profile
+      final profileRepository = SetUpDI.getIt<ProfileRepository>();
+      await profileRepository.getProfile();
+
+      debugPrint('🏁 [SplashScreen] Token is valid for userId: $userId');
       return true;
-    } catch (e) {
-      debugPrint('❌ [SplashScreen] Auth check error: $e');
+    } on ProfileException catch (e) {
+      debugPrint(
+        '❌ [SplashScreen] Profile API error: ${e.message} (Status: ${e.statusCode})',
+      );
+
+      // If unauthorized (401), clear storage as the token is no longer valid
+      if (e.statusCode == 401) {
+        debugPrint(
+          '🚫 [SplashScreen] Token expired or invalid, clearing storage',
+        );
+        await _clearSession();
+      }
       return false;
+    } catch (e) {
+      debugPrint('❌ [SplashScreen] Auth check unexpected error: $e');
+      // On unexpected errors (like network issues), we might want to allow
+      // the user to proceed if they have a token, but for strict security
+      // we check for connectivity or return false.
+      // Given the requirement "user should not go to homescreen with an invalid token",
+      // we return false to be safe.
+      return false;
+    }
+  }
+
+  /// Clear session data from storage
+  Future<void> _clearSession() async {
+    try {
+      await storage.remove('token');
+      await storage.remove('userId');
+      await storage.remove('user');
+      await storage.remove('isLoggedIn');
+      debugPrint('🧹 [SplashScreen] Session cleared');
+    } catch (e) {
+      debugPrint('❌ [SplashScreen] Error clearing session: $e');
     }
   }
 

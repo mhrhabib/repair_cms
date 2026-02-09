@@ -45,7 +45,9 @@ class AppRouter {
       }
 
       // If token exists and trying to access signIn or getStarted, redirect to home
-      if (token != null && (currentPath == RouteNames.signIn || currentPath == RouteNames.getStarted)) {
+      if (token != null &&
+          (currentPath == RouteNames.signIn ||
+              currentPath == RouteNames.getStarted)) {
         debugPrint('✅ [RouteGuard] Token found, redirecting to home');
         return RouteNames.home;
       }
@@ -54,28 +56,55 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(path: RouteNames.splash, builder: (context, state) => const SplashScreen()),
-      GoRoute(path: RouteNames.home, builder: (context, state) => const HomeScreen()),
-      GoRoute(path: RouteNames.dashboard, builder: (context, state) => DashboardScreen()),
-      GoRoute(path: RouteNames.getStarted, builder: (context, state) => const GetStartedScreen()),
-      GoRoute(path: RouteNames.signIn, builder: (context, state) => SignInScreen()),
+      GoRoute(
+        path: RouteNames.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.home,
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.dashboard,
+        builder: (context, state) => DashboardScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.getStarted,
+        builder: (context, state) => const GetStartedScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.signIn,
+        builder: (context, state) => SignInScreen(),
+      ),
       GoRoute(
         path: RouteNames.passwordInput,
-        builder: (context, state) => PasswordInputScreen(email: state.extra as String),
+        builder: (context, state) =>
+            PasswordInputScreen(email: (state.extra as String?) ?? ''),
       ),
       GoRoute(
         path: RouteNames.passwordForgotten,
-        builder: (context, state) => PasswordForgottenScreen(email: state.extra as String),
+        builder: (context, state) =>
+            PasswordForgottenScreen(email: (state.extra as String?) ?? ''),
       ),
       GoRoute(
         path: RouteNames.verifyCode,
-        builder: (context, state) => VerifyCodeScreen(email: state.extra as String),
+        builder: (context, state) =>
+            VerifyCodeScreen(email: (state.extra as String?) ?? ''),
       ),
       GoRoute(
         path: RouteNames.setNewPassword,
-        builder: (context, state) => SetNewPasswordScreen(email: state.extra as String),
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>?;
+          return SetNewPasswordScreen(
+            email: (extras?['email'] as String?) ?? '',
+            otp: (extras?['otp'] as String?) ?? '',
+          );
+        },
       ),
-      GoRoute(path: RouteNames.logsViewer, builder: (context, state) => const LogsViewerScreen()),
+      GoRoute(
+        path: RouteNames.logsViewer,
+        builder: (context, state) => const LogsViewerScreen(),
+      ),
     ],
   );
 }

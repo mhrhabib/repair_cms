@@ -39,7 +39,7 @@ class ForgotPasswordCubit extends Cubit<ForgotPasswordState> {
       final response = await repository.verifyOtp(email, otp);
 
       if (response.success) {
-        emit(ForgotPasswordOtpVerified(email, response.message));
+        emit(ForgotPasswordOtpVerified(email, otp, response.message));
       } else {
         emit(ForgotPasswordError(response.error ?? response.message));
       }
@@ -48,11 +48,15 @@ class ForgotPasswordCubit extends Cubit<ForgotPasswordState> {
     }
   }
 
-  Future<void> resetPassword(String email, String newPassword) async {
+  Future<void> resetPassword(
+    String email,
+    String newPassword,
+    String otp,
+  ) async {
     try {
       emit(ForgotPasswordLoading());
 
-      final response = await repository.resetPassword(email, newPassword);
+      final response = await repository.resetPassword(email, newPassword, otp);
 
       if (response.success) {
         emit(ForgotPasswordSuccess(response.message));

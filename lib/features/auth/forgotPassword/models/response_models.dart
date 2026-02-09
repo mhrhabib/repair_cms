@@ -2,8 +2,8 @@
 class SendOtpResponseModel {
   final bool success;
   final String message;
-  final String? data;
-  final String? error;
+  final dynamic data;
+  final dynamic error;
 
   SendOtpResponseModel({
     required this.success,
@@ -25,8 +25,8 @@ class SendOtpResponseModel {
 class VerifyOtpResponseModel {
   final bool success;
   final String message;
-  final String? data;
-  final String? error;
+  final dynamic data;
+  final dynamic error;
 
   VerifyOtpResponseModel({
     required this.success,
@@ -48,8 +48,8 @@ class VerifyOtpResponseModel {
 class ResetPasswordResponseModel {
   final bool success;
   final String message;
-  final String? data;
-  final String? error;
+  final dynamic data;
+  final dynamic error;
 
   ResetPasswordResponseModel({
     required this.success,

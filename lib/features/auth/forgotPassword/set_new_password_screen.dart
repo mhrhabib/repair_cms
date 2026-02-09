@@ -5,8 +5,13 @@ import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cu
 import 'package:repair_cms/features/auth/signin/sign_in_screen.dart';
 
 class SetNewPasswordScreen extends StatefulWidget {
-  const SetNewPasswordScreen({super.key, required this.email});
+  const SetNewPasswordScreen({
+    super.key,
+    required this.email,
+    required this.otp,
+  });
   final String email;
+  final String otp;
 
   @override
   State<SetNewPasswordScreen> createState() => SetNewPasswordScreenState();
@@ -53,7 +58,7 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
         await _saveBiometricCredentials();
       }
 
-      cubit.resetPassword(widget.email, _passwordController.text);
+      cubit.resetPassword(widget.email, _passwordController.text, widget.otp);
     }
   }
 
@@ -128,7 +133,7 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
     return BlocListener<ForgotPasswordCubit, ForgotPasswordState>(
       listener: (context, state) {
         if (state is ForgotPasswordSuccess) {
-          showCustomToast('Password reset successfully!');
+          showCustomToast('Password reset successfully!', isError: false);
           _navigateToLoginScreen();
         } else if (state is ForgotPasswordError) {
           showCustomToast(state.message, isError: true);

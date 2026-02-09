@@ -8,7 +8,10 @@ import 'package:repair_cms/features/auth/forgotPassword/models/response_models.d
 class ForgotPasswordRepository {
   Future<SendOtpResponseModel> sendOtp(String email) async {
     try {
-      dio.Response response = await BaseClient.post(url: ApiEndpoints.sentOtp, payload: {"email": email});
+      dio.Response response = await BaseClient.post(
+        url: ApiEndpoints.sentOtp,
+        payload: {"email": email},
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = json.decode(response.data);
@@ -19,7 +22,9 @@ class ForgotPasswordRepository {
     } on dio.DioException catch (e) {
       if (e.response != null) {
         final errorData = e.response?.data;
-        throw Exception(errorData['message'] ?? errorData['error'] ?? 'Failed to send OTP');
+        throw Exception(
+          errorData['message'] ?? errorData['error'] ?? 'Failed to send OTP',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
@@ -30,10 +35,15 @@ class ForgotPasswordRepository {
 
   Future<VerifyOtpResponseModel> verifyOtp(String email, String otp) async {
     try {
-      dio.Response response = await BaseClient.post(url: ApiEndpoints.verifyOtp, payload: {"email": email, "otp": otp});
+      dio.Response response = await BaseClient.post(
+        url: ApiEndpoints.verifyOtp,
+        payload: {"email": email, "otp": otp},
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data is String ? json.decode(response.data) : response.data;
+        final data = response.data is String
+            ? json.decode(response.data)
+            : response.data;
         return VerifyOtpResponseModel.fromJson(data);
       } else {
         throw Exception('Failed to verify OTP: ${response.statusCode}');
@@ -41,7 +51,9 @@ class ForgotPasswordRepository {
     } on dio.DioException catch (e) {
       if (e.response != null) {
         final errorData = e.response?.data;
-        throw Exception(errorData['message'] ?? errorData['error'] ?? 'Failed to verify OTP');
+        throw Exception(
+          errorData['message'] ?? errorData['error'] ?? 'Failed to verify OTP',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
@@ -50,15 +62,21 @@ class ForgotPasswordRepository {
     }
   }
 
-  Future<ResetPasswordResponseModel> resetPassword(String email, String newPassword) async {
+  Future<ResetPasswordResponseModel> resetPassword(
+    String email,
+    String newPassword,
+    String otp,
+  ) async {
     try {
       dio.Response response = await BaseClient.patch(
-        url: ApiEndpoints.updatePassword + email,
-        payload: {"password": newPassword},
+        url: "${ApiEndpoints.updatePassword}$email",
+        payload: {"email": email, "password": newPassword, "otp": otp},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data is String ? json.decode(response.data) : response.data;
+        final data = response.data is String
+            ? json.decode(response.data)
+            : response.data;
         return ResetPasswordResponseModel.fromJson(data);
       } else {
         throw Exception('Failed to reset password: ${response.statusCode}');
@@ -66,7 +84,11 @@ class ForgotPasswordRepository {
     } on dio.DioException catch (e) {
       if (e.response != null) {
         final errorData = e.response?.data;
-        throw Exception(errorData['message'] ?? errorData['error'] ?? 'Failed to reset password');
+        throw Exception(
+          errorData['message'] ??
+              errorData['error'] ??
+              'Failed to reset password',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
