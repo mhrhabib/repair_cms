@@ -97,6 +97,8 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
 
     await context.read<ModelsCubit>().createModel(name: modelName, userId: _userId, brandId: widget.brandId);
 
+    if (!mounted) return;
+
     final state = context.read<ModelsCubit>().state;
     if (state is ModelsLoaded) {
       final newModel = state.models.firstWhere(

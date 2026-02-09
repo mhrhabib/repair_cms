@@ -9,8 +9,7 @@ class PasswordForgottenScreen extends StatefulWidget {
   final String email;
 
   @override
-  State<PasswordForgottenScreen> createState() =>
-      PasswordForgottenScreenState();
+  State<PasswordForgottenScreen> createState() => PasswordForgottenScreenState();
 }
 
 class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
@@ -72,13 +71,11 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
 
     return BlocListener<ForgotPasswordCubit, ForgotPasswordState>(
       listener: (context, state) {
+        if (ModalRoute.of(context)?.isCurrent != true) return;
         if (state is ForgotPasswordEmailSent) {
           showCustomToast(state.message, isError: false);
           // Navigate to verify code screen
-          context.push(
-            RouteNames.verifyCode,
-            extra: _emailController.text.trim(),
-          );
+          context.push(RouteNames.verifyCode, extra: _emailController.text.trim());
         } else if (state is ForgotPasswordError) {
           showCustomToast(state.message, isError: true);
         }
@@ -86,13 +83,7 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         resizeToAvoidBottomInset: true,
-        appBar: AppBar(
-          iconTheme: IconThemeData(
-            color: AppColors.primary,
-            weight: 800,
-            fill: 0.4,
-          ),
-        ),
+        appBar: AppBar(iconTheme: IconThemeData(color: AppColors.primary, weight: 800, fill: 0.4)),
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -122,16 +113,11 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
                       // Email Input Field
                       Container(
                         decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: AppColors.deviderColor),
-                          ),
+                          border: Border(bottom: BorderSide(color: AppColors.deviderColor)),
                         ),
                         child: Row(
                           children: [
-                            Text(
-                              'Email',
-                              style: AppTypography.sfProHintTextStyle17,
-                            ),
+                            Text('Email', style: AppTypography.sfProHintTextStyle17),
                             Expanded(
                               child: TextFormField(
                                 controller: _emailController,
@@ -144,26 +130,14 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide.none,
                                   ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
-                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                   suffixIcon: _isEmailValid
                                       ? Container(
-                                          margin: EdgeInsets.only(
-                                            right: RadiusConstants.md,
-                                          ),
-                                          child: Icon(
-                                            Icons.check_circle,
-                                            color: AppColors.greenColor,
-                                            size: 30.w,
-                                          ),
+                                          margin: EdgeInsets.only(right: RadiusConstants.md),
+                                          child: Icon(Icons.check_circle, color: AppColors.greenColor, size: 30.w),
                                         )
                                       : null,
-                                  errorStyle: const TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 14,
-                                  ),
+                                  errorStyle: const TextStyle(color: Colors.red, fontSize: 14),
                                 ),
                                 keyboardType: TextInputType.emailAddress,
                                 textInputAction: TextInputAction.done,
@@ -193,19 +167,14 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
                             alignment: Alignment.bottomCenter,
                             child: CustomButton(
                               text: 'Request New Password',
-                              onPressed: state is ForgotPasswordLoading
-                                  ? null
-                                  : _handleSendOtp,
+                              onPressed: state is ForgotPasswordLoading ? null : _handleSendOtp,
                               child: state is ForgotPasswordLoading
                                   ? SizedBox(
                                       height: 20,
                                       width: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              AppColors.whiteColor,
-                                            ),
+                                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
                                       ),
                                     )
                                   : null,

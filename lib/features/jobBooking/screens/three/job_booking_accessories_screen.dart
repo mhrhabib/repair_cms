@@ -67,6 +67,8 @@ class _JobBookingAccessoriesScreenState extends State<JobBookingAccessoriesScree
         userId: _userId,
       );
 
+      if (!mounted) return;
+
       // The cubit will automatically refresh the list
 
       // Select the newly created accessory

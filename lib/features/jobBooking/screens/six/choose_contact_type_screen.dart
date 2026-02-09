@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/cubits/contactType/contact_type_cubit.dart';
@@ -25,9 +24,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController organizationController = TextEditingController();
 
-  String _selectedCountryCode = '+1';
-  String? _emailError;
-  
   List<Customersorsuppliers> searchResults = [];
   bool showSearchResults = false;
   bool showContactForm = false;
@@ -37,7 +33,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   Customersorsuppliers? selectedProfile;
   Timer? _searchDebounceTimer;
   bool _isSearching = false;
-  final ScrollController _scrollController = ScrollController();
+  bool _isProgrammaticUpdate = false;
 
   @override
   void initState() {
@@ -46,6 +42,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   }
 
   void _onSearchChanged() {
+    if (_isProgrammaticUpdate) return;
     final query = searchController.text.trim();
     currentSearchQuery = query;
 
@@ -65,15 +62,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
     setState(() {
       showSearchResults = true;
       _isSearching = true;
-    });
-
-    // Scroll to show search results
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
     });
 
     _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
@@ -101,28 +89,12 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
     return storage.read('userId') ?? '';
   }
 
-  bool _isValidEmail(String email) {
-    if (email.isEmpty) return true; // Optional field
-    final emailRegex = RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    );
-    return emailRegex.hasMatch(email);
-  }
-
-  void _validateEmail(String email) {
-    setState(() {
-      if (email.isNotEmpty && !_isValidEmail(email)) {
-        _emailError = 'Please enter a valid email address';
-      } else {
-        _emailError = null;
-      }
-    });
-  }
-
   void _selectProfile(Customersorsuppliers profile) {
     setState(() {
       final displayName = profile.organization ?? '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim();
+      _isProgrammaticUpdate = true;
       searchController.text = displayName;
+      _isProgrammaticUpdate = false;
       showSearchResults = false;
       showNewOption = false;
       showContactForm = false;
@@ -237,7 +209,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
       firstName: firstNameController.text,
       lastName: lastNameController.text,
       telephone: phoneController.text.replaceAll(RegExp(r'[^\d+]'), ''),
-      telephonePrefix: _selectedCountryCode,
+      telephonePrefix: "+1", // Default prefix
       email: emailController.text,
       customerId: '', // Will be set after profile creation
     );
@@ -257,8 +229,8 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
     return match?.group(1) ?? "+1";
   }
 
-  void _navigateToNextScreen() {
-    Navigator.push(
+  Future<void> _navigateToNextScreen() async {
+    await Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -273,6 +245,16 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
         },
       ),
     );
+
+    if (mounted) {
+      setState(() {
+        isExistingProfileSelected = false;
+        // Optionally reset other states if needed to restore the initial view
+        // For example, if we want to show the search results again:
+        // showSearchResults = true;
+        // But simply resetting isExistingProfileSelected should bring back the main content.
+      });
+    }
   }
 
   bool get _shouldShowButton {
@@ -283,12 +265,11 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   bool get _isFormValid {
     if (showContactForm) {
       final basicFieldsValid = firstNameController.text.isNotEmpty && lastNameController.text.isNotEmpty;
-      final emailValid = emailController.text.isEmpty || _isValidEmail(emailController.text);
 
       if (selectedContactType == 'business') {
-        return basicFieldsValid && organizationController.text.isNotEmpty && emailValid;
+        return basicFieldsValid && organizationController.text.isNotEmpty;
       }
-      return basicFieldsValid && emailValid;
+      return basicFieldsValid;
     }
     return false;
   }
@@ -300,7 +281,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: CustomScrollView(
-          controller: _scrollController,
           slivers: [
             // Progress bar
             SliverToBoxAdapter(
@@ -644,10 +624,8 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: firstNameController,
-                        textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           hintText: 'John',
-                          
                           hintStyle: TextStyle(color: Colors.grey[400]),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -673,7 +651,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: lastNameController,
-                        textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           hintText: 'Markinson',
                           hintStyle: TextStyle(color: Colors.grey[400]),
@@ -705,48 +682,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                         decoration: InputDecoration(
                           hintText: 'name@company.com',
                           hintStyle: TextStyle(color: Colors.grey[400]),
-                          errorText: _emailError,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: _emailError != null ? Colors.red : Colors.blue,
-                              width: 2,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: _emailError != null ? Colors.red : Colors.grey[300]!,
-                            ),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.red),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.red, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        textInputAction: TextInputAction.next,
-                        onChanged: (value) => _validateEmail(value),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Telephone (Optional)
-                      const Text('Telephone (Mobile)', style: TextStyle(fontSize: 14, color: Colors.black87)),
-                      const SizedBox(height: 8),
-                      IntlPhoneField(
-                        controller: phoneController,
-                        decoration: InputDecoration(
-                          hintText: 'Phone Number',
-                          hintStyle: TextStyle(color: Colors.grey[400]),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -761,13 +696,60 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
-                        initialCountryCode: 'US',
-                        textInputAction: TextInputAction.next,
-                        onChanged: (phone) {
-                          setState(() {
-                            _selectedCountryCode = phone.countryCode;
-                          });
-                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Telephone (Optional)
+                      const Text('Telephone (Mobile)', style: TextStyle(fontSize: 14, color: Colors.black87)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 20,
+                                  height: 12,
+                                  decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(2)),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: phoneController,
+                              keyboardType: TextInputType.phone,
+                              decoration: InputDecoration(
+                                hintText: '+880-1712345678',
+                                hintStyle: TextStyle(color: Colors.grey[400]),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 80),
@@ -860,7 +842,6 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   @override
   void dispose() {
     _searchDebounceTimer?.cancel();
-    _scrollController.dispose();
     searchController.dispose();
     firstNameController.dispose();
     lastNameController.dispose();

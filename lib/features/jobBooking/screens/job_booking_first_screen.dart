@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/service/service_cubit.dart';
@@ -14,7 +15,7 @@ class JobBookingFirstScreen extends StatefulWidget {
 class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  final List<ServiceModel> _selectedServices = [];
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -26,11 +27,18 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   }
 
   void _onSearchChanged(String query) {
-    if (query.isNotEmpty) {
-      context.read<ServiceCubit>().searchServices(keyword: query);
-    } else {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+
+    if (query.isEmpty) {
       context.read<ServiceCubit>().clearSearch();
+      return;
     }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        context.read<ServiceCubit>().searchServices(keyword: query);
+      }
+    });
   }
 
   void _addService(ServiceModel service) {
@@ -258,9 +266,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                                 focusNode: _searchFocusNode,
                                 onChanged: _onSearchChanged,
                                 decoration: InputDecoration(
-                                  hintText: _selectedServices.isEmpty
-                                      ? 'Search services...'
-                                      : 'iPhone 16 lcd repair...',
+                                  hintText: 'Search services...',
                                   hintStyle: AppTypography.fontSize14.copyWith(color: Colors.grey.shade400),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
@@ -533,13 +539,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
         // Bottom Button - Show only when services are selected
         bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
           builder: (context, state) {
-            final hasServices = state is JobBookingData && state.job.servicesIds.isNotEmpty;
-
-            if (hasServices && _searchController.text.isEmpty) {
+            if (state is JobBookingData && state.job.servicesIds.isNotEmpty && _searchController.text.isEmpty) {
               return _buildBookingButton(state);
-            } else {
-              return const SizedBox.shrink();
             }
+            return const SizedBox.shrink();
           },
         ),
       ),
@@ -644,6 +647,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();

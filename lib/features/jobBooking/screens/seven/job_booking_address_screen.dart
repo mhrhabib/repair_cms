@@ -33,6 +33,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
 
   bool _isLoading = false;
   bool _hasChanges = false; // Track if user made changes to existing profile
+  bool _hasHandledContactSuccess = false; // Prevent repeated navigation on ContactTypeSuccess
 
   // Store original values to detect changes
   String _originalStreet = '';
@@ -111,24 +112,24 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
   void _loadExistingAddressDataFromJobBooking() {
     final state = context.read<JobBookingCubit>().state;
     if (state is JobBookingData) {
-      // Load shipping address data if available
+      // Load shipping address data if available (field-level null checks)
       final shippingAddress = state.contact.shippingAddress;
-      if (shippingAddress.street!.isNotEmpty) {
+      if ((shippingAddress.street ?? '').isNotEmpty) {
         _addressController.text = shippingAddress.street!;
       }
-      if (shippingAddress.no!.isNotEmpty) {
+      if ((shippingAddress.no ?? '').isNotEmpty) {
         _houseNumberController.text = shippingAddress.no!;
       }
-      if (shippingAddress.city!.isNotEmpty) {
+      if ((shippingAddress.city ?? '').isNotEmpty) {
         _cityController.text = shippingAddress.city!;
       }
-      if (shippingAddress.zip!.isNotEmpty) {
+      if ((shippingAddress.zip ?? '').isNotEmpty) {
         _postalCodeController.text = shippingAddress.zip!;
       }
-      if (shippingAddress.state!.isNotEmpty) {
+      if ((shippingAddress.state ?? '').isNotEmpty) {
         _provinceController.text = shippingAddress.state!;
       }
-      if (shippingAddress.country!.isNotEmpty) {
+      if ((shippingAddress.country ?? '').isNotEmpty) {
         _countryController.text = shippingAddress.country!;
       }
 
@@ -375,7 +376,8 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
   Widget build(BuildContext context) {
     return BlocListener<ContactTypeCubit, ContactTypeState>(
       listener: (context, state) {
-        if (state is ContactTypeSuccess) {
+        if (state is ContactTypeSuccess && !_hasHandledContactSuccess) {
+          _hasHandledContactSuccess = true;
           debugPrint('✅ ${widget.isNewProfile ? 'Profile created' : 'Profile updated'} successfully with address');
 
           // Update the customer ID in JobBookingCubit with the created/updated profile

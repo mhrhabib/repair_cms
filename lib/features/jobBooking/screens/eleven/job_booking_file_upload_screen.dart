@@ -14,12 +14,10 @@ class JobBookingFileUploadScreen extends StatefulWidget {
   const JobBookingFileUploadScreen({super.key, this.jobId});
 
   @override
-  State<JobBookingFileUploadScreen> createState() =>
-      _JobBookingFileUploadScreenState();
+  State<JobBookingFileUploadScreen> createState() => _JobBookingFileUploadScreenState();
 }
 
-class _JobBookingFileUploadScreenState
-    extends State<JobBookingFileUploadScreen> {
+class _JobBookingFileUploadScreenState extends State<JobBookingFileUploadScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
   final Random _random = Random();
@@ -32,63 +30,44 @@ class _JobBookingFileUploadScreenState
           listener: (context, state) {
             if (state is JobFileUploadSuccess) {
               debugPrint('✅ Files uploaded successfully to server');
-              SnackbarDemo(
-                message: 'Files uploaded successfully',
-              ).showCustomSnackbar(context);
+              SnackbarDemo(message: 'Files uploaded successfully').showCustomSnackbar(context);
               // Navigate to next screen after successful upload
               Navigator.push(
                 context,
                 PageRouteBuilder(
                   pageBuilder: (context, animation, secondaryAnimation) =>
                       JobBookingPhysicalLocationScreen(jobId: widget.jobId!),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                        const begin = Offset(0.0, 1.0);
-                        const end = Offset.zero;
-                        const curve = Curves.easeInOut;
-                        var tween = Tween(
-                          begin: begin,
-                          end: end,
-                        ).chain(CurveTween(curve: curve));
-                        var offsetAnimation = animation.drive(tween);
-                        return SlideTransition(
-                          position: offsetAnimation,
-                          child: child,
-                        );
-                      },
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    const begin = Offset(0.0, 1.0);
+                    const end = Offset.zero;
+                    const curve = Curves.easeInOut;
+                    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                    var offsetAnimation = animation.drive(tween);
+                    return SlideTransition(position: offsetAnimation, child: child);
+                  },
                 ),
               );
             } else if (state is JobFileUploadError) {
               debugPrint('❌ File upload failed: ${state.message}');
-              SnackbarDemo(
-                message: 'Upload failed: ${state.message}',
-              ).showCustomSnackbar(context);
+              SnackbarDemo(message: 'Upload failed: ${state.message}').showCustomSnackbar(context);
               // Still allow navigation even if upload fails
-              SnackbarDemo(
-                message: 'Continue without uploading files?',
-              ).showCustomSnackbar(context);
+              SnackbarDemo(message: 'Continue without uploading files?').showCustomSnackbar(context);
               // Auto-navigate after showing toast
               Future.delayed(const Duration(milliseconds: 500), () {
+                if (!mounted) return;
                 Navigator.push(
                   context,
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
                         JobBookingPhysicalLocationScreen(jobId: widget.jobId!),
-                    transitionsBuilder:
-                        (context, animation, secondaryAnimation, child) {
-                          const begin = Offset(0.0, 1.0);
-                          const end = Offset.zero;
-                          const curve = Curves.easeInOut;
-                          var tween = Tween(
-                            begin: begin,
-                            end: end,
-                          ).chain(CurveTween(curve: curve));
-                          var offsetAnimation = animation.drive(tween);
-                          return SlideTransition(
-                            position: offsetAnimation,
-                            child: child,
-                          );
-                        },
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(0.0, 1.0);
+                      const end = Offset.zero;
+                      const curve = Curves.easeInOut;
+                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                      var offsetAnimation = animation.drive(tween);
+                      return SlideTransition(position: offsetAnimation, child: child);
+                    },
                   ),
                 );
               });
@@ -109,9 +88,7 @@ class _JobBookingFileUploadScreenState
         },
         builder: (context, state) {
           if (state is! JobBookingData) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
 
           final uploadedFiles = state.localFiles;
@@ -134,13 +111,7 @@ class _JobBookingFileUploadScreenState
                           topLeft: Radius.circular(6),
                           topRight: Radius.circular(0),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.shade300,
-                            blurRadius: 1,
-                            blurStyle: BlurStyle.outer,
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
                       ),
                     ),
                   ),
@@ -151,20 +122,11 @@ class _JobBookingFileUploadScreenState
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.of(
-                            context,
-                          ).popUntil(ModalRoute.withName(RouteNames.home)),
+                          onTap: () => Navigator.of(context).popUntil(ModalRoute.withName(RouteNames.home)),
                           child: Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[600],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                            decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.close, color: Colors.white, size: 20),
                           ),
                         ),
                       ],
@@ -175,18 +137,11 @@ class _JobBookingFileUploadScreenState
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
                     child: const Center(
                       child: Text(
                         '11',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -196,11 +151,7 @@ class _JobBookingFileUploadScreenState
                   // Title and subtitle
                   const Text(
                     'File Upload (Optional)',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
                   ),
 
                   const SizedBox(height: 8),
@@ -259,28 +210,15 @@ class _JobBookingFileUploadScreenState
                               ),
                               if (isUploading) ...[
                                 const SizedBox(width: 8),
-                                const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
+                                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                               ],
                               const Spacer(),
                               if (uploadedFiles.isNotEmpty)
                                 TextButton(
-                                  onPressed: isUploading
-                                      ? null
-                                      : _clearAllFiles,
+                                  onPressed: isUploading ? null : _clearAllFiles,
                                   child: Text(
                                     'Clear All',
-                                    style: TextStyle(
-                                      color: isUploading
-                                          ? Colors.grey
-                                          : Colors.red,
-                                      fontSize: 14,
-                                    ),
+                                    style: TextStyle(color: isUploading ? Colors.grey : Colors.red, fontSize: 14),
                                   ),
                                 ),
                             ],
@@ -290,19 +228,15 @@ class _JobBookingFileUploadScreenState
                             child: uploadedFiles.isEmpty
                                 ? _buildEmptyState()
                                 : GridView.builder(
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 2,
-                                          crossAxisSpacing: 12,
-                                          mainAxisSpacing: 12,
-                                          childAspectRatio: 1,
-                                        ),
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 1,
+                                    ),
                                     itemCount: uploadedFiles.length,
                                     itemBuilder: (context, index) {
-                                      return _buildFilePreview(
-                                        uploadedFiles[index],
-                                        index,
-                                      );
+                                      return _buildFilePreview(uploadedFiles[index], index);
                                     },
                                   ),
                           ),
@@ -314,11 +248,10 @@ class _JobBookingFileUploadScreenState
                   // Navigation buttons - Fixed at bottom
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: 
-                        BottomButtonsGroup(
-                          onPressed: !isUploading ? _saveAndNavigate : null,
-                          okButtonText: uploadedFiles.isEmpty ? 'Skip' : 'Continue',
-                        ),
+                    child: BottomButtonsGroup(
+                      onPressed: !isUploading ? _saveAndNavigate : null,
+                      okButtonText: uploadedFiles.isEmpty ? 'Skip' : 'Continue',
+                    ),
                   ),
                 ],
               ),
@@ -342,18 +275,12 @@ class _JobBookingFileUploadScreenState
         decoration: BoxDecoration(
           color: disabled ? Colors.grey[100] : Colors.grey[200],
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: disabled ? Colors.grey[300]! : Colors.grey[400]!,
-          ),
+          border: Border.all(color: disabled ? Colors.grey[300]! : Colors.grey[400]!),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 32,
-              color: disabled ? Colors.grey[400] : Colors.grey[600],
-            ),
+            Icon(icon, size: 32, color: disabled ? Colors.grey[400] : Colors.grey[600]),
             const SizedBox(height: 8),
             Text(
               label,
@@ -376,10 +303,7 @@ class _JobBookingFileUploadScreenState
         children: [
           Icon(Icons.photo_library_outlined, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          Text(
-            'No files uploaded yet',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
+          Text('No files uploaded yet', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
         ],
       ),
     );
@@ -409,8 +333,7 @@ class _JobBookingFileUploadScreenState
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        _buildFileIcon(fileName),
+                    errorBuilder: (context, error, stackTrace) => _buildFileIcon(fileName),
                   )
                 : _buildFileIcon(fileName),
           ),
@@ -425,15 +348,10 @@ class _JobBookingFileUploadScreenState
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.7),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(8),
-                bottomRight: Radius.circular(8),
-              ),
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
             ),
             child: Text(
-              fileName.length > 20
-                  ? '${fileName.substring(0, 17)}...'
-                  : fileName,
+              fileName.length > 20 ? '${fileName.substring(0, 17)}...' : fileName,
               style: const TextStyle(color: Colors.white, fontSize: 10),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -454,11 +372,7 @@ class _JobBookingFileUploadScreenState
                 color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.close,
-                color: _isUploading ? Colors.grey[400] : Colors.white,
-                size: 16,
-              ),
+              child: Icon(Icons.close, color: _isUploading ? Colors.grey[400] : Colors.white, size: 16),
             ),
           ),
         ),
@@ -473,16 +387,13 @@ class _JobBookingFileUploadScreenState
     if (fileName.toLowerCase().endsWith('.pdf')) {
       icon = Icons.picture_as_pdf;
       color = Colors.red;
-    } else if (fileName.toLowerCase().endsWith('.doc') ||
-        fileName.toLowerCase().endsWith('.docx')) {
+    } else if (fileName.toLowerCase().endsWith('.doc') || fileName.toLowerCase().endsWith('.docx')) {
       icon = Icons.description;
       color = Colors.blue;
-    } else if (fileName.toLowerCase().endsWith('.xls') ||
-        fileName.toLowerCase().endsWith('.xlsx')) {
+    } else if (fileName.toLowerCase().endsWith('.xls') || fileName.toLowerCase().endsWith('.xlsx')) {
       icon = Icons.table_chart;
       color = Colors.green;
-    } else if (fileName.toLowerCase().endsWith('.mp4') ||
-        fileName.toLowerCase().endsWith('.mov')) {
+    } else if (fileName.toLowerCase().endsWith('.mp4') || fileName.toLowerCase().endsWith('.mov')) {
       icon = Icons.videocam;
       color = Colors.purple;
     } else {
@@ -501,9 +412,7 @@ class _JobBookingFileUploadScreenState
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                fileName.length > 15
-                    ? '${fileName.substring(0, 12)}...'
-                    : fileName,
+                fileName.length > 15 ? '${fileName.substring(0, 12)}...' : fileName,
                 style: TextStyle(fontSize: 10, color: Colors.grey[700]),
                 textAlign: TextAlign.center,
                 maxLines: 2,
@@ -531,9 +440,7 @@ class _JobBookingFileUploadScreenState
         await context.read<JobBookingCubit>().processAndAddFile(image.path);
       }
     } catch (e) {
-      SnackbarDemo(
-        message: 'Error capturing image: $e',
-      ).showCustomSnackbar(context);
+      SnackbarDemo(message: 'Error capturing image: $e').showCustomSnackbar(context);
     }
   }
 
@@ -541,11 +448,7 @@ class _JobBookingFileUploadScreenState
     if (_isUploading) return;
 
     try {
-      final List<XFile> images = await _picker.pickMultiImage(
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 80,
-      );
+      final List<XFile> images = await _picker.pickMultiImage(maxWidth: 1200, maxHeight: 1200, imageQuality: 80);
 
       if (images.isNotEmpty) {
         for (final image in images) {
@@ -553,9 +456,7 @@ class _JobBookingFileUploadScreenState
         }
       }
     } catch (e) {
-      SnackbarDemo(
-        message: 'Error selecting images: $e',
-      ).showCustomSnackbar(context);
+      SnackbarDemo(message: 'Error selecting images: $e').showCustomSnackbar(context);
     }
   }
 
@@ -571,14 +472,9 @@ class _JobBookingFileUploadScreenState
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear All Files'),
-        content: const Text(
-          'Are you sure you want to remove all uploaded files?',
-        ),
+        content: const Text('Are you sure you want to remove all uploaded files?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -601,30 +497,21 @@ class _JobBookingFileUploadScreenState
       final jobId = widget.jobId ?? state.jobId;
 
       if (jobId == null || jobId.isEmpty) {
-        debugPrint(
-          '⚠️ [FileUploadScreen] No jobId found - job must be created first',
-        );
+        debugPrint('⚠️ [FileUploadScreen] No jobId found - job must be created first');
         // Just navigate to next screen without uploading
         Navigator.push(
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
                 JobBookingPhysicalLocationScreen(jobId: widget.jobId!),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(0.0, 1.0);
-                  const end = Offset.zero;
-                  const curve = Curves.easeInOut;
-                  var tween = Tween(
-                    begin: begin,
-                    end: end,
-                  ).chain(CurveTween(curve: curve));
-                  var offsetAnimation = animation.drive(tween);
-                  return SlideTransition(
-                    position: offsetAnimation,
-                    child: child,
-                  );
-                },
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 1.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOut;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
           ),
         );
         return;
@@ -644,19 +531,13 @@ class _JobBookingFileUploadScreenState
           return fileJson;
         }).toList();
 
-        debugPrint(
-          '📤 [FileUploadScreen] Uploading ${state.job.files!.length} files to server',
-        );
+        debugPrint('📤 [FileUploadScreen] Uploading ${state.job.files!.length} files to server');
         debugPrint('🆔 [FileUploadScreen] Job ID: $jobId');
         debugPrint('👤 [FileUploadScreen] User ID: $userId');
         debugPrint('📋 [FileUploadScreen] File data with IDs: $fileData');
 
         // Upload files using JobFileUploadCubit
-        context.read<JobFileUploadCubit>().uploadFiles(
-          userId: userId,
-          jobId: jobId,
-          fileData: fileData,
-        );
+        context.read<JobFileUploadCubit>().uploadFiles(userId: userId, jobId: jobId, fileData: fileData);
 
         // Listen for upload result in the MultiBlocListener above
         // Success: will navigate via listener
@@ -669,21 +550,14 @@ class _JobBookingFileUploadScreenState
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
                 JobBookingPhysicalLocationScreen(jobId: widget.jobId!),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(0.0, 1.0);
-                  const end = Offset.zero;
-                  const curve = Curves.easeInOut;
-                  var tween = Tween(
-                    begin: begin,
-                    end: end,
-                  ).chain(CurveTween(curve: curve));
-                  var offsetAnimation = animation.drive(tween);
-                  return SlideTransition(
-                    position: offsetAnimation,
-                    child: child,
-                  );
-                },
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 1.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOut;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
           ),
         );
       }
@@ -693,9 +567,6 @@ class _JobBookingFileUploadScreenState
   /// Generate a random ID for file uploads
   String _generateRandomId() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    return List.generate(
-      10,
-      (index) => chars[_random.nextInt(chars.length)],
-    ).join();
+    return List.generate(10, (index) => chars[_random.nextInt(chars.length)]).join();
   }
 }

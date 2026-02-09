@@ -54,6 +54,8 @@ class _JobBookingStartBookingJobScreenState extends State<JobBookingStartBooking
 
     await context.read<BrandCubit>().addBrand(userId: _userId, name: brandName);
 
+    if (!mounted) return;
+
     final state = context.read<BrandCubit>().state;
     if (state is BrandAdded) {
       _selectBrand(brandName);
