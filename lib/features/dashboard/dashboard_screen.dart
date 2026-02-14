@@ -34,17 +34,28 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void initState() {
     super.initState();
-    debugPrint(context.read<SignInCubit>().userType);
-    debugPrint(context.read<SignInCubit>().userId);
+    try {
+      debugPrint('🚀 [DashboardScreen] Initializing dashboard');
+      debugPrint('👤 [DashboardScreen] User Type: ${context.read<SignInCubit>().userType}');
+      debugPrint('👤 [DashboardScreen] User ID: ${context.read<SignInCubit>().userId}');
 
-    // Add observer to detect when app comes to foreground
-    WidgetsBinding.instance.addObserver(this);
+      // Add observer to detect when app comes to foreground
+      WidgetsBinding.instance.addObserver(this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadAllDashboardData();
-      context.read<QuickTaskCubit>().getTodos();
-      _fetchAndStoreCompanyAndReceiptData();
-    });
+      // Schedule data loading after first frame to prevent ANR
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          // Load dashboard data with timeout protection
+          _loadAllDashboardData();
+          // Load quick tasks
+          context.read<QuickTaskCubit>().getTodos();
+          // Fetch company and receipt data
+          _fetchAndStoreCompanyAndReceiptData();
+        }
+      });
+    } catch (e) {
+      debugPrint('❌ [DashboardScreen] Error in initState: $e');
+    }
   }
 
   @override
@@ -78,25 +89,31 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _fetchAndStoreCompanyAndReceiptData() {
-    final userId = storage.read('userId');
-    final companyId = storage.read('companyId');
+    try {
+      final userId = storage.read('userId');
+      final companyId = storage.read('companyId');
 
-    debugPrint('🚀 [DashboardScreen] Fetching company and receipt data');
-    debugPrint('👤 [DashboardScreen] User ID: $userId');
-    debugPrint('🏢 [DashboardScreen] Company ID: $companyId');
+      debugPrint('🚀 [DashboardScreen] Fetching company and receipt data');
+      debugPrint('👤 [DashboardScreen] User ID: $userId');
+      debugPrint('🏢 [DashboardScreen] Company ID: $companyId');
 
-    // Fetch company info if companyId exists
-    if (companyId != null && companyId.isNotEmpty) {
-      context.read<CompanyCubit>().getCompanyInfo(companyId: companyId);
-    } else {
-      debugPrint('⚠️ [DashboardScreen] No companyId found in storage');
-    }
+      // Fetch company info if companyId exists
+      if (companyId != null && companyId.toString().isNotEmpty) {
+        debugPrint('📦 [DashboardScreen] Fetching company info for ID: $companyId');
+        context.read<CompanyCubit>().getCompanyInfo(companyId: companyId.toString());
+      } else {
+        debugPrint('⚠️ [DashboardScreen] No companyId found in storage');
+      }
 
-    // Fetch job receipt if userId exists
-    if (userId != null && userId.isNotEmpty) {
-      context.read<JobReceiptCubit>().getJobReceipt(userId: userId);
-    } else {
-      debugPrint('⚠️ [DashboardScreen] No userId found in storage');
+      // Fetch job receipt if userId exists
+      if (userId != null && userId.toString().isNotEmpty) {
+        debugPrint('📋 [DashboardScreen] Fetching job receipt for user: $userId');
+        context.read<JobReceiptCubit>().getJobReceipt(userId: userId.toString());
+      } else {
+        debugPrint('⚠️ [DashboardScreen] No userId found in storage');
+      }
+    } catch (e) {
+      debugPrint('❌ [DashboardScreen] Error fetching company/receipt data: $e');
     }
   }
 
@@ -296,16 +313,24 @@ class _DashboardScreenState extends State<DashboardScreen>
         BlocListener<CompanyCubit, CompanyState>(
           listener: (context, state) {
             if (state is CompanyLoaded) {
-              debugPrint(
-                '✅ [DashboardScreen] Company data loaded, storing in GetStorage',
-              );
-              // Store company data as JSON string
-              storage.write('companyData', jsonEncode(state.company.toJson()));
-              debugPrint(
-                '📦 [DashboardScreen] Company name: ${state.company.name}',
-              );
+              try {
+                debugPrint(
+                  '✅ [DashboardScreen] Company data loaded, storing in GetStorage',
+                );
+                // Store company data as JSON string
+                storage.write('companyData', jsonEncode(state.company.toJson()));
+                debugPrint(
+                  '📦 [DashboardScreen] Company name: ${state.company.name}',
+                );
+              } catch (e) {
+                debugPrint('❌ [DashboardScreen] Error storing company data: $e');
+              }
             } else if (state is CompanyError) {
               debugPrint('❌ [DashboardScreen] Company error: ${state.message}');
+              // Optionally show a toast notification
+              SnackbarDemo(
+                message: 'Failed to load company info',
+              ).showCustomSnackbar(context);
             }
           },
         ),
@@ -313,21 +338,29 @@ class _DashboardScreenState extends State<DashboardScreen>
         BlocListener<JobReceiptCubit, JobReceiptState>(
           listener: (context, state) {
             if (state is JobReceiptLoaded) {
-              debugPrint(
-                '✅ [DashboardScreen] Job receipt data loaded, storing in GetStorage',
-              );
-              // Store receipt data as JSON string
-              storage.write(
-                'jobReceiptData',
-                jsonEncode(state.receipt.toJson()),
-              );
-              debugPrint(
-                '📦 [DashboardScreen] QR Code Enabled: ${state.receipt.qrCodeEnabled}',
-              );
+              try {
+                debugPrint(
+                  '✅ [DashboardScreen] Job receipt data loaded, storing in GetStorage',
+                );
+                // Store receipt data as JSON string
+                storage.write(
+                  'jobReceiptData',
+                  jsonEncode(state.receipt.toJson()),
+                );
+                debugPrint(
+                  '📦 [DashboardScreen] QR Code Enabled: ${state.receipt.qrCodeEnabled}',
+                );
+              } catch (e) {
+                debugPrint('❌ [DashboardScreen] Error storing receipt data: $e');
+              }
             } else if (state is JobReceiptError) {
               debugPrint(
                 '❌ [DashboardScreen] Job receipt error: ${state.message}',
               );
+              // Optionally show a toast notification
+              SnackbarDemo(
+                message: 'Failed to load receipt settings',
+              ).showCustomSnackbar(context);
             }
           },
         ),
@@ -398,13 +431,17 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildGreetingSection() {
+    // Get actual user name from storage
+    final fullName = storage.read('fullName') ?? 'User';
+    final firstName = fullName.split(' ').first;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              'Good Morning, John',
+              'Good Morning, $firstName',
               textHeightBehavior: const TextHeightBehavior(
                 applyHeightToFirstAscent: false,
                 applyHeightToLastDescent: false,

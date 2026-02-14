@@ -12,6 +12,9 @@ class DashboardCubit extends Cubit<DashboardState> {
   CompletedJobsResponseModel? _dashboardStats;
   CompletedJobsResponseModel? _jobProgress;
 
+  // Timeout duration for dashboard operations (40 seconds to account for network delays)
+  static const Duration operationTimeout = Duration(seconds: 40);
+
   DashboardCubit({required this.repository}) : super(DashboardInitial());
 
   void _safeEmit(DashboardState state) {
@@ -19,10 +22,10 @@ class DashboardCubit extends Cubit<DashboardState> {
       if (!isClosed) {
         emit(state);
       } else {
-        debugPrint('🚫 Attempted to emit after cubit was closed: $state');
+        debugPrint('🚫 [DashboardCubit] Attempted to emit after cubit was closed: $state');
       }
     } catch (e) {
-      debugPrint('Error in _safeEmit: $e');
+      debugPrint('❌ [DashboardCubit] Error in _safeEmit: $e');
     }
   }
 
@@ -165,8 +168,19 @@ class DashboardCubit extends Cubit<DashboardState> {
       // Get job progress without date parameters
       final progressFuture = repository.getJobProgress(userId: userId);
 
-      // Wait for both requests to complete
-      final results = await Future.wait([statsFuture, progressFuture]);
+      // Wait for both requests to complete with timeout protection
+      final results = await Future.wait([
+        statsFuture,
+        progressFuture,
+      ]).timeout(
+        operationTimeout,
+        onTimeout: () {
+          debugPrint('⏱️ [DashboardCubit] loadAllDashboardData operation timeout');
+          throw DashboardException(
+            message: 'Dashboard data loading timed out. Please try again.',
+          );
+        },
+      );
 
       if (isClosed) {
         debugPrint(
@@ -179,6 +193,8 @@ class DashboardCubit extends Cubit<DashboardState> {
       _jobProgress = results[1];
 
       debugPrint('✅ [DashboardCubit] All data loaded successfully');
+      debugPrint('📊 [DashboardCubit] Stats: ${_dashboardStats?.completedJobs ?? 0} completed');
+      debugPrint('📈 [DashboardCubit] Progress: ${_jobProgress?.totalJobs ?? 0} total jobs');
 
       _safeEmit(
         DashboardLoaded(
@@ -192,7 +208,7 @@ class DashboardCubit extends Cubit<DashboardState> {
     } catch (e) {
       debugPrint('💥 [DashboardCubit] Unexpected All Data Error: $e');
       _safeEmit(
-        DashboardError(message: 'Unexpected error occurred: ${e.toString()}'),
+        DashboardError(message: 'Failed to load dashboard data: ${e.toString()}'),
       );
     }
   }

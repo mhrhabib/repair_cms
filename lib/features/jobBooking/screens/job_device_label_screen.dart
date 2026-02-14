@@ -10,6 +10,7 @@ import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
+import 'package:repair_cms/features/moreSettings/labelContent/service/label_content_settings_service.dart';
 import 'package:repair_cms/core/helpers/show_toast.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 
@@ -31,6 +32,10 @@ class JobDeviceLabelScreen extends StatefulWidget {
 
 class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   final _settingsService = PrinterSettingsService();
+  final _labelContentService = LabelContentSettingsService();
+  
+  // Label content settings
+  late LabelContentSettings _labelSettings;
 
   /// Get the last used or default printer for one-click printing
   PrinterConfigModel? _getDefaultPrinter() {
@@ -294,85 +299,115 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Barcode section
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              height: 60.h,
-                              child: BarcodeWidget(
-                                barcode: Barcode.code128(),
-                                data: _getBarcodeData(),
-                                drawText: false,
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.black,
+                      if (_labelSettings.showBarcode || _labelSettings.showJobNo)
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (_labelSettings.showBarcode)
+                                SizedBox(
+                                  height: 60.h,
+                                  child: BarcodeWidget(
+                                    barcode: Barcode.code128(),
+                                    data: _getBarcodeData(),
+                                    drawText: false,
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              if (_labelSettings.showBarcode && _labelSettings.showJobNo)
+                                SizedBox(height: 8.h),
+                              if (_labelSettings.showJobNo)
+                                Text(
+                                  _getJobNumber(),
+                                  style: TextStyle(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                ),
+                            ],
+                          ),
+                        ),
+                      if ((_labelSettings.showBarcode || _labelSettings.showJobNo) && 
+                          (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR))
+                        SizedBox(width: 16.w),
+                      // QR Code section
+                      if (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR)
+                        Expanded(
+                          flex: 4,
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                height: 80.h,
+                                child: QrImageView(
+                                  data: _labelSettings.showJobQR ? _getQRCodeData() : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
+                                  version: QrVersions.auto,
+                                  size: 90.w,
+                                  backgroundColor: Colors.white,
                                 ),
                               ),
-                            ),
-                            Text(
-                              _getJobNumber(),
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.black,
-                              ),
-                              textAlign: TextAlign.left,
-                            ),
-                          ],
+                              SizedBox(height: 4.h),
+                            ],
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 16.w),
-                      // QR Code section
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              height: 80.h,
-                              child: QrImageView(
-                                data: _getQRCodeData(),
-                                version: QrVersions.auto,
-                                size: 90.w,
-                                backgroundColor: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 4.h),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
 
                   SizedBox(height: 16.h),
 
-                  // Job information - single line
-                  Text(
-                    '${_getJobNumber()} | ${_getCustomerName()} | ${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                      height: 1.3,
+                  // Job information - single line (conditional based on settings)
+                  if (_labelSettings.showJobNo || 
+                      _labelSettings.showCustomerName || 
+                      _labelSettings.showModelBrand ||
+                      _labelSettings.showDate ||
+                      _labelSettings.showJobType ||
+                      _labelSettings.showSymptom ||
+                      _labelSettings.showPhysicalLocation)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_labelSettings.showJobNo ||
+                            _labelSettings.showCustomerName ||
+                            _labelSettings.showModelBrand)
+                          Text(
+                            [
+                              if (_labelSettings.showJobNo) _getJobNumber(),
+                              if (_labelSettings.showCustomerName) _getCustomerName(),
+                              if (_labelSettings.showModelBrand) '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
+                            ].where((e) => e.isNotEmpty).join(' | '),
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                              height: 1.3,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                        if ((_labelSettings.showJobNo || _labelSettings.showCustomerName || _labelSettings.showModelBrand) &&
+                            (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation))
+                          SizedBox(height: 4.h),
+                        if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation)
+                          Text(
+                            [
+                              if (_labelSettings.showSymptom) _getDefect(),
+                              if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+                            ].where((e) => e.isNotEmpty).join(' | '),
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                              height: 1.3,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                      ],
                     ),
-                    textAlign: TextAlign.left,
-                  ),
-
-                  SizedBox(height: 4.h),
-
-                  // Defect and location - single line
-                  Text(
-                    '${_getDefect()} | BOX: ${_getPhysicalLocation()}',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                      height: 1.3,
-                    ),
-                    textAlign: TextAlign.left,
-                  ),
                 ],
               ),
             ),
@@ -385,6 +420,14 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   @override
   void initState() {
     super.initState();
+    _loadLabelContentSettings();
+  }
+
+  /// Load label content settings from storage
+  void _loadLabelContentSettings() {
+    debugPrint('🏷️ [JobDeviceLabelScreen] Loading label content settings');
+    _labelSettings = _labelContentService.getSettings();
+    debugPrint('✅ [JobDeviceLabelScreen] Label settings loaded: QR=${_labelSettings.showJobQR}, Barcode=${_labelSettings.showBarcode}');
   }
 
   /// Handle print button tap: try default printer, otherwise show selection
@@ -496,120 +539,144 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // Draw barcode using barcode package
       final barcodeData = _getBarcodeData();
 
-      // Draw barcode as rectangles
-      _drawBarcode(
-        canvas,
-        barcodeData,
-        padding,
-        padding,
-        barcodeWidth,
-        barcodeHeight,
-      );
+      // Draw barcode as rectangles (only if barcode setting is enabled)
+      if (_labelSettings.showBarcode) {
+        _drawBarcode(
+          canvas,
+          barcodeData,
+          padding,
+          padding,
+          barcodeWidth,
+          barcodeHeight,
+        );
+      }
 
       // Font sizes - fixed 26 for base, others proportional
       const double baseFontSize = 26.0; // Fixed size as requested
       // const double smallFontSize = 14.0; // Slightly smaller for details
       final lineSpacing = baseFontSize + 4.0; // Space between lines
 
-      // Draw job number under barcode
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: _getJobNumber(),
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 26.sp,
-            fontWeight: FontWeight.bold,
+      // Draw job number under barcode (only if showJobNo is enabled)
+      double currentY = padding;
+      if (_labelSettings.showBarcode) {
+        currentY = padding + barcodeHeight + 4;
+        if (_labelSettings.showJobNo) {
+          final textPainter = TextPainter(
+            text: TextSpan(
+              text: _getJobNumber(),
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 26.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          );
+          textPainter.layout(maxWidth: barcodeWidth);
+          textPainter.paint(
+            canvas,
+            Offset(
+              padding + (barcodeWidth - textPainter.width) / 2,
+              currentY,
+            ),
+          );
+          currentY += baseFontSize + 8;
+        }
+      } else if (_labelSettings.showJobNo) {
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: _getJobNumber(),
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 26.sp,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout(maxWidth: barcodeWidth);
-      textPainter.paint(
-        canvas,
-        Offset(
-          padding + (barcodeWidth - textPainter.width) / 2,
-          padding + barcodeHeight + 4,
-        ),
-      );
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout(maxWidth: contentWidth);
+        textPainter.paint(canvas, Offset(padding, padding));
+        currentY = padding + baseFontSize + 8;
+      }
 
-      // Draw QR code at same top position as barcode (aligned)
-      final qrPainter = QrPainter(
-        data: _getQRCodeData(),
-        version: QrVersions.auto,
-        errorCorrectionLevel: QrErrorCorrectLevel.M,
-        eyeStyle: const QrEyeStyle(
-          eyeShape: QrEyeShape.square,
-          color: Colors.black,
-        ),
-        dataModuleStyle: const QrDataModuleStyle(
-          dataModuleShape: QrDataModuleShape.square,
-          color: Colors.black,
-        ),
-      );
+      // Draw QR code at same top position as barcode (aligned) - only if QR enabled
+      if (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR) {
+        final qrPainter = QrPainter(
+          data: _labelSettings.showJobQR ? _getQRCodeData() : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
+          version: QrVersions.auto,
+          errorCorrectionLevel: QrErrorCorrectLevel.M,
+          eyeStyle: const QrEyeStyle(
+            eyeShape: QrEyeShape.square,
+            color: Colors.black,
+          ),
+          dataModuleStyle: const QrDataModuleStyle(
+            dataModuleShape: QrDataModuleShape.square,
+            color: Colors.black,
+          ),
+        );
 
-      final qrX = drawableWidth - padding - qrSize;
-      canvas.save();
-      canvas.translate(qrX, padding); // Same Y position as barcode
-      canvas.scale(qrSize / 200); // QrPainter draws at ~200px
-      qrPainter.paint(canvas, const Size(200, 200));
-      canvas.restore();
+        final qrX = drawableWidth - padding - qrSize;
+        canvas.save();
+        canvas.translate(qrX, padding); // Same Y position as barcode
+        canvas.scale(qrSize / 200); // QrPainter draws at ~200px
+        qrPainter.paint(canvas, const Size(200, 200));
+        canvas.restore();
+        
+        // Update currentY based on QR height
+        final qrBottomY = padding + qrSize;
+        if (qrBottomY > currentY) {
+          currentY = qrBottomY;
+        }
+      }
 
       // Draw info text BELOW both barcode and QR (after tallest element)
-      final barcodeBottomY =
-          padding + barcodeHeight + 24; // Job number + spacing
-      final qrBottomY = padding + qrSize;
-      final contentStartY =
-          (barcodeBottomY > qrBottomY ? barcodeBottomY : qrBottomY) + 8;
+      currentY += 8; // Add spacing
 
-      // First line: Job | Customer | Device
-      final infoText =
-          '${_getCustomerName()} | ${_getDeviceName()}';
-      final infoPainter = TextPainter(
-        text: TextSpan(
-          text: infoText,
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 26.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      infoPainter.layout(maxWidth: contentWidth);
-      infoPainter.paint(canvas, Offset(padding, contentStartY));
+      // Build text lines based on settings
+      final List<String> textLines = [];
+      
+      // First line: Customer | Device
+      if (_labelSettings.showCustomerName || _labelSettings.showModelBrand) {
+        final line = [
+          if (_labelSettings.showCustomerName) _getCustomerName(),
+          if (_labelSettings.showModelBrand) _getDeviceName(),
+        ].where((e) => e.isNotEmpty).join(' | ');
+        if (line.isNotEmpty) textLines.add(line);
+      }
 
-      // Draw IMEI line
-      final imeiPainter = TextPainter(
-        text: TextSpan(
-          text: 'IMEI: ${_getDeviceIMEI()}',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 26.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      imeiPainter.layout(maxWidth: contentWidth);
-      imeiPainter.paint(canvas, Offset(padding, contentStartY + lineSpacing));
+      // IMEI line
+      if (_labelSettings.showModelBrand) {
+        textLines.add('IMEI: ${_getDeviceIMEI()}');
+      }
 
-      // Draw defect/location line
-      final defectPainter = TextPainter(
-        text: TextSpan(
-          text: '${_getDefect()} | BOX: ${_getPhysicalLocation()}',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 26.sp,
-            fontWeight: FontWeight.w600,
+      // Defect/Location line
+      if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation) {
+        final line = [
+          if (_labelSettings.showSymptom) _getDefect(),
+          if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+        ].where((e) => e.isNotEmpty).join(' | ');
+        if (line.isNotEmpty) textLines.add(line);
+      }
+
+      // Paint each line
+      for (int i = 0; i < textLines.length; i++) {
+        final linePainter = TextPainter(
+          text: TextSpan(
+            text: textLines[i],
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 26.sp,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      defectPainter.layout(maxWidth: contentWidth);
-      defectPainter.paint(
-        canvas,
-        Offset(padding, contentStartY + lineSpacing * 2),
-      );
+          textDirection: TextDirection.ltr,
+        );
+        linePainter.layout(maxWidth: contentWidth);
+        linePainter.paint(
+          canvas,
+          Offset(padding, currentY + (i * lineSpacing)),
+        );
+      }
 
       // End recording and create image
       final picture = recorder.endRecording();

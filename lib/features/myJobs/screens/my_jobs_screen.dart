@@ -137,14 +137,14 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
               SliverAppBar(
                 backgroundColor: Colors.white,
                 elevation: 0,
-                leadingWidth: Navigator.of(context).canPop() ? 80.w : 56.w,
+                leadingWidth: context.canPop() ? 80.w : 56.w,
                 leading: FittedBox(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (Navigator.of(context).canPop())
+                      if (context.canPop())
                         IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
+                          onPressed: () => context.pop(),
                           icon: const Icon(
                             Icons.arrow_back_ios,
                             color: Colors.black87,
@@ -395,7 +395,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
                           if (state is JobSuccess) {
                             final jobs = state.jobs;
-                           
+
                             return Container(
                               color: Colors.white,
                               child: ListView.builder(
@@ -426,7 +426,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                           _showSearchOverlay = false;
                                         });
                                         // Clear search keyword when navigating to job details
-                                        context.read<JobCubit>().clearKeywordOnly();
+                                        context
+                                            .read<JobCubit>()
+                                            .clearKeywordOnly();
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
                                             builder: (context) =>
@@ -498,10 +500,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                 },
                               ),
                             );
-                            
                           }
-                         if(state is JobSuccess){
-                          final jobs = state.jobs;
+                          if (state is JobSuccess) {
+                            final jobs = state.jobs;
                             if (jobs.isEmpty) {
                               return Container(
                                 color: Colors.white,
@@ -515,7 +516,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                 ),
                               );
                             }
-                         }
+                          }
 
                           if (state is JobError) {
                             return Container(
@@ -653,36 +654,36 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     );
   }
 
-//   void _showFilterBottomSheet(BuildContext context) {
-//     showModalBottomSheet(
-//       context: context,
-//       builder: (context) {
-//         return Container(
-//           padding: const EdgeInsets.all(16),
-//           child: Column(
-//             mainAxisSize: MainAxisSize.min,
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               const Text(
-//                 'Filter Jobs',
-//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//               ),
-//               SizedBox(height: 16.h),
-//               // Add filter options here (date range, status, etc.)
-//               ElevatedButton(
-//                 onPressed: () {
-//                   Navigator.pop(context);
-//                   context.read<JobCubit>().clearFilters();
-//                 },
-//                 child: const Text('Clear Filters'),
-//               ),
-//             ],
-//           ),
-//         );
-//       },
-//     );
-//   }
- }
+  //   void _showFilterBottomSheet(BuildContext context) {
+  //     showModalBottomSheet(
+  //       context: context,
+  //       builder: (context) {
+  //         return Container(
+  //           padding: const EdgeInsets.all(16),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               const Text(
+  //                 'Filter Jobs',
+  //                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //               ),
+  //               SizedBox(height: 16.h),
+  //               // Add filter options here (date range, status, etc.)
+  //               ElevatedButton(
+  //                 onPressed: () {
+  //                   Navigator.pop(context);
+  //                   context.read<JobCubit>().clearFilters();
+  //                 },
+  //                 child: const Text('Clear Filters'),
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       },
+  //     );
+  //   }
+}
 
 // Helper class for tab configuration
 class TabConfig {

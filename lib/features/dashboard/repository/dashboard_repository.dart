@@ -17,6 +17,9 @@ class DashboardException implements Exception {
 }
 
 class DashboardRepository {
+  // Timeout duration for API calls (30 seconds)
+  static const Duration apiTimeout = Duration(seconds: 30);
+
   Future<CompletedJobsResponseModel> getCompletedJobs({
     String? userId,
     String? startDate,
@@ -48,7 +51,19 @@ class DashboardRepository {
       final url = ApiEndpoints.completeUserJob.replaceAll('<id>', userId);
       debugPrint('🌐 [DashboardRepository] Request URL: $url');
 
-      final response = await BaseClient.get(url: url, payload: queryParams);
+      // Wrap API call with timeout protection
+      final response = await BaseClient.get(
+        url: url,
+        payload: queryParams,
+      ).timeout(
+        apiTimeout,
+        onTimeout: () {
+          debugPrint('⏱️ [DashboardRepository] API call timeout - completed jobs');
+          throw DashboardException(
+            message: 'Request timed out. Please check your connection and try again.',
+          );
+        },
+      );
 
       debugPrint(
         '📊 [DashboardRepository] Response status: ${response.statusCode}',
@@ -73,12 +88,22 @@ class DashboardRepository {
         }
 
         return CompletedJobsResponseModel.fromJson(responseData);
+      } else if (response.statusCode == 401) {
+        throw DashboardException(
+          message: 'Unauthorized - Please login again',
+          statusCode: response.statusCode,
+        );
+      } else if (response.statusCode == 404) {
+        throw DashboardException(
+          message: 'Data not found',
+          statusCode: response.statusCode,
+        );
       } else {
         debugPrint(
           '❌ [DashboardRepository] Request failed with status: ${response.statusCode}',
         );
         throw DashboardException(
-          message: 'Failed to fetch completed jobs',
+          message: 'Failed to fetch completed jobs (Error: ${response.statusCode})',
           statusCode: response.statusCode,
         );
       }
@@ -88,8 +113,16 @@ class DashboardRepository {
       debugPrint('❌ [DashboardRepository] Dio Error: ${e.message}');
       if (e.response != null) {
         throw DashboardException(
-          message: 'Server error: ${e.response?.data}',
+          message: 'Server error: ${e.response?.data ?? e.message}',
           statusCode: e.response?.statusCode,
+        );
+      } else if (e.type == dio.DioExceptionType.connectionTimeout) {
+        throw DashboardException(
+          message: 'Connection timeout - please check your internet connection',
+        );
+      } else if (e.type == dio.DioExceptionType.receiveTimeout) {
+        throw DashboardException(
+          message: 'Server is taking too long to respond',
         );
       } else {
         throw DashboardException(message: 'Network error: ${e.message}');
@@ -146,7 +179,16 @@ class DashboardRepository {
       final url = ApiEndpoints.completeUserJob.replaceAll('<id>', userId);
       debugPrint('🌐 [DashboardRepository] Request URL: $url');
 
-      final response = await BaseClient.get(url: url);
+      // Wrap API call with timeout protection
+      final response = await BaseClient.get(url: url).timeout(
+        apiTimeout,
+        onTimeout: () {
+          debugPrint('⏱️ [DashboardRepository] API call timeout - job progress');
+          throw DashboardException(
+            message: 'Request timed out. Please check your connection and try again.',
+          );
+        },
+      );
 
       debugPrint(
         '📊 [DashboardRepository] Response status: ${response.statusCode}',
@@ -174,12 +216,22 @@ class DashboardRepository {
         }
 
         return CompletedJobsResponseModel.fromJson(responseData);
+      } else if (response.statusCode == 401) {
+        throw DashboardException(
+          message: 'Unauthorized - Please login again',
+          statusCode: response.statusCode,
+        );
+      } else if (response.statusCode == 404) {
+        throw DashboardException(
+          message: 'Data not found',
+          statusCode: response.statusCode,
+        );
       } else {
         debugPrint(
           '❌ [DashboardRepository] Request failed with status: ${response.statusCode}',
         );
         throw DashboardException(
-          message: 'Failed to fetch job progress',
+          message: 'Failed to fetch job progress (Error: ${response.statusCode})',
           statusCode: response.statusCode,
         );
       }
@@ -189,8 +241,16 @@ class DashboardRepository {
       debugPrint('❌ [DashboardRepository] Dio Error: ${e.message}');
       if (e.response != null) {
         throw DashboardException(
-          message: 'Server error: ${e.response?.data}',
+          message: 'Server error: ${e.response?.data ?? e.message}',
           statusCode: e.response?.statusCode,
+        );
+      } else if (e.type == dio.DioExceptionType.connectionTimeout) {
+        throw DashboardException(
+          message: 'Connection timeout - please check your internet connection',
+        );
+      } else if (e.type == dio.DioExceptionType.receiveTimeout) {
+        throw DashboardException(
+          message: 'Server is taking too long to respond',
         );
       } else {
         throw DashboardException(message: 'Network error: ${e.message}');

@@ -185,7 +185,13 @@ class Data {
     if (json['defect'] != null) {
       defect = <Defect>[];
       json['defect'].forEach((v) {
-        defect!.add(Defect.fromJson(v));
+        // Handle both string and map formats for backward compatibility
+        if (v is Map<String, dynamic>) {
+          defect!.add(Defect.fromJson(v));
+        } else if (v is String) {
+          // If it's a string, create a Defect with just the ID
+          defect!.add(Defect(sId: v));
+        }
       });
     }
     if (json['userData'] != null) {
@@ -590,7 +596,13 @@ class DeviceData {
     if (json['condition'] != null) {
       condition = <Condition>[];
       json['condition'].forEach((v) {
-        condition!.add(Condition.fromJson(v));
+        // Handle both string and map formats for backward compatibility
+        if (v is Map<String, dynamic>) {
+          condition!.add(Condition.fromJson(v));
+        } else if (v is String) {
+          // If it's a string, create a Condition with the value
+          condition!.add(Condition(value: v));
+        }
       });
     }
     serialNo = json['serial_no'];
@@ -910,7 +922,13 @@ class Device {
     if (json['condition'] != null) {
       condition = <Condition>[];
       json['condition'].forEach((v) {
-        condition!.add(Condition.fromJson(v));
+        // Handle both string and map formats for backward compatibility
+        if (v is Map<String, dynamic>) {
+          condition!.add(Condition.fromJson(v));
+        } else if (v is String) {
+          // If it's a string, create a Condition with the value
+          condition!.add(Condition(value: v));
+        }
       });
     }
     accessories = json['accessories'];
@@ -1038,7 +1056,13 @@ class Defect {
     if (json['defect'] != null) {
       defect = <DefectItem>[];
       json['defect'].forEach((v) {
-        defect!.add(DefectItem.fromJson(v));
+        // Handle both string and map formats for backward compatibility
+        if (v is Map<String, dynamic>) {
+          defect!.add(DefectItem.fromJson(v));
+        } else if (v is String) {
+          // If it's a string, create a DefectItem with the value
+          defect!.add(DefectItem(value: v));
+        }
       });
     }
     jobType = json['jobType'];
@@ -1046,9 +1070,15 @@ class Defect {
     description = json['description'];
     if (json['internalNote'] != null) {
       internalNote = <InternalNote>[];
-      json['internalNote'].forEach((v) {
-        internalNote!.add(InternalNote.fromJson(v));
-      });
+      if (json['internalNote'] is List) {
+        for (var v in json['internalNote']) {
+          if (v is Map<String, dynamic>) {
+            internalNote!.add(InternalNote.fromJson(v));
+          } else if (v is String) {
+            internalNote!.add(InternalNote(text: v, userName: 'System'));
+          }
+        }
+      }
     }
     assignItems = json['assignItems'];
     createdAt = json['createdAt'];
