@@ -14,6 +14,7 @@ class JobBookingData extends JobBookingState {
   final bool isUploading;
   final int currentStep;
   final String? jobId; // Store job ID after creation
+  final List<ServiceModel> selectedServices;
   List<File>? localFiles;
 
   JobBookingData({
@@ -24,6 +25,7 @@ class JobBookingData extends JobBookingState {
     this.isUploading = false,
     required this.currentStep,
     this.jobId,
+    this.selectedServices = const [],
     this.localFiles = const [],
   });
 
@@ -35,6 +37,7 @@ class JobBookingData extends JobBookingState {
     bool? isUploading,
     int? currentStep,
     String? jobId,
+    List<ServiceModel>? selectedServices,
     List<File>? localFiles,
   }) {
     return JobBookingData(
@@ -45,6 +48,7 @@ class JobBookingData extends JobBookingState {
       isUploading: isUploading ?? this.isUploading,
       currentStep: currentStep ?? this.currentStep,
       jobId: jobId ?? this.jobId,
+      selectedServices: selectedServices ?? this.selectedServices,
       localFiles: localFiles ?? this.localFiles,
     );
   }
