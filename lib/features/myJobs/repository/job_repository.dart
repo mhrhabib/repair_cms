@@ -22,33 +22,32 @@ class JobRepository {
     String? endDate,
     int page = 1,
     int pageSize = 20,
-    String? status,
+    List<String>? statusList,
     String? userID,
+    String? sortBy,
+    String? location,
+    String? priority,
+    String? assignee,
+    String? dueDate,
   }) async {
     try {
-      final Map<String, dynamic> queryParams = {'page': page, 'pageSize': pageSize};
+      final Map<String, dynamic> queryParams = {
+        'page': page,
+        'limit': pageSize,
+        'keyword': keyword ?? '',
+        'status': '', // Always empty as per working URL
+        'assignUserId': (assignee != null && assignee != 'None') ? assignee : '',
+        'job_priority': (priority != null && priority.isNotEmpty && priority != 'All') ? priority : 'null',
+        'due_date': dueDate ?? 'null',
+      };
 
-      // Add optional parameters if provided
-      if (keyword != null && keyword.isNotEmpty) {
-        queryParams['keyword'] = keyword;
-      }
-
-      if (startDate != null && startDate.isNotEmpty) {
-        queryParams['startDate'] = startDate;
-      }
-
-      if (endDate != null && endDate.isNotEmpty) {
-        queryParams['endDate'] = endDate;
-      }
-
-      if (status != null && status.isNotEmpty) {
-        queryParams['status'] = status;
+      // Handle statusList: Encode as JSON array if provided
+      if (statusList != null && statusList.isNotEmpty) {
+        queryParams['statusList'] = jsonEncode(statusList);
       }
 
       debugPrint('🚀 [JobRepository] Fetching jobs:');
       debugPrint('   📍 User ID: $userID');
-      debugPrint('   📍 Status Filter: $status');
-      debugPrint('   📍 Page: $page');
       debugPrint('   📍 Query Params: $queryParams');
 
       dio.Response response = await BaseClient.get(
@@ -1105,9 +1104,7 @@ class JobRepository {
     try {
       debugPrint('🚀 [JobRepository] Fetching status settings for user: $userId');
 
-      final dio.Response response = await BaseClient.get(
-        url: '${ApiEndpoints.baseUrl}/settings-status/user/$userId',
-      );
+      final dio.Response response = await BaseClient.get(url: '${ApiEndpoints.baseUrl}/settings-status/user/$userId');
 
       if (response.statusCode == 200) {
         final responseData = response.data is String ? jsonDecode(response.data) : response.data;

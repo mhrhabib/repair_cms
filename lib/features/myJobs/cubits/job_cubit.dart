@@ -11,10 +11,14 @@ class JobCubit extends Cubit<JobStates> {
   final JobRepository repository;
 
   // Track current filter state
-  String _currentStatusFilter = '';
+  List<String> _currentStatusList = [];
   String _currentKeyword = '';
   String _currentStartDate = '';
   String _currentEndDate = '';
+  String _currentSortBy = '';
+  String _currentLocation = '';
+  String _currentPriority = '';
+  String _currentAssignee = '';
   int _currentPage = 1;
   final int _pageSize = 20;
 
@@ -24,7 +28,12 @@ class JobCubit extends Cubit<JobStates> {
     String? keyword,
     String? startDate,
     String? endDate,
-    String? status,
+    List<String>? statusList,
+    String? sortBy,
+    String? location,
+    String? priority,
+    String? assignee,
+    String? dueDate,
     int page = 1,
     bool loadMore = false,
   }) async {
@@ -32,7 +41,12 @@ class JobCubit extends Cubit<JobStates> {
     _currentKeyword = keyword ?? _currentKeyword;
     _currentStartDate = startDate ?? _currentStartDate;
     _currentEndDate = endDate ?? _currentEndDate;
-    _currentStatusFilter = status ?? _currentStatusFilter;
+    if (statusList != null) _currentStatusList = statusList;
+    if (sortBy != null) _currentSortBy = sortBy;
+    if (location != null) _currentLocation = location;
+    if (priority != null) _currentPriority = priority;
+    if (assignee != null) _currentAssignee = assignee;
+
     _currentPage = page;
 
     if (!loadMore) {
@@ -40,7 +54,7 @@ class JobCubit extends Cubit<JobStates> {
     }
 
     try {
-      debugPrint('🔄 JobCubit: Fetching jobs with params: page=$page, status=$status');
+      debugPrint('🔄 JobCubit: Fetching jobs with params: page=$page, statusList=$_currentStatusList, sort=$sortBy');
 
       final userId = storage.read('userId');
       debugPrint('👤 JobCubit: User ID from storage: $userId');
@@ -49,7 +63,12 @@ class JobCubit extends Cubit<JobStates> {
         keyword: _currentKeyword,
         startDate: _currentStartDate,
         endDate: _currentEndDate,
-        status: _currentStatusFilter,
+        statusList: _currentStatusList,
+        sortBy: _currentSortBy,
+        location: _currentLocation,
+        priority: _currentPriority,
+        assignee: _currentAssignee,
+        dueDate: dueDate,
         page: _currentPage,
         pageSize: _pageSize,
         userID: userId,
@@ -423,9 +442,9 @@ class JobCubit extends Cubit<JobStates> {
   }
 
   void filterJobsByStatus(String status) {
-    _currentStatusFilter = status;
+    _currentStatusList = status == 'All' || status.isEmpty ? [] : [status];
     _currentPage = 1;
-    getJobs(status: status);
+    getJobs();
   }
 
   void searchJobs(String keyword) {
@@ -445,7 +464,11 @@ class JobCubit extends Cubit<JobStates> {
     _currentKeyword = '';
     _currentStartDate = '';
     _currentEndDate = '';
-    _currentStatusFilter = '';
+    _currentStatusList = [];
+    _currentSortBy = '';
+    _currentLocation = '';
+    _currentPriority = '';
+    _currentAssignee = '';
     _currentPage = 1;
     getJobs();
   }
@@ -462,7 +485,7 @@ class JobCubit extends Cubit<JobStates> {
   }
 
   // Getters for current filter state
-  String get currentStatusFilter => _currentStatusFilter;
+  List<String> get currentStatusList => _currentStatusList;
   String get currentKeyword => _currentKeyword;
   String get currentStartDate => _currentStartDate;
   String get currentEndDate => _currentEndDate;

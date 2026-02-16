@@ -13,125 +13,126 @@ class JobCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
       },
       child: Container(
+        padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status and Priority Row
-            Padding(
-              padding: EdgeInsets.only(right: 16.w, top: 16.w, bottom: 16.w),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: job.jobStatus.isNotEmpty ? _getStatusColor(job) : Colors.grey,
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(30.w),
-                        bottomRight: Radius.circular(30.w),
+            // Top Row: Date, Status Badge, Priority
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Date and Status
+                Row(
+                  children: [
+                    Text(
+                      job.dueDate != null
+                          ? intl.DateFormat('dd.MM.yyyy').format(job.dueDate!)
+                          : intl.DateFormat('dd.MM.yyyy').format(job.createdAt),
+                      style: GoogleFonts.roboto(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
-                    child: Text(
-                      job.status.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    SizedBox(width: 8.w),
+                    Text(
+                      _getStatusText(job),
+                      style: GoogleFonts.roboto(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                     ),
-                  ),
-                  Row(
-                    children: [
-                      Text('Priority:', style: AppTypography.fontSize16Normal.copyWith(color: AppColors.fontMainColor)),
-                      const SizedBox(width: 4),
-                      Icon(Icons.flag, color: _getPriorityColor(job), size: 15.h),
-                      const SizedBox(width: 4),
-                      Text(
-                        _getPriorityText(job),
-                        style: AppTypography.fontSize16Normal.copyWith(
-                          color: AppColors.fontSecondaryColor,
-                          fontWeight: FontWeight.w400,
-                        ),
+                  ],
+                ),
+                // Priority Flag
+                Row(
+                  children: [
+                    Text(
+                      _getPriorityText(job),
+                      style: GoogleFonts.roboto(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                    SizedBox(width: 4.w),
+                    Icon(Icons.flag, color: _getPriorityColor(job), size: 18.sp),
+                  ],
+                ),
+              ],
             ),
-      
-            // Job Details
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Job ID label (600) and job number (500) with Roboto
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Job ID: ',
-                                style: GoogleFonts.roboto(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.fontMainColor,
-                                ),
-                              ),
-                              TextSpan(
-                                text: job.jobNo,
-                                style: GoogleFonts.roboto(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.fontSecondaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${job.dueDate != null ? intl.DateFormat('dd.MM.yyyy').format(job.dueDate!) : 'No date'} | ${_getWarrantyText(job)} | Location: ${job.customerDetails.shippingAddress.city}',
-                          style: AppTypography.fontSize16Normal.copyWith(fontSize: 16.sp, color: AppColors.fontMainColor),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          job.deviceData.brand ?? 'Unknown',
-                          style: AppTypography.fontSize16Normal.copyWith(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.fontMainColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'IMEI/SN: ${job.deviceData.imei ?? 'N/A'}',
-                          style: AppTypography.fontSize16Normal.copyWith(
-                            fontSize: 16.sp,
-                            color: AppColors.fontSecondaryColor,
-                          ),
-                        ),
-                      ],
+            SizedBox(height: 12.h),
+
+            // Job ID and Customer Name
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'JOB ID ${job.jobNo} | ${_getCustomerName()}',
+                    style: GoogleFonts.roboto(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E293B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: const Color(0xFF94A3B8), size: 24.sp),
+              ],
+            ),
+            SizedBox(height: 8.h),
+
+            // Employee and Device Info
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Employee Avatar
+                Container(
+                  width: 24.w,
+                  height: 24.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _getEmployeeInitial(),
+                      style: GoogleFonts.roboto(fontSize: 10.sp, fontWeight: FontWeight.w600, color: Colors.white),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
-                    },
-                    child: Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 32.h),
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  _getEmployeeName(),
+                  style: GoogleFonts.roboto(
+                    fontSize: 14.sp,
+                    color: const Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-              ),
+                ),
+                Spacer(),
+                Expanded(
+                  child: Text(
+                    _getDeviceInfo(),
+                    style: GoogleFonts.roboto(
+                      fontSize: 14.sp,
+                      color: const Color(0xFF64748B),
+                      fontWeight: FontWeight.w400,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -139,55 +140,113 @@ class JobCardWidget extends StatelessWidget {
     );
   }
 
+  String _getCustomerName() {
+    final firstName = job.customerDetails.firstName;
+    final lastName = job.customerDetails.lastName;
+    return '$firstName $lastName'.trim().isNotEmpty ? '$firstName $lastName'.trim() : 'Unknown Customer';
+  }
+
+  String _getEmployeeName() {
+    return job.assignerName.trim().isNotEmpty ? job.assignerName.trim() : 'Unknown';
+  }
+
+  String _getEmployeeInitial() {
+    final name = _getEmployeeName();
+    return name.isNotEmpty ? name[0].toUpperCase() : 'U';
+  }
+
+  String _getDeviceInfo() {
+    final brand = job.deviceData.brand ?? '';
+    final model = job.deviceData.model ?? '';
+
+    if (brand.isEmpty && model.isEmpty) {
+      return 'Unknown Device';
+    }
+
+    return '$brand $model'.trim();
+  }
+
+  String _getStatusText(Job job) {
+    final status = job.status.toLowerCase().trim();
+
+    switch (status) {
+      case 'booked':
+        return 'Booked In';
+      case 'in progress':
+      case 'in_progress':
+        return 'In Progress';
+      case 'accepted_quotes':
+        return 'Quote Accepted';
+      case 'parts_not_available':
+      case 'parts not available':
+        return 'Parts not available';
+      case 'ready_to_return':
+        return 'Ready To Return';
+      case 'quotation_sent':
+        return 'Quote Rejected';
+      case 'completed':
+        return 'Completed';
+      case 'draft':
+        return 'Draft';
+      default:
+        return status;
+    }
+  }
+
+  Color _getStatusColor(Job job) {
+    final status = job.status.toLowerCase().trim();
+
+    switch (status) {
+      case 'booked':
+        return const Color(0xFF3B82F6); // Blue
+      case 'in progress':
+      case 'in_progress':
+        return const Color(0xFFFF9800); // Orange
+      case 'accepted_quotes':
+        return const Color(0xFF10B981); // Green
+      case 'quotation_sent':
+        return const Color(0xFFEF4444); // Red
+      case 'parts_not_available':
+      case 'parts not available':
+        return const Color(0xFF8B5CF6); // Purple
+      case 'ready_to_return':
+        return const Color(0xFF14B8A6); // Teal
+      case 'completed':
+        return const Color(0xFF10B981); // Green
+      case 'draft':
+        return const Color(0xFF6B7280); // Gray
+      default:
+        return const Color(0xFF3B82F6); // Blue
+    }
+  }
+
   Color _getPriorityColor(Job job) {
     final priority = job.jobPriority?.toLowerCase() ?? 'neutral';
 
-    if (priority == 'high') {
-      return Colors.red;
-    } else if (priority == 'urgent') {
-      return Colors.orange;
-    } else {
-      return Colors.grey;
+    switch (priority) {
+      case 'urgent':
+        return const Color(0xFFEF4444); // Red
+      case 'high':
+        return const Color(0xFFFF9800); // Orange
+      case 'neutral':
+      case 'normal':
+      default:
+        return const Color(0xFF6B7280); // Gray
     }
   }
 
   String _getPriorityText(Job job) {
-    return job.jobPriority ?? 'neutral';
-  }
+    final priority = job.jobPriority?.toLowerCase() ?? 'neutral';
 
-  String _getWarrantyText(Job job) {
-    // You can customize this based on your warranty logic
-    return job.services.isNotEmpty ? 'Warranty' : 'No Warranty';
-  }
-
-  Color _getStatusColor(Job job) {
-    // Map various job.status values to colors
-    final status = job.status.toLowerCase().trim();
-
-    // Prefer using the latest jobStatus entry for some variants if needed
-    // final lastStatus = job.jobStatus.isNotEmpty ? job.jobStatus.last.status?.toString()?.toLowerCase() : null;
-
-    switch (status) {
-      case 'completed':
-        return Colors.green;
-      case 'in progress':
-      case 'in_progress':
-        return AppColors.warningColor;
-      // 'ready_to_return' intentionally falls through to default mapping if not matched above
-      case 'draft':
-        return Colors.grey;
-      case 'invoice_sent':
-        return AppColors.fontMainColor;
-      case 'quotation_sent':
-        return Colors.purple;
-      case 'booked':
-        return Colors.lightBlue;
-      case 'accepted_quotes':
-        return Colors.blueAccent;
-      case 'ready_to_return':
-        return Colors.teal;
+    switch (priority) {
+      case 'urgent':
+        return 'Urgent';
+      case 'high':
+        return 'High';
+      case 'neutral':
+      case 'normal':
       default:
-        return Colors.blue;
+        return 'Neutral';
     }
   }
 }
