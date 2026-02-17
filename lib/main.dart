@@ -2,6 +2,10 @@ import 'package:get_storage/get_storage.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:repair_cms/firebase_options.dart';
+import 'package:repair_cms/core/services/firebase_notification_service.dart';
 import 'package:repair_cms/core/connectivity/connectivity_cubit.dart';
 import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
 import 'package:repair_cms/features/auth/forgotPassword/repo/forgot_password_repo.dart';
@@ -51,11 +55,19 @@ import 'package:talker_flutter/talker_flutter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Set background message handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   await SetUpDI.instance.init();
 
   // Initialize local notifications
   await SetUpDI.getIt<LocalNotificationService>().initialize();
   await SetUpDI.getIt<LocalNotificationService>().requestPermissions();
+
+  // Initialize Firebase Messaging
+  await SetUpDI.getIt<FirebaseNotificationService>().initialize();
 
   // Log Talker initialization
   SetUpDI.getIt<Talker>().info('RepairCMS App Started');
@@ -71,33 +83,88 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ConnectivityCubit(Connectivity())),
-        BlocProvider(create: (context) => SignInCubit(repository: SetUpDI.getIt<SignInRepository>())),
-        BlocProvider(create: (context) => ForgotPasswordCubit(repository: SetUpDI.getIt<ForgotPasswordRepository>())),
-        BlocProvider(create: (context) => ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>())),
-        BlocProvider(create: (context) => CompanyCubit(companyRepository: SetUpDI.getIt<CompanyRepository>())),
-        BlocProvider(create: (context) => JobCubit(repository: SetUpDI.getIt<JobRepository>())),
-        BlocProvider(create: (context) => DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>())),
-        BlocProvider(create: (context) => QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>())),
-        BlocProvider(create: (context) => ServiceCubit(serviceRepository: SetUpDI.getIt<ServiceRepository>())),
-        BlocProvider(create: (context) => JobCreateCubit(jobRepository: SetUpDI.getIt<JobBookingRepository>())),
-        BlocProvider(create: (context) => JobBookingCubit()),
         BlocProvider(
           create: (context) =>
-              JobFileUploadCubit(fileUploadRepository: SetUpDI.getIt<JobBookingFileUploadRepository>()),
-        ),
-        BlocProvider(create: (context) => BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>())),
-        BlocProvider(create: (context) => ModelsCubit(modelsRepository: SetUpDI.getIt<ModelsRepository>())),
-        BlocProvider(
-          create: (context) => AccessoriesCubit(accessoriesRepository: SetUpDI.getIt<AccessoriesRepository>()),
+              SignInCubit(repository: SetUpDI.getIt<SignInRepository>()),
         ),
         BlocProvider(
-          create: (context) => ContactTypeCubit(contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>()),
+          create: (context) => ForgotPasswordCubit(
+            repository: SetUpDI.getIt<ForgotPasswordRepository>(),
+          ),
         ),
-        BlocProvider(create: (context) => JobTypeCubit(jobTypeRepository: SetUpDI.getIt<JobTypeRepository>())),
-        BlocProvider(create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>())),
-        BlocProvider(create: (context) => JobReceiptCubit(jobReceiptRepository: SetUpDI.getIt<JobReceiptRepository>())),
         BlocProvider(
-          create: (context) => NotificationCubit(notificationRepository: SetUpDI.getIt<NotificationRepository>()),
+          create: (context) =>
+              ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>()),
+        ),
+        BlocProvider(
+          create: (context) => CompanyCubit(
+            companyRepository: SetUpDI.getIt<CompanyRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) =>
+              JobCubit(repository: SetUpDI.getIt<JobRepository>()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>()),
+        ),
+        BlocProvider(
+          create: (context) => ServiceCubit(
+            serviceRepository: SetUpDI.getIt<ServiceRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => JobCreateCubit(
+            jobRepository: SetUpDI.getIt<JobBookingRepository>(),
+          ),
+        ),
+        BlocProvider(create: (context) => JobBookingCubit()),
+        BlocProvider(
+          create: (context) => JobFileUploadCubit(
+            fileUploadRepository:
+                SetUpDI.getIt<JobBookingFileUploadRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) =>
+              BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              ModelsCubit(modelsRepository: SetUpDI.getIt<ModelsRepository>()),
+        ),
+        BlocProvider(
+          create: (context) => AccessoriesCubit(
+            accessoriesRepository: SetUpDI.getIt<AccessoriesRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => ContactTypeCubit(
+            contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => JobTypeCubit(
+            jobTypeRepository: SetUpDI.getIt<JobTypeRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>()),
+        ),
+        BlocProvider(
+          create: (context) => JobReceiptCubit(
+            jobReceiptRepository: SetUpDI.getIt<JobReceiptRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => NotificationCubit(
+            notificationRepository: SetUpDI.getIt<NotificationRepository>(),
+          ),
         ),
         BlocProvider(
           create: (context) => MessageCubit(
@@ -115,7 +182,9 @@ class MyApp extends StatelessWidget {
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'RepairCMS',
-            theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            ),
             routerConfig: AppRouter.router,
           ),
         ),

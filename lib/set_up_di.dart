@@ -38,6 +38,7 @@ import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart
 import 'package:repair_cms/features/notifications/repository/notification_repo.dart';
 import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/core/services/local_notification_service.dart';
+import 'package:repair_cms/core/services/firebase_notification_service.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/repository/message_repository.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
@@ -210,6 +211,11 @@ class SetUpDI {
     // Local notification service (singleton)
     _getIt.registerLazySingleton<LocalNotificationService>(
       () => LocalNotificationService(),
+    );
+
+    // Firebase notification service (singleton)
+    _getIt.registerLazySingleton<FirebaseNotificationService>(
+      () => FirebaseNotificationService(),
     );
 
     // Message repository and cubit

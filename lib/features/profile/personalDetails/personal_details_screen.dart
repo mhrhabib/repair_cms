@@ -177,12 +177,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       _updateProfileData(userId, profileCubit);
     } else {
       // No changes
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No changes to save'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (!mounted) return;
+      showCustomToast('No changes to save', isError: true);
     }
 
     // Unfocus all text fields to hide keyboard
@@ -230,14 +226,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           _isUploadingAvatar = false; // Reset upload state
         });
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Avatar uploaded successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showCustomToast('Avatar uploaded successfully', isError: false);
       }
     } catch (error) {
       debugPrint('❌ [PersonalDetailsScreen] Error uploading avatar: $error');
@@ -450,12 +439,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             });
 
             // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile picture updated successfully'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
+            showCustomToast(
+              'Profile picture updated successfully',
+              isError: false,
             );
           } catch (e) {
             debugPrint(
@@ -503,13 +489,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             });
 
             // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile picture removed'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
+            showCustomToast('Profile picture removed', isError: false);
           } catch (e) {
             debugPrint(
               '❌ [PersonalDetailsScreen] Error updating UI after remove: $e',
@@ -559,13 +539,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    showCustomToast(message, isError: true);
   }
 
   @override
@@ -584,24 +558,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     return BlocConsumer<ProfileCubit, ProfileStates>(
       listener: (context, state) {
         if (state is ProfileError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
+          showCustomToast(state.message, isError: true);
         }
 
         if (state is ProfileUpdated) {
           if (!_isUploadingAvatar) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile updated successfully'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
+            showCustomToast('Profile updated successfully', isError: false);
           }
 
           // Update original values after successful save

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "633126425868",
+    "project_id": "repaircms-ultimate",
+    "storage_bucket": "repaircms-ultimate.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:633126425868:android:f1df46b8e06607b99fe529",
+        "android_client_info": {
+          "package_name": "com.repaircms.ultimate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6iDdPfhg6O2iFC_QhS6PHFp1uUaJQKjQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
