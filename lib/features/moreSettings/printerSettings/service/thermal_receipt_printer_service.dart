@@ -10,8 +10,7 @@ import '../../../../set_up_di.dart';
 /// Dedicated thermal receipt printer service for image-based printing
 /// Supports Epson, Star, Xprinter and other ESC/POS compatible thermal printers
 class ThermalReceiptPrinterService {
-  static final ThermalReceiptPrinterService _instance =
-      ThermalReceiptPrinterService._internal();
+  static final ThermalReceiptPrinterService _instance = ThermalReceiptPrinterService._internal();
   factory ThermalReceiptPrinterService() => _instance;
   ThermalReceiptPrinterService._internal();
 
@@ -26,15 +25,11 @@ class ThermalReceiptPrinterService {
     int paperWidth = 80, // 80mm or 58mm
   }) async {
     final startTime = DateTime.now();
-    _talker.info(
-      '🖨️ [ThermalImage] Starting print to $ipAddress:$port (${paperWidth}mm paper)',
-    );
+    _talker.info('🖨️ [ThermalImage] Starting print to $ipAddress:$port (${paperWidth}mm paper)');
     _talker.debug('📦 Image data: ${imageBytes.length} bytes');
 
     try {
-      debugPrint(
-        '🖨️ [ThermalImage: $ipAddress] Starting thermal receipt image print',
-      );
+      debugPrint('🖨️ [ThermalImage: $ipAddress] Starting thermal receipt image print');
       debugPrint('📏 Paper width: ${paperWidth}mm');
 
       // Decode the image
@@ -45,9 +40,7 @@ class ThermalReceiptPrinterService {
       _talker.debug('✅ Decoded: ${uiImage.width}x${uiImage.height} pixels');
 
       // Convert to image package format for processing
-      final byteData = await uiImage.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      );
+      final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.rawRgba);
       if (byteData == null) {
         throw Exception('Failed to convert image to bytes');
       }
@@ -62,28 +55,18 @@ class ThermalReceiptPrinterService {
       // Calculate width in pixels based on paper size
       // 80mm = 576 pixels at 203 DPI, 58mm = 420 pixels at 203 DPI
       final widthPixels = paperWidth == 80 ? 576 : 420;
-      _talker.debug(
-        '📏 Target width: $widthPixels pixels for ${paperWidth}mm paper',
-      );
+      _talker.debug('📏 Target width: $widthPixels pixels for ${paperWidth}mm paper');
 
       // Resize image to fit thermal paper width
       _talker.debug('🔄 Resizing image...');
-      final resizedImg = img.copyResize(
-        imgLib,
-        width: widthPixels,
-        maintainAspect: true,
-      );
+      final resizedImg = img.copyResize(imgLib, width: widthPixels, maintainAspect: true);
 
       // Convert to monochrome (black and white) for thermal printing
       _talker.debug('🔄 Converting to monochrome...');
       final bwImg = img.grayscale(resizedImg);
 
-      debugPrint(
-        '📐 Image size: ${resizedImg.width}x${resizedImg.height} pixels',
-      );
-      _talker.info(
-        '✅ Processed: ${resizedImg.width}x${resizedImg.height} pixels (B&W)',
-      );
+      debugPrint('📐 Image size: ${resizedImg.width}x${resizedImg.height} pixels');
+      _talker.info('✅ Processed: ${resizedImg.width}x${resizedImg.height} pixels (B&W)');
 
       // Build ESC/POS raster graphics commands
       _talker.debug('🔄 Building ESC/POS raster commands...');
@@ -92,11 +75,7 @@ class ThermalReceiptPrinterService {
 
       // Send to printer
       _talker.debug('🌐 Connecting to $ipAddress:$port...');
-      final socket = await Socket.connect(
-        ipAddress,
-        port,
-        timeout: const Duration(seconds: 5),
-      );
+      final socket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 5));
       debugPrint('🌐 Connected to printer, sending ${commands.length} bytes');
       _talker.info('✅ Socket connected');
 
@@ -108,24 +87,14 @@ class ThermalReceiptPrinterService {
 
       final duration = DateTime.now().difference(startTime);
       debugPrint('✅ [ThermalImage: $ipAddress] Print successful');
-      _talker.info(
-        '✅ Print completed successfully in ${duration.inMilliseconds}ms',
-      );
-      return PrinterResult(
-        success: true,
-        message: 'Thermal receipt printed successfully',
-        code: 0,
-      );
+      _talker.info('✅ Print completed successfully in ${duration.inMilliseconds}ms');
+      return PrinterResult(success: true, message: 'Thermal receipt printed successfully', code: 0);
     } catch (e, st) {
       debugPrint('❌ [ThermalImage: $ipAddress] Error: $e');
       debugPrint('Stack trace: $st');
       _talker.error('❌ Print failed: $e');
       _talker.debug('Stack trace: $st');
-      return PrinterResult(
-        success: false,
-        message: 'Print error: $e',
-        code: -1,
-      );
+      return PrinterResult(success: false, message: 'Print error: $e', code: -1);
     }
   }
 
@@ -177,8 +146,8 @@ class ThermalReceiptPrinterService {
     // Feed paper
     commands.addAll([0x1B, 0x64, 0x03]); // ESC d 3 - Feed 3 lines
 
-    // Cut paper (if supported)
-    commands.addAll([0x1D, 0x56, 0x41, 0x03]); // GS V A n - Partial cut
+    // Cut paper (partial cut - compatible with XP-410B and most ESC/POS printers)
+    commands.addAll([0x1D, 0x56, 0x41, 0x03]); // GS V A 3 - Partial cut
 
     return commands;
   }
@@ -191,23 +160,15 @@ class ThermalReceiptPrinterService {
     int port = 9100,
   }) async {
     final startTime = DateTime.now();
-    _talker.info(
-      '🖨️ [RawESCPOS] Starting print to $ipAddress:$port',
-    );
+    _talker.info('🖨️ [RawESCPOS] Starting print to $ipAddress:$port');
     _talker.debug('📦 ESC/POS data: ${escposBytes.length} bytes');
 
     try {
-      debugPrint(
-        '🖨️ [RawESCPOS: $ipAddress] Printing ${escposBytes.length} bytes',
-      );
+      debugPrint('🖨️ [RawESCPOS: $ipAddress] Printing ${escposBytes.length} bytes');
 
       // Connect to printer
       _talker.debug('🌐 Connecting to $ipAddress:$port...');
-      final socket = await Socket.connect(
-        ipAddress,
-        port,
-        timeout: const Duration(seconds: 5),
-      );
+      final socket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 5));
       debugPrint('🌐 Connected to printer');
       _talker.info('✅ Socket connected');
 
@@ -215,59 +176,34 @@ class ThermalReceiptPrinterService {
       _talker.debug('📤 Sending ESC/POS commands to printer...');
       socket.add(escposBytes);
       await socket.flush();
-      
+
       // Wait briefly for printer to process
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       await socket.close();
       _talker.debug('🔌 Socket closed');
 
       final duration = DateTime.now().difference(startTime);
       debugPrint('✅ [RawESCPOS: $ipAddress] Print successful');
-      _talker.info(
-        '✅ Print completed successfully in ${duration.inMilliseconds}ms',
-      );
-      return PrinterResult(
-        success: true,
-        message: 'Thermal receipt printed successfully',
-        code: 0,
-      );
+      _talker.info('✅ Print completed successfully in ${duration.inMilliseconds}ms');
+      return PrinterResult(success: true, message: 'Thermal receipt printed successfully', code: 0);
     } catch (e, st) {
       debugPrint('❌ [RawESCPOS: $ipAddress] Error: $e');
       debugPrint('Stack trace: $st');
       _talker.error('❌ Print failed: $e');
       _talker.debug('Stack trace: $st');
-      return PrinterResult(
-        success: false,
-        message: 'Print error: $e',
-        code: -1,
-      );
+      return PrinterResult(success: false, message: 'Print error: $e', code: -1);
     }
   }
 
   /// Check if printer is reachable
-  Future<PrinterResult> checkConnection({
-    required String ipAddress,
-    int port = 9100,
-  }) async {
+  Future<PrinterResult> checkConnection({required String ipAddress, int port = 9100}) async {
     try {
-      final socket = await Socket.connect(
-        ipAddress,
-        port,
-        timeout: const Duration(seconds: 3),
-      );
+      final socket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 3));
       socket.destroy();
-      return PrinterResult(
-        success: true,
-        message: 'Printer is reachable',
-        code: 0,
-      );
+      return PrinterResult(success: true, message: 'Printer is reachable', code: 0);
     } catch (e) {
-      return PrinterResult(
-        success: false,
-        message: 'Cannot reach printer: $e',
-        code: -1,
-      );
+      return PrinterResult(success: false, message: 'Cannot reach printer: $e', code: -1);
     }
   }
 }

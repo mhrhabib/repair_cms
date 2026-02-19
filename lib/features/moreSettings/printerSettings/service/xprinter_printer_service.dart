@@ -39,11 +39,13 @@ class XprinterPrinterService implements BasePrinterService {
 
       // Line feeds and cut
       commands.addAll([0x0A, 0x0A, 0x0A]); // Line feeds
-      commands.addAll([0x1D, 0x56, 0x42, 0x00]); // GS V B 0 - Full cut
+      commands.addAll([0x1D, 0x56, 0x41, 0x03]); // GS V A 3 - Partial cut (XP-410B compatible)
 
       socket.add(Uint8List.fromList(commands));
       await socket.flush();
-      socket.destroy();
+      // Give the XP-410B time to process the buffer before closing
+      await Future.delayed(const Duration(milliseconds: 500));
+      await socket.close();
 
       _talker.info('[ThermalPrinter: $ipAddress] ✅ Xprinter receipt printed successfully');
       return PrinterResult(success: true, message: 'Xprinter receipt printed successfully', code: 0);
@@ -137,7 +139,7 @@ class XprinterPrinterService implements BasePrinterService {
 
       // Feed and cut
       bytes.addAll([0x0A, 0x0A, 0x0A]); // Line feeds
-      bytes.addAll([gs, 0x56, 0x42, 0x00]); // GS V B 0 - Full cut
+      bytes.addAll([gs, 0x56, 0x41, 0x03]); // GS V A 3 - Partial cut (XP-410B compatible)
 
       socket.add(Uint8List.fromList(bytes));
       await socket.flush();

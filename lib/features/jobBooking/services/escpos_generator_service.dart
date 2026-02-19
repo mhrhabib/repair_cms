@@ -17,7 +17,7 @@ class EscPosGeneratorService {
     bool includeQrCode = true,
   }) {
     debugPrint('🖨️ [EscPosGenerator] Generating receipt for paper width: ${paperWidth}mm');
-    
+
     final List<int> bytes = [];
 
     // Initialize printer
@@ -103,7 +103,7 @@ class EscPosGeneratorService {
       final trackingNumber = jobData['jobTrackingNumber'];
       final jobId = jobData['sId'];
       final email = jobData['customerDetails']?['email'] ?? '';
-      
+
       if (trackingNumber != null && jobId != null) {
         final qrUrl = 'https://customer-portal.repaircms.com/$trackingNumber/order-tracking/$jobId?email=$email';
         bytes.addAll(_printCenteredText('Scan to track your order:'));
@@ -135,7 +135,7 @@ class EscPosGeneratorService {
   static List<int> _printCompanyHeader(Map<String, dynamic> jobData) {
     final List<int> bytes = [];
     final receiptFooter = jobData['receiptFooter'];
-    
+
     if (receiptFooter != null) {
       final address = receiptFooter['address'];
       if (address != null) {
@@ -150,7 +150,7 @@ class EscPosGeneratorService {
         final num = address['num'] ?? '';
         final zip = address['zip'] ?? '';
         final city = address['city'] ?? '';
-        
+
         if (street.isNotEmpty || num.isNotEmpty) {
           bytes.addAll(_printCenteredText('$street $num'.trim()));
         }
@@ -165,7 +165,7 @@ class EscPosGeneratorService {
         final phone = contact['telephone'] ?? '';
         final email = contact['email'] ?? '';
         final website = contact['website'] ?? '';
-        
+
         if (phone.isNotEmpty) {
           bytes.addAll(_printCenteredText('Tel: $phone'));
         }
@@ -186,19 +186,19 @@ class EscPosGeneratorService {
   static List<int> _printCustomerDetails(Map<String, dynamic> jobData) {
     final List<int> bytes = [];
     final customerDetails = jobData['customerDetails'];
-    
+
     if (customerDetails != null) {
       bytes.addAll(_setLeftAlign());
-      
+
       final salutation = customerDetails['salutation'] ?? '';
       final firstName = customerDetails['firstName'] ?? '';
       final lastName = customerDetails['lastName'] ?? '';
       final organization = customerDetails['organization'] ?? '';
-      
+
       if (organization.isNotEmpty) {
         bytes.addAll(_printText(organization));
       }
-      
+
       final fullName = '$salutation $firstName $lastName'.trim();
       if (fullName.isNotEmpty) {
         bytes.addAll(_printText(fullName));
@@ -217,7 +217,7 @@ class EscPosGeneratorService {
 
       bytes.addAll(_printSeparator());
     }
-    
+
     return bytes;
   }
 
@@ -233,7 +233,8 @@ class EscPosGeneratorService {
     if (createdAt != null) {
       try {
         final date = DateTime.parse(createdAt);
-        final formatted = '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+        final formatted =
+            '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
         bytes.addAll(_printText('Date: $formatted'));
       } catch (e) {
         bytes.addAll(_printText('Date: $createdAt'));
@@ -319,7 +320,6 @@ class EscPosGeneratorService {
       gS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30, // fn=81, m=48
     ]);
 
-
     return bytes;
   }
 
@@ -336,10 +336,7 @@ class EscPosGeneratorService {
 
     final condition = device['condition'] as List?;
     if (condition != null && condition.isNotEmpty) {
-      final conditionStr = condition
-          .map((c) => c['value'] ?? '')
-          .where((v) => v.isNotEmpty)
-          .join(', ');
+      final conditionStr = condition.map((c) => c['value'] ?? '').where((v) => v.isNotEmpty).join(', ');
       if (conditionStr.isNotEmpty) {
         bytes.addAll(_printText('Condition: $conditionStr'));
       }
@@ -355,10 +352,7 @@ class EscPosGeneratorService {
 
     final defectList = defect['defect'] as List?;
     if (defectList != null && defectList.isNotEmpty) {
-      final defectStr = defectList
-          .map((d) => d['value'] ?? '')
-          .where((v) => v.isNotEmpty)
-          .join(', ');
+      final defectStr = defectList.map((d) => d['value'] ?? '').where((v) => v.isNotEmpty).join(', ');
       if (defectStr.isNotEmpty) {
         bytes.addAll(_printText(defectStr));
       }
@@ -375,7 +369,7 @@ class EscPosGeneratorService {
   /// Print services/line items section
   static List<int> _printServicesSection(List assignedItems) {
     final List<int> bytes = [];
-    
+
     bytes.addAll(_setLeftAlign());
     bytes.addAll(_printSectionHeader('Services:'));
     bytes.addAll(_setCenterAlign());
@@ -386,7 +380,7 @@ class EscPosGeneratorService {
       if (item is Map<String, dynamic>) {
         final name = item['productName'] ?? item['name'] ?? '';
         final price = item['price_incl_vat'] ?? item['salePriceIncVat'] ?? 0;
-        
+
         if (name.isNotEmpty) {
           bytes.addAll(_setLeftAlign());
           bytes.addAll(_printText(name));
@@ -408,7 +402,7 @@ class EscPosGeneratorService {
 
     final assignedItems = jobData['assignedItems'] as List?;
     double subtotal = 0.0;
-    
+
     if (assignedItems != null) {
       for (final item in assignedItems) {
         if (item is Map<String, dynamic>) {
@@ -451,18 +445,18 @@ class EscPosGeneratorService {
     final List<int> bytes = [];
     bytes.addAll(_printSeparator());
     bytes.addAll(_setCenterAlign());
-    
+
     final receiptFooter = jobData['receiptFooter'];
     if (receiptFooter != null) {
       final contact = receiptFooter['contact'];
       if (contact != null) {
         bytes.addAll(_printText('For assistance, contact us:'));
-        
+
         final phone = contact['telephone'];
         if (phone != null && phone.isNotEmpty) {
           bytes.addAll(_printText('Tel: $phone'));
         }
-        
+
         final email = contact['email'];
         if (email != null && email.isNotEmpty) {
           bytes.addAll(_printText(email));
@@ -475,7 +469,7 @@ class EscPosGeneratorService {
         bytes.addAll(_feedLines(1));
         final iban = bank['iban'];
         final bic = bank['bic'];
-        
+
         if (iban != null && iban.isNotEmpty) {
           bytes.addAll(_printText('IBAN: $iban'));
         }
@@ -487,13 +481,13 @@ class EscPosGeneratorService {
 
     bytes.addAll(_feedLines(1));
     bytes.addAll(_printCenteredText('Thank you for your business!'));
-    
+
     return bytes;
   }
 
   // === TEXT FORMATTING HELPERS ===
 
-  /// Print regular text (left aligned) 
+  /// Print regular text (left aligned)
   static List<int> _printText(String text) {
     if (text.isEmpty) return [];
     final bytes = utf8.encode(text);
@@ -503,14 +497,8 @@ class EscPosGeneratorService {
   /// Print centered text
   static List<int> _printCenteredText(String text) {
     if (text.isEmpty) return [];
-    return [
-      ..._setCenterAlign(),
-      ...utf8.encode(text),
-      lF,
-    ];
+    return [..._setCenterAlign(), ...utf8.encode(text), lF];
   }
-
-
 
   /// Print centered bold text
   static List<int> _printCenteredBoldText(String text, {bool doubleHeight = false}) {
@@ -529,24 +517,12 @@ class EscPosGeneratorService {
   /// Print section header (bold, underlined)
   static List<int> _printSectionHeader(String text) {
     if (text.isEmpty) return [];
-    return [
-      ..._setLeftAlign(),
-      ..._setBoldOn(),
-      ...utf8.encode(text),
-      lF,
-      ..._setBoldOff(),
-    ];
+    return [..._setLeftAlign(), ..._setBoldOn(), ...utf8.encode(text), lF, ..._setBoldOff()];
   }
-
-
 
   /// Print separator line
   static List<int> _printSeparator() {
-    return [
-      ..._setCenterAlign(),
-      ...utf8.encode('--------------------------------'),
-      lF,
-    ];
+    return [..._setCenterAlign(), ...utf8.encode('--------------------------------'), lF];
   }
 
   // === ALIGNMENT COMMANDS ===
@@ -566,7 +542,7 @@ class EscPosGeneratorService {
   // === FEED & CUT COMMANDS ===
 
   static List<int> _feedLines(int lines) => [eSC, 0x64, lines]; // ESC d n
-  static List<int> _cutPaper() => [gS, 0x56, 0x00]; // GS V 0 - Full cut
+  static List<int> _cutPaper() => [gS, 0x56, 0x41, 0x03]; // GS V A 3 - Partial cut (XP-410B compatible)
 
   // === UTILITY METHODS ===
 
@@ -583,11 +559,11 @@ class EscPosGeneratorService {
   static String _getCustomerName(Map<String, dynamic> jobData) {
     final customerDetails = jobData['customerDetails'];
     if (customerDetails == null) return '';
-    
+
     final salutation = customerDetails['salutation'] ?? '';
     final firstName = customerDetails['firstName'] ?? '';
     final lastName = customerDetails['lastName'] ?? '';
-    
+
     return '$salutation $firstName $lastName'.trim();
   }
 
@@ -600,10 +576,10 @@ class EscPosGeneratorService {
   /// Strip HTML tags from text (for salutation and terms)
   static String _stripHtml(String html) {
     if (html.isEmpty) return '';
-    
+
     // Remove HTML tags
     String text = html.replaceAll(RegExp(r'<[^>]*>'), '');
-    
+
     // Decode HTML entities
     text = text
         .replaceAll('&nbsp;', ' ')
@@ -612,10 +588,10 @@ class EscPosGeneratorService {
         .replaceAll('&gt;', '>')
         .replaceAll('&quot;', '"')
         .replaceAll('&#39;', "'");
-    
+
     // Clean up extra whitespace
     text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
-    
+
     return text;
   }
 }

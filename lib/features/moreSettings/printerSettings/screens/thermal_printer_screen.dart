@@ -38,7 +38,7 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   final Map<String, List<String>> _brandModels = {
     'Epson': ['TM-T20II', 'TM-T82', 'TM-T88V', 'TM-M30'],
     'Star': ['TSP143III', 'TSP650II', 'TSP700II', 'TSP847II'],
-    'Xprinter': ['XP-80C', 'XP-365B', 'XP-N160II'],
+    'Xprinter': ['XP-80C', 'XP-365B', 'XP-N160II', 'XP-410B'],
     'Brother': ['TD-2130N', 'TD-4420TN', 'TD-4550DNWB'],
   };
 
@@ -220,7 +220,8 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
     debugPrint('🖨️ [TestPrint] Starting test print to $ip:$port');
 
     // Create a simple test receipt text
-    final testReceipt = '''
+    final testReceipt =
+        '''
 ========================================
            TEST RECEIPT
 ========================================
@@ -260,12 +261,8 @@ thermal printer configuration.
 
       // Use the printer service factory to get appropriate service
       final printerService = PrinterServiceFactory.getPrinterServiceForConfig(config);
-      
-      final result = await printerService.printThermalReceipt(
-        ipAddress: ip,
-        text: testReceipt,
-        port: port,
-      );
+
+      final result = await printerService.printThermalReceipt(ipAddress: ip, text: testReceipt, port: port);
 
       if (result.success) {
         debugPrint('✅ [TestPrint] Print successful');
@@ -586,55 +583,40 @@ thermal printer configuration.
 
             // Test Print Button
             Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha:0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: isPrinting ? null : _testPrint,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+                ],
+              ),
+              child: SafeArea(
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: isPrinting ? null : _testPrint,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                  ),
-                  child: isPrinting
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                    child: isPrinting
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
-                          ),
-                        )
-                      : const Text(
-                          'Test Print',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                          )
+                        : const Text('Test Print', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
                 ),
               ),
             ),
-          ),
-
           ],
         ),
       ),
