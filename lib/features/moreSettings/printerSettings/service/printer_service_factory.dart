@@ -1,4 +1,3 @@
-
 import 'brother_sdk_printer_service.dart';
 import 'brother_printer_service.dart';
 import 'epson_printer_service.dart';
@@ -130,6 +129,7 @@ class PrinterServiceFactory {
       ipAddress: config.ipAddress,
       text: text,
       port: config.port ?? 9100,
+      labelSize: config.labelSize,
     );
   }
 
@@ -171,6 +171,7 @@ class PrinterServiceFactory {
       ipAddress: config.ipAddress,
       labelData: labelData,
       port: config.port ?? 9100,
+      labelSize: config.labelSize,
     );
   }
 
@@ -229,6 +230,7 @@ class PrinterServiceFactory {
       ipAddress: config.ipAddress,
       imageBytes: imageBytes,
       port: config.port ?? 9100,
+      labelSize: config.labelSize,
     );
   }
 

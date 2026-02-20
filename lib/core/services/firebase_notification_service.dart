@@ -36,14 +36,23 @@ class FirebaseNotificationService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // Get the device token
-        String? token = await _fcm.getToken();
-        debugPrint('🔑 [FirebaseNotificationService] FCM Token: $token');
+        // Tell iOS to show notification banners even when app is in foreground
+        await _fcm.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
 
-        // To be implemented: Send token to your backend
-        // if (token != null) {
-        //   _sendTokenToBackend(token);
-        // }
+        // On iOS, we need to wait for the APNS token before getting FCM token
+        await _retrieveFCMToken();
+
+        // Listen for token refreshes (handles cases where initial token wasn't available)
+        _fcm.onTokenRefresh.listen((newToken) {
+          debugPrint(
+            '🔄 [FirebaseNotificationService] FCM Token refreshed: $newToken',
+          );
+          // To be implemented: Send updated token to your backend
+        });
 
         // Set up foreground message handler
         FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -56,6 +65,47 @@ class FirebaseNotificationService {
       }
     } catch (e) {
       debugPrint('❌ [FirebaseNotificationService] Initialization error: $e');
+    }
+  }
+
+  /// Retrieve FCM token, waiting for APNS token on iOS if needed
+  Future<void> _retrieveFCMToken() async {
+    // On iOS, the APNS token may not be ready immediately after permission is granted.
+    // We retry a few times with a delay to allow the system to register the APNS token.
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      String? apnsToken;
+      for (int attempt = 1; attempt <= 5; attempt++) {
+        apnsToken = await _fcm.getAPNSToken();
+        if (apnsToken != null) {
+          debugPrint(
+            '✅ [FirebaseNotificationService] APNS token ready (attempt $attempt)',
+          );
+          break;
+        }
+        debugPrint(
+          '⏳ [FirebaseNotificationService] APNS token not ready, retrying ($attempt/5)...',
+        );
+        await Future.delayed(Duration(seconds: attempt)); // Progressive backoff
+      }
+
+      if (apnsToken == null) {
+        debugPrint(
+          '⚠️ [FirebaseNotificationService] APNS token still not available after retries. '
+          'FCM token will be retrieved on next token refresh.',
+        );
+        return;
+      }
+    }
+
+    try {
+      String? token = await _fcm.getToken();
+      debugPrint('🔑 [FirebaseNotificationService] FCM Token: $token');
+      // To be implemented: Send token to your backend
+    } catch (e) {
+      debugPrint(
+        '⚠️ [FirebaseNotificationService] Could not get FCM token: $e. '
+        'Will be retrieved on token refresh.',
+      );
     }
   }
 

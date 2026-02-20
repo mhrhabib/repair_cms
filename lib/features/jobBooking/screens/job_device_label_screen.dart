@@ -33,7 +33,7 @@ class JobDeviceLabelScreen extends StatefulWidget {
 class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   final _settingsService = PrinterSettingsService();
   final _labelContentService = LabelContentSettingsService();
-  
+
   // Label content settings
   late LabelContentSettings _labelSettings;
 
@@ -299,7 +299,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Barcode section
-                      if (_labelSettings.showBarcode || _labelSettings.showJobNo)
+                      if (_labelSettings.showBarcode ||
+                          _labelSettings.showJobNo)
                         Expanded(
                           flex: 6,
                           child: Column(
@@ -319,7 +320,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                                     ),
                                   ),
                                 ),
-                              if (_labelSettings.showBarcode && _labelSettings.showJobNo)
+                              if (_labelSettings.showBarcode &&
+                                  _labelSettings.showJobNo)
                                 SizedBox(height: 8.h),
                               if (_labelSettings.showJobNo)
                                 Text(
@@ -334,11 +336,14 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                             ],
                           ),
                         ),
-                      if ((_labelSettings.showBarcode || _labelSettings.showJobNo) && 
-                          (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR))
+                      if ((_labelSettings.showBarcode ||
+                              _labelSettings.showJobNo) &&
+                          (_labelSettings.showJobQR ||
+                              _labelSettings.showTrackingPortalQR))
                         SizedBox(width: 16.w),
                       // QR Code section
-                      if (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR)
+                      if (_labelSettings.showJobQR ||
+                          _labelSettings.showTrackingPortalQR)
                         Expanded(
                           flex: 4,
                           child: Column(
@@ -346,7 +351,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                               SizedBox(
                                 height: 80.h,
                                 child: QrImageView(
-                                  data: _labelSettings.showJobQR ? _getQRCodeData() : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
+                                  data: _labelSettings.showJobQR
+                                      ? _getQRCodeData()
+                                      : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
                                   version: QrVersions.auto,
                                   size: 90.w,
                                   backgroundColor: Colors.white,
@@ -362,8 +369,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                   SizedBox(height: 16.h),
 
                   // Job information - single line (conditional based on settings)
-                  if (_labelSettings.showJobNo || 
-                      _labelSettings.showCustomerName || 
+                  if (_labelSettings.showJobNo ||
+                      _labelSettings.showCustomerName ||
                       _labelSettings.showModelBrand ||
                       _labelSettings.showDate ||
                       _labelSettings.showJobType ||
@@ -378,8 +385,10 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                           Text(
                             [
                               if (_labelSettings.showJobNo) _getJobNumber(),
-                              if (_labelSettings.showCustomerName) _getCustomerName(),
-                              if (_labelSettings.showModelBrand) '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
+                              if (_labelSettings.showCustomerName)
+                                _getCustomerName(),
+                              if (_labelSettings.showModelBrand)
+                                '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
                             ].where((e) => e.isNotEmpty).join(' | '),
                             style: TextStyle(
                               fontSize: 18.sp,
@@ -389,14 +398,19 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                             ),
                             textAlign: TextAlign.left,
                           ),
-                        if ((_labelSettings.showJobNo || _labelSettings.showCustomerName || _labelSettings.showModelBrand) &&
-                            (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation))
+                        if ((_labelSettings.showJobNo ||
+                                _labelSettings.showCustomerName ||
+                                _labelSettings.showModelBrand) &&
+                            (_labelSettings.showSymptom ||
+                                _labelSettings.showPhysicalLocation))
                           SizedBox(height: 4.h),
-                        if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation)
+                        if (_labelSettings.showSymptom ||
+                            _labelSettings.showPhysicalLocation)
                           Text(
                             [
                               if (_labelSettings.showSymptom) _getDefect(),
-                              if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+                              if (_labelSettings.showPhysicalLocation)
+                                'BOX: ${_getPhysicalLocation()}',
                             ].where((e) => e.isNotEmpty).join(' | '),
                             style: TextStyle(
                               fontSize: 18.sp,
@@ -427,7 +441,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   void _loadLabelContentSettings() {
     debugPrint('🏷️ [JobDeviceLabelScreen] Loading label content settings');
     _labelSettings = _labelContentService.getSettings();
-    debugPrint('✅ [JobDeviceLabelScreen] Label settings loaded: QR=${_labelSettings.showJobQR}, Barcode=${_labelSettings.showBarcode}');
+    debugPrint(
+      '✅ [JobDeviceLabelScreen] Label settings loaded: QR=${_labelSettings.showJobQR}, Barcode=${_labelSettings.showBarcode}',
+    );
   }
 
   /// Handle print button tap: try default printer, otherwise show selection
@@ -447,31 +463,37 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   /// Other TD-2: 203 DPI (8 dots/mm)
   /// TD-4: 300 DPI (11.811 dots/mm)
   double _getDotsPerMm(PrinterConfigModel? printer) {
-  final model = printer?.printerModel?.toUpperCase() ?? '';
-  
-  debugPrint('🔍 Checking printer model: "$model"');
-  
-  // TD-4 series MUST be checked FIRST (before TD-2)
-  if (model.startsWith('TD-4')) {
-    debugPrint('✅ TD-4 series detected: 300 DPI (11.811 dots/mm)');
-    return 11.811; // 300 DPI for TD-4
-  }
-  
-  // TD-2350D and TD-2350DA are 300 DPI printers
-  if (model.contains('TD-2350')) {
-    debugPrint('✅ TD-2350 series detected: 300 DPI (11.82 dots/mm)');
-    return 11.82;
-  }
-  
-  // Other TD-2 series (non-2350) are 203 DPI
-  if (model.startsWith('TD-2')) {
-    debugPrint('✅ Other TD-2 series detected: 203 DPI (8.0 dots/mm)');
+    final model = printer?.printerModel?.toUpperCase() ?? '';
+
+    debugPrint('🔍 Checking printer model: "$model"');
+
+    // TD-4 series MUST be checked FIRST (before TD-2)
+    if (model.startsWith('TD-4')) {
+      debugPrint('✅ TD-4 series detected: 300 DPI (11.811 dots/mm)');
+      return 11.811; // 300 DPI for TD-4
+    }
+
+    // TD-2350D and TD-2350DA are 300 DPI printers
+    if (model.contains('TD-2350')) {
+      debugPrint('✅ TD-2350 series detected: 300 DPI (11.82 dots/mm)');
+      return 11.82;
+    }
+
+    // Other TD-2 series (non-2350) are 203 DPI
+    if (model.startsWith('TD-2')) {
+      debugPrint('✅ Other TD-2 series detected: 203 DPI (8.0 dots/mm)');
+      return 8.0;
+    }
+
+    // Handle Xprinter (Standard 203 DPI for most XP models)
+    if (printer?.printerBrand.toLowerCase() == 'xprinter') {
+      debugPrint('✅ Xprinter detected: 203 DPI (8.0 dots/mm)');
+      return 8.0;
+    }
+
+    debugPrint('⚠️ Unknown printer model, using default 203 DPI');
     return 8.0;
   }
-  
-  debugPrint('⚠️ Unknown printer model, using default 203 DPI');
-  return 8.0;
-}
 
   /// Generate label image at exact printer resolution
   /// TD-2350D: 300 DPI (11.82 dots/mm) - 50×26mm = 591×307 dots
@@ -575,10 +597,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
           textPainter.layout(maxWidth: barcodeWidth);
           textPainter.paint(
             canvas,
-            Offset(
-              padding + (barcodeWidth - textPainter.width) / 2,
-              currentY,
-            ),
+            Offset(padding + (barcodeWidth - textPainter.width) / 2, currentY),
           );
           currentY += baseFontSize + 8;
         }
@@ -602,7 +621,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // Draw QR code at same top position as barcode (aligned) - only if QR enabled
       if (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR) {
         final qrPainter = QrPainter(
-          data: _labelSettings.showJobQR ? _getQRCodeData() : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
+          data: _labelSettings.showJobQR
+              ? _getQRCodeData()
+              : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
           version: QrVersions.auto,
           errorCorrectionLevel: QrErrorCorrectLevel.M,
           eyeStyle: const QrEyeStyle(
@@ -621,7 +642,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         canvas.scale(qrSize / 200); // QrPainter draws at ~200px
         qrPainter.paint(canvas, const Size(200, 200));
         canvas.restore();
-        
+
         // Update currentY based on QR height
         final qrBottomY = padding + qrSize;
         if (qrBottomY > currentY) {
@@ -634,7 +655,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       // Build text lines based on settings
       final List<String> textLines = [];
-      
+
       // First line: Customer | Device
       if (_labelSettings.showCustomerName || _labelSettings.showModelBrand) {
         final line = [
@@ -653,7 +674,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation) {
         final line = [
           if (_labelSettings.showSymptom) _getDefect(),
-          if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+          if (_labelSettings.showPhysicalLocation)
+            'BOX: ${_getPhysicalLocation()}',
         ].where((e) => e.isNotEmpty).join(' | ');
         if (line.isNotEmpty) textLines.add(line);
       }

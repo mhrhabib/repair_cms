@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import '../models/printer_config_model.dart';
 
 /// Base printer service interface that all printer brands implement
 abstract class BasePrinterService {
@@ -16,6 +17,7 @@ abstract class BasePrinterService {
     required String text,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   });
 
   /// Print device label with formatted data
@@ -24,6 +26,7 @@ abstract class BasePrinterService {
     required Map<String, String> labelData,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   });
 
   /// Print image (if supported)
@@ -31,6 +34,7 @@ abstract class BasePrinterService {
     required String ipAddress,
     required Uint8List imageBytes,
     int port = 9100,
+    LabelSize? labelSize,
   });
 
   /// Check printer status

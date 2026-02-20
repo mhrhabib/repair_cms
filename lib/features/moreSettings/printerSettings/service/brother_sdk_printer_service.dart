@@ -19,7 +19,8 @@ import 'package:repair_cms/set_up_di.dart';
 /// This service will immediately throw an exception for TD printers, allowing the caller
 /// to fall back to raw TCP/IPP printing via BrotherPrinterService.
 class BrotherSDKPrinterService implements base.BasePrinterService {
-  static final BrotherSDKPrinterService _instance = BrotherSDKPrinterService._internal();
+  static final BrotherSDKPrinterService _instance =
+      BrotherSDKPrinterService._internal();
   factory BrotherSDKPrinterService() => _instance;
   BrotherSDKPrinterService._internal();
 
@@ -93,7 +94,10 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
 
   /// Map our app's `LabelSize` (from settings) to `BrotherLabelSize` used by the SDK
   /// Note: This is only for QL and PT series. TD series should use customPaperSize instead.
-  BrotherLabelSize _mapLabelSizeToBrother(LabelSize? labelSize, String modelString) {
+  BrotherLabelSize _mapLabelSizeToBrother(
+    LabelSize? labelSize,
+    String modelString,
+  ) {
     if (labelSize == null) return BrotherLabelSize.QLRollW62;
 
     final w = labelSize.width;
@@ -144,7 +148,12 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
   }) async {
-    return printLabel(ipAddress: ipAddress, text: text, port: port, timeout: timeout);
+    return printLabel(
+      ipAddress: ipAddress,
+      text: text,
+      port: port,
+      timeout: timeout,
+    );
   }
 
   @override
@@ -153,6 +162,7 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     required String text,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     // Check for TD series printers BEFORE attempting any SDK calls
     final modelString = _getModelForIp(ipAddress);
@@ -163,7 +173,9 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
       _talker.debug(
         '[LabelPrinter: $ipAddress] TD series detected: $modelString - SDK not supported, triggering raw TCP fallback',
       );
-      throw Exception('TD series printers require raw TCP mode. Brother SDK does not support TD series.');
+      throw Exception(
+        'TD series printers require raw TCP mode. Brother SDK does not support TD series.',
+      );
     }
 
     // Retry logic: attempt up to 3 times with delays
@@ -172,11 +184,15 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
 
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        _talker.info('[LabelPrinter: $ipAddress] Starting Brother SDK label print (Attempt $attempt/$maxRetries)');
+        _talker.info(
+          '[LabelPrinter: $ipAddress] Starting Brother SDK label print (Attempt $attempt/$maxRetries)',
+        );
         final device = _createNetworkDevice(ipAddress, modelString);
 
         // Debug info: log mapping and device details before opening SDK stream
-        _talker.debug('[LabelPrinter] Model: $modelString, Device: ${device.modelName}');
+        _talker.debug(
+          '[LabelPrinter] Model: $modelString, Device: ${device.modelName}',
+        );
         debugPrint('🛠️ Brother SDK — modelString=$modelString');
         debugPrint(
           '🛠️ Brother SDK — device: ip=${device.ipAddress}, source=${device.source}, model=${device.model}, modelName=${device.modelName}',
@@ -196,16 +212,24 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
         if (!await pdfFile.exists()) {
           throw Exception('PDF file not created at $pdfPath');
         }
-        debugPrint('🛠️ Brother SDK — PDF file size: ${await pdfFile.length()} bytes');
+        debugPrint(
+          '🛠️ Brother SDK — PDF file size: ${await pdfFile.length()} bytes',
+        );
 
-        _talker.info('[LabelPrinter] Sending to Brother printer: ${await pdfFile.length()} bytes');
+        _talker.info(
+          '[LabelPrinter] Sending to Brother printer: ${await pdfFile.length()} bytes',
+        );
 
         // QL and PT series use labelSize enum
         final brotherLabel = _mapLabelSizeToBrother(cfgLabelSize, modelString);
         debugPrint('🛠️ Brother SDK — QL/PT printer: labelSize=$brotherLabel');
         _talker.debug('[LabelPrinter] QL/PT printer: labelSize=$brotherLabel');
 
-        await BrotherPrinter.printPDF(path: pdfPath, device: device, labelSize: brotherLabel);
+        await BrotherPrinter.printPDF(
+          path: pdfPath,
+          device: device,
+          labelSize: brotherLabel,
+        );
 
         _talker.info('[LabelPrinter: $ipAddress] ✅ Label printed successfully');
         debugPrint('✅ Brother SDK — printPDF completed successfully');
@@ -218,9 +242,15 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
           await File(pdfPath).delete();
         } catch (_) {}
 
-        return base.PrinterResult(success: true, message: 'Print successful (SDK)', code: 0);
+        return base.PrinterResult(
+          success: true,
+          message: 'Print successful (SDK)',
+          code: 0,
+        );
       } catch (e, st) {
-        _talker.warning('[LabelPrinter: $ipAddress] Attempt $attempt failed: $e');
+        _talker.warning(
+          '[LabelPrinter: $ipAddress] Attempt $attempt failed: $e',
+        );
         debugPrint('⚠️ Brother SDK printLabel attempt $attempt error: $e');
 
         // If not the last attempt, wait before retrying
@@ -231,12 +261,15 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
         }
 
         // Final attempt failed - provide detailed error message
-        _talker.error('[LabelPrinter: $ipAddress] ❌ All $maxRetries attempts failed');
+        _talker.error(
+          '[LabelPrinter: $ipAddress] ❌ All $maxRetries attempts failed',
+        );
         debugPrint('❌ Stack trace: $st');
 
         // Provide more specific error messages
         String errorMsg = 'Print failed after $maxRetries attempts. ';
-        if (e.toString().contains('connection') || e.toString().contains('timeout')) {
+        if (e.toString().contains('connection') ||
+            e.toString().contains('timeout')) {
           errorMsg +=
               'Connection issue: Check if printer is on, IP address ($ipAddress) is correct, and both devices are on same network.';
         } else if (e.toString().contains('model')) {
@@ -264,7 +297,11 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
       }
     }
     // Should never reach here due to loop logic
-    return base.PrinterResult(success: false, message: 'Unknown error', code: -1);
+    return base.PrinterResult(
+      success: false,
+      message: 'Unknown error',
+      code: -1,
+    );
   }
 
   @override
@@ -273,6 +310,7 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     required Map<String, String> labelData,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     final buffer = StringBuffer();
     buffer.writeln('JOB: ${labelData['jobNumber'] ?? 'N/A'}');
@@ -282,7 +320,12 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     buffer.writeln('DEFECT: ${labelData['defect'] ?? 'N/A'}');
     buffer.writeln('LOCATION: ${labelData['location'] ?? 'N/A'}');
 
-    return printLabel(ipAddress: ipAddress, text: buffer.toString(), port: port, timeout: timeout);
+    return printLabel(
+      ipAddress: ipAddress,
+      text: buffer.toString(),
+      port: port,
+      timeout: timeout,
+    );
   }
 
   @override
@@ -290,6 +333,7 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
     required String ipAddress,
     required Uint8List imageBytes,
     int port = 9100,
+    LabelSize? labelSize,
   }) async {
     // Check for TD series printers BEFORE attempting any SDK calls
     final modelString = _getModelForIp(ipAddress);
@@ -297,13 +341,19 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
       debugPrint(
         '🛠️ Brother SDK (image) — TD printer detected ($modelString), SDK not supported - skipping to raw TCP fallback',
       );
-      _talker.debug('[LabelPrinter: $ipAddress] TD series detected: $modelString - SDK image printing not supported');
-      throw Exception('TD series printers require raw TCP mode. Brother SDK does not support TD series.');
+      _talker.debug(
+        '[LabelPrinter: $ipAddress] TD series detected: $modelString - SDK image printing not supported',
+      );
+      throw Exception(
+        'TD series printers require raw TCP mode. Brother SDK does not support TD series.',
+      );
     }
 
     try {
       final device = _createNetworkDevice(ipAddress, modelString);
-      debugPrint('🛠️ Brother SDK (image) — device: ip=${device.ipAddress}, model=${device.modelName}');
+      debugPrint(
+        '🛠️ Brother SDK (image) — device: ip=${device.ipAddress}, model=${device.modelName}',
+      );
 
       final tempDir = await getTemporaryDirectory();
       final isPdf =
@@ -317,41 +367,70 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
 
       if (isPdf) {
         // Rasterize PDF to image
-        await for (var page in printing.Printing.raster(imageBytes, pages: [0], dpi: 300)) {
+        await for (var page in printing.Printing.raster(
+          imageBytes,
+          pages: [0],
+          dpi: 300,
+        )) {
           final uiImage = await page.toImage();
-          final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+          final byteData = await uiImage.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
 
-          tempFile = File('${tempDir.path}/print_pdf_${DateTime.now().millisecondsSinceEpoch}.png');
+          tempFile = File(
+            '${tempDir.path}/print_pdf_${DateTime.now().millisecondsSinceEpoch}.png',
+          );
           await tempFile.writeAsBytes(byteData!.buffer.asUint8List());
           break; // Only print first page
         }
       } else {
         // Save image bytes directly
-        tempFile = File('${tempDir.path}/print_image_${DateTime.now().millisecondsSinceEpoch}.png');
+        tempFile = File(
+          '${tempDir.path}/print_image_${DateTime.now().millisecondsSinceEpoch}.png',
+        );
         await tempFile.writeAsBytes(imageBytes);
       }
 
       if (tempFile == null) {
-        return base.PrinterResult(success: false, message: 'Failed to process image', code: -1);
+        return base.PrinterResult(
+          success: false,
+          message: 'Failed to process image',
+          code: -1,
+        );
       }
 
       // Create PDF from image and send to SDK
       final pdfPath = await _createPdfFromImage(await tempFile.readAsBytes());
-      final cfgLabelSizeImg = _settingsService.getDefaultPrinter('label')?.labelSize;
+      final cfgLabelSizeImg = _settingsService
+          .getDefaultPrinter('label')
+          ?.labelSize;
       debugPrint('🛠️ Brother SDK (image) — sending PDF at $pdfPath');
 
       // QL and PT series use labelSize enum
-      final brotherLabelImg = _mapLabelSizeToBrother(cfgLabelSizeImg, modelString);
-      debugPrint('🛠️ Brother SDK (image) — QL/PT printer: labelSize=$brotherLabelImg');
+      final brotherLabelImg = _mapLabelSizeToBrother(
+        cfgLabelSizeImg,
+        modelString,
+      );
+      debugPrint(
+        '🛠️ Brother SDK (image) — QL/PT printer: labelSize=$brotherLabelImg',
+      );
 
-      await BrotherPrinter.printPDF(path: pdfPath, device: device, labelSize: brotherLabelImg);
+      await BrotherPrinter.printPDF(
+        path: pdfPath,
+        device: device,
+        labelSize: brotherLabelImg,
+      );
 
       try {
         await tempFile.delete();
         await File(pdfPath).delete();
       } catch (_) {}
 
-      return base.PrinterResult(success: true, message: 'Print successful (SDK)', code: 0);
+      return base.PrinterResult(
+        success: true,
+        message: 'Print successful (SDK)',
+        code: 0,
+      );
     } catch (e, st) {
       debugPrint('❌ Brother SDK printLabelImage error: $e');
       debugPrint(st.toString());
@@ -360,11 +439,16 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
   }
 
   @override
-  Future<base.PrinterStatus> getPrinterStatus({required String ipAddress, int port = 9100}) async {
+  Future<base.PrinterStatus> getPrinterStatus({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
     try {
       // Use brother_printer discovery to check for device presence
       final devices = await BrotherPrinter.searchDevices(delay: 3);
-      debugPrint('🛠️ Brother SDK — discovered devices: ${devices.map((d) => d.ipAddress).toList()}');
+      debugPrint(
+        '🛠️ Brother SDK — discovered devices: ${devices.map((d) => d.ipAddress).toList()}',
+      );
       final found = devices.any((d) => d.ipAddress == ipAddress);
 
       return base.PrinterStatus(
@@ -373,13 +457,19 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
         code: found ? 0 : -1,
       );
     } catch (e) {
-      return base.PrinterStatus(isConnected: false, message: 'Status error: $e', code: -1);
+      return base.PrinterStatus(
+        isConnected: false,
+        message: 'Status error: $e',
+        code: -1,
+      );
     }
   }
 
   Future<String> _createPdfFromText(String text) async {
     final doc = pw.Document();
-    doc.addPage(pw.Page(build: (pw.Context ctx) => pw.Container(child: pw.Text(text))));
+    doc.addPage(
+      pw.Page(build: (pw.Context ctx) => pw.Container(child: pw.Text(text))),
+    );
     final bytes = await doc.save();
     final file = File(
       '${(await getTemporaryDirectory()).path}/brother_text_${DateTime.now().millisecondsSinceEpoch}.pdf',
@@ -391,7 +481,9 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
   Future<String> _createPdfFromImage(Uint8List imageBytes) async {
     final doc = pw.Document();
     final image = pw.MemoryImage(imageBytes);
-    doc.addPage(pw.Page(build: (pw.Context ctx) => pw.Center(child: pw.Image(image))));
+    doc.addPage(
+      pw.Page(build: (pw.Context ctx) => pw.Center(child: pw.Image(image))),
+    );
     final bytes = await doc.save();
     final file = File(
       '${(await getTemporaryDirectory()).path}/brother_image_${DateTime.now().millisecondsSinceEpoch}.pdf',
@@ -401,6 +493,8 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
   }
 
   bool usesBrotherSDK(String modelString) {
-    return modelString.startsWith('TD-') || modelString.startsWith('QL-') || modelString.startsWith('PT-');
+    return modelString.startsWith('TD-') ||
+        modelString.startsWith('QL-') ||
+        modelString.startsWith('PT-');
   }
 }

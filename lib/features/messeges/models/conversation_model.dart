@@ -383,9 +383,10 @@ class Comment {
     if (mentionsList != null) {
       mentions = mentionsList
           .map((m) {
-            if (m is Map)
+            if (m is Map) {
               return (m['_id'] ?? m['id'] ?? m['sId'] ?? m['email'])
                   ?.toString();
+            }
             return m?.toString();
           })
           .whereType<String>()

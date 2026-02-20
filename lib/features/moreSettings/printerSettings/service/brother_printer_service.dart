@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/set_up_di.dart';
 import 'printer_settings_service.dart';
+import '../models/printer_config_model.dart';
 
 import 'base_printer_service.dart';
 
@@ -163,6 +164,7 @@ class BrotherPrinterService implements BasePrinterService {
     required String text,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     return printThermalReceipt(
       ipAddress: ipAddress,
@@ -178,6 +180,7 @@ class BrotherPrinterService implements BasePrinterService {
     required Map<String, String> labelData,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     try {
       _talker.info('[BrotherRawTCP: $ipAddress] Printing device label');
@@ -254,6 +257,7 @@ class BrotherPrinterService implements BasePrinterService {
     required String ipAddress,
     required Uint8List imageBytes,
     int port = 9100,
+    LabelSize? labelSize,
   }) async {
     try {
       _talker.info(
@@ -633,7 +637,9 @@ class BrotherPrinterService implements BasePrinterService {
 
     final validFlag = 0x80; // Bit 7: Valid command
     final autoCut = 0x02; // Bit 1: Auto-cut
-    final highQuality = dotsPerMm > 10 ? 0x04 : 0x00; // Bit 2: High quality for TD-4
+    final highQuality = dotsPerMm > 10
+        ? 0x04
+        : 0x00; // Bit 2: High quality for TD-4
     final mirrorOff = 0x00; // Bit 0: No mirror
 
     bytes.add(validFlag | autoCut | highQuality | mirrorOff);
@@ -740,7 +746,7 @@ class BrotherPrinterService implements BasePrinterService {
 
     // 9. Print command
     bytes.add(0x1A); // SUB - Print command
-    
+
     // 10. Form feed to eject label
     bytes.add(0x0C); // FF - Form feed
 

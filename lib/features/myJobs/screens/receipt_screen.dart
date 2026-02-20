@@ -28,9 +28,11 @@ class ReceiptScreen extends StatelessWidget {
     debugPrint('🖨️ Opening printer selection dialog');
 
     final allPrinters = _settingsService.getAllPrinters();
-    // Only show A4 printers in receipt screen
+    // Show all configured printers so user can choose between A4, Label (Xprinter), or Thermal
     final List<PrinterConfigModel> configuredPrinters = [
       ...allPrinters['a4'] ?? [],
+      ...allPrinters['thermal'] ?? [],
+      ...allPrinters['label'] ?? [],
     ];
 
     debugPrint('📊 Found ${configuredPrinters.length} A4 printers');

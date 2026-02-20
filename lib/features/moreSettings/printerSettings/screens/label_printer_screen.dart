@@ -34,6 +34,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   String _selectedProtocol = 'TCP';
   bool _setAsDefault = false;
   bool _isSaving = false;
+  bool _isPrinting = false;
 
   List<PrinterConfigModel> _savedPrinters = [];
 
@@ -56,7 +57,15 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       'TD-4550DNWB',
       'TD-455DNWB', // Client's printer at 192.168.0.7 (typo variant of TD-4550DNWB)
     ],
-    'Xprinter': ['XP-420B', 'XP-470B', 'XP-DT425B'],
+    'Xprinter': [
+      'XP-80C',
+      'XP-365B',
+      'XP-N160II',
+      'XP-410B',
+      'XP-420B',
+      'XP-470B',
+      'XP-DT425B',
+    ],
     'Dymo': ['LabelWriter 450', 'LabelWriter 4XL', 'LabelWriter 550'],
   };
 
@@ -257,6 +266,139 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
       SnackbarDemo(
         message: 'Printer selected: ${result['ip']}',
       ).showCustomSnackbar(context);
+    }
+  }
+
+  /// Test receipt print (text-based)
+  Future<void> _testReceiptPrint() async {
+    final ip = _ipController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 9100;
+
+    if (ip.isEmpty) {
+      SnackbarDemo(
+        message: 'Please enter IP address to test print',
+      ).showCustomSnackbar(context);
+      return;
+    }
+
+    setState(() => _isPrinting = true);
+
+    final testReceipt =
+        '''
+========================================
+           TEST RECEIPT
+========================================
+
+Printer: $_selectedBrand ${_selectedModel ?? ''}
+IP Address: $ip
+Port: $port
+
+========================================
+           TEST SUCCESSFUL
+========================================
+
+Date: ${DateTime.now().toString().split('.')[0]}
+
+This is a test print to verify your
+label printer's receipt mode.
+
+========================================
+''';
+
+    try {
+      final config = PrinterConfigModel(
+        printerType: 'label',
+        printerBrand: _selectedBrand,
+        printerModel: _selectedModel,
+        ipAddress: ip,
+        protocol: _selectedProtocol,
+        port: port,
+        isDefault: false,
+      );
+
+      final printerService = PrinterServiceFactory.getPrinterServiceForConfig(
+        config,
+      );
+      final result = await printerService.printThermalReceipt(
+        ipAddress: ip,
+        text: testReceipt,
+        port: port,
+      );
+
+      if (result.success) {
+        SnackbarDemo(
+          message: '✅ Test receipt printed successfully!',
+        ).showCustomSnackbar(context);
+      } else {
+        SnackbarDemo(
+          message: '❌ Test receipt failed: ${result.message}',
+        ).showCustomSnackbar(context);
+      }
+    } catch (e) {
+      SnackbarDemo(
+        message: '❌ Test receipt error: $e',
+      ).showCustomSnackbar(context);
+    } finally {
+      setState(() => _isPrinting = false);
+    }
+  }
+
+  /// Test label print (structured data)
+  Future<void> _testLabelPrint() async {
+    final ip = _ipController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 9100;
+
+    if (ip.isEmpty) {
+      SnackbarDemo(
+        message: 'Please enter IP address to test label',
+      ).showCustomSnackbar(context);
+      return;
+    }
+
+    setState(() => _isPrinting = true);
+
+    try {
+      final config = PrinterConfigModel(
+        printerType: 'label',
+        printerBrand: _selectedBrand,
+        printerModel: _selectedModel,
+        ipAddress: ip,
+        protocol: _selectedProtocol,
+        port: port,
+        isDefault: false,
+        labelSize: _selectedLabelSize,
+      );
+
+      final labelData = {
+        'jobNumber': 'JOB-12345',
+        'customerName': 'Test Customer',
+        'deviceName': 'iPhone 13 Pro',
+        'imei': '123456789012345',
+        'defect': 'Broken Screen',
+        'location': 'Shelf A-1',
+        'jobId': '888',
+      };
+
+      final result = await PrinterServiceFactory.printDeviceLabelWithFallback(
+        config: config,
+        labelData: labelData,
+      );
+
+      if (result.success) {
+        SnackbarDemo(
+          message: '✅ Test label printed successfully!',
+        ).showCustomSnackbar(context);
+      } else {
+        SnackbarDemo(
+          message: '❌ Test label failed: ${result.message}',
+        ).showCustomSnackbar(context);
+      }
+    } catch (e) {
+      SnackbarDemo(
+        message: '❌ Test label error: $e',
+      ).showCustomSnackbar(context);
+    } finally {
+      setState(() => _isPrinting = false);
     }
   }
 
@@ -768,8 +910,75 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
               ),
             if (_ipController.text.trim().isNotEmpty) SizedBox(height: 8.h),
 
-            // Test Button with EXACT 591x307 dots (50x26mm @ 300 DPI)
-            if (_ipController.text.trim().isNotEmpty)
+            if (_ipController.text.trim().isNotEmpty) ...[
+              Padding(
+                padding: EdgeInsets.only(top: 12.h),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.h,
+                        child: ElevatedButton(
+                          onPressed: _isPrinting ? null : _testReceiptPrint,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade600,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          child: _isPrinting
+                              ? SizedBox(
+                                  height: 20.h,
+                                  width: 20.h,
+                                  child: const CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  'Test Receipt',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.h,
+                        child: ElevatedButton(
+                          onPressed: _isPrinting ? null : _testLabelPrint,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.indigo.shade600,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          child: _isPrinting
+                              ? SizedBox(
+                                  height: 20.h,
+                                  width: 20.h,
+                                  child: const CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  'Test Label',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Padding(
                 padding: EdgeInsets.only(top: 8.h),
                 child: SizedBox(
@@ -862,6 +1071,7 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),
