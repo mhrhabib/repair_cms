@@ -113,7 +113,31 @@ USB Printer Implementation Guide:
 4. Alternative: Use network-enabled printers instead of USB.
 
 Current limitation: USB printing is not supported in this implementation.
-Please configure your printer with a network IP address for printing.
 ''';
+  }
+
+  @override
+  Future<PrinterResult> printBorderTest({
+    required String ipAddress,
+    int port = 9100,
+    LabelSize? labelSize,
+  }) async {
+    return PrinterResult(
+      success: false,
+      message: 'Border test not supported for USB',
+      code: -2,
+    );
+  }
+
+  @override
+  Future<PrinterResult> calibrate({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
+    return PrinterResult(
+      success: false,
+      message: 'Calibration not supported for USB',
+      code: -2,
+    );
   }
 }

@@ -981,6 +981,120 @@ label printer's receipt mode.
               ),
               Padding(
                 padding: EdgeInsets.only(top: 8.h),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.h,
+                        child: OutlinedButton(
+                          onPressed: _isPrinting
+                              ? null
+                              : () async {
+                                  setState(() => _isPrinting = true);
+                                  try {
+                                    final config = PrinterConfigModel(
+                                      printerType: 'label',
+                                      printerBrand: _selectedBrand,
+                                      printerModel: _selectedModel,
+                                      ipAddress: _ipController.text.trim(),
+                                      protocol: _selectedProtocol,
+                                      port: int.tryParse(_portController.text),
+                                      isDefault: false,
+                                      labelSize: _selectedLabelSize,
+                                    );
+                                    final res =
+                                        await PrinterServiceFactory.getService(
+                                          config,
+                                        ).printBorderTest(
+                                          ipAddress: config.ipAddress,
+                                          port: config.port ?? 9100,
+                                          labelSize: config.labelSize,
+                                        );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(res.message)),
+                                      );
+                                    }
+                                  } finally {
+                                    setState(() => _isPrinting = false);
+                                  }
+                                },
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            side: const BorderSide(color: Colors.purple),
+                          ),
+                          child: Text(
+                            'Border Test',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.purple,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.h,
+                        child: OutlinedButton(
+                          onPressed: _isPrinting
+                              ? null
+                              : () async {
+                                  setState(() => _isPrinting = true);
+                                  try {
+                                    final config = PrinterConfigModel(
+                                      printerType: 'label',
+                                      printerBrand: _selectedBrand,
+                                      printerModel: _selectedModel,
+                                      ipAddress: _ipController.text.trim(),
+                                      protocol: _selectedProtocol,
+                                      port: int.tryParse(_portController.text),
+                                      isDefault: false,
+                                    );
+                                    final res =
+                                        await PrinterServiceFactory.getService(
+                                          config,
+                                        ).calibrate(
+                                          ipAddress: config.ipAddress,
+                                          port: config.port ?? 9100,
+                                        );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(res.message)),
+                                      );
+                                    }
+                                  } finally {
+                                    setState(() => _isPrinting = false);
+                                  }
+                                },
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            side: const BorderSide(color: Colors.teal),
+                          ),
+                          child: Text(
+                            'Calibrate/Feed',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.teal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: 8.h),
                 child: SizedBox(
                   width: double.infinity,
                   height: 48.h,

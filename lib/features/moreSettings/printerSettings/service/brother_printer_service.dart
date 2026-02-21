@@ -761,4 +761,29 @@ class BrotherPrinterService implements BasePrinterService {
     );
     return bytes;
   }
+
+  @override
+  Future<PrinterResult> printBorderTest({
+    required String ipAddress,
+    int port = 9100,
+    LabelSize? labelSize,
+  }) async {
+    return PrinterResult(
+      success: false,
+      message: 'Border test not implemented for raw Brother',
+      code: -2,
+    );
+  }
+
+  @override
+  Future<PrinterResult> calibrate({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
+    return PrinterResult(
+      success: false,
+      message: 'Calibration not implemented for raw Brother',
+      code: -2,
+    );
+  }
 }

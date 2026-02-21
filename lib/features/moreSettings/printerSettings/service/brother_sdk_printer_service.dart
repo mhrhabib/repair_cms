@@ -497,4 +497,29 @@ class BrotherSDKPrinterService implements base.BasePrinterService {
         modelString.startsWith('QL-') ||
         modelString.startsWith('PT-');
   }
+
+  @override
+  Future<base.PrinterResult> printBorderTest({
+    required String ipAddress,
+    int port = 9100,
+    LabelSize? labelSize,
+  }) async {
+    return base.PrinterResult(
+      success: false,
+      message: 'Border test not supported via SDK',
+      code: -2,
+    );
+  }
+
+  @override
+  Future<base.PrinterResult> calibrate({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
+    return base.PrinterResult(
+      success: false,
+      message: 'Calibration not supported via SDK',
+      code: -2,
+    );
+  }
 }

@@ -82,8 +82,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       // Try capturing label widget as image for high-fidelity label (barcode + QR)
       if (canPrintImage) {
-        // Capture the exact widget as displayed on screen
-        final imageBytes = await _captureLabelAsImage();
+        // Capture the exact widget as displayed on screen, using the SELECTED printer for correct DPI/size
+        final imageBytes = await _captureLabelAsImage(printer);
 
         if (imageBytes == null) {
           throw Exception('Failed to capture label image');
@@ -499,17 +499,16 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   /// TD-2350D: 300 DPI (11.82 dots/mm) - 50×26mm = 591×307 dots
   /// TD-4 series: 300 DPI (11.811 dots/mm)
   /// Other TD-2: 203 DPI (8 dots/mm)
-  Future<Uint8List?> _captureLabelAsImage() async {
+  Future<Uint8List?> _captureLabelAsImage(PrinterConfigModel printer) async {
     try {
       debugPrint('📸 Generating label image at printer resolution');
 
-      // Get label size from printer config (in mm)
-      final defaultPrinter = _getDefaultPrinter();
-      final labelWidthMm = defaultPrinter?.labelSize?.width ?? 51;
-      final labelHeightMm = defaultPrinter?.labelSize?.height ?? 26;
+      // Use the SELECTED printer's size & DPI (not the default printer)
+      final labelWidthMm = printer.labelSize?.width ?? 50;
+      final labelHeightMm = printer.labelSize?.height ?? 26;
 
-      // Get DPI-aware dots per mm
-      final dotsPerMm = _getDotsPerMm(defaultPrinter);
+      // Get DPI-aware dots per mm for the selected printer
+      final dotsPerMm = _getDotsPerMm(printer);
       final dpi = dotsPerMm > 10 ? 300 : 203;
 
       // Convert to pixels at NATIVE resolution (no 2x multiplier!)
@@ -519,7 +518,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final heightPx = (labelHeightMm * dotsPerMm).round();
 
       debugPrint(
-        '📐 Printer: ${defaultPrinter?.printerModel ?? "unknown"}, DPI: $dpi',
+        '📐 Printer: ${printer.printerModel ?? "unknown"} (${printer.printerBrand}), DPI: $dpi',
       );
       debugPrint(
         '📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${widthPx}x${heightPx}px (NATIVE 1x)',
@@ -539,11 +538,13 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         bgPaint,
       );
 
-      // Apply printer margin compensation (same as test border)
-      // Shift canvas origin to account for unprintable margins
-      const double offsetX = 50.0; // Shift right
-      const double offsetY = 50.0; // Shift down
-      canvas.translate(offsetX, offsetY);
+      // Offset compensates for Brother's unprintable hardware margins.
+      // For Xprinter and other brands the TSPL SIZE/GAP commands already
+      // handle the printable area, so zero offset is correct.
+      final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
+      final double offsetX = isBrother ? 50.0 : 0.0;
+      final double offsetY = isBrother ? 50.0 : 0.0;
+      if (offsetX > 0 || offsetY > 0) canvas.translate(offsetX, offsetY);
 
       // Adjust content area to fit within shifted bounds
       final drawableWidth = widthPx - offsetX;
@@ -573,10 +574,11 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         );
       }
 
-      // Font sizes - fixed 26 for base, others proportional
-      const double baseFontSize = 26.0; // Fixed size as requested
-      // const double smallFontSize = 14.0; // Slightly smaller for details
-      final lineSpacing = baseFontSize + 4.0; // Space between lines
+      // Font size proportional to the canvas height so text fits regardless
+      // of device pixel ratio. 26.sp would be device-scaled (e.g. 78px on a 3×
+      // device) and overflow a 208-dot Xprinter label. We clamp between 11–26.
+      final double baseFontSize = (drawableHeight * 0.075).clamp(18.0, 26.0);
+      final double lineSpacing = baseFontSize + 3.0;
 
       // Draw job number under barcode (only if showJobNo is enabled)
       double currentY = padding;
@@ -588,7 +590,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
               text: _getJobNumber(),
               style: TextStyle(
                 color: Colors.black,
-                fontSize: 26.sp,
+                fontSize: baseFontSize,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -599,7 +601,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
             canvas,
             Offset(padding + (barcodeWidth - textPainter.width) / 2, currentY),
           );
-          currentY += baseFontSize + 8;
+          currentY += lineSpacing;
         }
       } else if (_labelSettings.showJobNo) {
         final textPainter = TextPainter(
@@ -607,7 +609,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
             text: _getJobNumber(),
             style: TextStyle(
               color: Colors.black,
-              fontSize: 26.sp,
+              fontSize: baseFontSize,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -615,7 +617,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         );
         textPainter.layout(maxWidth: contentWidth);
         textPainter.paint(canvas, Offset(padding, padding));
-        currentY = padding + baseFontSize + 8;
+        currentY = padding + lineSpacing;
       }
 
       // Draw QR code at same top position as barcode (aligned) - only if QR enabled
@@ -687,7 +689,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
             text: textLines[i],
             style: TextStyle(
               color: Colors.black,
-              fontSize: 26.sp,
+              fontSize: baseFontSize,
               fontWeight: FontWeight.w600,
             ),
           ),

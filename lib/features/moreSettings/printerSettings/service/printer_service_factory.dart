@@ -52,6 +52,10 @@ class PrinterServiceFactory {
     return getPrinterService(config.printerBrand);
   }
 
+  /// Alias for [getPrinterServiceForConfig] used in UI
+  static BasePrinterService getService(PrinterConfigModel config) =>
+      getPrinterServiceForConfig(config);
+
   /// Get USB printer service (special case)
   static USBPrinterService getUSBPrinterService() {
     return USBPrinterService();
