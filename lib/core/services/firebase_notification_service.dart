@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:repair_cms/core/services/local_notification_service.dart';
+import 'package:repair_cms/features/notifications/repository/fcm_token_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
 
 /// Service for managing Firebase Cloud Messaging (FCM).
@@ -47,11 +48,11 @@ class FirebaseNotificationService {
         await _retrieveFCMToken();
 
         // Listen for token refreshes (handles cases where initial token wasn't available)
-        _fcm.onTokenRefresh.listen((newToken) {
+        _fcm.onTokenRefresh.listen((newToken) async {
           debugPrint(
             '🔄 [FirebaseNotificationService] FCM Token refreshed: $newToken',
           );
-          // To be implemented: Send updated token to your backend
+          await _syncTokenToBackend(newToken);
         });
 
         // Set up foreground message handler
@@ -100,11 +101,31 @@ class FirebaseNotificationService {
     try {
       String? token = await _fcm.getToken();
       debugPrint('🔑 [FirebaseNotificationService] FCM Token: $token');
-      // To be implemented: Send token to your backend
+      if (token != null) {
+        await _syncTokenToBackend(token);
+      }
     } catch (e) {
       debugPrint(
         '⚠️ [FirebaseNotificationService] Could not get FCM token: $e. '
         'Will be retrieved on token refresh.',
+      );
+    }
+  }
+
+  /// Sync FCM token to the backend
+  Future<void> _syncTokenToBackend(String token) async {
+    try {
+      debugPrint(
+        '⬆️ [FirebaseNotificationService] Syncing FCM token to backend...',
+      );
+      final fcmRepo = SetUpDI.getIt<FcmTokenRepository>();
+      await fcmRepo.registerToken(token: token);
+      debugPrint(
+        '✅ [FirebaseNotificationService] FCM token synced successfully',
+      );
+    } catch (e) {
+      debugPrint(
+        '❌ [FirebaseNotificationService] Failed to sync FCM token: $e',
       );
     }
   }

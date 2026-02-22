@@ -36,6 +36,7 @@ import 'package:repair_cms/features/profile/repository/profile_repository.dart';
 import 'package:repair_cms/features/splash/cubit/splash_cubit.dart';
 import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
 import 'package:repair_cms/features/notifications/repository/notification_repo.dart';
+import 'package:repair_cms/features/notifications/repository/fcm_token_repository.dart';
 import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/core/services/firebase_notification_service.dart';
@@ -203,6 +204,10 @@ class SetUpDI {
       () => NotificationCubit(
         notificationRepository: _getIt<NotificationRepository>(),
       ),
+    );
+    // FCM token repository
+    _getIt.registerLazySingleton<FcmTokenRepository>(
+      () => FcmTokenRepositoryImpl(),
     );
 
     // Socket service (singleton)

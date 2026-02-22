@@ -68,4 +68,7 @@ class ApiEndpoints {
   // sub user management
   static const String findSubUsersByOwner =
       '$baseUrl/user/find-by-owner/<userId>';
+
+  // fcm token
+  static const String fcmToken = '$baseUrl/fcm-token';
 }

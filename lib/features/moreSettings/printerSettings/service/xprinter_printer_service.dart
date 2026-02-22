@@ -213,12 +213,13 @@ class XprinterPrinterService implements BasePrinterService {
 
       // 2. Build TSPL Bitmap commands
       final commands = <int>[];
-      // DIRECTION 0: printer outputs label in normal orientation.
-      // We send image rows top-to-bottom so the first row appears at
-      // the leading edge of the label (top when held normally).
+      // DIRECTION 1: printer outputs label in orientation user prefers.
+      // The user confirmed that the border test (which uses DIRECTION 1)
+      // prints correctly, while DIRECTION 0 was making the bitmap
+      // print upside down and reversed.
       commands.addAll(utf8.encode('SIZE $widthMm mm,$heightMm mm\n'));
       commands.addAll(utf8.encode('GAP 3 mm,0 mm\n'));
-      commands.addAll(utf8.encode('DIRECTION 0\n'));
+      commands.addAll(utf8.encode('DIRECTION 1\n'));
       commands.addAll(utf8.encode('SET TEAR ON\n'));
       commands.addAll(utf8.encode('CLS\n'));
 
