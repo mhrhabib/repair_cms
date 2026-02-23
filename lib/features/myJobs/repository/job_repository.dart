@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
+import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io' as io;
 import 'package:flutter/cupertino.dart';
@@ -12,7 +13,7 @@ import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/services/email_service.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart' hide InternalNote;
-import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
+import 'package:repair_cms/features/myJobs/models/status_settings_model.dart';
 
 class JobRepository {
   Future<JobListResponse> getJobs({
@@ -21,33 +22,32 @@ class JobRepository {
     String? endDate,
     int page = 1,
     int pageSize = 20,
-    String? status,
+    List<String>? statusList,
     String? userID,
+    String? sortBy,
+    String? location,
+    String? priority,
+    String? assignee,
+    String? dueDate,
   }) async {
     try {
-      final Map<String, dynamic> queryParams = {'page': page, 'pageSize': pageSize};
+      final Map<String, dynamic> queryParams = {
+        'page': page,
+        'limit': pageSize,
+        'keyword': keyword ?? '',
+        'status': '', // Always empty as per working URL
+        'assignUserId': (assignee != null && assignee != 'None') ? assignee : '',
+        'job_priority': (priority != null && priority.isNotEmpty && priority != 'All') ? priority : 'null',
+        'due_date': dueDate ?? 'null',
+      };
 
-      // Add optional parameters if provided
-      if (keyword != null && keyword.isNotEmpty) {
-        queryParams['keyword'] = keyword;
-      }
-
-      if (startDate != null && startDate.isNotEmpty) {
-        queryParams['startDate'] = startDate;
-      }
-
-      if (endDate != null && endDate.isNotEmpty) {
-        queryParams['endDate'] = endDate;
-      }
-
-      if (status != null && status.isNotEmpty) {
-        queryParams['status'] = status;
+      // Handle statusList: Encode as JSON array if provided
+      if (statusList != null && statusList.isNotEmpty) {
+        queryParams['statusList'] = jsonEncode(statusList);
       }
 
       debugPrint('🚀 [JobRepository] Fetching jobs:');
       debugPrint('   📍 User ID: $userID');
-      debugPrint('   📍 Status Filter: $status');
-      debugPrint('   📍 Page: $page');
       debugPrint('   📍 Query Params: $queryParams');
 
       dio.Response response = await BaseClient.get(
@@ -1097,6 +1097,36 @@ class JobRepository {
       debugPrint('❌ Error in deleteJobFile: $e');
       debugPrint('📋 Stack trace: $stackTrace');
       throw Exception('Failed to delete file: $e');
+    }
+  }
+
+  Future<StatusSettingsResponse> getStatusSettings(String userId) async {
+    try {
+      debugPrint('🚀 [JobRepository] Fetching status settings for user: $userId');
+
+      final dio.Response response = await BaseClient.get(url: '${ApiEndpoints.baseUrl}/settings-status/user/$userId');
+
+      if (response.statusCode == 200) {
+        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+
+        debugPrint('✅ [JobRepository] Status settings fetched successfully');
+        debugPrint('📊 [JobRepository] Total statuses: ${responseData['totalStatus'] ?? 0}');
+
+        return StatusSettingsResponse.fromJson(responseData);
+      } else {
+        throw Exception('Failed to fetch status settings: ${response.statusCode} - ${response.data}');
+      }
+    } on dio.DioException catch (e) {
+      debugPrint('❌ Dio Error in getStatusSettings: ${e.message}');
+      if (e.response != null) {
+        throw Exception('Server error: ${e.response?.statusCode} - ${e.response?.data}');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Unexpected error in getStatusSettings: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
+      throw Exception('Unexpected error: $e');
     }
   }
 

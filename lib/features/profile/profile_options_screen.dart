@@ -1,5 +1,4 @@
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/profile/password&security/password_security_screen.dart';
 import 'package:repair_cms/features/profile/personalDetails/personal_details_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -16,13 +15,26 @@ class ProfileOptionsScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           onPressed: () {
-            Navigator.pop(context);
+            try {
+              debugPrint('🔄 [ProfileOptionsScreen] Navigating back');
+              Navigator.pop(context);
+            } catch (e) {
+              debugPrint('❌ [ProfileOptionsScreen] Error navigating back: $e');
+            }
           },
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black87,
+            size: 20,
+          ),
         ),
         title: const Text(
           'My Profile',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
@@ -37,14 +49,29 @@ class ProfileOptionsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Personal Details',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonalDetailsScreen()));
+                try {
+                  debugPrint(
+                    '🔄 [ProfileOptionsScreen] Navigating to Personal Details',
+                  );
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PersonalDetailsScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint(
+                    '❌ [ProfileOptionsScreen] Error navigating to Personal Details: $e',
+                  );
+                }
               },
             ),
             Container(
               height: 1,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -55,15 +82,17 @@ class ProfileOptionsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Language & Region',
               onTap: () {
-                storage.write('token', null);
-                context.go(RouteNames.signIn);
-              },
+                //coming soon feature on toast center 
+                showCustomToast('Coming Soon!', isError: false);
+              }
             ),
             Container(
               height: 1,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
 
@@ -75,7 +104,20 @@ class ProfileOptionsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Password & Security',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => PasswordSecurityScreen()));
+                try {
+                  debugPrint(
+                    '🔄 [ProfileOptionsScreen] Navigating to Password & Security',
+                  );
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PasswordSecurityScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint(
+                    '❌ [ProfileOptionsScreen] Error navigating to Password & Security: $e',
+                  );
+                }
               },
             ),
             Container(
@@ -83,7 +125,9 @@ class ProfileOptionsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
           ],
@@ -126,7 +170,11 @@ class ProfileOptionsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.fontMainColor,
+                size: 24,
+              ),
             ],
           ),
         ),

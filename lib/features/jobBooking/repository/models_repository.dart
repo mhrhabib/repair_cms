@@ -7,7 +7,11 @@ import 'package:repair_cms/features/jobBooking/models/models_model.dart';
 
 abstract class ModelsRepository {
   Future<List<ModelsModel>> getModelsList({required String brandId});
-  Future<ModelsModel> createModel({required String name, required String userId, required String brandId});
+  Future<ModelsModel> createModel({
+    required String name,
+    required String userId,
+    required String brandId,
+  });
 }
 
 class ModelsRepositoryImpl implements ModelsRepository {
@@ -15,10 +19,14 @@ class ModelsRepositoryImpl implements ModelsRepository {
   Future<List<ModelsModel>> getModelsList({required String brandId}) async {
     try {
       debugPrint('🚀 [ModelsRepository] Fetching models list');
-      debugPrint('   📍 URL: ${ApiEndpoints.modelsListUrl.replaceAll('<brandId>', brandId)}');
+      debugPrint(
+        '   📍 URL: ${ApiEndpoints.modelsListUrl.replaceAll('<brandId>', brandId)}',
+      );
       debugPrint('   🏷️ Brand ID: $brandId');
 
-      Response response = await BaseClient.get(url: ApiEndpoints.modelsListUrl.replaceAll('<brandId>', brandId));
+      Response response = await BaseClient.get(
+        url: ApiEndpoints.modelsListUrl.replaceAll('<brandId>', brandId),
+      );
 
       debugPrint('✅ [ModelsRepository] Models response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
@@ -32,25 +40,35 @@ class ModelsRepositoryImpl implements ModelsRepository {
         }
 
         if (jsonData is List) {
-          final models = (jsonData).map((modelJson) => ModelsModel.fromJson(modelJson)).toList();
+          final models = (jsonData)
+              .map((modelJson) => ModelsModel.fromJson(modelJson))
+              .toList();
           debugPrint('   📦 Parsed ${models.length} models');
           return models;
         } else if (jsonData is Map) {
           // Handle case where API returns wrapped in a map
           final data = jsonData;
           if (data.containsKey('models') && data['models'] is List) {
-            final models = (data['models'] as List).map((modelJson) => ModelsModel.fromJson(modelJson)).toList();
-            debugPrint('   📦 Parsed ${models.length} models from "models" key');
+            final models = (data['models'] as List)
+                .map((modelJson) => ModelsModel.fromJson(modelJson))
+                .toList();
+            debugPrint(
+              '   📦 Parsed ${models.length} models from "models" key',
+            );
             return models;
           } else if (data.containsKey('data') && data['data'] is List) {
-            final models = (data['data'] as List).map((modelJson) => ModelsModel.fromJson(modelJson)).toList();
+            final models = (data['data'] as List)
+                .map((modelJson) => ModelsModel.fromJson(modelJson))
+                .toList();
             debugPrint('   📦 Parsed ${models.length} models from "data" key');
             return models;
           }
         }
 
         debugPrint('   ⚠️ Unexpected response format: $jsonData');
-        throw ModelsException(message: 'Unexpected response format from server');
+        throw ModelsException(
+          message: 'Unexpected response format from server',
+        );
       } else {
         throw ModelsException(
           message: 'Failed to load models: ${response.statusCode}',
@@ -62,7 +80,10 @@ class ModelsRepositoryImpl implements ModelsRepository {
       debugPrint('   💥 Error: ${e.message}');
       debugPrint('   📍 Type: ${e.type}');
       debugPrint('   🔧 Response: ${e.response?.data}');
-      throw ModelsException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw ModelsException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e, stackTrace) {
       debugPrint('💥 [ModelsRepository] Unexpected error:');
       debugPrint('   💥 Error: $e');
@@ -72,17 +93,34 @@ class ModelsRepositoryImpl implements ModelsRepository {
   }
 
   @override
-  Future<ModelsModel> createModel({required String name, required String userId, required String brandId}) async {
+  Future<ModelsModel> createModel({
+    required String name,
+    required String userId,
+    required String brandId,
+  }) async {
     try {
       debugPrint('🚀 [ModelsRepository] Creating new model: $name');
 
       final payload = {"name": name, "userId": userId, "brandId": brandId};
 
-      Response response = await BaseClient.post(url: ApiEndpoints.createModel, payload: payload);
+      Response response = await BaseClient.post(
+        url: ApiEndpoints.createModel,
+        payload: payload,
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final newModel = ModelsModel.fromJson(response.data);
-        debugPrint('✅ [ModelsRepository] Model created successfully: ${newModel.name}');
+        debugPrint('✅ [ModelsRepository] Model created successfully');
+        debugPrint('   📊 Response Data Type: ${response.data.runtimeType}');
+
+        // Parse response data
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data);
+        }
+
+        final newModel = ModelsModel.fromJson(jsonData);
+        debugPrint('✅ [ModelsRepository] Model created: ${newModel.name}');
         return newModel;
       } else {
         throw ModelsException(
@@ -93,9 +131,14 @@ class ModelsRepositoryImpl implements ModelsRepository {
     } on DioException catch (e) {
       debugPrint('🌐 [ModelsRepository] DioException while creating model:');
       debugPrint('   💥 Error: ${e.message}');
-      throw ModelsException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw ModelsException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e) {
-      debugPrint('💥 [ModelsRepository] Unexpected error while creating model:');
+      debugPrint(
+        '💥 [ModelsRepository] Unexpected error while creating model:',
+      );
       debugPrint('   💥 Error: $e');
       throw ModelsException(message: 'Unexpected error: $e');
     }
@@ -109,5 +152,6 @@ class ModelsException implements Exception {
   ModelsException({required this.message, this.statusCode});
 
   @override
-  String toString() => 'ModelsException: $message${statusCode != null ? ' ($statusCode)' : ''}';
+  String toString() =>
+      'ModelsException: $message${statusCode != null ? ' ($statusCode)' : ''}';
 }

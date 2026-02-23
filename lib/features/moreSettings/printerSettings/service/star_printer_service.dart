@@ -1,14 +1,19 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:talker_flutter/talker_flutter.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 import 'base_printer_service.dart';
+import '../models/printer_config_model.dart';
 
 /// Star thermal printer service
 class StarPrinterService implements BasePrinterService {
   static final StarPrinterService _instance = StarPrinterService._internal();
   factory StarPrinterService() => _instance;
   StarPrinterService._internal();
+
+  Talker get _talker => SetUpDI.getIt<Talker>();
 
   @override
   Future<PrinterResult> printThermalReceipt({
@@ -18,6 +23,7 @@ class StarPrinterService implements BasePrinterService {
     Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
+      _talker.info('[ThermalPrinter: $ipAddress] Starting Star thermal print');
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
 
       // Star ESC/POS commands (similar to Epson)
@@ -40,9 +46,21 @@ class StarPrinterService implements BasePrinterService {
       await socket.flush();
       socket.destroy();
 
-      return PrinterResult(success: true, message: 'Star receipt printed successfully', code: 0);
+      _talker.info(
+        '[ThermalPrinter: $ipAddress] ✅ Star receipt printed successfully',
+      );
+      return PrinterResult(
+        success: true,
+        message: 'Star receipt printed successfully',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterResult(success: false, message: 'Star print error: $e', code: -1);
+      _talker.error('[ThermalPrinter: $ipAddress] ❌ Star print error: $e');
+      return PrinterResult(
+        success: false,
+        message: 'Star print error: $e',
+        code: -1,
+      );
     }
   }
 
@@ -52,8 +70,14 @@ class StarPrinterService implements BasePrinterService {
     required String text,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
-    return printThermalReceipt(ipAddress: ipAddress, text: text, port: port, timeout: timeout);
+    return printThermalReceipt(
+      ipAddress: ipAddress,
+      text: text,
+      port: port,
+      timeout: timeout,
+    );
   }
 
   @override
@@ -62,6 +86,7 @@ class StarPrinterService implements BasePrinterService {
     required Map<String, String> labelData,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     try {
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
@@ -136,9 +161,17 @@ class StarPrinterService implements BasePrinterService {
       await socket.flush();
       await socket.close();
 
-      return PrinterResult(success: true, message: 'Star label printed successfully', code: 0);
+      return PrinterResult(
+        success: true,
+        message: 'Star label printed successfully',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterResult(success: false, message: 'Star print error: $e', code: -1);
+      return PrinterResult(
+        success: false,
+        message: 'Star print error: $e',
+        code: -1,
+      );
     }
   }
 
@@ -147,18 +180,38 @@ class StarPrinterService implements BasePrinterService {
     required String ipAddress,
     required Uint8List imageBytes,
     int port = 9100,
+    LabelSize? labelSize,
   }) async {
-    return PrinterResult(success: false, message: 'Star image printing not supported', code: -2);
+    return PrinterResult(
+      success: false,
+      message: 'Star image printing not supported',
+      code: -2,
+    );
   }
 
   @override
-  Future<PrinterStatus> getPrinterStatus({required String ipAddress, int port = 9100}) async {
+  Future<PrinterStatus> getPrinterStatus({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
     try {
-      final socket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 4));
+      final socket = await Socket.connect(
+        ipAddress,
+        port,
+        timeout: const Duration(seconds: 4),
+      );
       socket.destroy();
-      return PrinterStatus(isConnected: true, message: 'Star printer reachable', code: 0);
+      return PrinterStatus(
+        isConnected: true,
+        message: 'Star printer reachable',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterStatus(isConnected: false, message: 'Star printer not reachable: $e', code: -1);
+      return PrinterStatus(
+        isConnected: false,
+        message: 'Star printer not reachable: $e',
+        code: -1,
+      );
     }
   }
 }

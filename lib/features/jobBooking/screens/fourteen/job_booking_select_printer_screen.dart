@@ -6,6 +6,7 @@ import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cu
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_receipt_preview_screen.dart';
+import 'package:repair_cms/features/jobBooking/screens/job_thermal_receipt_preview_screen.dart';
 
 class JobBookingSelectPrinterScreen extends StatefulWidget {
   final String jobId;
@@ -94,6 +95,7 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
   }
 
   void _showSuccessAndNavigate() {
+    if (!mounted) return;
     // Navigate to appropriate screen based on printer type selection
     final jobCreateState = context.read<JobCreateCubit>().state;
     if (jobCreateState is JobCreateCreated && jobCreateState.response.data != null) {
@@ -106,9 +108,27 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
         //         JobDeviceLabelScreen(jobResponse: jobCreateState.response, printOption: _selectedPrinterType),
         //   ),
         // );
+      } else if (_selectedPrinterType == 'Thermal Receipt') {
+        // Navigate to thermal receipt preview screen
+        debugPrint('🧾 [SelectPrinter] Navigating to thermal receipt preview');
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                JobThermalReceiptPreviewScreen(jobResponse: jobCreateState.response, printOption: _selectedPrinterType),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 1.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOut;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
+          ),
+        );
       } else {
-        // Navigate to receipt preview screen for A4 and Thermal receipts
-        debugPrint('📄 [SelectPrinter] Navigating to receipt preview with complete job data');
+        // Navigate to A4 receipt preview screen
+        debugPrint('📄 [SelectPrinter] Navigating to A4 receipt preview with complete job data');
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
@@ -353,51 +373,51 @@ class _JobBookingSelectPrinterScreenState extends State<JobBookingSelectPrinterS
                       SizedBox(height: 16.h),
 
                       // Device Label option (full width)
-                      GestureDetector(
-                        onTap: () => _selectPrinterType('Device Label'),
-                        child: Container(
-                          height: 120.h,
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.whiteColor,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
-                              color: _selectedPrinterType == 'Device Label' ? AppColors.primary : Colors.grey.shade300,
-                              width: _selectedPrinterType == 'Device Label' ? 2 : 1,
-                            ),
-                          ),
-                          child: Stack(
-                            children: [
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.label, size: 32.sp, color: Colors.grey.shade700),
-                                  SizedBox(height: 8.h),
-                                  Text(
-                                    'Device Label',
-                                    style: AppTypography.fontSize14.copyWith(
-                                      color: Colors.grey.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                              if (_selectedPrinterType == 'Device Label')
-                                Positioned(
-                                  top: 0,
-                                  right: 0,
-                                  child: Container(
-                                    width: 20.w,
-                                    height: 20.h,
-                                    decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                                    child: Icon(Icons.check, color: Colors.white, size: 12.sp),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      // GestureDetector(
+                      //   onTap: () => _selectPrinterType('Device Label'),
+                      //   child: Container(
+                      //     height: 120.h,
+                      //     padding: EdgeInsets.all(16.w),
+                      //     decoration: BoxDecoration(
+                      //       color: AppColors.whiteColor,
+                      //       borderRadius: BorderRadius.circular(12.r),
+                      //       border: Border.all(
+                      //         color: _selectedPrinterType == 'Device Label' ? AppColors.primary : Colors.grey.shade300,
+                      //         width: _selectedPrinterType == 'Device Label' ? 2 : 1,
+                      //       ),
+                      //     ),
+                      //     child: Stack(
+                      //       children: [
+                      //         Column(
+                      //           mainAxisAlignment: MainAxisAlignment.center,
+                      //           children: [
+                      //             Icon(Icons.label, size: 32.sp, color: Colors.grey.shade700),
+                      //             SizedBox(height: 8.h),
+                      //             Text(
+                      //               'Device Label',
+                      //               style: AppTypography.fontSize14.copyWith(
+                      //                 color: Colors.grey.shade700,
+                      //                 fontWeight: FontWeight.w500,
+                      //               ),
+                      //               textAlign: TextAlign.center,
+                      //             ),
+                      //           ],
+                      //         ),
+                      //         if (_selectedPrinterType == 'Device Label')
+                      //           Positioned(
+                      //             top: 0,
+                      //             right: 0,
+                      //             child: Container(
+                      //               width: 20.w,
+                      //               height: 20.h,
+                      //               decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                      //               child: Icon(Icons.check, color: Colors.white, size: 12.sp),
+                      //             ),
+                      //           ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // ),
                       const Spacer(),
 
                       // Loading state

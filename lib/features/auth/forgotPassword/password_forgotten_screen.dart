@@ -67,11 +67,11 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenWidth > 600;
 
     return BlocListener<ForgotPasswordCubit, ForgotPasswordState>(
       listener: (context, state) {
+        if (ModalRoute.of(context)?.isCurrent != true) return;
         if (state is ForgotPasswordEmailSent) {
           showCustomToast(state.message, isError: false);
           // Navigate to verify code screen
@@ -87,8 +87,9 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(vertical: 20.h),
               child: SizedBox(
-                width: isLargeScreen ? 400 : screenWidth * 0.9,
+                width: isLargeScreen ? 600 : screenWidth * 0.9,
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -104,7 +105,7 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
                         ),
                       ),
 
-                      SizedBox(height: screenHeight * 0.08),
+                      SizedBox(height: 80.h),
 
                       // Email Label
                       const SizedBox(height: 8),
@@ -112,7 +113,7 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
                       // Email Input Field
                       Container(
                         decoration: BoxDecoration(
-                          border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
+                          border: Border(bottom: BorderSide(color: AppColors.deviderColor)),
                         ),
                         child: Row(
                           children: [
@@ -148,7 +149,7 @@ class PasswordForgottenScreenState extends State<PasswordForgottenScreen> {
                         ),
                       ),
 
-                      SizedBox(height: screenHeight * 0.12),
+                      SizedBox(height: 120.h),
 
                       // Progress Indicator
                       ThreeDotsPointerWidget(

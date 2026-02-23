@@ -104,6 +104,8 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
       builder: (_) => _PatternBottomSheet(initialPattern: connectedDots),
     );
 
+    if (!mounted) return;
+
     // If the user confirmed a pattern (result is not null)
     if (result != null) {
       setState(() {

@@ -33,6 +33,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   Customersorsuppliers? selectedProfile;
   Timer? _searchDebounceTimer;
   bool _isSearching = false;
+  bool _isProgrammaticUpdate = false;
 
   @override
   void initState() {
@@ -41,6 +42,7 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   }
 
   void _onSearchChanged() {
+    if (_isProgrammaticUpdate) return;
     final query = searchController.text.trim();
     currentSearchQuery = query;
 
@@ -90,7 +92,9 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
   void _selectProfile(Customersorsuppliers profile) {
     setState(() {
       final displayName = profile.organization ?? '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim();
+      _isProgrammaticUpdate = true;
       searchController.text = displayName;
+      _isProgrammaticUpdate = false;
       showSearchResults = false;
       showNewOption = false;
       showContactForm = false;
@@ -225,8 +229,8 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
     return match?.group(1) ?? "+1";
   }
 
-  void _navigateToNextScreen() {
-    Navigator.push(
+  Future<void> _navigateToNextScreen() async {
+    await Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -241,6 +245,16 @@ class _ChooseContactTypeScreenState extends State<ChooseContactTypeScreen> {
         },
       ),
     );
+
+    if (mounted) {
+      setState(() {
+        isExistingProfileSelected = false;
+        // Optionally reset other states if needed to restore the initial view
+        // For example, if we want to show the search results again:
+        // showSearchResults = true;
+        // But simply resetting isExistingProfileSelected should bring back the main content.
+      });
+    }
   }
 
   bool get _shouldShowButton {

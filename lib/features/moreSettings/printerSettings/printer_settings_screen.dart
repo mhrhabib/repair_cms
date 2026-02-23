@@ -18,7 +18,11 @@ class PrinterSettingsScreen extends StatelessWidget {
         elevation: 0,
         title: const Text(
           'Printer Settings',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
@@ -32,7 +36,18 @@ class PrinterSettingsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'A4 Receipt Printer',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const A4PrinterScreen()));
+                try {
+                  debugPrint('🔄 [PrinterSettings] Navigating to A4 Printer');
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const A4PrinterScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint(
+                    '❌ [PrinterSettings] Error navigating to A4 Printer: $e',
+                  );
+                }
               },
             ),
 
@@ -41,7 +56,9 @@ class PrinterSettingsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
 
@@ -51,7 +68,20 @@ class PrinterSettingsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Thermal Printer (80mm)',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ThermalPrinterScreen()));
+                try {
+                  debugPrint(
+                    '🔄 [PrinterSettings] Navigating to Thermal Printer',
+                  );
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ThermalPrinterScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint(
+                    '❌ [PrinterSettings] Error navigating to Thermal Printer: $e',
+                  );
+                }
               },
             ),
 
@@ -60,7 +90,9 @@ class PrinterSettingsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
 
@@ -70,7 +102,20 @@ class PrinterSettingsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Label Printer',
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LabelPrinterScreen()));
+                try {
+                  debugPrint(
+                    '🔄 [PrinterSettings] Navigating to Label Printer',
+                  );
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const LabelPrinterScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint(
+                    '❌ [PrinterSettings] Error navigating to Label Printer: $e',
+                  );
+                }
               },
             ),
             Container(
@@ -78,7 +123,9 @@ class PrinterSettingsScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.diviverColor, width: 0.5)),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
+                ),
               ),
             ),
           ],
@@ -104,17 +151,27 @@ class PrinterSettingsScreen extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Icon(icon, color: iconColor, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.fontMainColor, size: 24),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.fontMainColor,
+                size: 24,
+              ),
             ],
           ),
         ),

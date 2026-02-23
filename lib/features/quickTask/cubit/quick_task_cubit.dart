@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
@@ -12,11 +13,22 @@ class QuickTaskCubit extends Cubit<QuickTaskState> {
 
   // Get all todos
   Future<void> getTodos() async {
+    debugPrint('🔄 [QuickTaskCubit] Getting todos...');
     emit(QuickTaskLoading());
     try {
-      final response = await _repository.getTodos(userId: storage.read('userId'));
+      final response = await _repository.getTodos(
+        userId: storage.read('userId'),
+      );
+      debugPrint(
+        '✅ [QuickTaskCubit] Loaded ${response.length} todos successfully',
+      );
       emit(QuickTaskLoaded(response));
-    } catch (e) {
+    } on QuickTaskException catch (e) {
+      debugPrint('❌ [QuickTaskCubit] QuickTaskException: ${e.message}');
+      emit(QuickTaskError(e.message));
+    } catch (e, stackTrace) {
+      debugPrint('💥 [QuickTaskCubit] Unexpected error: $e');
+      debugPrint('📋 [QuickTaskCubit] Stack trace: $stackTrace');
       emit(QuickTaskError(e.toString()));
     }
   }
@@ -32,33 +44,54 @@ class QuickTaskCubit extends Cubit<QuickTaskState> {
 
   // Mark todo as complete
   Future<void> completeTodo(String taskId, Map<String, dynamic> updates) async {
+    debugPrint('🔄 [QuickTaskCubit] Completing todo: $taskId');
     try {
       await _repository.completeTodo(taskId, updates);
+      debugPrint('✅ [QuickTaskCubit] Todo completed, refreshing list');
       // Refresh the list
       await getTodos();
-    } catch (e) {
+    } on QuickTaskException catch (e) {
+      debugPrint('❌ [QuickTaskCubit] QuickTaskException: ${e.message}');
+      emit(QuickTaskError(e.message));
+    } catch (e, stackTrace) {
+      debugPrint('💥 [QuickTaskCubit] Unexpected error: $e');
+      debugPrint('📋 [QuickTaskCubit] Stack trace: $stackTrace');
       emit(QuickTaskError(e.toString()));
     }
   }
 
   // Delete todo
   Future<void> deleteTodo(String taskId) async {
+    debugPrint('🔄 [QuickTaskCubit] Deleting todo: $taskId');
     try {
       await _repository.deleteTodo(taskId);
+      debugPrint('✅ [QuickTaskCubit] Todo deleted, refreshing list');
       // Refresh the list
       await getTodos();
-    } catch (e) {
+    } on QuickTaskException catch (e) {
+      debugPrint('❌ [QuickTaskCubit] QuickTaskException: ${e.message}');
+      emit(QuickTaskError(e.message));
+    } catch (e, stackTrace) {
+      debugPrint('💥 [QuickTaskCubit] Unexpected error: $e');
+      debugPrint('📋 [QuickTaskCubit] Stack trace: $stackTrace');
       emit(QuickTaskError(e.toString()));
     }
   }
 
   // Create new todo
   Future<void> createTodo(Map<String, dynamic> todo) async {
+    debugPrint('🔄 [QuickTaskCubit] Creating new todo');
     try {
       await _repository.createTodo(todo);
+      debugPrint('✅ [QuickTaskCubit] Todo created, refreshing list');
       // Refresh the list
       await getTodos();
-    } catch (e) {
+    } on QuickTaskException catch (e) {
+      debugPrint('❌ [QuickTaskCubit] QuickTaskException: ${e.message}');
+      emit(QuickTaskError(e.message));
+    } catch (e, stackTrace) {
+      debugPrint('💥 [QuickTaskCubit] Unexpected error: $e');
+      debugPrint('📋 [QuickTaskCubit] Stack trace: $stackTrace');
       emit(QuickTaskError(e.toString()));
     }
   }

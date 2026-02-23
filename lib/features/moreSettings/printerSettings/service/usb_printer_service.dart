@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'base_printer_service.dart';
+import '../models/printer_config_model.dart';
 
 /// USB Printer Service
 /// Note: USB printing requires platform-specific implementation and permissions.
@@ -36,6 +37,7 @@ class USBPrinterService implements BasePrinterService {
     required String text,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     return PrinterResult(
       success: false,
@@ -52,6 +54,7 @@ class USBPrinterService implements BasePrinterService {
     required Map<String, String> labelData,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     return PrinterResult(
       success: false,
@@ -67,6 +70,7 @@ class USBPrinterService implements BasePrinterService {
     required String ipAddress,
     required Uint8List imageBytes,
     int port = 9100,
+    LabelSize? labelSize,
   }) async {
     return PrinterResult(
       success: false,
@@ -76,7 +80,10 @@ class USBPrinterService implements BasePrinterService {
   }
 
   @override
-  Future<PrinterStatus> getPrinterStatus({required String ipAddress, int port = 9100}) async {
+  Future<PrinterStatus> getPrinterStatus({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
     return PrinterStatus(
       isConnected: false,
       message:

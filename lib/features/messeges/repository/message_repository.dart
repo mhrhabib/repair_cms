@@ -4,10 +4,12 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
+import 'package:repair_cms/features/messeges/models/sub_user_model.dart';
 
 /// Repository for message-related API operations
 abstract class MessageRepository {
   Future<ConversationModel> getConversation({required String conversationId});
+  Future<List<SubUser>> getSubUsers({required String userId});
 }
 
 class MessageRepositoryImpl implements MessageRepository {
@@ -77,6 +79,56 @@ class MessageRepositoryImpl implements MessageRepository {
       debugPrint('❌ [MessageRepository] Error: $e');
       debugPrintStack(stackTrace: stacktrace);
       throw MessageException(message: 'Error loading conversation: $e');
+    }
+  }
+
+  @override
+  Future<List<SubUser>> getSubUsers({required String userId}) async {
+    try {
+      debugPrint('🌐 [MessageRepository] Fetching sub users for owner: $userId');
+
+      final Response response = await BaseClient.get(
+        url: ApiEndpoints.findSubUsersByOwner.replaceAll('<userId>', userId),
+      );
+
+      debugPrint('📊 [MessageRepository] Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        // Handle JSON string parsing
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+        final data = jsonData;
+
+        debugPrint('📦 [MessageRepository] Response data type: ${data.runtimeType}');
+
+        // Handle different response structures
+        if (data is Map<String, dynamic> && data.containsKey('success') && data['success'] == true) {
+          if (data.containsKey('data') && data['data'] is List) {
+            final usersList = data['data'] as List;
+            debugPrint('✅ [MessageRepository] Received ${usersList.length} sub users');
+            return usersList.map((json) => SubUser.fromJson(json as Map<String, dynamic>)).toList();
+          }
+        } else if (data is List) {
+          // API returns array directly
+          debugPrint('✅ [MessageRepository] Received ${data.length} sub users as list');
+          return data.map((json) => SubUser.fromJson(json as Map<String, dynamic>)).toList();
+        }
+
+        debugPrint('⚠️ [MessageRepository] Unexpected response format for sub users');
+        throw MessageException(message: 'Unexpected response format for sub users');
+      } else {
+        throw MessageException(message: 'Failed to load sub users', statusCode: response.statusCode);
+      }
+    } on DioException catch (e) {
+      debugPrint('❌ [MessageRepository] DioException: ${e.message}');
+      throw MessageException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+    } catch (e, stacktrace) {
+      debugPrint('❌ [MessageRepository] Error: $e');
+      debugPrintStack(stackTrace: stacktrace);
+      throw MessageException(message: 'Error loading sub users: $e');
     }
   }
 }

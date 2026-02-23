@@ -10,7 +10,7 @@ class AppColors {
   static const Color lightFontColor = Color(0xFF71788F);
   static const Color borderColor = Color(0xFFD4DDE7);
   static const Color blackColor = Color(0xFF000000);
-  static const Color diviverColor = Color(0xFFC6C6C8);
+  static const Color deviderColor = Color(0xFFC6C6C8);
   static const Color greenColor = Color(0xFF48BB78);
   static const Color disabledButtonColor = Color(0xFFBDBDBD);
   static const Color warningColor = Color(0xFFFF8924);

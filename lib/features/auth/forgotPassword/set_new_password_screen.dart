@@ -1,11 +1,17 @@
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/services/biometric_storage_service.dart';
 import 'package:repair_cms/features/auth/forgotPassword/cubit/forgot_password_cubit.dart';
 import 'package:repair_cms/features/auth/signin/sign_in_screen.dart';
 
 class SetNewPasswordScreen extends StatefulWidget {
-  const SetNewPasswordScreen({super.key, required this.email});
+  const SetNewPasswordScreen({
+    super.key,
+    required this.email,
+    required this.otp,
+  });
   final String email;
+  final String otp;
 
   @override
   State<SetNewPasswordScreen> createState() => SetNewPasswordScreenState();
@@ -52,13 +58,19 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
         await _saveBiometricCredentials();
       }
 
-      cubit.resetPassword(widget.email, _passwordController.text);
+      cubit.resetPassword(widget.email, _passwordController.text, widget.otp);
     }
   }
 
   Future<void> _saveBiometricCredentials() async {
     try {
-      await BiometricStorageService.saveBiometricCredentials(email: widget.email, password: _passwordController.text);
+      final storage = GetStorage();
+      final userId = storage.read('userId')?.toString();
+      await BiometricStorageService.saveBiometricCredentials(
+        email: widget.email,
+        password: _passwordController.text,
+        userId: userId,
+      );
       showCustomToast('Biometric authentication enabled');
     } catch (e) {
       showCustomToast('Failed to save biometric credentials', isError: true);
@@ -116,13 +128,12 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenWidth > 600;
 
     return BlocListener<ForgotPasswordCubit, ForgotPasswordState>(
       listener: (context, state) {
         if (state is ForgotPasswordSuccess) {
-          showCustomToast('Password reset successfully!');
+          showCustomToast('Password reset successfully!', isError: false);
           _navigateToLoginScreen();
         } else if (state is ForgotPasswordError) {
           showCustomToast(state.message, isError: true);
@@ -131,12 +142,19 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         resizeToAvoidBottomInset: true,
-        appBar: AppBar(iconTheme: IconThemeData(color: AppColors.primary, weight: 800, fill: 0.4)),
+        appBar: AppBar(
+          iconTheme: IconThemeData(
+            color: AppColors.primary,
+            weight: 800,
+            fill: 0.4,
+          ),
+        ),
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(vertical: 20.h),
               child: SizedBox(
-                width: isLargeScreen ? 400 : screenWidth * 0.9,
+                width: isLargeScreen ? 600 : screenWidth * 0.9,
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -154,18 +172,22 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
                       Center(
                         child: Text(
                           'You are almost there!',
-                          style: AppTypography.sfProText15.copyWith(color: AppColors.fontMainColor),
+                          style: AppTypography.sfProText15.copyWith(
+                            color: AppColors.fontMainColor,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
 
-                      SizedBox(height: screenHeight * 0.08),
+                      SizedBox(height: 80.h),
 
                       // Divider
                       Container(
                         height: 1,
                         decoration: BoxDecoration(
-                          border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
+                          border: Border(
+                            bottom: BorderSide(color: AppColors.deviderColor),
+                          ),
                         ),
                       ),
 
@@ -174,58 +196,89 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
                       // Password Input Field
                       Container(
                         decoration: BoxDecoration(
-                          border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
+                          border: Border(
+                            bottom: BorderSide(color: AppColors.deviderColor),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            Text('Password', style: AppTypography.sfProHintTextStyle17),
+                            Text(
+                              'Password',
+                              style: AppTypography.sfProHintTextStyle17,
+                            ),
                             Expanded(
-                              child: BlocBuilder<ForgotPasswordCubit, ForgotPasswordState>(
-                                builder: (context, state) {
-                                  final isLoading = state is ForgotPasswordLoading;
+                              child:
+                                  BlocBuilder<
+                                    ForgotPasswordCubit,
+                                    ForgotPasswordState
+                                  >(
+                                    builder: (context, state) {
+                                      final isLoading =
+                                          state is ForgotPasswordLoading;
 
-                                  return TextFormField(
-                                    controller: _passwordController,
-                                    focusNode: _passwordFocusNode,
-                                    style: AppTypography.sfProHintTextStyle17,
-                                    textInputAction: TextInputAction.done,
-                                    obscureText: _obscureText,
-                                    enabled: !isLoading,
-                                    decoration: InputDecoration(
-                                      hintText: 'Min. 6 Characters',
-                                      hintStyle: AppTypography.sfProHintTextStyle17.copyWith(
-                                        color: AppColors.diviverColor,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      suffixIcon: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (_isPasswordValid)
-                                            GestureDetector(
-                                              onTap: _togglePasswordVisibility,
-                                              child: Container(
-                                                margin: const EdgeInsets.only(right: 8),
-                                                child: Icon(
-                                                  _obscureText ? Icons.visibility : Icons.visibility_off,
-                                                  color: Colors.grey[600],
-                                                  size: 24,
-                                                ),
+                                      return TextFormField(
+                                        controller: _passwordController,
+                                        focusNode: _passwordFocusNode,
+                                        style:
+                                            AppTypography.sfProHintTextStyle17,
+                                        textInputAction: TextInputAction.done,
+                                        obscureText: _obscureText,
+                                        enabled: !isLoading,
+                                        decoration: InputDecoration(
+                                          hintText: 'Min. 6 Characters',
+                                          hintStyle: AppTypography
+                                              .sfProHintTextStyle17
+                                              .copyWith(
+                                                color: AppColors.deviderColor,
                                               ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
                                             ),
-                                        ],
-                                      ),
-                                      errorStyle: const TextStyle(color: Colors.red, fontSize: 14),
-                                    ),
-                                    keyboardType: TextInputType.visiblePassword,
-                                    validator: _passwordValidator,
-                                    onFieldSubmitted: (_) => _resetPassword(),
-                                  );
-                                },
-                              ),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 14,
+                                              ),
+                                          suffixIcon: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (_isPasswordValid)
+                                                GestureDetector(
+                                                  onTap:
+                                                      _togglePasswordVisibility,
+                                                  child: Container(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          right: 8,
+                                                        ),
+                                                    child: Icon(
+                                                      _obscureText
+                                                          ? Icons.visibility
+                                                          : Icons
+                                                                .visibility_off,
+                                                      color: Colors.grey[600],
+                                                      size: 24,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          errorStyle: const TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        keyboardType:
+                                            TextInputType.visiblePassword,
+                                        validator: _passwordValidator,
+                                        onFieldSubmitted: (_) =>
+                                            _resetPassword(),
+                                      );
+                                    },
+                                  ),
                             ),
                           ],
                         ),
@@ -243,22 +296,32 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
                               width: 24,
                               height: 24,
                               decoration: BoxDecoration(
-                                color: _isBiometricEnabled ? AppColors.greenColor : Colors.transparent,
+                                color: _isBiometricEnabled
+                                    ? AppColors.greenColor
+                                    : Colors.transparent,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: _isBiometricEnabled ? AppColors.greenColor : Colors.grey[400]!,
+                                  color: _isBiometricEnabled
+                                      ? AppColors.greenColor
+                                      : Colors.grey[400]!,
                                   width: 1,
                                 ),
                               ),
                               child: _isBiometricEnabled
-                                  ? const Icon(Icons.check, color: Colors.white, size: 18)
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 18,
+                                    )
                                   : null,
                             ),
                             const SizedBox(width: 12),
                             Text(
                               'Enable Face ID/Fingerprint for quick login',
                               style: AppTypography.sfProText15.copyWith(
-                                color: _isBiometricEnabled ? AppColors.primary : Colors.grey[600],
+                                color: _isBiometricEnabled
+                                    ? AppColors.primary
+                                    : Colors.grey[600],
                               ),
                             ),
                           ],
@@ -267,7 +330,10 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
                       SizedBox(height: 8.h),
                       Text(
                         'Your credentials will be securely stored for faster login',
-                        style: AppTypography.fontSize14.copyWith(color: Colors.grey[500], fontStyle: FontStyle.italic),
+                        style: AppTypography.fontSize14.copyWith(
+                          color: Colors.grey[500],
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
 
                       SizedBox(height: 20.h),
@@ -276,7 +342,9 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
                       Container(
                         height: 1,
                         decoration: BoxDecoration(
-                          border: Border(bottom: BorderSide(color: AppColors.diviverColor)),
+                          border: Border(
+                            bottom: BorderSide(color: AppColors.deviderColor),
+                          ),
                         ),
                       ),
 
@@ -296,7 +364,9 @@ class SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
                                     width: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteColor),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColors.whiteColor,
+                                      ),
                                     ),
                                   )
                                 : null,

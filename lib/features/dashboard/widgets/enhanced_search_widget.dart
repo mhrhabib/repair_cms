@@ -16,13 +16,18 @@ class EnhancedSearchWidget extends StatefulWidget {
   final Function(String)? onSearchChanged;
   final Function()? onQRScanPressed;
 
-  const EnhancedSearchWidget({super.key, this.onSearchChanged, this.onQRScanPressed});
+  const EnhancedSearchWidget({
+    super.key,
+    this.onSearchChanged,
+    this.onQRScanPressed,
+  });
 
   @override
   State<EnhancedSearchWidget> createState() => _EnhancedSearchWidgetState();
 }
 
-class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with SingleTickerProviderStateMixin {
+class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget>
+    with SingleTickerProviderStateMixin {
   bool _isSearchActive = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -53,7 +58,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
   }
 
   void _onSearchChanged() {
-    debugPrint('🔍 [EnhancedSearchWidget] Search text changed: ${_searchController.text}');
+    debugPrint(
+      '🔍 [EnhancedSearchWidget] Search text changed: ${_searchController.text}',
+    );
 
     // Cancel previous debounce timer
     if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -66,7 +73,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
 
       if (query.isNotEmpty) {
         // Call JobCubit to search jobs via API
-        debugPrint('👤 [EnhancedSearchWidget] Searching jobs with keyword: $query');
+        debugPrint(
+          '👤 [EnhancedSearchWidget] Searching jobs with keyword: $query',
+        );
         context.read<JobCubit>().searchJobs(query);
       }
     });
@@ -86,15 +95,21 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
   void _deactivateSearch() {
     setState(() {
       _isSearchActive = false;
+      _searchController.clear();
     });
-    _searchController.clear();
     _searchFocusNode.unfocus();
+    
+    // Clear the search keyword in JobCubit to prevent it from affecting future job list calls
+    context.read<JobCubit>().clearSearchKeyword();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isSearchActive) {
-      return BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5), child: _buildActiveSearchView());
+      return BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: _buildActiveSearchView(),
+      );
     } else {
       return _buildInactiveSearchField();
     }
@@ -122,7 +137,12 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                     SizedBox(width: 12.w),
                     Icon(FeatherIcons.search, color: Colors.black, size: 22.sp),
                     SizedBox(width: 8.w),
-                    Text('Search job', style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor)),
+                    Text(
+                      'Search job',
+                      style: AppTypography.fontSize16.copyWith(
+                        color: AppColors.lightFontColor,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -136,9 +156,17 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                 children: [
                   GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationsScreen()));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => NotificationsScreen(),
+                        ),
+                      );
                     },
-                    child: Icon(SolarIconsBold.bell, color: Colors.grey.shade600, size: 24.sp),
+                    child: Icon(
+                      SolarIconsBold.bell,
+                      color: Colors.grey.shade600,
+                      size: 24.sp,
+                    ),
                   ),
                   Positioned(
                     right: 0,
@@ -146,7 +174,10 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                     child: Container(
                       width: 8.w,
                       height: 8.h,
-                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ],
@@ -154,7 +185,11 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
               SizedBox(width: 12.w),
               GestureDetector(
                 onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProfileOptionsScreen()));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ProfileOptionsScreen(),
+                    ),
+                  );
                 },
                 child: BlocBuilder<ProfileCubit, ProfileStates>(
                   builder: (context, state) {
@@ -182,7 +217,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                               }
                             })
                             .catchError((error) {
-                              debugPrint('Failed to fetch avatar signed URL: $error');
+                              debugPrint(
+                                'Failed to fetch avatar signed URL: $error',
+                              );
                             });
                       }
                     } else if (state is ProfileLoading) {
@@ -194,11 +231,15 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                         // Profile Avatar
                         CircleAvatar(
                           radius: 16.r,
-                          backgroundImage: _avatarSignedUrl != null && _avatarSignedUrl!.isNotEmpty
+                          backgroundImage:
+                              _avatarSignedUrl != null &&
+                                  _avatarSignedUrl!.isNotEmpty
                               ? NetworkImage(_avatarSignedUrl!)
-                              : (avatarUrl != null && avatarUrl.startsWith('http')
+                              : (avatarUrl != null &&
+                                        avatarUrl.startsWith('http')
                                     ? NetworkImage(avatarUrl)
-                                    : const AssetImage('assets/icon/icon.png') as ImageProvider),
+                                    : const AssetImage('assets/icon/icon.png')
+                                          as ImageProvider),
                           backgroundColor: Colors.grey.shade300,
                           onBackgroundImageError: (exception, stackTrace) {
                             debugPrint('Profile image load error: $exception');
@@ -219,7 +260,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                                   height: 12.r,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -257,7 +300,11 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
-                    child: Icon(Icons.qr_code_scanner, color: Colors.white, size: 24.sp),
+                    child: Icon(
+                      Icons.qr_code_scanner,
+                      color: Colors.white,
+                      size: 24.sp,
+                    ),
                   ),
                 ),
                 SizedBox(width: 12.w),
@@ -266,21 +313,34 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                 Expanded(
                   child: Container(
                     height: 40.h,
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8.r)),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
                     child: TextField(
                       controller: _searchController,
                       focusNode: _searchFocusNode,
                       textAlignVertical: TextAlignVertical.center,
                       decoration: InputDecoration(
                         hintText: 'Search job',
-                        hintStyle: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
-                        prefixIcon: Icon(FeatherIcons.search, color: Colors.black, size: 22.sp),
+                        hintStyle: AppTypography.fontSize16.copyWith(
+                          color: AppColors.lightFontColor,
+                        ),
+                        prefixIcon: Icon(
+                          FeatherIcons.search,
+                          color: Colors.black,
+                          size: 22.sp,
+                        ),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? GestureDetector(
                                 onTap: () {
                                   _searchController.clear();
                                 },
-                                child: Icon(Icons.close, color: Colors.grey, size: 20.sp),
+                                child: Icon(
+                                  Icons.close,
+                                  color: Colors.grey,
+                                  size: 20.sp,
+                                ),
                               )
                             : null,
                         border: InputBorder.none,
@@ -297,7 +357,10 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                   onTap: _deactivateSearch,
                   child: Text(
                     'Cancel',
-                    style: AppTypography.fontSize16.copyWith(color: Colors.white, fontWeight: FontWeight.w500),
+                    style: AppTypography.fontSize16.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -312,7 +375,11 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
               return Container(
                 color: Colors.white,
                 padding: EdgeInsets.all(24.h),
-                child: Center(child: CircularProgressIndicator(color: AppColors.fontMainColor)),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.fontMainColor,
+                  ),
+                ),
               );
             }
 
@@ -325,7 +392,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                   child: Center(
                     child: Text(
                       'No jobs found',
-                      style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                      style: AppTypography.fontSize16.copyWith(
+                        color: AppColors.lightFontColor,
+                      ),
                     ),
                   ),
                 );
@@ -338,7 +407,10 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
                 color: Colors.white,
                 padding: EdgeInsets.all(24.h),
                 child: Center(
-                  child: Text('Error: ${state.message}', style: AppTypography.fontSize14.copyWith(color: Colors.red)),
+                  child: Text(
+                    'Error: ${state.message}',
+                    style: AppTypography.fontSize14.copyWith(color: Colors.red),
+                  ),
                 ),
               );
             }
@@ -353,7 +425,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
   Widget _buildSearchResults(List<Job> jobs) {
     return Container(
       color: Colors.white,
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.6,
+      ),
       child: ListView.builder(
         shrinkWrap: true,
         itemCount: jobs.length,
@@ -370,7 +444,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
     final formattedDate = intl.DateFormat('dd.MM.yyyy').format(job.createdAt);
 
     // Get customer name
-    final customerName = '${job.customerDetails.firstName} ${job.customerDetails.lastName}'.trim();
+    final customerName =
+        '${job.customerDetails.firstName} ${job.customerDetails.lastName}'
+            .trim();
 
     // Get device info
     final deviceBrand = job.deviceData.brand ?? '';
@@ -379,16 +455,24 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
 
     return GestureDetector(
       onTap: () {
-        debugPrint('🔍 [EnhancedSearchWidget] Navigating to job details: ${job.id}');
+        debugPrint(
+          '🔍 [EnhancedSearchWidget] Navigating to job details: ${job.id}',
+        );
         // Close search overlay
         _deactivateSearch();
         // Navigate to JobDetailsScreen
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => JobDetailsScreen(jobId: job.id),
+          ),
+        );
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: const Color(0xFFDEE3E8), width: 1)),
+          border: Border(
+            bottom: BorderSide(color: const Color(0xFFDEE3E8), width: 1),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,7 +481,10 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
               children: [
                 Text(
                   job.jobNo,
-                  style: AppTypography.fontSize16.copyWith(fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
+                  style: AppTypography.fontSize16.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.fontMainColor,
+                  ),
                 ),
                 if (customerName.isNotEmpty)
                   Text(
@@ -412,7 +499,9 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget> with Single
             SizedBox(height: 2.h),
             Text(
               '$formattedDate${deviceInfo.isNotEmpty ? ' | $deviceInfo' : ''}',
-              style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
+              style: AppTypography.fontSize14.copyWith(
+                color: AppColors.lightFontColor,
+              ),
             ),
             SizedBox(height: 2.h),
           ],

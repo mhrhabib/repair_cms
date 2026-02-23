@@ -1,207 +1,339 @@
-# Repair CMS - AI Agent Instructions
+# Repair CMS — AI Agent Instructions
 
-## Project Overview
-Flutter mobile app for repair shop management with job tracking, quick tasks, customer management, and printing (Brother & Dymo printers).
+**Purpose:** Concise, actionable rules to help AI agents be immediately productive in this Flutter repair shop management app.
 
-## Critical Architecture Patterns
+## Quick Start
+```bash
+flutter pub get
+flutter run  # or flutter run -d <device>
+flutter clean && flutter pub get  # if build issues
+```
 
-### 1. Dependency Injection & Registration Flow
-All services follow a **strict 3-step registration** in `lib/set_up_di.dart` → `main.dart`:
+## Architecture Overview
 
+**Data Flow:** `UI → Cubit → Repository → BaseClient → API (staging-api.repaircms.com)`
+
+```
+lib/
+├── main.dart                    # App entry, MultiBlocProvider setup
+├── set_up_di.dart              # GetIt DI container (single source of truth)
+├── core/
+│   ├── base/base_client.dart   # HTTP client with auth & emoji logging
+│   ├── helpers/
+│   │   ├── api_endpoints.dart  # API URLs with <id> placeholders
+│   │   └── storage.dart        # GetStorage keys (token, userId, etc)
+│   ├── routes/
+│   │   ├── router.dart         # GoRouter definitions
+│   │   └── route_names.dart    # Route constants
+│   └── services/               # Socket, notifications, biometric
+└── features/                   # Feature modules (auth, jobBooking, etc)
+    └── [feature]/
+        ├── cubits/             # State management
+        ├── repository/         # Data layer
+        └── models/             # Data models
+```
+
+## Critical Patterns (MUST Follow)
+
+### 1. Dependency Injection (3-Step Registration)
+All new features follow this exact sequence:
+
+**Step 1:** Register in `lib/set_up_di.dart`
 ```dart
-// Step 1: Register in SetUpDI.init()
+// Repositories: registerLazySingleton
 _getIt.registerLazySingleton<BrandRepository>(() => BrandRepositoryImpl());
-_getIt.registerFactory<BrandCubit>(() => BrandCubit(brandRepository: _getIt<BrandRepository>()));
 
-// Step 2: Add to MultiBlocProvider in main.dart
-BlocProvider(create: (context) => BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>()))
+// Cubits: registerFactory (creates new instance per request)
+_getIt.registerFactory<BrandCubit>(() => BrandCubit(
+  brandRepository: _getIt<BrandRepository>()
+));
+```
 
-// Step 3: Routes in AppRouter.router (lib/core/routes/router.dart)
+**Step 2:** Provide in `lib/main.dart` `MultiBlocProvider`
+```dart
+BlocProvider(create: (context) => BrandCubit(
+  brandRepository: SetUpDI.getIt<BrandRepository>()
+)),
+```
+
+**Step 3:** Add route in `lib/core/routes/router.dart` + `route_names.dart`
+```dart
+// route_names.dart
+static const String brands = '/brands';
+
+// router.dart
 GoRoute(path: RouteNames.brands, builder: (context, state) => BrandsScreen())
 ```
 
-**Rule**: Repositories are `registerLazySingleton`, cubits are `registerFactory`. Missing any step breaks DI.
-
-### 2. State File Pattern (Part-of Declaration)
-States MUST be defined in separate files using part-of:
+### 2. Cubit State Structure
+**Required:** Cubits MUST use `part`/`part of` for state files.
 
 ```dart
 // brand_cubit.dart
+import 'package:flutter_bloc/flutter_bloc.dart';
 part 'brand_state.dart';
-class BrandCubit extends Cubit<BrandState> { ... }
+
+class BrandCubit extends Cubit<BrandState> {
+  final BrandRepository brandRepository;
+  BrandCubit({required this.brandRepository}) : super(BrandInitial());
+  
+  Future<void> fetchBrands() async {
+    emit(BrandLoading());  // Always emit Loading first
+    try {
+      final brands = await brandRepository.fetchBrands();
+      emit(BrandLoaded(brands: brands));  // Success
+    } on BrandException catch (e) {
+      emit(BrandError(message: e.message));  // Typed error
+    } catch (e) {
+      emit(BrandError(message: 'Unexpected error: ${e.toString()}'));
+    }
+  }
+}
 
 // brand_state.dart
 part of 'brand_cubit.dart';
+
 abstract class BrandState {}
+
+class BrandInitial extends BrandState {}
 class BrandLoading extends BrandState {}
+class BrandLoaded extends BrandState {
+  final List<Brand> brands;
+  const BrandLoaded({required this.brands});
+}
+class BrandError extends BrandState {
+  final String message;
+  const BrandError({required this.message});
+}
 ```
 
-### 3. Repository Pattern Evolution
-**New features (jobBooking onwards)**: Abstract interface + Impl class:
+**State Emission Order:** Loading → Success/Error (UI expects this sequence)
+
+### 3. Repository Pattern
+**New features:** Use interface + implementation pattern.
 ```dart
+// Abstract interface
 abstract class BrandRepository {
-  Future<List<BrandModel>> getBrandsList({required String userId});
+  Future<List<Brand>> fetchBrands();
 }
-class BrandRepositoryImpl implements BrandRepository { ... }
-```
 
-**Legacy features** (auth, profile, myJobs, quickTask, dashboard): Concrete classes without interfaces. Don't refactor these without explicit request.
-
-### 4. API Integration Critical Details
-**BaseClient** in `lib/core/base/base_client.dart` auto-injects Bearer token from GetStorage:
-
-```dart
-dio.Response response = await BaseClient.get(
-  url: ApiEndpoints.brandsListUrl.replaceAll('<id>', userId) // MUST use .replaceAll for placeholders
-);
-```
-
-**Endpoints** in `lib/core/helpers/api_endpoints.dart` use template placeholders:
-- `<id>`, `<userId>`, `<brandId>`, `<jobId>` → Replace with `.replaceAll('<id>', actualValue)`
-- Base URL: `https://api.repaircms.com` (hardcoded, no env switching)
-
-**Response handling pattern**:
-```dart
-if (response.statusCode == 200) {
-  // Handle both List and Map responses with nested data keys
-  if (response.data is List) return (response.data as List).map(...).toList();
-  if (response.data is Map && data.containsKey('brands')) return (data['brands'] as List).map(...).toList();
-}
-```
-
-### 5. Error Handling Architecture
-Repositories throw **custom domain exceptions** (not generic Exception):
-
-```dart
+// Implementation with domain exception
 class BrandException implements Exception {
   final String message;
   final int? statusCode;
   BrandException({required this.message, this.statusCode});
+  @override
+  String toString() => 'BrandException: $message';
 }
 
-// In repository:
-} on DioException catch (e) {
-  throw BrandException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+class BrandRepositoryImpl implements BrandRepository {
+  @override
+  Future<List<Brand>> fetchBrands() async {
+    debugPrint('🚀 [BrandRepository] Fetching brands');
+    try {
+      final url = ApiEndpoints.brandsListUrl.replaceAll('<id>', userId);
+      final response = await BaseClient.get(url: url);
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.data);
+        return (data as List).map((e) => Brand.fromJson(e)).toList();
+      }
+      throw BrandException(
+        message: 'Failed to load brands',
+        statusCode: response.statusCode
+      );
+    } catch (e) {
+      throw BrandException(message: e.toString());
+    }
+  }
 }
 ```
 
-Cubits catch these and emit typed error states: `emit(BrandError(message: e.message))`
+**Interface + Impl pattern (recommended for new features):**
+- `CompanyRepository`, `BrandRepository`, `ModelsRepository`, `AccessoriesRepository`, `ServiceRepository`, `JobTypeRepository`, `ContactTypeRepository`, `JobItemRepository`, `JobBookingRepository`, `JobBookingFileUploadRepository`, `NotificationRepository`, `MessageRepository`
 
-### 6. Debug Logging Convention
-Use emoji-prefixed `debugPrint` (not `print`) throughout:
-- 🚀 Method start
+**Legacy repositories (DO NOT refactor without approval):**
+- `AuthRepository`, `ProfileRepository`, `JobRepository`, `QuickTaskRepository`, `DashboardRepository` — these use concrete classes without interfaces.
+
+### 4. HTTP & API Integration
+**BaseClient** (`lib/core/base/base_client.dart`):
+- Auto-attaches `Authorization: Bearer <token>` from GetStorage
+- Logs all requests with emoji prefixes (🚀, ✅, ❌, 🌐) via custom `LoggingInterceptor`
+- Returns raw `Response` — repositories must parse JSON
+
+**API Endpoints** (`lib/core/helpers/api_endpoints.dart`):
+- Contains placeholders: `<id>`, `<userId>`, `<jobId>`, `<brandId>`
+- **Always replace before calling:**
+  ```dart
+  final url = ApiEndpoints.getJobById.replaceAll('<id>', jobId);
+  ```
+- Base URL: `https://staging-api.repaircms.com`
+
+**Response Handling:**
+- Repositories parse JSON: `jsonDecode(response.data)`
+- Handle both `Map` (single object) and `List` (array) responses
+- Check status codes explicitly:
+  ```dart
+  if (response.statusCode == 200) { /* success */ }
+  else { throw CustomException(...); }
+  ```
+
+### 5. Models & Storage
+**Models:** Manual `fromJson`/`toJson` (NO code generation).
+- Map MongoDB `_id` to Dart `sId`:
+  ```dart
+  class Brand {
+    final String? sId;
+    Brand({this.sId});
+    
+    factory Brand.fromJson(Map<String, dynamic> json) => Brand(
+      sId: json['_id'] as String?,
+    );
+    
+    Map<String, dynamic> toJson() => {'_id': sId};
+  }
+  ```
+
+**GetStorage Keys** (`lib/core/helpers/storage.dart`):
+- `token`, `userId`, `email`, `fullName`, `userType`, `locationId`, `isLoggedIn`
+- Access via: `GetStorage().read('token')`
+
+### 6. Routing & Navigation
+- **Routes:** `lib/core/routes/router.dart` (GoRouter)
+- **Route names:** `lib/core/routes/route_names.dart`
+- **Navigation:** Use `context.go()` / `context.push()` consistently
+- Example:
+  ```dart
+  context.push(RouteNames.brands);
+  ```
+
+### 7. Logging Convention
+**ALWAYS use emoji-prefixed `debugPrint`:**
+- 🚀 Start of operation
 - ✅ Success
 - ❌ Error
-- 📊 Data/response
-- 👤 User context
-- 💥 Unexpected errors
-- 🌐 Network calls
+- 🌐 Network request
+- 📊 Response data
+- 🔐 Auth/security
+- 🏢 Business logic
+- 💥 Unexpected error
 
-Example: `debugPrint('🚀 [BrandCubit] Fetching brands for user: $userId');`
-
-## Key Technical Patterns
-
-### State Management Flow
 ```dart
-// In cubit methods:
-emit(BrandLoading());
-try {
-  final data = await repository.method();
-  emit(BrandLoaded(brands: data));
-} on CustomException catch (e) {
-  emit(BrandError(message: e.message));
-}
-
-// In UI:
-context.read<BrandCubit>().getBrands(userId: userId);  // Trigger action
-BlocBuilder<BrandCubit, BrandState>(builder: (context, state) { ... })
+debugPrint('🚀 [BrandRepository] Fetching brands');
+debugPrint('✅ [BrandCubit] Brands loaded successfully');
+debugPrint('❌ [BrandCubit] Error: ${e.message}');
 ```
 
-### Model Serialization (Manual, No Codegen)
-```dart
-class BrandModel {
-  String? sId;  // MongoDB _id field
-  String? name;
-  
-  BrandModel.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];  // Note underscore prefix
-    name = json['name'];
-  }
-  
-  Map<String, dynamic> toJson() => {'_id': sId, 'name': name};
-}
-```
+## Platform-Specific Features
 
-### Storage Keys (GetStorage)
-Access via `final storage = GetStorage()` from `lib/core/helpers/storage.dart`:
-- `token` - JWT bearer token
-- `userId`, `email`, `fullName`, `userType`, `locationId`
-- `isLoggedIn` - boolean flag
+### Printing
+- **Brother printers** (TD-2D, TD-4D): `brother_printer: ^0.2.6` package with native SDK support
+- **Dymo printers:** `escp_printer: ^1.0.2` package
+- **Network A4 printers:** Raw TCP printing with multiple fallback strategies
+- Services: `lib/features/moreSettings/printerSettings/service/`
+  - `BrotherPrinterService` & `BrotherSdkPrinterService` (singletons)
+  - `DymoPrinterService` (singleton)
+  - `A4NetworkPrinterService` (with Talker logging for diagnostics)
+  - `PrinterServiceFactory` for abstraction
+  - Additional services: `EpsonPrinterService`, `StarPrinterService`, `XPrinterService`
+- **Native dependencies:** Changes require `pod install` (iOS) or Gradle sync (Android)
+- **Testing:** Must test on physical device/simulator — emulators may not work
+- **Troubleshooting:** Check `BROTHER_*.md` and `PRINTER_*.md` files in project root for known issues
 
-Initialize in `main()`: `await GetStorage.init();` before `runApp()`
+### Real-Time Features
+- **Socket.IO:** `lib/core/services/socket_service.dart`
+  - Connects to backend with auth token
+  - Joins user room on connect
+  - Used for messaging & notifications
+- **Local Notifications:** `lib/core/services/local_notification_service.dart`
+  - Registered in `set_up_di.dart`
+  - Initialized in `main.dart`
 
-### Routing & Navigation
-```dart
-// Define in lib/core/routes/route_names.dart:
-static const String brands = '/brands';
+### Logging & Debugging
+- **Talker:** Remote log viewer (`talker_flutter: ^4.7.1`)
+- Registered as singleton in `set_up_di.dart`
+- View logs: Navigate to `/logsViewer` route
+- Usage: `SetUpDI.getIt<Talker>().info('Message')`
+- Access via: More Settings → Debug Logs (for end-users)
+- Share logs: Tap share button to export logs via WhatsApp/Email/Telegram
+- Use Talker for diagnosing printer issues remotely (see `TALKER_IMPLEMENTATION_SUMMARY.md`)
 
-// Register in AppRouter.router:
-GoRoute(path: RouteNames.brands, builder: (context, state) => BrandsScreen())
+## Development Constraints
 
-// Navigate:
-context.go(RouteNames.brands);
-context.push(RouteNames.detail, extra: brandObject);
-```
+### Forbidden Practices
+- ❌ NO code generation (`freezed`, `json_serializable`, `build_runner`)
+- ❌ NO refactoring legacy repositories without approval
+- ❌ NO changing DI registration pattern
+- ❌ NO using terminal commands for file edits (use tools)
 
-## Development Workflows
+### Required Practices
+- ✅ Follow 3-step DI registration
+- ✅ Use `part`/`part of` for cubit states
+- ✅ Emit Loading → Success/Error states
+- ✅ Create custom exceptions for repositories
+- ✅ Use emoji-prefixed logging
+- ✅ Replace URL placeholders before API calls
+- ✅ Test printer features on real devices
 
-### Adding a Complete Feature
-1. Create `lib/features/<feature>/` with `models/`, `repository/`, `cubits/`, `screens/`, `widgets/`
-2. Build model with `fromJson`/`toJson` (nullable fields, handle MongoDB `_id` → `sId`)
-3. Create repository interface + impl (throw custom exceptions)
-4. Build cubit with `part 'cubit_state.dart'` (emit Loading → Success/Error)
-5. Register in `SetUpDI.init()` (repo lazy, cubit factory)
-6. Add `BlocProvider` to `main.dart` MultiBlocProvider
-7. Add routes to `AppRouter.router` and `RouteNames`
-8. Build UI with `BlocBuilder`/`BlocListener`
+## Feature Addition Checklist
 
-### Common Commands
-```bash
-flutter pub get                    # Install dependencies
-flutter run                        # Run app
-flutter run --release             # Release build
-flutter clean && flutter pub get  # Fix dependency issues
-```
+Adding a new feature (e.g., "Customers"):
 
-### Debugging API Issues
-1. Check `BaseClient` logs in console (🌐 emoji)
-2. Verify token in GetStorage: `debugPrint(storage.read('token'))`
-3. Confirm endpoint placeholder replacement: `.replaceAll('<id>', value)`
-4. Check response structure (List vs Map with nested keys)
+1. **Create repository:** `lib/features/customers/repository/customer_repository.dart`
+   - Interface + Impl pattern
+   - Custom exception (e.g., `CustomerException`)
+   - Emoji logging
 
-## Project-Specific Conventions
+2. **Create cubit:** `lib/features/customers/cubits/customer_cubit.dart` + `customer_state.dart`
+   - Use `part`/`part of`
+   - Inject repository via constructor
+   - Emit Loading → Success/Error
 
-**UI Design System**:
-- Screen size: `ScreenUtilInit(designSize: Size(375, 812))` - use `.w`, `.h`, `.sp`
-- Colors: `AppColors` in `lib/core/constants/app_colors.dart`
-- Typography: `AppTypography` (SF Pro Text via Google Fonts)
-- Common imports: `lib/core/app_exports.dart` barrel file
+3. **Register in DI:** `lib/set_up_di.dart`
+   ```dart
+   _getIt.registerLazySingleton<CustomerRepository>(() => CustomerRepositoryImpl());
+   _getIt.registerFactory<CustomerCubit>(() => CustomerCubit(
+     customerRepository: _getIt<CustomerRepository>()
+   ));
+   ```
 
-**Toasts**: `showCustomToast(message, isError: bool)` from `lib/core/helpers/show_toast.dart`
+4. **Provide cubit:** `lib/main.dart` `MultiBlocProvider`
+   ```dart
+   BlocProvider(create: (context) => CustomerCubit(
+     customerRepository: SetUpDI.getIt<CustomerRepository>()
+   )),
+   ```
 
-**Printer Integration**:
-- Brother: `another_brother` package
-- Dymo: `escp_printer` package
+5. **Add route:**
+   - `lib/core/routes/route_names.dart`: `static const String customers = '/customers';`
+   - `lib/core/routes/router.dart`: `GoRoute(path: RouteNames.customers, builder: ...)`
 
-**File Uploads**: Use `jobFileUpload` or `uploadProfileAvatar` endpoints with userId/jobId parameters
+6. **Create UI:** `lib/features/customers/screens/customer_screen.dart`
+   - Use `BlocBuilder<CustomerCubit, CustomerState>` or `BlocConsumer`
+   - Handle all state cases (Initial, Loading, Loaded, Error)
 
-**Date Picker**: `syncfusion_flutter_datepicker` (commercial license implied)
+## Key Files Reference
 
-## Important Gotchas
+**Start here for understanding:**
+- `lib/set_up_di.dart` — DI registration
+- `lib/main.dart` — App initialization & BlocProviders
+- `lib/core/base/base_client.dart` — HTTP client
+- `lib/core/helpers/api_endpoints.dart` — API URLs
+- `lib/core/helpers/storage.dart` — Persistent keys
+- `lib/core/routes/router.dart` — Navigation
+- `lib/features/company/` — Example of new pattern (interface + impl)
+- `lib/features/auth/` — Example of legacy pattern (concrete class)
 
-1. **Never** use code generation (no `freezed`, `json_serializable`)
-2. **Always** emit states in order: Loading → Success/Error (check `brand_cubit.dart` for reference)
-3. **Repository registration**: Lazy singleton only (not factory) - prevents multiple HTTP client instances
-4. **State preservation**: See `BrandCubit.addBrand()` for pattern of preserving state during optimistic updates
-5. **Test coverage**: Minimal (only `widget_test.dart`). No TDD enforced.
-6. **iOS/Android native**: Printer setup requires native configuration (see Podfile, build.gradle)
+**For examples:**
+- Interface pattern: `lib/features/company/repository/company_repo.dart`
+- Cubit structure: `lib/features/company/cubits/company_cubit.dart`
+- Error handling: `lib/features/jobBooking/cubits/brands/brand_cubit.dart`
+
+## Testing
+- Unit tests: `test/cubits/` and `test/models/`
+- Uses `bloc_test: ^10.0.0` and `mocktail: ^1.0.4`
+- Run: `flutter test`
+
+---
+
+**Need clarification?** Ask about specific features (e.g., "How do I implement file upload?" or "Show me socket integration example").

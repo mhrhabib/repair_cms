@@ -54,22 +54,33 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     debugPrint('🖨️ Opening printer selection dialog');
 
     final allPrinters = _settingsService.getAllPrinters();
-    final List<PrinterConfigModel> configuredPrinters = [
-      ...allPrinters['thermal'] ?? [],
-      ...allPrinters['label'] ?? [],
-      ...allPrinters['a4'] ?? [],
-    ];
+    
+    // Filter printers based on selected print option
+    List<PrinterConfigModel> configuredPrinters;
+    String printerTypeLabel;
+    
+    if (widget.printOption == 'Thermal Receipt') {
+      configuredPrinters = allPrinters['thermal'] ?? [];
+      printerTypeLabel = 'thermal';
+    } else if (widget.printOption == 'Device Label') {
+      configuredPrinters = allPrinters['label'] ?? [];
+      printerTypeLabel = 'label';
+    } else {
+      // A4 Receipt
+      configuredPrinters = allPrinters['a4'] ?? [];
+      printerTypeLabel = 'A4';
+    }
 
-    debugPrint('📊 Found ${configuredPrinters.length} configured printers');
+    debugPrint('📊 Found ${configuredPrinters.length} $printerTypeLabel printers');
 
     if (configuredPrinters.isEmpty) {
       // No printers configured - show discovery option
       final shouldDiscover = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('No Printers Configured'),
-          content: const Text(
-            'No printers are configured yet. Would you like to search for available printers on your network?',
+          title: Text('No $printerTypeLabel Printers Configured'),
+          content: Text(
+            'No $printerTypeLabel printers are configured yet. Would you like to search for available printers on your network?',
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),

@@ -113,7 +113,7 @@ class Job {
       'subTotal': subTotal,
       'total': total,
       'jobNo': jobNo,
-      'customerId': customerId,
+      if (_isValidObjectId(customerId)) 'customerId': customerId,
       'customerDetails': customerDetails.toJson(),
       'files': files?.map((file) => file.toJson()).toList(),
       if (validLocation != null) 'location': validLocation,
@@ -341,7 +341,7 @@ class CustomerDetails {
 
   Map<String, dynamic> toJson() {
     return {
-      'customerId': customerId,
+      if (_isValidObjectId(customerId)) 'customerId': customerId,
       'type': type,
       'type2': type2,
       'organization': organization,

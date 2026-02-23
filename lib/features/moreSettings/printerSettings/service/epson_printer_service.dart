@@ -1,14 +1,19 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:talker_flutter/talker_flutter.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 import 'base_printer_service.dart';
+import '../models/printer_config_model.dart';
 
 /// Epson thermal printer service
 class EpsonPrinterService implements BasePrinterService {
   static final EpsonPrinterService _instance = EpsonPrinterService._internal();
   factory EpsonPrinterService() => _instance;
   EpsonPrinterService._internal();
+
+  Talker get _talker => SetUpDI.getIt<Talker>();
 
   @override
   Future<PrinterResult> printThermalReceipt({
@@ -18,6 +23,7 @@ class EpsonPrinterService implements BasePrinterService {
     Duration timeout = const Duration(seconds: 5),
   }) async {
     try {
+      _talker.info('[ThermalPrinter: $ipAddress] Starting Epson thermal print');
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
 
       // Epson ESC/POS commands
@@ -40,9 +46,21 @@ class EpsonPrinterService implements BasePrinterService {
       await socket.flush();
       socket.destroy();
 
-      return PrinterResult(success: true, message: 'Epson receipt printed successfully', code: 0);
+      _talker.info(
+        '[ThermalPrinter: $ipAddress] ✅ Thermal receipt printed successfully',
+      );
+      return PrinterResult(
+        success: true,
+        message: 'Epson receipt printed successfully',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterResult(success: false, message: 'Epson print error: $e', code: -1);
+      _talker.error('[ThermalPrinter: $ipAddress] ❌ Epson print error: $e');
+      return PrinterResult(
+        success: false,
+        message: 'Epson print error: $e',
+        code: -1,
+      );
     }
   }
 
@@ -52,9 +70,15 @@ class EpsonPrinterService implements BasePrinterService {
     required String text,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     // Epson label printers use similar commands to thermal
-    return printThermalReceipt(ipAddress: ipAddress, text: text, port: port, timeout: timeout);
+    return printThermalReceipt(
+      ipAddress: ipAddress,
+      text: text,
+      port: port,
+      timeout: timeout,
+    );
   }
 
   @override
@@ -63,6 +87,7 @@ class EpsonPrinterService implements BasePrinterService {
     required Map<String, String> labelData,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     try {
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
@@ -137,9 +162,17 @@ class EpsonPrinterService implements BasePrinterService {
       await socket.flush();
       await socket.close();
 
-      return PrinterResult(success: true, message: 'Epson label printed successfully', code: 0);
+      return PrinterResult(
+        success: true,
+        message: 'Epson label printed successfully',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterResult(success: false, message: 'Epson print error: $e', code: -1);
+      return PrinterResult(
+        success: false,
+        message: 'Epson print error: $e',
+        code: -1,
+      );
     }
   }
 
@@ -148,18 +181,38 @@ class EpsonPrinterService implements BasePrinterService {
     required String ipAddress,
     required Uint8List imageBytes,
     int port = 9100,
+    LabelSize? labelSize,
   }) async {
-    return PrinterResult(success: false, message: 'Epson image printing not supported', code: -2);
+    return PrinterResult(
+      success: false,
+      message: 'Epson image printing not supported',
+      code: -2,
+    );
   }
 
   @override
-  Future<PrinterStatus> getPrinterStatus({required String ipAddress, int port = 9100}) async {
+  Future<PrinterStatus> getPrinterStatus({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
     try {
-      final socket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 4));
+      final socket = await Socket.connect(
+        ipAddress,
+        port,
+        timeout: const Duration(seconds: 4),
+      );
       socket.destroy();
-      return PrinterStatus(isConnected: true, message: 'Epson printer reachable', code: 0);
+      return PrinterStatus(
+        isConnected: true,
+        message: 'Epson printer reachable',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterStatus(isConnected: false, message: 'Epson printer not reachable: $e', code: -1);
+      return PrinterStatus(
+        isConnected: false,
+        message: 'Epson printer not reachable: $e',
+        code: -1,
+      );
     }
   }
 }

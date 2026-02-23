@@ -40,3 +40,15 @@ class MessageReceived extends MessageState {
 
   MessageReceived({required this.message, required this.messages, required this.conversationId});
 }
+
+class SubUsersLoaded extends MessageState {
+  final List<SubUser> subUsers;
+
+  SubUsersLoaded({required this.subUsers});
+}
+
+class SubUsersError extends MessageState {
+  final String message;
+
+  SubUsersError({required this.message});
+}

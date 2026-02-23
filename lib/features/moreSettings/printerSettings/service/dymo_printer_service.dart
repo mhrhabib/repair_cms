@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 
 import 'base_printer_service.dart';
+import '../models/printer_config_model.dart';
 
 /// Dymo label printer service
 /// Note: Dymo printers use proprietary protocols and may require specific drivers.
@@ -42,9 +43,17 @@ class DymoPrinterService implements BasePrinterService {
       await socket.flush();
       socket.destroy();
 
-      return PrinterResult(success: true, message: 'Dymo receipt printed successfully', code: 0);
+      return PrinterResult(
+        success: true,
+        message: 'Dymo receipt printed successfully',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterResult(success: false, message: 'Dymo print error: $e', code: -1);
+      return PrinterResult(
+        success: false,
+        message: 'Dymo print error: $e',
+        code: -1,
+      );
     }
   }
 
@@ -54,6 +63,7 @@ class DymoPrinterService implements BasePrinterService {
     required String text,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     try {
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
@@ -67,7 +77,11 @@ class DymoPrinterService implements BasePrinterService {
 
       // Set label size (approximate for standard labels)
       // This may need adjustment based on specific Dymo model
-      commands.addAll([0x1D, 0x77, 0x02]); // GS w 2 - Label width approx 2 inches
+      commands.addAll([
+        0x1D,
+        0x77,
+        0x02,
+      ]); // GS w 2 - Label width approx 2 inches
 
       // Print text
       commands.addAll(utf8.encode(text));
@@ -80,9 +94,17 @@ class DymoPrinterService implements BasePrinterService {
       await socket.flush();
       await socket.close();
 
-      return PrinterResult(success: true, message: 'Dymo label printed successfully', code: 0);
+      return PrinterResult(
+        success: true,
+        message: 'Dymo label printed successfully',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterResult(success: false, message: 'Dymo label print error: $e', code: -1);
+      return PrinterResult(
+        success: false,
+        message: 'Dymo label print error: $e',
+        code: -1,
+      );
     }
   }
 
@@ -92,6 +114,7 @@ class DymoPrinterService implements BasePrinterService {
     required Map<String, String> labelData,
     int port = 9100,
     Duration timeout = const Duration(seconds: 5),
+    LabelSize? labelSize,
   }) async {
     try {
       final socket = await Socket.connect(ipAddress, port, timeout: timeout);
@@ -137,7 +160,9 @@ class DymoPrinterService implements BasePrinterService {
 
       // Defect (truncated for label size)
       final defect = labelData['defect'] ?? 'N/A';
-      final shortDefect = defect.length > 15 ? '${defect.substring(0, 12)}...' : defect;
+      final shortDefect = defect.length > 15
+          ? '${defect.substring(0, 12)}...'
+          : defect;
       bytes.addAll([esc, 0x21, 0x08]); // Bold
       bytes.addAll(utf8.encode('Defect: '));
       bytes.addAll([esc, 0x21, 0x00]); // Normal
@@ -145,7 +170,9 @@ class DymoPrinterService implements BasePrinterService {
 
       // Location (truncated)
       final location = labelData['location'] ?? 'N/A';
-      final shortLocation = location.length > 15 ? '${location.substring(0, 12)}...' : location;
+      final shortLocation = location.length > 15
+          ? '${location.substring(0, 12)}...'
+          : location;
       bytes.addAll([esc, 0x21, 0x08]); // Bold
       bytes.addAll(utf8.encode('Location: '));
       bytes.addAll([esc, 0x21, 0x00]); // Normal
@@ -168,9 +195,17 @@ class DymoPrinterService implements BasePrinterService {
       await socket.flush();
       await socket.close();
 
-      return PrinterResult(success: true, message: 'Dymo label printed successfully', code: 0);
+      return PrinterResult(
+        success: true,
+        message: 'Dymo label printed successfully',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterResult(success: false, message: 'Dymo print error: $e', code: -1);
+      return PrinterResult(
+        success: false,
+        message: 'Dymo print error: $e',
+        code: -1,
+      );
     }
   }
 
@@ -179,20 +214,40 @@ class DymoPrinterService implements BasePrinterService {
     required String ipAddress,
     required Uint8List imageBytes,
     int port = 9100,
+    LabelSize? labelSize,
   }) async {
     // Dymo printers support image printing but require specific image formats
     // This is a placeholder - would need Dymo SDK or specific image processing
-    return PrinterResult(success: false, message: 'Dymo image printing requires Dymo SDK', code: -2);
+    return PrinterResult(
+      success: false,
+      message: 'Dymo image printing requires Dymo SDK',
+      code: -2,
+    );
   }
 
   @override
-  Future<PrinterStatus> getPrinterStatus({required String ipAddress, int port = 9100}) async {
+  Future<PrinterStatus> getPrinterStatus({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
     try {
-      final socket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 4));
+      final socket = await Socket.connect(
+        ipAddress,
+        port,
+        timeout: const Duration(seconds: 4),
+      );
       socket.destroy();
-      return PrinterStatus(isConnected: true, message: 'Dymo printer reachable', code: 0);
+      return PrinterStatus(
+        isConnected: true,
+        message: 'Dymo printer reachable',
+        code: 0,
+      );
     } catch (e) {
-      return PrinterStatus(isConnected: false, message: 'Dymo printer not reachable: $e', code: -1);
+      return PrinterStatus(
+        isConnected: false,
+        message: 'Dymo printer not reachable: $e',
+        code: -1,
+      );
     }
   }
 }

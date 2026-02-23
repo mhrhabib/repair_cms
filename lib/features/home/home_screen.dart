@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
@@ -37,36 +36,73 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    _animationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+    try {
+      _animationController = AnimationController(
+        duration: const Duration(milliseconds: 300),
+        vsync: this,
+      );
 
-    _rotationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+      _rotationController = AnimationController(
+        duration: const Duration(milliseconds: 300),
+        vsync: this,
+      );
 
-    _expandAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+      _expandAnimation = CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      );
 
-    _rotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.125, // 45 degrees (0.125 * 360° = 45°)
-    ).animate(CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut));
+      _rotationAnimation =
+          Tween<double>(
+            begin: 0.0,
+            end: 0.125, // 45 degrees (0.125 * 360° = 45°)
+          ).animate(
+            CurvedAnimation(
+              parent: _rotationController,
+              curve: Curves.easeInOut,
+            ),
+          );
+
+      debugPrint(
+        '✅ [HomeScreen] Animation controllers initialized successfully',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ [HomeScreen] Error initializing animations: $e');
+      debugPrint('📋 [HomeScreen] Stack trace: $stackTrace');
+    }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _rotationController.dispose();
+    try {
+      _animationController.dispose();
+      _rotationController.dispose();
+      debugPrint('✅ [HomeScreen] Animation controllers disposed successfully');
+    } catch (e) {
+      debugPrint('❌ [HomeScreen] Error disposing animations: $e');
+    }
     super.dispose();
   }
 
   void _toggleExpansion() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _animationController.forward();
-        _rotationController.forward();
-      } else {
-        _animationController.reverse();
-        _rotationController.reverse();
-      }
-    });
+    if (!mounted) return;
+
+    try {
+      setState(() {
+        _isExpanded = !_isExpanded;
+        if (_isExpanded) {
+          _animationController.forward();
+          _rotationController.forward();
+          debugPrint('🔄 [HomeScreen] Expanding FAB menu');
+        } else {
+          _animationController.reverse();
+          _rotationController.reverse();
+          debugPrint('🔄 [HomeScreen] Collapsing FAB menu');
+        }
+      });
+    } catch (e) {
+      debugPrint('❌ [HomeScreen] Error toggling expansion: $e');
+    }
   }
 
   @override
@@ -103,14 +139,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
             ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildBottomNavItem(0, SolarIconsOutline.pieChart, 'Home'),
-              _buildBottomNavItem(1, SolarIconsOutline.suitcaseTag, 'My Jobs'),
+              _buildBottomNavItem(1, SolarIconsOutline.suitcaseTag, 'Jobs'),
               // Empty container to balance the space for the center button
               SizedBox(width: 56.w, height: 56.h),
               _buildBottomNavItem(2, SolarIconsOutline.chatUnread, 'Messages'),
@@ -131,13 +171,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final bool isSelected = _currentIndex == index;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => _onItemTapped(index),
       child: SizedBox(
         width: 60.w,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade400, size: 24.sp),
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : Colors.grey.shade400,
+              size: 24.sp,
+            ),
             SizedBox(height: 4.h),
             Text(
               label,
@@ -162,7 +207,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           color: AppColors.primary,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
           border: Border.all(color: AppColors.whiteColor, width: 4.w),
         ),
@@ -186,9 +235,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    if (!mounted) return;
+
+    try {
+      // Remove focus from any focused input first so taps aren't consumed by focus changes
+      if (mounted) {
+        FocusScope.of(context).unfocus();
+      }
+
+      setState(() {
+        _currentIndex = index;
+      });
+
+      debugPrint('📍 [HomeScreen] Navigated to tab: $index');
+    } catch (e) {
+      debugPrint('❌ [HomeScreen] Error changing tab: $e');
+    }
   }
 
   Widget _buildExpandableFAB() {
@@ -216,54 +278,121 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         icon: SolarIconsBold.caseRoundMinimalistic,
                         label: 'New Job',
                         backgroundColor: const Color(0xFF2589F6),
-                        onTap: () {
-                          // Handle New Job action
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) => JobBookingFirstScreen(),
-                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                const begin = Offset(0.0, 1.0); // Start from bottom
-                                const end = Offset.zero; // End at center
-                                const curve = Curves.easeInOut;
-                                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                                var offsetAnimation = animation.drive(tween);
-                                return SlideTransition(position: offsetAnimation, child: child);
-                              },
-                            ),
-                          );
-                          debugPrint('New Job tapped');
-                          _toggleExpansion();
+                        onTap: () async {
+                          if (!mounted) return;
+
+                          try {
+                            debugPrint('🚀 [HomeScreen] Navigating to New Job');
+                            _toggleExpansion();
+
+                            await Navigator.of(context).push(
+                              PageRouteBuilder(
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        JobBookingFirstScreen(),
+                                transitionsBuilder:
+                                    (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      const begin = Offset(0.0, 1.0);
+                                      const end = Offset.zero;
+                                      const curve = Curves.easeInOut;
+                                      var tween = Tween(
+                                        begin: begin,
+                                        end: end,
+                                      ).chain(CurveTween(curve: curve));
+                                      var offsetAnimation = animation.drive(
+                                        tween,
+                                      );
+                                      return SlideTransition(
+                                        position: offsetAnimation,
+                                        child: child,
+                                      );
+                                    },
+                              ),
+                            );
+
+                            debugPrint(
+                              '✅ [HomeScreen] Returned from New Job screen',
+                            );
+                          } catch (e) {
+                            debugPrint(
+                              '❌ [HomeScreen] Error navigating to New Job: $e',
+                            );
+                          }
                         },
                       ),
 
-                      SizedBox(height: 16.h),
+                      // SizedBox(height: 16.h),
 
                       // Barcode Scanner Button
-                      _buildExpandableButton(
-                        icon: FontAwesomeIcons.barcode,
-                        label: 'Barcode Scanner',
-                        backgroundColor: const Color(0xFF2589F6),
-                        onTap: () {
-                          _toggleExpansion();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const JobScannerScreen(isBarcodeMode: true)),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 16.h),
+                      // _buildExpandableButton(
+                      //   icon: FontAwesomeIcons.barcode,
+                      //   label: 'Barcode Scanner',
+                      //   backgroundColor: const Color(0xFF2589F6),
+                      //   onTap: () async {
+                      //     if (!mounted) return;
+
+                      //     try {
+                      //       debugPrint(
+                      //         '🚀 [HomeScreen] Navigating to Barcode Scanner',
+                      //       );
+                      //       _toggleExpansion();
+
+                      //       await Navigator.push(
+                      //         context,
+                      //         MaterialPageRoute(
+                      //           builder: (context) =>
+                      //               const JobScannerScreen(isBarcodeMode: true),
+                      //         ),
+                      //       );
+
+                      //       debugPrint(
+                      //         '✅ [HomeScreen] Returned from Barcode Scanner',
+                      //       );
+                      //     } catch (e) {
+                      //       debugPrint(
+                      //         '❌ [HomeScreen] Error navigating to Barcode Scanner: $e',
+                      //       );
+                      //     }
+                      //   },
+                      // ),
+                      // SizedBox(height: 16.h),
 
                       // QR Scanner Button
                       _buildExpandableButton(
                         icon: SolarIconsBold.qrCode,
                         label: 'QR Scanner',
                         backgroundColor: const Color(0xFF2589F6),
-                        onTap: () {
-                          _toggleExpansion();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const JobScannerScreen(isBarcodeMode: false)),
-                          );
+                        onTap: () async {
+                          if (!mounted) return;
+
+                          try {
+                            debugPrint(
+                              '🚀 [HomeScreen] Navigating to QR Scanner',
+                            );
+                            _toggleExpansion();
+
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const JobScannerScreen(
+                                  isBarcodeMode: false,
+                                ),
+                              ),
+                            );
+
+                            debugPrint(
+                              '✅ [HomeScreen] Returned from QR Scanner',
+                            );
+                          } catch (e) {
+                            debugPrint(
+                              '❌ [HomeScreen] Error navigating to QR Scanner: $e',
+                            );
+                          }
                         },
                       ),
                       SizedBox(height: 16.h),
@@ -301,7 +430,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: AppTypography.fontSize20.copyWith(color: Colors.white)),
+            Text(
+              label,
+              style: AppTypography.fontSize20.copyWith(color: Colors.white),
+            ),
             SizedBox(width: 8.w),
             Container(
               height: 64.w,
@@ -311,7 +443,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(30.r),
                 boxShadow: [
-                  BoxShadow(color: backgroundColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: backgroundColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Icon(icon, color: Colors.white, size: 32.sp),

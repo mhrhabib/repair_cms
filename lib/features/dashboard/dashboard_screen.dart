@@ -22,7 +22,8 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
   Shader linearGradient = const LinearGradient(
     colors: <Color>[Color(0xFFDB00FF), Color(0xFF432BFF)],
   ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0));
@@ -32,38 +33,87 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void initState() {
-    debugPrint(context.read<SignInCubit>().userType);
-    debugPrint(context.read<SignInCubit>().userId);
+    super.initState();
+    try {
+      debugPrint('🚀 [DashboardScreen] Initializing dashboard');
+      debugPrint('👤 [DashboardScreen] User Type: ${context.read<SignInCubit>().userType}');
+      debugPrint('👤 [DashboardScreen] User ID: ${context.read<SignInCubit>().userId}');
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Add observer to detect when app comes to foreground
+      WidgetsBinding.instance.addObserver(this);
+
+      // Schedule data loading after first frame to prevent ANR
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          // Load dashboard data with timeout protection
+          _loadAllDashboardData();
+          // Load quick tasks
+          context.read<QuickTaskCubit>().getTodos();
+          // Fetch company and receipt data
+          _fetchAndStoreCompanyAndReceiptData();
+        }
+      });
+    } catch (e) {
+      debugPrint('❌ [DashboardScreen] Error in initState: $e');
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh dashboard when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      debugPrint(
+        '🔄 [DashboardScreen] App resumed - refreshing dashboard data',
+      );
       _loadAllDashboardData();
       context.read<QuickTaskCubit>().getTodos();
-      _fetchAndStoreCompanyAndReceiptData();
-    });
+    }
+  }
 
-    super.initState();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if we're coming back from another route
+    final route = ModalRoute.of(context);
+    if (route != null && route.isCurrent && route.settings.name == null) {
+      // This runs when navigating back to this screen
+      Future.microtask(() {
+        debugPrint(
+          '🔄 [DashboardScreen] Returned to dashboard - refreshing data',
+        );
+        _loadAllDashboardData();
+        context.read<QuickTaskCubit>().getTodos();
+      });
+    }
   }
 
   void _fetchAndStoreCompanyAndReceiptData() {
-    final userId = storage.read('userId');
-    final companyId = storage.read('companyId');
+    try {
+      final userId = storage.read('userId');
+      final companyId = storage.read('companyId');
 
-    debugPrint('🚀 [DashboardScreen] Fetching company and receipt data');
-    debugPrint('👤 [DashboardScreen] User ID: $userId');
-    debugPrint('🏢 [DashboardScreen] Company ID: $companyId');
+      debugPrint('🚀 [DashboardScreen] Fetching company and receipt data');
+      debugPrint('👤 [DashboardScreen] User ID: $userId');
+      debugPrint('🏢 [DashboardScreen] Company ID: $companyId');
 
-    // Fetch company info if companyId exists
-    if (companyId != null && companyId.isNotEmpty) {
-      context.read<CompanyCubit>().getCompanyInfo(companyId: companyId);
-    } else {
-      debugPrint('⚠️ [DashboardScreen] No companyId found in storage');
-    }
+      // Fetch company info if companyId exists
+      if (companyId != null && companyId.toString().isNotEmpty) {
+        debugPrint('📦 [DashboardScreen] Fetching company info for ID: $companyId');
+        context.read<CompanyCubit>().getCompanyInfo(companyId: companyId.toString());
+      } else {
+        debugPrint('⚠️ [DashboardScreen] No companyId found in storage');
+      }
 
-    // Fetch job receipt if userId exists
-    if (userId != null && userId.isNotEmpty) {
-      context.read<JobReceiptCubit>().getJobReceipt(userId: userId);
-    } else {
-      debugPrint('⚠️ [DashboardScreen] No userId found in storage');
+      // Fetch job receipt if userId exists
+      if (userId != null && userId.toString().isNotEmpty) {
+        debugPrint('📋 [DashboardScreen] Fetching job receipt for user: $userId');
+        context.read<JobReceiptCubit>().getJobReceipt(userId: userId.toString());
+      } else {
+        debugPrint('⚠️ [DashboardScreen] No userId found in storage');
+      }
+    } catch (e) {
+      debugPrint('❌ [DashboardScreen] Error fetching company/receipt data: $e');
     }
   }
 
@@ -81,6 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -99,7 +150,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
-            borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r), topRight: Radius.circular(20.r)),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20.r),
+              topRight: Radius.circular(20.r),
+            ),
           ),
           child: Column(
             children: [
@@ -107,7 +161,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Select date Range', style: AppTypography.fontSize20.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Select date Range',
+                    style: AppTypography.fontSize20.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(Icons.close, size: 24.sp),
@@ -119,7 +178,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Selected Date Range Display
               Container(
                 padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
+                decoration: BoxDecoration(
+                  color: AppColors.borderColor,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -127,7 +189,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       tempStartDate != null && tempEndDate != null
                           ? '${DateFormat('dd.MM.yyyy').format(tempStartDate!)} - ${DateFormat('dd.MM.yyyy').format(tempEndDate!)}'
                           : 'Select start and end dates',
-                      style: AppTypography.fontSize16.copyWith(fontWeight: FontWeight.w500),
+                      style: AppTypography.fontSize16.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -138,18 +202,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Expanded(
                 child: SfDateRangePicker(
                   selectionMode: DateRangePickerSelectionMode.range,
-                  initialSelectedRange: tempStartDate != null && tempEndDate != null
+                  initialSelectedRange:
+                      tempStartDate != null && tempEndDate != null
                       ? PickerDateRange(tempStartDate, tempEndDate)
                       : null,
-                  onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
-                    if (args.value is PickerDateRange) {
-                      setModalState(() {
-                        tempStartDate = args.value.startDate;
-                        tempEndDate = args.value.endDate;
-                      });
-                    }
-                  },
-                  monthViewSettings: const DateRangePickerMonthViewSettings(enableSwipeSelection: false),
+                  onSelectionChanged:
+                      (DateRangePickerSelectionChangedArgs args) {
+                        if (args.value is PickerDateRange) {
+                          setModalState(() {
+                            tempStartDate = args.value.startDate;
+                            tempEndDate = args.value.endDate;
+                          });
+                        }
+                      },
+                  monthViewSettings: const DateRangePickerMonthViewSettings(
+                    enableSwipeSelection: false,
+                  ),
                   selectionColor: AppColors.primary,
                   startRangeSelectionColor: AppColors.primary,
                   endRangeSelectionColor: AppColors.primary,
@@ -174,9 +242,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         side: BorderSide(color: AppColors.primary),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
                       ),
-                      child: Text('Clear', style: AppTypography.fontSize16.copyWith(color: AppColors.primary)),
+                      child: Text(
+                        'Clear',
+                        style: AppTypography.fontSize16.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                   ),
                   SizedBox(width: 12.w),
@@ -201,15 +276,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               );
 
                               // Show success message
-                              SnackbarDemo(message: 'Date range applied successfully').showCustomSnackbar(context);
+                              SnackbarDemo(
+                                message: 'Date range applied successfully',
+                              ).showCustomSnackbar(context);
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
                       ),
-                      child: Text('Apply', style: AppTypography.fontSize16.copyWith(color: Colors.white)),
+                      child: Text(
+                        'Apply',
+                        style: AppTypography.fontSize16.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -229,12 +313,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         BlocListener<CompanyCubit, CompanyState>(
           listener: (context, state) {
             if (state is CompanyLoaded) {
-              debugPrint('✅ [DashboardScreen] Company data loaded, storing in GetStorage');
-              // Store company data as JSON string
-              storage.write('companyData', jsonEncode(state.company.toJson()));
-              debugPrint('📦 [DashboardScreen] Company name: ${state.company.name}');
+              try {
+                debugPrint(
+                  '✅ [DashboardScreen] Company data loaded, storing in GetStorage',
+                );
+                // Store company data as JSON string
+                storage.write('companyData', jsonEncode(state.company.toJson()));
+                debugPrint(
+                  '📦 [DashboardScreen] Company name: ${state.company.name}',
+                );
+              } catch (e) {
+                debugPrint('❌ [DashboardScreen] Error storing company data: $e');
+              }
             } else if (state is CompanyError) {
               debugPrint('❌ [DashboardScreen] Company error: ${state.message}');
+              // Optionally show a toast notification
+              SnackbarDemo(
+                message: 'Failed to load company info',
+              ).showCustomSnackbar(context);
             }
           },
         ),
@@ -242,12 +338,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
         BlocListener<JobReceiptCubit, JobReceiptState>(
           listener: (context, state) {
             if (state is JobReceiptLoaded) {
-              debugPrint('✅ [DashboardScreen] Job receipt data loaded, storing in GetStorage');
-              // Store receipt data as JSON string
-              storage.write('jobReceiptData', jsonEncode(state.receipt.toJson()));
-              debugPrint('📦 [DashboardScreen] QR Code Enabled: ${state.receipt.qrCodeEnabled}');
+              try {
+                debugPrint(
+                  '✅ [DashboardScreen] Job receipt data loaded, storing in GetStorage',
+                );
+                // Store receipt data as JSON string
+                storage.write(
+                  'jobReceiptData',
+                  jsonEncode(state.receipt.toJson()),
+                );
+                debugPrint(
+                  '📦 [DashboardScreen] QR Code Enabled: ${state.receipt.qrCodeEnabled}',
+                );
+              } catch (e) {
+                debugPrint('❌ [DashboardScreen] Error storing receipt data: $e');
+              }
             } else if (state is JobReceiptError) {
-              debugPrint('❌ [DashboardScreen] Job receipt error: ${state.message}');
+              debugPrint(
+                '❌ [DashboardScreen] Job receipt error: ${state.message}',
+              );
+              // Optionally show a toast notification
+              SnackbarDemo(
+                message: 'Failed to load receipt settings',
+              ).showCustomSnackbar(context);
             }
           },
         ),
@@ -318,18 +431,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildGreetingSection() {
+    // Get actual user name from storage
+    final fullName = storage.read('fullName') ?? 'User';
+    final firstName = fullName.split(' ').first;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              'Good Morning, John',
+              'Good Morning, $firstName',
               textHeightBehavior: const TextHeightBehavior(
                 applyHeightToFirstAscent: false,
                 applyHeightToLastDescent: false,
               ),
-              style: AppTypography.fontSize22.copyWith(fontWeight: FontWeight.w500),
+              style: AppTypography.fontSize22.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
             ),
             SizedBox(width: 8.w),
             Transform(
@@ -345,7 +464,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             applyHeightToFirstAscent: false,
             applyHeightToLastDescent: false,
           ),
-          style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
+          style: AppTypography.fontSize14.copyWith(
+            color: AppColors.lightFontColor,
+          ),
         ),
       ],
     );
@@ -354,11 +475,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildIncompleteToDoCard(BuildContext context) {
     return BlocBuilder<QuickTaskCubit, QuickTaskState>(
       builder: (context, state) {
-        final incompleteCount = context.read<QuickTaskCubit>().getIncompleteTodosCount();
+        final incompleteCount = context
+            .read<QuickTaskCubit>()
+            .getIncompleteTodosCount();
 
         return GestureDetector(
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => QuickTaskScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => QuickTaskScreen()),
+            );
           },
           child: Container(
             padding: EdgeInsets.all(8.w),
@@ -366,7 +492,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               color: AppColors.whiteColor,
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Row(
@@ -377,16 +507,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         'Incomplete To-Do\'s',
-                        style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
+                        style: AppTypography.fontSize16.copyWith(
+                          color: AppColors.lightFontColor,
+                        ),
                       ),
                       SizedBox(height: 8.h),
-                      Text('$incompleteCount', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        '$incompleteCount',
+                        style: AppTypography.fontSize28.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 SizedBox(width: 8.w),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 12.h,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.whiteColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.r),
@@ -395,11 +535,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.today_rounded, color: AppColors.primary, size: 22.sp),
+                      Icon(
+                        Icons.today_rounded,
+                        color: AppColors.primary,
+                        size: 22.sp,
+                      ),
                       SizedBox(width: 4.w),
                       Text(
                         'See All To-Do\'s',
-                        style: AppTypography.fontSize16.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+                        style: AppTypography.fontSize16.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -423,7 +570,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           // Format the date range from the API response
           final filterRange = state.dashboardStats!.filterRange;
-          if (filterRange.startDate.isNotEmpty && filterRange.endDate.isNotEmpty) {
+          if (filterRange.startDate.isNotEmpty &&
+              filterRange.endDate.isNotEmpty) {
             try {
               final startDate = DateTime.parse(filterRange.startDate);
               final endDate = DateTime.parse(filterRange.endDate);
@@ -444,7 +592,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: AppColors.whiteColor,
             borderRadius: BorderRadius.circular(12.r),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
           child: Column(
@@ -455,28 +607,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Container(
                     width: 40.w,
                     height: 40.h,
-                    decoration: BoxDecoration(color: const Color(0xFFC507FF), borderRadius: BorderRadius.circular(8.r)),
-                    child: Icon(SolarIconsBold.suitcaseTag, color: Colors.white, size: 30.sp),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC507FF),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Icon(
+                      SolarIconsBold.suitcaseTag,
+                      color: Colors.white,
+                      size: 30.sp,
+                    ),
                   ),
                   SizedBox(width: 16.w),
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(8.r)),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderColor,
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
                     child: GestureDetector(
                       onTap: _showDateRangePicker,
                       child: Row(
                         children: [
                           Text(
-                            _selectedStartDate != null && _selectedEndDate != null
+                            _selectedStartDate != null &&
+                                    _selectedEndDate != null
                                 ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
                                 : 'This Month',
                             style: AppTypography.fontSize16,
                           ),
                           SizedBox(width: 2.w),
-                          Container(height: 28.h, color: const Color(0x898FA0B2), width: 2.w),
+                          Container(
+                            height: 28.h,
+                            color: const Color(0x898FA0B2),
+                            width: 2.w,
+                          ),
                           SizedBox(width: 2.w),
-                          const Icon(Icons.calendar_month, color: Color(0xFF2589F6)),
-                          Icon(Icons.keyboard_arrow_down, color: const Color(0xFF2589F6), size: 20.sp),
+                          const Icon(
+                            Icons.calendar_month,
+                            color: Color(0xFF2589F6),
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            color: const Color(0xFF2589F6),
+                            size: 20.sp,
+                          ),
                         ],
                       ),
                     ),
@@ -490,7 +664,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(dateRangeText, style: AppTypography.fontSize14.copyWith(color: AppColors.fontMainColor)),
+                      Text(
+                        dateRangeText,
+                        style: AppTypography.fontSize14.copyWith(
+                          color: AppColors.fontMainColor,
+                        ),
+                      ),
                       Text(
                         'Completed Jobs',
                         style: AppTypography.fontSize24.copyWith(
@@ -500,7 +679,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  Text(completedJobs.toString(), style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w800)),
+                  Text(
+                    completedJobs.toString(),
+                    style: AppTypography.fontSize28.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
 
@@ -527,7 +711,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Icon(Icons.error_outline, color: Colors.red, size: 16.sp),
                       SizedBox(width: 8.w),
                       Expanded(
-                        child: Text('Failed to load data', style: AppTypography.fontSize12.copyWith(color: Colors.red)),
+                        child: Text(
+                          'Failed to load data',
+                          style: AppTypography.fontSize12.copyWith(
+                            color: Colors.red,
+                          ),
+                        ),
                       ),
                       GestureDetector(
                         onTap: _loadAllDashboardData,
@@ -556,8 +745,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('QR Scanner'),
-          content: const Text('QR Scanner functionality would be implemented here.'),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))],
+          content: const Text(
+            'QR Scanner functionality would be implemented here.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
         );
       },
     );

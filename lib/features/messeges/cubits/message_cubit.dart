@@ -6,9 +6,21 @@ import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
+import 'package:repair_cms/features/messeges/models/sub_user_model.dart';
 import 'package:repair_cms/features/messeges/repository/message_repository.dart';
 
 part 'message_state.dart';
+
+/// Custom exception for message operations
+class MessageException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  MessageException({required this.message, this.statusCode});
+
+  @override
+  String toString() => message;
+}
 
 class MessageCubit extends Cubit<MessageState> {
   final SocketService socketService;
@@ -85,6 +97,25 @@ class MessageCubit extends Cubit<MessageState> {
     }
   }
 
+  /// Load sub users for the current user (for internal messaging)
+  Future<void> getSubUsers({required String userId}) async {
+    try {
+      debugPrint('🔄 [MessageCubit] Loading sub users for user: $userId');
+      emit(MessageLoading());
+
+      final subUsers = await messageRepository.getSubUsers(userId: userId);
+
+      debugPrint('✅ [MessageCubit] Loaded ${subUsers.length} sub users');
+      emit(SubUsersLoaded(subUsers: subUsers));
+    } on MessageException catch (e) {
+      debugPrint('❌ [MessageCubit] MessageException: ${e.message}');
+      emit(SubUsersError(message: e.message));
+    } catch (e) {
+      debugPrint('❌ [MessageCubit] Error loading sub users: $e');
+      emit(SubUsersError(message: 'Failed to load sub users: $e'));
+    }
+  }
+
   void _initializeListeners() {
     debugPrint('🚀 [MessageCubit] Initializing socket listeners');
 
@@ -122,6 +153,12 @@ class MessageCubit extends Cubit<MessageState> {
     socketService.on('updateInternalComment', (data) {
       debugPrint('💬 [MessageCubit] updateInternalComment: $data');
       _handleInternalComment(data);
+    });
+
+    // Listen for internal comments from RCMS
+    socketService.on('internalCommentFromRCMS', (data) {
+      debugPrint('💬 [MessageCubit] internalCommentFromRCMS: $data');
+      _handleInternalCommentFromRCMS(data);
     });
   }
 
@@ -259,6 +296,83 @@ class MessageCubit extends Cubit<MessageState> {
     // Handle internal comment updates
     debugPrint('💬 Internal comment: $data');
     // You can emit a specific state for comments if needed
+  }
+
+  void _handleInternalCommentFromRCMS(dynamic data) {
+    debugPrint('💬 [MessageCubit] Handling internal comment from RCMS: $data');
+
+    try {
+      if (data == null) return;
+
+      // Parse the {message, comment} structure
+      final Map<String, dynamic> parsedData = data is String ? jsonDecode(data) : data;
+
+      // Extract message and comment
+      final messageData = parsedData['message'];
+      final commentData = parsedData['comment'];
+
+      if (messageData != null) {
+        final message = Conversation.fromJson(messageData);
+        debugPrint('💬 [MessageCubit] Processing message part: ${message.conversationId}');
+
+        // Handle the message part like a regular incoming message
+        _handleNewMessage(message);
+      }
+
+      if (commentData != null) {
+        final comment = Comment.fromJson(commentData);
+        debugPrint('💬 [MessageCubit] Processing comment part: ${comment.messageId}');
+
+        // For now, just log the comment. You can emit a specific state or handle it differently
+        debugPrint('💬 [MessageCubit] Comment received: ${comment.text} by ${comment.authorId}');
+        // Attach comment to existing conversation if possible
+        try {
+          // Find existing conversation by message id or conversationId
+          final existingIndex = _conversations.indexWhere(
+            (c) =>
+                (comment.messageId != null && c.sId != null && c.sId == comment.messageId) ||
+                (comment.conversationId != null &&
+                    c.conversationId != null &&
+                    c.conversationId == comment.conversationId),
+          );
+
+          if (existingIndex != -1) {
+            final existing = _conversations[existingIndex];
+            existing.comments = existing.comments ?? [];
+            existing.comments!.add(comment);
+            debugPrint('📝 [MessageCubit] Attached comment to existing conversation at index $existingIndex');
+            _sortMessages();
+            emit(
+              MessageReceived(
+                message: existing,
+                messages: List.from(_conversations),
+                conversationId: _currentConversationId ?? existing.conversationId ?? '',
+              ),
+            );
+          } else {
+            // Create a new conversation entry for this comment
+            final newConv = Conversation(
+              comment: comment,
+              conversationId: comment.conversationId,
+              createdAt: DateTime.now().toIso8601String(),
+            );
+            _conversations.add(newConv);
+            debugPrint('📝 [MessageCubit] Added new conversation for comment');
+            emit(
+              MessageReceived(
+                message: newConv,
+                messages: List.from(_conversations),
+                conversationId: comment.conversationId ?? '',
+              ),
+            );
+          }
+        } catch (e) {
+          debugPrint('❌ [MessageCubit] Error attaching comment: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ [MessageCubit] Error handling internal comment from RCMS: $e');
+    }
   }
 
   void _updateConversationWithNewMessage(Conversation message) {
@@ -415,14 +529,107 @@ class MessageCubit extends Cubit<MessageState> {
     socketService.markAsRead(message.toJson());
   }
 
-  void sendInternalComment({required Map<String, dynamic> message, required Map<String, dynamic> comment}) {
+  Future<void> sendInternalComment({required Map<String, dynamic> comment}) async {
     debugPrint('💬 [MessageCubit] Sending internal comment');
+    debugPrint('💬 [MessageCubit] Socket connected: ${socketService.isConnected}');
+
+    // Check if socket is connected, if not, try to reconnect
     if (!socketService.isConnected) {
-      debugPrint('❌ [MessageCubit] Socket not connected, cannot send comment');
-      emit(MessageError(message: 'Not connected to server. Please check your connection.'));
-      return;
+      debugPrint('⚠️ [MessageCubit] Socket disconnected for comment. Attempting to reconnect...');
+      socketService.reconnect();
+
+      // Wait a bit for reconnection (max 2 seconds)
+      int attempts = 0;
+      while (!socketService.isConnected && attempts < 20) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+      }
+
+      if (socketService.isConnected) {
+        debugPrint('✅ [MessageCubit] Socket reconnected successfully!');
+      } else {
+        debugPrint('❌ [MessageCubit] Failed to reconnect socket. Comment will be sent but may not reach server.');
+      }
     }
-    socketService.sendInternalComment({'message': message, 'comment': comment});
+
+    // Build local Comment model for optimistic UI update
+    try {
+      String? readField(String key) {
+        try {
+          if (comment.containsKey(key) && comment[key] != null) return comment[key] as String?;
+        } catch (_) {}
+        try {
+          final nested = comment['comment'];
+          if (nested is Map && nested.containsKey(key) && nested[key] != null) return nested[key] as String?;
+        } catch (_) {}
+        return null;
+      }
+
+      dynamic readMentions() {
+        try {
+          if (comment.containsKey('mentions') && comment['mentions'] != null) return comment['mentions'];
+        } catch (_) {}
+        try {
+          final nested = comment['comment'];
+          if (nested is Map && nested.containsKey('mentions') && nested['mentions'] != null) return nested['mentions'];
+        } catch (_) {}
+        return null;
+      }
+
+      final localComment = Comment(
+        text: readField('text'),
+        authorId: readField('authorId') ?? readField('userId'),
+        userId: readField('userId'),
+        messageId: readField('messageId'),
+        conversationId: readField('conversationId'),
+        parentCommentId: readField('parentCommentId'),
+        mentions: readMentions() != null ? List<String>.from(readMentions()) : null,
+      );
+
+      // Try to populate sender/receiver from payload for better optimistic UI
+      Sender? optimisticSender;
+      Sender? optimisticReceiver;
+      try {
+        final senderData = comment['sender'] ?? (comment['message'] != null ? comment['message']['sender'] : null);
+        if (senderData != null && senderData is Map<String, dynamic>) {
+          optimisticSender = Sender.fromJson(senderData);
+        }
+
+        final receiverData =
+            comment['receiver'] ?? (comment['message'] != null ? comment['message']['receiver'] : null);
+        if (receiverData != null && receiverData is Map<String, dynamic>) {
+          optimisticReceiver = Sender.fromJson(receiverData);
+        }
+      } catch (_) {
+        // ignore parsing issues
+      }
+
+      final localConversation = Conversation(
+        sender: optimisticSender,
+        receiver: optimisticReceiver,
+        comment: localComment,
+        seen: false,
+        conversationId: comment['conversationId'] as String?,
+        participants: '',
+        loggedUserId: comment['userId'] as String?,
+        createdAt: DateTime.now().toIso8601String(),
+      );
+
+      // Optimistically add to local list and emit state so UI updates immediately
+      _conversations.add(localConversation);
+      emit(
+        MessageSent(
+          message: localConversation,
+          messages: List.from(_conversations),
+          conversationId: localConversation.conversationId ?? '',
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ [MessageCubit] Error creating local comment: $e');
+    }
+
+    // Send to server via socket so other participants (and server) can persist/distribute
+    socketService.sendInternalComment(comment);
   }
 
   @override

@@ -1,6 +1,7 @@
 class PrinterConfigModel {
   final String printerType; // 'thermal', 'label', 'a4'
-  final String printerBrand; // 'Brother', 'Epson', 'Star', 'Xprinter', 'Dymo', 'Generic'
+  final String
+  printerBrand; // 'Brother', 'Epson', 'Star', 'Xprinter', 'Dymo', 'Generic'
   final String? printerModel;
   final String ipAddress;
   final String protocol; // 'TCP', 'USB'
@@ -9,6 +10,8 @@ class PrinterConfigModel {
   final String? usbDeviceId; // For USB printers
   final LabelSize? labelSize; // For label printers
   final int? paperWidth; // For thermal printers (80mm, 58mm)
+  final bool?
+  useSdk; // Whether to prefer vendor SDK (e.g., Brother) for this printer
 
   PrinterConfigModel({
     required this.printerType,
@@ -21,6 +24,7 @@ class PrinterConfigModel {
     this.usbDeviceId,
     this.labelSize,
     this.paperWidth,
+    this.useSdk,
   });
 
   // Get label dimensions
@@ -39,8 +43,11 @@ class PrinterConfigModel {
       isDefault: json['isDefault'] ?? false,
       port: json['port'],
       usbDeviceId: json['usbDeviceId'],
-      labelSize: json['labelSize'] != null ? LabelSize.fromJson(json['labelSize']) : null,
+      labelSize: json['labelSize'] != null
+          ? LabelSize.fromJson(json['labelSize'])
+          : null,
       paperWidth: json['paperWidth'],
+      useSdk: json['useSdk'] ?? false,
     );
   }
 
@@ -56,6 +63,7 @@ class PrinterConfigModel {
       'usbDeviceId': usbDeviceId,
       'labelSize': labelSize?.toJson(),
       'paperWidth': paperWidth,
+      'useSdk': useSdk ?? false,
     };
   }
 
@@ -70,6 +78,7 @@ class PrinterConfigModel {
     String? usbDeviceId,
     LabelSize? labelSize,
     int? paperWidth,
+    bool? useSdk,
   }) {
     return PrinterConfigModel(
       printerType: printerType ?? this.printerType,
@@ -82,6 +91,7 @@ class PrinterConfigModel {
       usbDeviceId: usbDeviceId ?? this.usbDeviceId,
       labelSize: labelSize ?? this.labelSize,
       paperWidth: paperWidth ?? this.paperWidth,
+      useSdk: useSdk ?? this.useSdk,
     );
   }
 }
@@ -95,7 +105,11 @@ class LabelSize {
   LabelSize({required this.width, required this.height, required this.name});
 
   factory LabelSize.fromJson(Map<String, dynamic> json) {
-    return LabelSize(width: json['width'] ?? 0, height: json['height'] ?? 0, name: json['name'] ?? '');
+    return LabelSize(
+      width: json['width'] ?? 0,
+      height: json['height'] ?? 0,
+      name: json['name'] ?? '',
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -118,8 +132,20 @@ class LabelSize {
   // Predefined label sizes for different brands
   static List<LabelSize> getBrotherSizes() {
     return [
-      LabelSize(width: 62, height: 100, name: '62x100'),
+      LabelSize(
+        width: 50,
+        height: 26,
+        name: '50x26 (TD-2350D)',
+      ), // 591×307 dots @ 300 DPI
+      LabelSize(width: 51, height: 26, name: '51x26'),
       LabelSize(width: 62, height: 29, name: '62x29'),
+      LabelSize(width: 62, height: 100, name: '62x100'),
+      LabelSize(
+        width: 100,
+        height: 150,
+        name: '100x150 (TD-4)',
+      ), // For TD-4 series
+      LabelSize(width: 102, height: 150, name: '102x150'),
       LabelSize(width: 102, height: 152, name: '102x152'),
       LabelSize(width: 102, height: 51, name: '102x51'),
       LabelSize(width: 29, height: 90, name: '29x90'),
@@ -137,10 +163,13 @@ class LabelSize {
 
   static List<LabelSize> getXprinterSizes() {
     return [
-      LabelSize(width: 80, height: 80, name: '80x80'),
-      LabelSize(width: 80, height: 60, name: '80x60'),
+      LabelSize(width: 50, height: 25, name: '50x25'),
+      LabelSize(width: 50, height: 30, name: '50x30'),
+      LabelSize(width: 40, height: 30, name: '40x30'),
       LabelSize(width: 60, height: 40, name: '60x40'),
-      LabelSize(width: 100, height: 100, name: '100x100'),
+      LabelSize(width: 80, height: 50, name: '80x50'),
+      LabelSize(width: 100, height: 150, name: '100x150'),
+      LabelSize(width: 80, height: 80, name: '80x80'),
     ];
   }
 }

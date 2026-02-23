@@ -54,6 +54,8 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
     try {
       await context.read<JobTypeCubit>().createJobType(name: jobTypeName, userId: _userId, locationId: _locationId);
 
+      if (!mounted) return;
+
       final state = context.read<JobTypeCubit>().state;
       if (state is JobTypeLoaded) {
         final newJobType = state.jobTypes.firstWhere(

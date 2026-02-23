@@ -341,7 +341,7 @@ class JobStatus {
   final String colorCode;
   final String userName;
   final int createAtStatus;
-  final bool notifications;
+  final dynamic notifications;
   final String email;
   final String notes;
   final dynamic priority;
@@ -365,7 +365,7 @@ class JobStatus {
       colorCode: json['colorCode'] ?? '',
       userName: json['userName'] ?? '',
       createAtStatus: json['createAtStatus'] ?? 0,
-      notifications: json['notifications'] ?? false,
+      notifications: json['notifications'] ?? '',
       email: json['email'] ?? '',
       notes: json['notes'] ?? '',
       priority: json['priority'],
@@ -1475,7 +1475,21 @@ class Defect {
   factory Defect.fromJson(Map<String, dynamic> json) {
     return Defect(
       id: json['_id'] ?? '',
-      defect: (json['defect'] as List<dynamic>?)?.map((defect) => DefectItem.fromJson(defect)).toList() ?? [],
+      defect: (json['defect'] as List<dynamic>?)
+              ?.map((defectEntry) {
+                if (defectEntry is Map<String, dynamic>) {
+                  return DefectItem.fromJson(defectEntry);
+                }
+
+                // Handle cases where defect entry is a plain string
+                if (defectEntry is String) {
+                  return DefectItem(value: defectEntry, id: defectEntry);
+                }
+
+                // Fallback: convert to string
+                return DefectItem(value: defectEntry.toString(), id: defectEntry.toString());
+              })
+              .toList() ?? [],
       jobType: json['jobType'] ?? '',
       reference: json['reference'] ?? '',
       description: json['description'] ?? '',

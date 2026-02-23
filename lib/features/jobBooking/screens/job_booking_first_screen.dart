@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/service/service_cubit.dart';
@@ -14,7 +15,7 @@ class JobBookingFirstScreen extends StatefulWidget {
 class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  final List<ServiceModel> _selectedServices = [];
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -26,16 +27,23 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   }
 
   void _onSearchChanged(String query) {
-    if (query.isNotEmpty) {
-      context.read<ServiceCubit>().searchServices(keyword: query);
-    } else {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+
+    if (query.isEmpty) {
       context.read<ServiceCubit>().clearSearch();
+      return;
     }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        context.read<ServiceCubit>().searchServices(keyword: query);
+      }
+    });
   }
 
   void _addService(ServiceModel service) {
     // Use JobBookingCubit to add service instead of local state
-    context.read<JobBookingCubit>().addService(service.id);
+    context.read<JobBookingCubit>().addService(service);
 
     // Clear search and hide keyboard
     _searchController.clear();
@@ -50,7 +58,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
 
   Widget _buildHighlightedText(String text, String query) {
     if (query.isEmpty) {
-      return Text(text, style: AppTypography.fontSize16Bold.copyWith(color: Colors.black));
+      return Text(
+        text,
+        style: AppTypography.fontSize16Bold.copyWith(color: Colors.black),
+      );
     }
 
     final List<TextSpan> spans = [];
@@ -73,7 +84,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
       spans.add(
         TextSpan(
           text: text.substring(index, index + query.length),
-          style: AppTypography.fontSize16Bold.copyWith(color: Colors.black, backgroundColor: Colors.yellow),
+          style: AppTypography.fontSize16Bold.copyWith(
+            color: Colors.black,
+            backgroundColor: Colors.yellow,
+          ),
         ),
       );
 
@@ -95,7 +109,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
 
   Widget _buildHighlightedCategory(String text, String query) {
     if (query.isEmpty) {
-      return Text(text, style: AppTypography.fontSize12.copyWith(color: Colors.blue));
+      return Text(
+        text,
+        style: AppTypography.fontSize12.copyWith(color: Colors.blue),
+      );
     }
 
     final List<TextSpan> spans = [];
@@ -118,7 +135,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
       spans.add(
         TextSpan(
           text: text.substring(index, index + query.length),
-          style: AppTypography.fontSize12.copyWith(color: Colors.blue, backgroundColor: Colors.yellow),
+          style: AppTypography.fontSize12.copyWith(
+            color: Colors.blue,
+            backgroundColor: Colors.yellow,
+          ),
         ),
       );
 
@@ -141,7 +161,11 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
-      listeners: [BlocListener<JobBookingCubit, JobBookingState>(listener: (context, state) {})],
+      listeners: [
+        BlocListener<JobBookingCubit, JobBookingState>(
+          listener: (context, state) {},
+        ),
+      ],
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackgroundColor,
         body: SafeArea(
@@ -161,7 +185,13 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                           topLeft: Radius.circular(6),
                           topRight: Radius.circular(0),
                         ),
-                        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade300,
+                            blurRadius: 1,
+                            blurStyle: BlurStyle.outer,
+                          ),
+                        ],
                       ),
                     ),
 
@@ -175,8 +205,15 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                         child: Container(
                           width: 32.w,
                           height: 32.h,
-                          decoration: BoxDecoration(color: Color(0xFF71788F), borderRadius: BorderRadius.circular(8.r)),
-                          child: Icon(Icons.close, color: Colors.white, size: 20.sp),
+                          decoration: BoxDecoration(
+                            color: Color(0xFF71788F),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -187,11 +224,20 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                     Align(
                       alignment: Alignment.center,
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-                        decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12.r)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
                         child: Text(
                           'Express Job',
-                          style: AppTypography.fontSize12.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                          style: AppTypography.fontSize12.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -217,9 +263,16 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                               SizedBox(width: 8.w),
                               GestureDetector(
                                 onTap: () {
-                                  showDialog(context: context, builder: (context) => _buildInfoDialog());
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => _buildInfoDialog(),
+                                  );
                                 },
-                                child: Icon(Icons.help_outline, color: Colors.grey.shade500, size: 20.sp),
+                                child: Icon(
+                                  Icons.help_outline,
+                                  color: Colors.grey.shade500,
+                                  size: 20.sp,
+                                ),
                               ),
                             ],
                           ),
@@ -250,7 +303,11 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                         child: Row(
                           children: [
                             SizedBox(width: 16.w),
-                            Icon(Icons.search, color: Colors.grey.shade400, size: 20.sp),
+                            Icon(
+                              Icons.search,
+                              color: Colors.grey.shade400,
+                              size: 20.sp,
+                            ),
                             SizedBox(width: 12.w),
                             Expanded(
                               child: TextField(
@@ -258,10 +315,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                                 focusNode: _searchFocusNode,
                                 onChanged: _onSearchChanged,
                                 decoration: InputDecoration(
-                                  hintText: _selectedServices.isEmpty
-                                      ? 'Search services...'
-                                      : 'iPhone 16 lcd repair...',
-                                  hintStyle: AppTypography.fontSize14.copyWith(color: Colors.grey.shade400),
+                                  hintText: 'Search services...',
+                                  hintStyle: AppTypography.fontSize14.copyWith(
+                                    color: Colors.grey.shade400,
+                                  ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
                                 ),
@@ -275,7 +332,11 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                                 },
                                 child: Padding(
                                   padding: EdgeInsets.only(right: 16.w),
-                                  child: Icon(Icons.close, color: Colors.grey.shade400, size: 20.sp),
+                                  child: Icon(
+                                    Icons.close,
+                                    color: Colors.grey.shade400,
+                                    size: 20.sp,
+                                  ),
                                 ),
                               )
                             else
@@ -308,18 +369,26 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                         // Check if service is selected using JobBookingCubit
                         return BlocBuilder<JobBookingCubit, JobBookingState>(
                           builder: (context, bookingState) {
-                            final isAlreadySelected = bookingState is JobBookingData
-                                ? bookingState.job.servicesIds.contains(service.id)
+                            final isAlreadySelected =
+                                bookingState is JobBookingData
+                                ? bookingState.job.servicesIds.contains(
+                                    service.id,
+                                  )
                                 : false;
 
                             return GestureDetector(
                               onTap: () => _addService(service),
                               child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                                margin: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 4.h,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.whiteColor,
                                   borderRadius: BorderRadius.circular(12.r),
-                                  border: Border.all(color: Colors.grey.shade200),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                  ),
                                 ),
                                 child: Container(
                                   padding: EdgeInsets.all(16.w),
@@ -327,41 +396,50 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                                     children: [
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            _buildHighlightedText(service.name, state.searchQuery),
+                                            _buildHighlightedText(
+                                              service.name,
+                                              state.searchQuery,
+                                            ),
                                             SizedBox(height: 4.h),
-                                            _buildHighlightedCategory(service.category, state.searchQuery),
-                                            if (service.description.isNotEmpty) ...[
-                                              SizedBox(height: 4.h),
-                                              Text(
-                                                service.description,
-                                                style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
+                                            _buildHighlightedCategory(
+                                              '${service.manufacturer} ${service.model}',
+                                              state.searchQuery,
+                                            ),
                                           ],
                                         ),
                                       ),
                                       SizedBox(width: 12.w),
                                       Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
                                         children: [
                                           Text(
                                             '${service.priceInclVat.toStringAsFixed(2)} €',
-                                            style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                                            style: AppTypography.fontSize16Bold
+                                                .copyWith(
+                                                  color: AppColors.primary,
+                                                ),
                                           ),
                                           SizedBox(height: 2.h),
                                           Text(
                                             'incl. ${service.vat}% VAT',
-                                            style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500),
+                                            style: AppTypography.fontSize10
+                                                .copyWith(
+                                                  color: Colors.grey.shade500,
+                                                ),
                                           ),
                                         ],
                                       ),
                                       if (isAlreadySelected) ...[
                                         SizedBox(width: 8.w),
-                                        Icon(Icons.check_circle, color: Colors.green, size: 20.sp),
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green,
+                                          size: 20.sp,
+                                        ),
                                       ],
                                     ],
                                   ),
@@ -377,7 +455,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                   if (state is ServiceNoResults) {
                     return SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           width: double.infinity,
@@ -388,7 +469,9 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                           ),
                           child: Text(
                             'No services found for "${state.searchQuery}"',
-                            style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade500),
+                            style: AppTypography.fontSize14.copyWith(
+                              color: Colors.grey.shade500,
+                            ),
                           ),
                         ),
                       ),
@@ -398,7 +481,10 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                   if (state is ServiceError) {
                     return SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           width: double.infinity,
@@ -411,11 +497,15 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                             children: [
                               Text(
                                 'Error: ${state.message}',
-                                style: AppTypography.fontSize14.copyWith(color: Colors.red),
+                                style: AppTypography.fontSize14.copyWith(
+                                  color: Colors.red,
+                                ),
                               ),
                               SizedBox(height: 8.h),
                               ElevatedButton(
-                                onPressed: () => context.read<ServiceCubit>().refreshSearch(),
+                                onPressed: () => context
+                                    .read<ServiceCubit>()
+                                    .refreshSearch(),
                                 child: Text('Retry'),
                               ),
                             ],
@@ -432,69 +522,78 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
               // Selected Services from JobBookingCubit
               BlocBuilder<JobBookingCubit, JobBookingState>(
                 builder: (context, state) {
-                  if (state is JobBookingData && state.job.servicesIds.isNotEmpty && _searchController.text.isEmpty) {
+                  if (state is JobBookingData &&
+                      state.job.servicesIds.isNotEmpty &&
+                      _searchController.text.isEmpty) {
                     // In a real app, you'd want to fetch service details for the selected IDs
                     // For now, we'll just show the IDs. You can enhance this by storing service details in JobBookingCubit
                     return SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
-                        final serviceId = state.job.servicesIds[index];
-                        // You might want to store service details in JobBookingCubit for display
-                        // For now, we'll just show the ID
+                        final service = state.selectedServices[index];
                         return Container(
-                          margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-                          padding: EdgeInsets.all(16.w),
+                          margin: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.whiteColor,
                             borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: AppColors.primary, width: 1.5),
+                            border: Border.all(
+                              color: AppColors.primary,
+                              width: 1.5,
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Container(
+                            padding: EdgeInsets.all(16.w),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    service.name,
+                                    style: AppTypography.fontSize16Bold
+                                        .copyWith(color: Colors.black),
+                                  ),
+                                ),
+                                SizedBox(width: 12.w),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      'Service ID: $serviceId',
-                                      style: AppTypography.fontSize16Bold.copyWith(color: Colors.black),
+                                      '${service.priceInclVat.toStringAsFixed(2)} €',
+                                      style: AppTypography.fontSize16Bold
+                                          .copyWith(color: AppColors.primary),
                                     ),
-                                    SizedBox(height: 4.h),
+                                    SizedBox(height: 2.h),
                                     Text(
-                                      'Tap to see details',
-                                      style: AppTypography.fontSize12.copyWith(color: Colors.blue),
+                                      'incl. ${service.vat}% VAT',
+                                      style: AppTypography.fontSize10.copyWith(
+                                        color: Colors.grey.shade500,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Price TBD', // You can store price in JobBookingCubit
-                                    style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                                SizedBox(width: 12.w),
+                                GestureDetector(
+                                  onTap: () => _removeService(service.id),
+                                  child: Container(
+                                    width: 24.w,
+                                    height: 24.h,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 16.sp,
+                                    ),
                                   ),
-                                  SizedBox(height: 2.h),
-                                  Text(
-                                    'incl. VAT',
-                                    style: AppTypography.fontSize10.copyWith(color: Colors.grey.shade500),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(width: 12.w),
-                              GestureDetector(
-                                onTap: () => _removeService(serviceId),
-                                child: Container(
-                                  width: 24.w,
-                                  height: 24.h,
-                                  decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                  child: Icon(Icons.close, color: Colors.white, size: 16.sp),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
-                      }, childCount: state.job.servicesIds.length),
+                      }, childCount: state.selectedServices.length),
                     );
                   }
 
@@ -506,16 +605,24 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.search, size: 48.sp, color: Colors.grey.shade300),
+                            Icon(
+                              Icons.search,
+                              size: 48.sp,
+                              color: Colors.grey.shade300,
+                            ),
                             SizedBox(height: 16.h),
                             Text(
                               'Search for services',
-                              style: AppTypography.fontSize16.copyWith(color: Colors.grey.shade500),
+                              style: AppTypography.fontSize16.copyWith(
+                                color: Colors.grey.shade500,
+                              ),
                             ),
                             SizedBox(height: 8.h),
                             Text(
                               'Type in the search bar to find services',
-                              style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade400),
+                              style: AppTypography.fontSize12.copyWith(
+                                color: Colors.grey.shade400,
+                              ),
                             ),
                           ],
                         ),
@@ -533,13 +640,12 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
         // Bottom Button - Show only when services are selected
         bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
           builder: (context, state) {
-            final hasServices = state is JobBookingData && state.job.servicesIds.isNotEmpty;
-
-            if (hasServices && _searchController.text.isEmpty) {
+            if (state is JobBookingData &&
+                state.job.servicesIds.isNotEmpty &&
+                _searchController.text.isEmpty) {
               return _buildBookingButton(state);
-            } else {
-              return const SizedBox.shrink();
             }
+            return const SizedBox.shrink();
           },
         ),
       ),
@@ -559,14 +665,23 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                 Container(
                   width: 32.w,
                   height: 32.h,
-                  decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                  child: Icon(Icons.question_mark_outlined, color: Colors.white, size: 20.sp),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.question_mark_outlined,
+                    color: Colors.white,
+                    size: 20.sp,
+                  ),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
                     'To book a job you must add at least one service to your service list.',
-                    style: AppTypography.fontSize14.copyWith(fontWeight: FontWeight.w600),
+                    style: AppTypography.fontSize14.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -574,7 +689,9 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
             SizedBox(height: 16.h),
             Text(
               'Use your desktop computer at\nhttps://my.repairmc.com/service',
-              style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+              style: AppTypography.fontSize12.copyWith(
+                color: Colors.grey.shade600,
+              ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 24.h),
@@ -585,11 +702,16 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(22.r),
+                  ),
                 ),
                 child: Text(
                   'Dismiss',
-                  style: AppTypography.fontSize14.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: AppTypography.fontSize14.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -604,18 +726,29 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
       decoration: BoxDecoration(
         color: Colors.transparent,
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 2, left: 12.w, right: 12.w, top: 2),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 2,
+          left: 12.w,
+          right: 12.w,
+          top: 2,
+        ),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 '${bookingData.job.servicesIds.length} x Service selected',
-                style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade600),
+                style: AppTypography.fontSize14.copyWith(
+                  color: Colors.grey.shade600,
+                ),
               ),
               SizedBox(height: 4.h),
               SizedBox(
@@ -624,15 +757,24 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     // Pass the JobBookingCubit data to next screen
-                    Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute(builder: (context) => JobBookingStartBookingJobScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => JobBookingStartBookingJobScreen(),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.r)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25.r),
+                    ),
                   ),
-                  child: Text('Start booking', style: AppTypography.fontSize16Bold.copyWith(color: Colors.white)),
+                  child: Text(
+                    'Start booking',
+                    style: AppTypography.fontSize16Bold.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -644,6 +786,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();

@@ -27,10 +27,10 @@ class Data {
   String? deviceId;
   String? jobContactId;
   String? defectId;
-  double? subTotal;
-  double? total;
-  double? vat;
-  double? discount;
+  dynamic subTotal;
+  dynamic total;
+  dynamic vat;
+  dynamic discount;
   String? jobNo;
   bool? emailConfirmation;
   List<File>? files;
@@ -116,10 +116,10 @@ class Data {
     deviceId = json['deviceId'];
     jobContactId = json['jobContactId'];
     defectId = json['defectId'];
-    subTotal = json['subTotal']?.toDouble();
-    total = json['total']?.toDouble();
-    vat = json['vat']?.toDouble();
-    discount = json['discount']?.toDouble();
+    subTotal = json['subTotal'];
+    total = json['total'];
+    vat = json['vat'];
+    discount = json['discount'];
     jobNo = json['jobNo'];
     emailConfirmation = json['emailConfirmation'];
     if (json['files'] != null) {
@@ -136,13 +136,19 @@ class Data {
         jobStatus!.add(JobStatus.fromJson(v));
       });
     }
-    customerDetails = json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null;
-    deviceData = json['deviceData'] != null ? DeviceData.fromJson(json['deviceData']) : null;
+    customerDetails = json['customerDetails'] != null
+        ? CustomerDetails.fromJson(json['customerDetails'])
+        : null;
+    deviceData = json['deviceData'] != null
+        ? DeviceData.fromJson(json['deviceData'])
+        : null;
     status = json['status'];
     location = json['location'];
     salutationHTMLmarkup = json['salutationHTMLmarkup'];
     termsAndConditionsHTMLmarkup = json['termsAndConditionsHTMLmarkup'];
-    receiptFooter = json['receipt_footer'] != null ? ReceiptFooter.fromJson(json['receipt_footer']) : null;
+    receiptFooter = json['receipt_footer'] != null
+        ? ReceiptFooter.fromJson(json['receipt_footer'])
+        : null;
     if (json['loggedUserId'] != null) {
       loggedUserId = <LoggedUser>[];
       json['loggedUserId'].forEach((v) {
@@ -179,7 +185,13 @@ class Data {
     if (json['defect'] != null) {
       defect = <Defect>[];
       json['defect'].forEach((v) {
-        defect!.add(Defect.fromJson(v));
+        // Handle both string and map formats for backward compatibility
+        if (v is Map<String, dynamic>) {
+          defect!.add(Defect.fromJson(v));
+        } else if (v is String) {
+          // If it's a string, create a Defect with just the ID
+          defect!.add(Defect(sId: v));
+        }
       });
     }
     if (json['userData'] != null) {
@@ -317,8 +329,8 @@ class JobStatus {
   String? colorCode;
   String? userName;
   int? createAtStatus;
-  bool? notifications;
-  String? email;
+  dynamic notifications;
+  dynamic email;
   String? notes;
   dynamic priority; // Can be String or int
 
@@ -417,8 +429,12 @@ class CustomerDetails {
     email = json['email'];
     telephone = json['telephone'];
     telephonePrefix = json['telephone_prefix'];
-    billingAddress = json['billing_address'] != null ? BillingAddress.fromJson(json['billing_address']) : null;
-    shippingAddress = json['shipping_address'] != null ? ShippingAddress.fromJson(json['shipping_address']) : null;
+    billingAddress = json['billing_address'] != null
+        ? BillingAddress.fromJson(json['billing_address'])
+        : null;
+    shippingAddress = json['shipping_address'] != null
+        ? ShippingAddress.fromJson(json['shipping_address'])
+        : null;
     vatNo = json['vatNo'];
     reverseCharge = json['reverseCharge'];
   }
@@ -563,7 +579,14 @@ class DeviceData {
   List<Condition>? condition;
   String? serialNo;
 
-  DeviceData({this.brand, this.brandId, this.model, this.type, this.condition, this.serialNo});
+  DeviceData({
+    this.brand,
+    this.brandId,
+    this.model,
+    this.type,
+    this.condition,
+    this.serialNo,
+  });
 
   DeviceData.fromJson(Map<String, dynamic> json) {
     brand = json['brand'];
@@ -573,7 +596,13 @@ class DeviceData {
     if (json['condition'] != null) {
       condition = <Condition>[];
       json['condition'].forEach((v) {
-        condition!.add(Condition.fromJson(v));
+        // Handle both string and map formats for backward compatibility
+        if (v is Map<String, dynamic>) {
+          condition!.add(Condition.fromJson(v));
+        } else if (v is String) {
+          // If it's a string, create a Condition with the value
+          condition!.add(Condition(value: v));
+        }
       });
     }
     serialNo = json['serial_no'];
@@ -618,15 +647,28 @@ class ReceiptFooter {
   Address? address;
   ContactInfo? contact;
   Bank? bank;
+  String? openingHours;
 
-  ReceiptFooter({this.companyLogo, this.companyLogoURL, this.address, this.contact, this.bank});
+  ReceiptFooter({
+    this.companyLogo,
+    this.companyLogoURL,
+    this.address,
+    this.contact,
+    this.bank,
+    this.openingHours,
+  });
 
   ReceiptFooter.fromJson(Map<String, dynamic> json) {
     companyLogo = json['companyLogo'];
     companyLogoURL = json['companyLogoURL'];
-    address = json['address'] != null ? Address.fromJson(json['address']) : null;
-    contact = json['contact'] != null ? ContactInfo.fromJson(json['contact']) : null;
+    address = json['address'] != null
+        ? Address.fromJson(json['address'])
+        : null;
+    contact = json['contact'] != null
+        ? ContactInfo.fromJson(json['contact'])
+        : null;
     bank = json['bank'] != null ? Bank.fromJson(json['bank']) : null;
+    openingHours = json['openingHours'];
   }
 
   Map<String, dynamic> toJson() {
@@ -642,6 +684,7 @@ class ReceiptFooter {
     if (bank != null) {
       data['bank'] = bank!.toJson();
     }
+    data['openingHours'] = openingHours;
     return data;
   }
 }
@@ -654,7 +697,14 @@ class Address {
   String? city;
   String? country;
 
-  Address({this.companyName, this.street, this.num, this.zip, this.city, this.country});
+  Address({
+    this.companyName,
+    this.street,
+    this.num,
+    this.zip,
+    this.city,
+    this.country,
+  });
 
   Address.fromJson(Map<String, dynamic> json) {
     companyName = json['companyName'];
@@ -751,15 +801,26 @@ class UserData {
   Currency? currency;
   DateFormat? dateFormat;
 
-  UserData({this.email, this.fullName, this.avatar, this.position, this.currency, this.dateFormat});
+  UserData({
+    this.email,
+    this.fullName,
+    this.avatar,
+    this.position,
+    this.currency,
+    this.dateFormat,
+  });
 
   UserData.fromJson(Map<String, dynamic> json) {
     email = json['email'];
     fullName = json['fullName'];
     avatar = json['avatar'];
     position = json['position'];
-    currency = json['currency'] != null ? Currency.fromJson(json['currency']) : null;
-    dateFormat = json['dateFormat'] != null ? DateFormat.fromJson(json['dateFormat']) : null;
+    currency = json['currency'] != null
+        ? Currency.fromJson(json['currency'])
+        : null;
+    dateFormat = json['dateFormat'] != null
+        ? DateFormat.fromJson(json['dateFormat'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -861,7 +922,13 @@ class Device {
     if (json['condition'] != null) {
       condition = <Condition>[];
       json['condition'].forEach((v) {
-        condition!.add(Condition.fromJson(v));
+        // Handle both string and map formats for backward compatibility
+        if (v is Map<String, dynamic>) {
+          condition!.add(Condition.fromJson(v));
+        } else if (v is String) {
+          // If it's a string, create a Condition with the value
+          condition!.add(Condition(value: v));
+        }
       });
     }
     accessories = json['accessories'];
@@ -989,7 +1056,13 @@ class Defect {
     if (json['defect'] != null) {
       defect = <DefectItem>[];
       json['defect'].forEach((v) {
-        defect!.add(DefectItem.fromJson(v));
+        // Handle both string and map formats for backward compatibility
+        if (v is Map<String, dynamic>) {
+          defect!.add(DefectItem.fromJson(v));
+        } else if (v is String) {
+          // If it's a string, create a DefectItem with the value
+          defect!.add(DefectItem(value: v));
+        }
       });
     }
     jobType = json['jobType'];
@@ -997,9 +1070,15 @@ class Defect {
     description = json['description'];
     if (json['internalNote'] != null) {
       internalNote = <InternalNote>[];
-      json['internalNote'].forEach((v) {
-        internalNote!.add(InternalNote.fromJson(v));
-      });
+      if (json['internalNote'] is List) {
+        for (var v in json['internalNote']) {
+          if (v is Map<String, dynamic>) {
+            internalNote!.add(InternalNote.fromJson(v));
+          } else if (v is String) {
+            internalNote!.add(InternalNote(text: v, userName: 'System'));
+          }
+        }
+      }
     }
     assignItems = json['assignItems'];
     createdAt = json['createdAt'];
@@ -1053,7 +1132,13 @@ class InternalNote {
   String? userName;
   String? id;
 
-  InternalNote({this.text, this.userId, this.createdAt, this.userName, this.id});
+  InternalNote({
+    this.text,
+    this.userId,
+    this.createdAt,
+    this.userName,
+    this.id,
+  });
 
   InternalNote.fromJson(Map<String, dynamic> json) {
     text = json['text'] is List

@@ -22,10 +22,21 @@ class GetStartedScreen extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(height: 30.h),
-              Image.asset(AssetsConstant.logo1PNG, height: 55.39.h, width: 123.w),
+              Image.asset(
+                AssetsConstant.logo1PNG,
+                height: 55.39.h,
+                width: 123.w,
+              ),
 
               SizedBox(height: 30.h),
-              Image.asset(AssetsConstant.startingGraphicsPNG, height: isTablet ? 400 : null),
+              Image.asset(
+                AssetsConstant.startingGraphicsPNG,
+                height: isTablet
+                    ? 400.h
+                    : MediaQuery.of(context).size.height * 0.46,
+                width: double.infinity,
+                fit: BoxFit.contain,
+              ),
               SizedBox(height: 20.h),
               Column(
                 mainAxisSize: MainAxisSize.min,
@@ -98,11 +109,19 @@ class GetStartedScreen extends StatelessWidget {
               SizedBox(height: 12.h),
               Text(
                 'Legal Disclosure | Privacy Policy | Terms Of Service',
-                style: GoogleFonts.roboto(fontSize: 13.sp, fontWeight: FontWeight.w500, color: AppColors.blackColor),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.blackColor,
+                ),
               ),
               Text(
                 'Copyright © Candy Melon Software GmbH',
-                style: GoogleFonts.poppins(fontSize: 11.sp, fontWeight: FontWeight.w400, color: Color(0xFF2B2B2B)),
+                style: GoogleFonts.poppins(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF2B2B2B),
+                ),
               ),
             ],
           ),

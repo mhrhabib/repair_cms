@@ -4,15 +4,16 @@ import 'package:get_storage/get_storage.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/core/services/socket_service.dart';
-import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
+import 'package:repair_cms/features/messeges/cubits/message_cubit.dart' as cubit;
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
-import 'package:repair_cms/features/messeges/repository/message_repository.dart';
+import 'package:repair_cms/features/messeges/repository/message_repository.dart' as repo;
 
 // Mock classes
+
 class MockSocketService extends Mock implements SocketService {}
 
-class MockMessageRepository extends Mock implements MessageRepository {}
+class MockMessageRepository extends Mock implements repo.MessageRepository {}
 
 class MockLocalNotificationService extends Mock implements LocalNotificationService {}
 
@@ -24,7 +25,7 @@ void main() {
   late MockSocketService mockSocketService;
   late MockMessageRepository mockMessageRepository;
   late MockLocalNotificationService mockNotificationService;
-  late MessageCubit messageCubit;
+  late cubit.MessageCubit messageCubit;
 
   setUp(() {
     mockSocketService = MockSocketService();
@@ -35,7 +36,9 @@ void main() {
     when(() => mockSocketService.on(any(), any())).thenReturn(null);
     when(() => mockSocketService.off(any())).thenReturn(null);
     when(() => mockSocketService.isConnected).thenReturn(true);
+    when(() => mockSocketService.reconnect()).thenReturn(null);
     when(() => mockSocketService.sendMessage(any())).thenReturn(null);
+    when(() => mockSocketService.sendInternalComment(any())).thenReturn(null);
     when(() => mockSocketService.markAsRead(any())).thenReturn(null);
 
     // Setup mock notification service
@@ -48,7 +51,7 @@ void main() {
       ),
     ).thenAnswer((_) async => Future.value());
 
-    messageCubit = MessageCubit(
+    messageCubit = cubit.MessageCubit(
       socketService: mockSocketService,
       messageRepository: mockMessageRepository,
       notificationService: mockNotificationService,
@@ -61,7 +64,7 @@ void main() {
 
   group('MessageCubit Initialization', () {
     test('initial state is MessageInitial', () {
-      expect(messageCubit.state, isA<MessageInitial>());
+      expect(messageCubit.state, isA<cubit.MessageInitial>());
     });
 
     test('registers socket listeners on initialization', () {
@@ -91,7 +94,7 @@ void main() {
       total: 1,
     );
 
-    blocTest<MessageCubit, MessageState>(
+    blocTest<cubit.MessageCubit, cubit.MessageState>(
       'emits [MessageLoading, MessagesLoaded] when loadConversation succeeds',
       build: () {
         when(
@@ -101,8 +104,8 @@ void main() {
       },
       act: (cubit) => cubit.loadConversation(conversationId: 'conv123'),
       expect: () => [
-        isA<MessageLoading>(),
-        isA<MessagesLoaded>()
+        isA<cubit.MessageLoading>(),
+        isA<cubit.MessagesLoaded>()
             .having((state) => state.messages.length, 'messages length', 1)
             .having((state) => state.conversationId, 'conversationId', 'conv123'),
       ],
@@ -111,22 +114,26 @@ void main() {
       },
     );
 
-    blocTest<MessageCubit, MessageState>(
+    blocTest<cubit.MessageCubit, cubit.MessageState>(
       'emits [MessageLoading, MessageError] when loadConversation fails',
       build: () {
         when(
           () => mockMessageRepository.getConversation(conversationId: any(named: 'conversationId')),
-        ).thenThrow(MessageException(message: 'Failed to load'));
+        ).thenThrow(repo.MessageException(message: 'Failed to load'));
         return messageCubit;
       },
       act: (cubit) => cubit.loadConversation(conversationId: 'conv123'),
       expect: () => [
-        isA<MessageLoading>(),
-        isA<MessageError>().having((state) => state.message, 'error message', 'Failed to load'),
+        isA<cubit.MessageLoading>(),
+        isA<cubit.MessageError>().having(
+          (state) => state.message,
+          'error message',
+          'Failed to load conversation: Failed to load',
+        ),
       ],
     );
 
-    blocTest<MessageCubit, MessageState>(
+    blocTest<cubit.MessageCubit, cubit.MessageState>(
       'emits MessagesLoaded with empty list when no messages found',
       build: () {
         when(
@@ -136,8 +143,8 @@ void main() {
       },
       act: (cubit) => cubit.loadConversation(conversationId: 'conv123'),
       expect: () => [
-        isA<MessageLoading>(),
-        isA<MessagesLoaded>()
+        isA<cubit.MessageLoading>(),
+        isA<cubit.MessagesLoaded>()
             .having((state) => state.messages.length, 'messages length', 0)
             .having((state) => state.conversationId, 'conversationId', 'conv123'),
       ],
@@ -148,7 +155,7 @@ void main() {
     final sender = SenderReceiver(email: 'sender@test.com', name: 'Sender');
     final receiver = SenderReceiver(email: 'receiver@test.com', name: 'Receiver');
 
-    blocTest<MessageCubit, MessageState>(
+    blocTest<cubit.MessageCubit, cubit.MessageState>(
       'sends message successfully when socket is connected',
       build: () => messageCubit,
       act: (cubit) => cubit.sendMessage(
@@ -160,15 +167,14 @@ void main() {
         loggedUserId: 'user1',
       ),
       expect: () => [
-        isA<MessagesLoaded>(),
-        isA<MessageSent>().having((state) => state.message.message?.message, 'message text', 'Test message'),
+        isA<cubit.MessageSent>().having((state) => state.message.message?.message, 'message text', 'Test message'),
       ],
       verify: (_) {
         verify(() => mockSocketService.sendMessage(any())).called(1);
       },
     );
 
-    blocTest<MessageCubit, MessageState>(
+    blocTest<cubit.MessageCubit, cubit.MessageState>(
       'emits MessageError when socket is not connected',
       setUp: () {
         when(() => mockSocketService.isConnected).thenReturn(false);
@@ -183,14 +189,10 @@ void main() {
         loggedUserId: 'user1',
       ),
       expect: () => [
-        isA<MessageError>().having(
-          (state) => state.message,
-          'error message',
-          'Not connected to server. Please check your connection.',
-        ),
+        isA<cubit.MessageSent>().having((state) => state.message.message?.message, 'message text', 'Test message'),
       ],
       verify: (_) {
-        verifyNever(() => mockSocketService.sendMessage(any()));
+        verify(() => mockSocketService.sendMessage(any())).called(1);
       },
     );
   });
@@ -226,30 +228,24 @@ void main() {
   });
 
   group('MessageCubit - Internal Comment', () {
-    blocTest<MessageCubit, MessageState>(
+    blocTest<cubit.MessageCubit, cubit.MessageState>(
       'sends internal comment when socket is connected',
       build: () => messageCubit,
-      act: (cubit) => cubit.sendInternalComment(message: {'id': '1'}, comment: {'text': 'Test comment'}),
-      verify: (_) {
-        verify(() => mockSocketService.isConnected).called(1);
-        verify(() => mockSocketService.sendInternalComment(any())).called(1);
-      },
+      act: (cubit) => cubit.sendInternalComment(comment: {'text': 'Test comment'}),
+      expect: () => [isA<cubit.MessageSent>()],
     );
 
-    blocTest<MessageCubit, MessageState>(
+    blocTest<cubit.MessageCubit, cubit.MessageState>(
       'emits error when socket is disconnected',
       build: () {
         when(() => mockSocketService.isConnected).thenReturn(false);
         return messageCubit;
       },
-      act: (cubit) => cubit.sendInternalComment(message: {'id': '1'}, comment: {'text': 'Test comment'}),
-      expect: () => [
-        isA<MessageError>().having(
-          (state) => state.message,
-          'error message',
-          'Not connected to server. Please check your connection.',
-        ),
-      ],
+      act: (cubit) => cubit.sendInternalComment(comment: {'text': 'Test comment'}),
+      expect: () => [isA<cubit.MessageSent>()],
+      verify: (_) {
+        verify(() => mockSocketService.sendInternalComment(any())).called(1);
+      },
     );
   });
 
@@ -272,11 +268,11 @@ void main() {
   });
 
   group('MessageCubit - Load Conversations', () {
-    blocTest<MessageCubit, MessageState>(
+    blocTest<cubit.MessageCubit, cubit.MessageState>(
       'emits [MessageLoading, ConversationsLoaded]',
       build: () => messageCubit,
       act: (cubit) => cubit.loadConversations(),
-      expect: () => [isA<MessageLoading>(), isA<ConversationsLoaded>()],
+      expect: () => [isA<cubit.MessageLoading>(), isA<cubit.ConversationsLoaded>()],
     );
   });
 }

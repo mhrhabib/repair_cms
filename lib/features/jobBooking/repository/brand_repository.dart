@@ -83,11 +83,25 @@ class BrandRepositoryImpl implements BrandRepository {
 
       debugPrint('✅ [BrandRepository] Add brand response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
+      debugPrint('   📊 Response Type: ${response.data.runtimeType}');
       debugPrint('   📊 Response: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         await getBrandsList(userId: userId);
-        return BrandModel.fromJson(response.data);
+        
+        // Handle both String and parsed JSON responses
+        dynamic jsonData = response.data;
+        if (response.data is String) {
+          debugPrint('   🔄 Response is String, parsing JSON...');
+          jsonData = jsonDecode(response.data as String);
+        }
+        
+        if (jsonData is Map<String, dynamic>) {
+          return BrandModel.fromJson(jsonData);
+        } else {
+          debugPrint('   ⚠️ Unexpected response format: $jsonData');
+          throw BrandException(message: 'Unexpected response format from server');
+        }
       } else {
         throw BrandException(message: 'Failed to add brand: ${response.statusCode}', statusCode: response.statusCode);
       }

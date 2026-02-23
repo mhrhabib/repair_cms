@@ -31,11 +31,12 @@ class ForgotPasswordEmailSent extends ForgotPasswordState {
 
 class ForgotPasswordOtpVerified extends ForgotPasswordState {
   final String email;
+  final String otp;
   final String message;
-  const ForgotPasswordOtpVerified(this.email, this.message);
+  const ForgotPasswordOtpVerified(this.email, this.otp, this.message);
 
   @override
-  List<Object> get props => [email, message];
+  List<Object> get props => [email, otp, message];
 }
 
 class ForgotPasswordError extends ForgotPasswordState {

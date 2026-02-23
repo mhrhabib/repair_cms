@@ -1,5 +1,52 @@
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 
+extension MapSafeHelper on Map<String, dynamic> {
+  String? getString(String key) {
+    var value = this[key];
+    if (value == null) return null;
+    return value.toString();
+  }
+
+  int? getInt(String key) {
+    var value = this[key];
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  double? getDouble(String key) {
+    var value = this[key];
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  bool? getBool(String key) {
+    var value = this[key];
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is String) return value.toLowerCase() == 'true';
+    if (value is int) return value == 1;
+    return null;
+  }
+
+  Map<String, dynamic>? getMap(String key) {
+    var value = this[key];
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
+  }
+
+  List<dynamic>? getList(String key) {
+    var value = this[key];
+    if (value == null || value is! List) return null;
+    return value;
+  }
+}
+
 class ConversationModel {
   bool? success;
   List<Conversation>? data;
@@ -8,20 +55,30 @@ class ConversationModel {
   String? error;
   String? message;
 
-  ConversationModel({this.success, this.data, this.pages, this.total, this.error, this.message});
+  ConversationModel({
+    this.success,
+    this.data,
+    this.pages,
+    this.total,
+    this.error,
+    this.message,
+  });
 
   ConversationModel.fromJson(Map<String, dynamic> json) {
-    success = json['success'];
-    if (json['data'] != null) {
+    success = json.getBool('success');
+    var dataList = json.getList('data');
+    if (dataList != null) {
       data = <Conversation>[];
-      json['data'].forEach((v) {
-        data!.add(Conversation.fromJson(v));
-      });
+      for (var v in dataList) {
+        if (v is Map<String, dynamic>) {
+          data!.add(Conversation.fromJson(v));
+        }
+      }
     }
     pages = json['pages'];
     total = json['total'];
-    error = json['error'];
-    message = json['message'];
+    error = json.getString('error');
+    message = json.getString('message');
   }
 
   Map<String, dynamic> toJson() {
@@ -44,6 +101,8 @@ class Conversation {
   Sender? receiver;
   String? conversationId;
   Message? message;
+  Comment? comment;
+  List<Comment>? comments;
   bool? seen;
   List<ServiceItemList>? serviceItemList;
   String? participants;
@@ -60,6 +119,7 @@ class Conversation {
     this.receiver,
     this.conversationId,
     this.message,
+    this.comment,
     this.seen,
     this.serviceItemList,
     this.participants,
@@ -72,25 +132,46 @@ class Conversation {
   });
 
   Conversation.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    sender = json['sender'] != null ? Sender.fromJson(json['sender']) : null;
-    receiver = json['receiver'] != null ? Sender.fromJson(json['receiver']) : null;
-    conversationId = json['conversationId'];
-    message = json['message'] != null ? Message.fromJson(json['message']) : null;
-    seen = json['seen'];
-    if (json['serviceItemList'] != null) {
-      serviceItemList = <ServiceItemList>[];
-      json['serviceItemList'].forEach((v) {
-        serviceItemList!.add(ServiceItemList.fromJson(v));
-      });
+    sId = json.getString('_id');
+    var senderMap = json.getMap('sender');
+    sender = senderMap != null ? Sender.fromJson(senderMap) : null;
+    var receiverMap = json.getMap('receiver');
+    receiver = receiverMap != null ? Sender.fromJson(receiverMap) : null;
+    conversationId = json.getString('conversationId');
+    var messageMap = json.getMap('message');
+    message = messageMap != null ? Message.fromJson(messageMap) : null;
+    var commentMap = json.getMap('comment');
+    comment = commentMap != null ? Comment.fromJson(commentMap) : null;
+
+    var commentsList = json.getList('comments');
+    if (commentsList != null) {
+      comments = <Comment>[];
+      for (var v in commentsList) {
+        if (v is Map<String, dynamic>) {
+          comments!.add(Comment.fromJson(v));
+        }
+      }
     }
-    participants = json['participants'];
-    loggedUserId = json['loggedUserId'];
-    userId = json['userId'] != null ? UserId.fromJson(json['userId']) : null;
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+
+    seen = json.getBool('seen');
+    var serviceItems = json.getList('serviceItemList');
+    if (serviceItems != null) {
+      serviceItemList = <ServiceItemList>[];
+      for (var v in serviceItems) {
+        if (v is Map<String, dynamic>) {
+          serviceItemList!.add(ServiceItemList.fromJson(v));
+        }
+      }
+    }
+
+    participants = json.getString('participants');
+    loggedUserId = json.getString('loggedUserId');
+    var userIdMap = json.getMap('userId');
+    userId = userIdMap != null ? UserId.fromJson(userIdMap) : null;
+    createdAt = json.getString('createdAt');
+    updatedAt = json.getString('updatedAt');
     iV = json['__v'];
-    id = json['id'];
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
@@ -106,9 +187,17 @@ class Conversation {
     if (message != null) {
       data['message'] = message!.toJson();
     }
+    if (comment != null) {
+      data['comment'] = comment!.toJson();
+    }
+    if (comments != null) {
+      data['comments'] = comments!.map((c) => c.toJson()).toList();
+    }
     data['seen'] = seen;
     if (serviceItemList != null) {
-      data['serviceItemList'] = serviceItemList!.map((v) => v.toJson()).toList();
+      data['serviceItemList'] = serviceItemList!
+          .map((v) => v.toJson())
+          .toList();
     }
     data['participants'] = participants;
     data['loggedUserId'] = loggedUserId;
@@ -130,8 +219,8 @@ class Sender {
   Sender({this.email, this.name});
 
   Sender.fromJson(Map<String, dynamic> json) {
-    email = json['email'];
-    name = json['name'];
+    email = json.getString('email');
+    name = json.getString('name');
   }
 
   Map<String, dynamic> toJson() {
@@ -154,6 +243,7 @@ class Message {
   String? quotationId;
   Quotation? quotation;
   Notification? notification;
+  Comment? comment;
 
   Message({
     this.message,
@@ -167,25 +257,36 @@ class Message {
     this.quotationId,
     this.quotation,
     this.notification,
+    this.comment,
   });
 
   Message.fromJson(Map<String, dynamic> json) {
-    message = json['message'];
-    messageType = json['messageType'];
-    jobId = json['jobId'];
-    progress = json['progress'];
-    if (json['services'] != null) {
+    message = json.getString('message');
+    messageType = json.getString('messageType');
+    jobId = json.getString('jobId');
+    progress = json.getString('progress');
+    var servicesList = json.getList('services');
+    if (servicesList != null) {
       services = <Services>[];
-      json['services'].forEach((v) {
-        services!.add(Services.fromJson(v));
-      });
+      for (var v in servicesList) {
+        if (v is Map<String, dynamic>) {
+          services!.add(Services.fromJson(v));
+        }
+      }
     }
-    file = json['file'];
-    invoice = json['invoice'] != null ? Invoice.fromJson(json['invoice']) : null;
-    quotationNo = json['quotationNo'];
-    quotationId = json['quotationId'];
-    quotation = json['quotation'] != null ? Quotation.fromJson(json['quotation']) : null;
-    notification = json['notification'] != null ? Notification.fromJson(json['notification']) : null;
+    file = json.getString('file');
+    var invoiceMap = json.getMap('invoice');
+    invoice = invoiceMap != null ? Invoice.fromJson(invoiceMap) : null;
+    quotationNo = json.getString('quotationNo');
+    quotationId = json.getString('quotationId');
+    var quotationMap = json.getMap('quotation');
+    quotation = quotationMap != null ? Quotation.fromJson(quotationMap) : null;
+    var notificationMap = json.getMap('notification');
+    notification = notificationMap != null
+        ? Notification.fromJson(notificationMap)
+        : null;
+    var commentMap = json.getMap('comment');
+    comment = commentMap != null ? Comment.fromJson(commentMap) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -209,6 +310,99 @@ class Message {
     if (notification != null) {
       data['notification'] = notification!.toJson();
     }
+    if (comment != null) {
+      data['comment'] = comment!.toJson();
+    }
+    return data;
+  }
+}
+
+class Comment {
+  String? text;
+  String? authorId;
+  String? userId;
+  String? messageId;
+  String? conversationId;
+  String? parentCommentId;
+  List<String>? mentions;
+
+  Comment({
+    this.text,
+    this.authorId,
+    this.userId,
+    this.messageId,
+    this.conversationId,
+    this.parentCommentId,
+    this.mentions,
+  });
+
+  Comment.fromJson(Map<String, dynamic> json) {
+    text = json.getString('text');
+
+    var author = json['authorId'];
+    if (author is Map) {
+      authorId =
+          (author['_id'] ?? author['id'] ?? author['sId'] ?? author['userId'])
+              ?.toString();
+    } else {
+      authorId = author?.toString();
+    }
+
+    var user = json['userId'];
+    if (user is Map) {
+      userId = (user['_id'] ?? user['id'] ?? user['sId'] ?? user['userId'])
+          ?.toString();
+    } else {
+      userId = user?.toString();
+    }
+
+    var msgId = json['messageId'];
+    if (msgId is Map) {
+      messageId = (msgId['_id'] ?? msgId['id'] ?? msgId['sId'])?.toString();
+    } else {
+      messageId = msgId?.toString();
+    }
+
+    var convId = json['conversationId'];
+    if (convId is Map) {
+      conversationId = (convId['_id'] ?? convId['id'] ?? convId['sId'])
+          ?.toString();
+    } else {
+      conversationId = convId?.toString();
+    }
+
+    var parent = json['parentCommentId'];
+    if (parent is Map) {
+      parentCommentId = (parent['_id'] ?? parent['id'] ?? parent['sId'])
+          ?.toString();
+    } else {
+      parentCommentId = parent?.toString();
+    }
+
+    var mentionsList = json.getList('mentions');
+    if (mentionsList != null) {
+      mentions = mentionsList
+          .map((m) {
+            if (m is Map) {
+              return (m['_id'] ?? m['id'] ?? m['sId'] ?? m['email'])
+                  ?.toString();
+            }
+            return m?.toString();
+          })
+          .whereType<String>()
+          .toList();
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['text'] = text;
+    data['authorId'] = authorId;
+    data['userId'] = userId;
+    data['messageId'] = messageId;
+    data['conversationId'] = conversationId;
+    data['parentCommentId'] = parentCommentId;
+    data['mentions'] = mentions;
     return data;
   }
 }
@@ -219,7 +413,7 @@ class Services {
   dynamic vat;
   dynamic priceInclVat;
   String? id;
-  String? itemNumber;
+  dynamic itemNumber;
   dynamic unit;
   String? physicalLocation;
   dynamic stockQty;
@@ -263,32 +457,35 @@ class Services {
   });
 
   Services.fromJson(Map<String, dynamic> json) {
-    productName = json['productName'];
+    productName = json.getString('productName');
     priceExclVat = json['price_excl_vat'];
     vat = json['vat'];
     priceInclVat = json['price_incl_vat'];
-    id = json['id'];
+    id = json.getString('id');
     itemNumber = json['itemNumber'];
     unit = json['unit'];
-    physicalLocation = json['physicalLocation'];
+    physicalLocation = json.getString('physicalLocation');
     stockQty = json['stockQty'];
     amount = json['amount'];
-    description = json['description'];
-    manufacturer = json['manufacturer'];
-    manufacturerNumber = json['manufacturerNumber'];
-    color = json['color'];
-    condition = json['condition'];
-    category = json['category'];
-    serialNoManagement = json['serialNoManagement'];
-    lineItemId = json['lineItemId'];
+    description = json.getString('description');
+    manufacturer = json.getString('manufacturer');
+    manufacturerNumber = json.getString('manufacturerNumber');
+    color = json.getString('color');
+    condition = json.getString('condition');
+    category = json.getString('category');
+    serialNoManagement = json.getBool('serialNoManagement');
+    lineItemId = json.getString('lineItemId');
     discountedIncl = json['discounted_incl'];
     discountedExcl = json['discounted_excl'];
-    serviceId = json['serviceId'];
-    if (json['assignedItems'] != null) {
+    serviceId = json.getString('serviceId');
+    var items = json.getList('assignedItems');
+    if (items != null) {
       assignedItems = <AssignedItems>[];
-      json['assignedItems'].forEach((v) {
-        assignedItems!.add(AssignedItems.fromJson(v));
-      });
+      for (var v in items) {
+        if (v is Map<String, dynamic>) {
+          assignedItems!.add(AssignedItems.fromJson(v));
+        }
+      }
     }
   }
 
@@ -362,23 +559,23 @@ class AssignedItems {
   });
 
   AssignedItems.fromJson(Map<String, dynamic> json) {
-    productName = json['productName'];
+    productName = json.getString('productName');
     priceExclVat = json['price_excl_vat'];
     vat = json['vat'];
     priceInclVat = json['price_incl_vat'];
-    id = json['id'];
-    itemNumber = json['itemNumber'];
+    id = json.getString('id');
+    itemNumber = json.getString('itemNumber');
     unit = json['unit'];
-    physicalLocation = json['physicalLocation'];
+    physicalLocation = json.getString('physicalLocation');
     stockQty = json['stockQty'];
     amount = json['amount'];
-    description = json['description'];
-    manufacturer = json['manufacturer'];
-    manufacturerNumber = json['manufacturerNumber'];
-    color = json['color'];
-    condition = json['condition'];
-    category = json['category'];
-    serialNoManagement = json['serialNoManagement'];
+    description = json.getString('description');
+    manufacturer = json.getString('manufacturer');
+    manufacturerNumber = json.getString('manufacturerNumber');
+    color = json.getString('color');
+    condition = json.getString('condition');
+    category = json.getString('category');
+    serialNoManagement = json.getBool('serialNoManagement');
   }
 
   Map<String, dynamic> toJson() {
@@ -490,62 +687,83 @@ class Invoice {
   });
 
   Invoice.fromJson(Map<String, dynamic> json) {
-    companyId = json['companyId'];
-    jobId = json['jobId'] != null ? JobId.fromJson(json['jobId']) : null;
-    jobNo = json['jobNo'];
-    text = json['text'];
+    companyId = json.getString('companyId');
+    var jobIdMap = json.getMap('jobId');
+    jobId = jobIdMap != null ? JobId.fromJson(jobIdMap) : null;
+    jobNo = json.getString('jobNo');
+    text = json.getString('text');
     subTotal = json['subTotal'];
     discount = json['discount'];
-    discountPercent = json['discountPercent'];
+    discountPercent = json.getString('discountPercent');
     vat = json['vat'];
     total = json['total'];
     backAmount = json['backAmount'];
-    if (json['serviceItemList'] != null) {
+    var itemsList = json.getList('serviceItemList');
+    if (itemsList != null) {
       serviceItemList = <ServiceItemList>[];
-      json['serviceItemList'].forEach((v) {
-        serviceItemList!.add(ServiceItemList.fromJson(v));
-      });
+      for (var v in itemsList) {
+        if (v is Map<String, dynamic>) {
+          serviceItemList!.add(ServiceItemList.fromJson(v));
+        }
+      }
     }
-    paymentMethod = json['paymentMethod'];
-    paymentStatus = json['paymentStatus'];
-    invoiceNo = json['invoiceNo'];
-    invoiceStatus = json['invoiceStatus'];
-    if (json['status'] != null) {
+    paymentMethod = json.getString('paymentMethod');
+    paymentStatus = json.getString('paymentStatus');
+    invoiceNo = json.getString('invoiceNo');
+    invoiceStatus = json.getString('invoiceStatus');
+    var statusList = json.getList('status');
+    if (statusList != null) {
       status = <Status>[];
-      json['status'].forEach((v) {
-        status!.add(Status.fromJson(v));
-      });
+      for (var v in statusList) {
+        if (v is Map<String, dynamic>) {
+          status!.add(Status.fromJson(v));
+        }
+      }
     }
-    if (json['files'] != null) {
+    var filesList = json.getList('files');
+    if (filesList != null) {
       files = <Files>[];
-      json['files'].forEach((v) {
-        files!.add(Files.fromJson(v));
-      });
+      for (var v in filesList) {
+        if (v is Map<String, dynamic>) {
+          files!.add(Files.fromJson(v));
+        }
+      }
     }
 
-    customerDetails = json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null;
-    paymentNote = json['paymentNote'];
+    var customerMap = json.getMap('customerDetails');
+    customerDetails = customerMap != null
+        ? CustomerDetails.fromJson(customerMap)
+        : null;
+    paymentNote = json.getString('paymentNote');
     paymentDueDate = json['paymentDueDate'];
-    isSend = json['isSend'];
-    isRevoked = json['isRevoked'];
-    isCreditInvoice = json['isCreditInvoice'];
-    paid = json['paid'];
-    invoicePrdynamicType = json['invoicePrdynamicType'];
-    invoiceType = json['invoiceType'];
-    userName = json['userName'];
-    salutationHTMLmarkup = json['salutationHTMLmarkup'];
-    termsAndConditionsHTMLmarkup = json['termsAndConditionsHTMLmarkup'];
-    receiptFooter = json['receipt_footer'] != null ? ReceiptFooter.fromJson(json['receipt_footer']) : null;
-    location = json['location'];
-    loggedUserId = json['loggedUserId'] != null ? LoggedUserId.fromJson(json['loggedUserId']) : null;
-    userId = json['userId'];
-    isIncludingVat = json['isIncludingVat'];
-    customerReference = json['customerReference'];
-    sId = json['_id'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    isSend = json.getBool('isSend');
+    isRevoked = json.getBool('isRevoked');
+    isCreditInvoice = json.getBool('isCreditInvoice');
+    paid = json.getBool('paid');
+    invoicePrdynamicType = json.getString('invoicePrdynamicType');
+    invoiceType = json.getString('invoiceType');
+    userName = json.getString('userName');
+    salutationHTMLmarkup = json.getString('salutationHTMLmarkup');
+    termsAndConditionsHTMLmarkup = json.getString(
+      'termsAndConditionsHTMLmarkup',
+    );
+    var footerMap = json.getMap('receipt_footer');
+    receiptFooter = footerMap != null
+        ? ReceiptFooter.fromJson(footerMap)
+        : null;
+    location = json.getString('location');
+    var loggedUserMap = json.getMap('loggedUserId');
+    loggedUserId = loggedUserMap != null
+        ? LoggedUserId.fromJson(loggedUserMap)
+        : null;
+    userId = json.getString('userId');
+    isIncludingVat = json.getBool('isIncludingVat');
+    customerReference = json.getString('customerReference');
+    sId = json.getString('_id');
+    createdAt = json.getString('createdAt');
+    updatedAt = json.getString('updatedAt');
     iV = json['__v'];
-    id = json['id'];
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
@@ -563,7 +781,9 @@ class Invoice {
     data['total'] = total;
     data['backAmount'] = backAmount;
     if (serviceItemList != null) {
-      data['serviceItemList'] = serviceItemList!.map((v) => v.toJson()).toList();
+      data['serviceItemList'] = serviceItemList!
+          .map((v) => v.toJson())
+          .toList();
     }
     data['paymentMethod'] = paymentMethod;
     data['paymentStatus'] = paymentStatus;
@@ -695,61 +915,81 @@ class JobId {
   });
 
   JobId.fromJson(Map<String, dynamic> json) {
-    salutationHTMLmarkup = json['salutationHTMLmarkup'];
-    termsAndConditionsHTMLmarkup = json['termsAndConditionsHTMLmarkup'];
-    isJobCompleted = json['is_job_completed'];
-    isDeviceReturned = json['is_device_returned'];
-    jobSource = json['jobSource'];
-    sId = json['_id'];
-    jobType = json['jobType'];
-    jobTypes = json['jobTypes'];
-    model = json['model'];
-    servicesIds = json['servicesIds'].cast<String>();
-    deviceId = json['deviceId'] != null ? DeviceId.fromJson(json['deviceId']) : null;
-    jobContactId = json['jobContactId'];
-    defectId = json['defectId'] != null ? DefectId.fromJson(json['defectId']) : null;
+    salutationHTMLmarkup = json.getString('salutationHTMLmarkup');
+    termsAndConditionsHTMLmarkup = json.getString(
+      'termsAndConditionsHTMLmarkup',
+    );
+    isJobCompleted = json.getBool('is_job_completed');
+    isDeviceReturned = json.getBool('is_device_returned');
+    jobSource = json.getString('jobSource');
+    sId = json.getString('_id');
+    jobType = json.getString('jobType');
+    jobTypes = json.getString('jobTypes');
+    model = json.getString('model');
+    var sIds = json.getList('servicesIds');
+    servicesIds = sIds?.map((e) => e.toString()).toList();
+    var deviceMap = json.getMap('deviceId');
+    deviceId = deviceMap != null ? DeviceId.fromJson(deviceMap) : null;
+    jobContactId = json.getString('jobContactId');
+    var defectMap = json.getMap('defectId');
+    defectId = defectMap != null ? DefectId.fromJson(defectMap) : null;
     subTotal = json['subTotal'];
     total = json['total'];
     vat = json['vat'];
     discount = json['discount'];
-    jobNo = json['jobNo'];
-    customerId = json['customerId'];
-    if (json['assignedItemsIds'] != null) {
+    jobNo = json.getString('jobNo');
+    customerId = json.getString('customerId');
+    var itemsList = json.getList('assignedItemsIds');
+    if (itemsList != null) {
       assignedItemsIds = <AssignedItems>[];
-      json['assignedItemsIds'].forEach((v) {
-        assignedItemsIds!.add(AssignedItems.fromJson(v));
-      });
+      for (var v in itemsList) {
+        if (v is Map<String, dynamic>) {
+          assignedItemsIds!.add(AssignedItems.fromJson(v));
+        }
+      }
     }
-    emailConfirmation = json['emailConfirmation'];
-    if (json['files'] != null) {
+    emailConfirmation = json.getBool('emailConfirmation');
+    var filesList = json.getList('files');
+    if (filesList != null) {
       files = <Files>[];
-      json['files'].forEach((v) {
-        files!.add(Files.fromJson(v));
-      });
+      for (var v in filesList) {
+        if (v is Map<String, dynamic>) {
+          files!.add(Files.fromJson(v));
+        }
+      }
     }
-    prdynamicDeviceLabel = json['prdynamicDeviceLabel'];
-    if (json['jobStatus'] != null) {
+    prdynamicDeviceLabel = json.getBool('prdynamicDeviceLabel');
+    var statusList = json.getList('jobStatus');
+    if (statusList != null) {
       jobStatus = <JobStatus>[];
-      json['jobStatus'].forEach((v) {
-        jobStatus!.add(JobStatus.fromJson(v));
-      });
+      for (var v in statusList) {
+        if (v is Map<String, dynamic>) {
+          jobStatus!.add(JobStatus.fromJson(v));
+        }
+      }
     }
-    customerDetails = json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null;
-    status = json['status'];
-    location = json['location'];
-    userId = json['userId'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    var customerMap = json.getMap('customerDetails');
+    customerDetails = customerMap != null
+        ? CustomerDetails.fromJson(customerMap)
+        : null;
+    status = json.getString('status');
+    location = json.getString('location');
+    userId = json.getString('userId');
+    createdAt = json.getString('createdAt');
+    updatedAt = json.getString('updatedAt');
     iV = json['__v'];
-    jobTrackingNumber = json['job_tracking_number'];
-    physicalLocation = json['physicalLocation'];
-    prdynamicOption = json['prdynamicOption'];
-    signatureFilePath = json['signatureFilePath'];
-    deviceData = json['deviceData'] != null ? DeviceData.fromJson(json['deviceData']) : null;
-    jobPriority = json['job_priority'];
-    assignUser = json['assign_user'];
-    assignerName = json['assigner_name'];
-    id = json['id'];
+    jobTrackingNumber = json.getString('job_tracking_number');
+    physicalLocation = json.getString('physicalLocation');
+    prdynamicOption = json.getString('prdynamicOption');
+    signatureFilePath = json.getString('signatureFilePath');
+    var deviceDataMap = json.getMap('deviceData');
+    deviceData = deviceDataMap != null
+        ? DeviceData.fromJson(deviceDataMap)
+        : null;
+    jobPriority = json.getString('job_priority');
+    assignUser = json.getString('assign_user');
+    assignerName = json.getString('assigner_name');
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
@@ -778,7 +1018,9 @@ class JobId {
     data['jobNo'] = jobNo;
     data['customerId'] = customerId;
     if (assignedItemsIds != null) {
-      data['assignedItemsIds'] = assignedItemsIds!.map((v) => v.toJson()).toList();
+      data['assignedItemsIds'] = assignedItemsIds!
+          .map((v) => v.toJson())
+          .toList();
     }
     data['emailConfirmation'] = emailConfirmation;
     if (files != null) {
@@ -844,25 +1086,28 @@ class DeviceId {
   });
 
   DeviceId.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    brand = json['brand'];
-    model = json['model'];
-    category = json['category'];
-    imei = json['imei'];
-    if (json['condition'] != null) {
+    sId = json.getString('_id');
+    brand = json.getString('brand');
+    model = json.getString('model');
+    category = json.getString('category');
+    imei = json.getString('imei');
+    var condList = json.getList('condition');
+    if (condList != null) {
       condition = <Condition>[];
-      json['condition'].forEach((v) {
-        condition!.add(Condition.fromJson(v));
-      });
+      for (var v in condList) {
+        if (v is Map<String, dynamic>) {
+          condition!.add(Condition.fromJson(v));
+        }
+      }
     }
 
-    deviceSecurity = json['deviceSecurity'];
+    deviceSecurity = json.getString('deviceSecurity');
 
-    color = json['color'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    color = json.getString('color');
+    createdAt = json.getString('createdAt');
+    updatedAt = json.getString('updatedAt');
     iV = json['__v'];
-    id = json['id'];
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
@@ -892,8 +1137,8 @@ class Condition {
   Condition({this.value, this.id});
 
   Condition.fromJson(Map<String, dynamic> json) {
-    value = json['value'];
-    id = json['id'];
+    value = json.getString('value');
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
@@ -932,27 +1177,34 @@ class DefectId {
   });
 
   DefectId.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    if (json['defect'] != null) {
+    sId = json.getString('_id');
+    var defectList = json.getList('defect');
+    if (defectList != null) {
       defect = <Defect>[];
-      json['defect'].forEach((v) {
-        defect!.add(Defect.fromJson(v));
-      });
+      for (var v in defectList) {
+        if (v is Map<String, dynamic>) {
+          defect!.add(Defect.fromJson(v));
+        }
+      }
     }
-    jobType = json['jobType'];
-    reference = json['reference'];
-    description = json['description'];
-    if (json['internalNote'] != null) {
+    jobType = json.getString('jobType');
+    reference = json.getString('reference');
+    description = json.getString('description');
+    var notesList = json.getList('internalNote');
+    if (notesList != null) {
       internalNote = <InternalNote>[];
-      json['internalNote'].forEach((v) {
-        internalNote!.add(InternalNote.fromJson(v));
-      });
+      for (var v in notesList) {
+        if (v is Map<String, dynamic>) {
+          internalNote!.add(InternalNote.fromJson(v));
+        }
+      }
     }
-    assignItems = json['assignItems'].cast<String>();
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    var items = json.getList('assignItems');
+    assignItems = items?.map((e) => e.toString()).toList();
+    createdAt = json.getString('createdAt');
+    updatedAt = json.getString('updatedAt');
     iV = json['__v'];
-    id = json['id'];
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
@@ -979,18 +1231,24 @@ class DefectId {
 class InternalNote {
   String? text;
   String? userId;
-  String? createdAt;
+  dynamic createdAt;
   String? userName;
   String? id;
 
-  InternalNote({this.text, this.userId, this.createdAt, this.userName, this.id});
+  InternalNote({
+    this.text,
+    this.userId,
+    this.createdAt,
+    this.userName,
+    this.id,
+  });
 
   InternalNote.fromJson(Map<String, dynamic> json) {
-    text = json['text'];
-    userId = json['userId'];
+    text = json.getString('text');
+    userId = json.getString('userId');
     createdAt = json['createdAt'];
-    userName = json['userName'];
-    id = json['id'];
+    userName = json.getString('userName');
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
@@ -1013,9 +1271,9 @@ class Files {
   Files({this.file, this.id, this.fileName, this.size});
 
   Files.fromJson(Map<String, dynamic> json) {
-    file = json['file'];
-    id = json['id'];
-    fileName = json['fileName'];
+    file = json.getString('file');
+    id = json.getString('id');
+    fileName = json.getString('fileName');
     size = json['size'];
   }
 
@@ -1053,15 +1311,15 @@ class JobStatus {
   });
 
   JobStatus.fromJson(Map<String, dynamic> json) {
-    title = json['title'];
-    userId = json['userId'];
-    colorCode = json['colorCode'];
-    userName = json['userName'];
+    title = json.getString('title');
+    userId = json.getString('userId');
+    colorCode = json.getString('colorCode');
+    userName = json.getString('userName');
     createAtStatus = json['createAtStatus'];
-    notifications = json['notifications'];
-    email = json['email'];
-    notes = json['notes'];
-    priority = json['priority'];
+    notifications = json.getBool('notifications');
+    email = json.getString('email');
+    notes = json.getString('notes');
+    priority = json.getString('priority');
   }
 
   Map<String, dynamic> toJson() {
@@ -1109,18 +1367,21 @@ class CustomerDetails {
   });
 
   CustomerDetails.fromJson(Map<String, dynamic> json) {
-    customerId = json['customerId'];
-    type = json['type'];
-    type2 = json['type2'];
-    organization = json['organization'];
-    customerNo = json['customerNo'];
-    email = json['email'];
-    telephone = json['telephone'];
-    billingAddress = json['billing_address'] != null ? BillingAddress.fromJson(json['billing_address']) : null;
-    salutation = json['salutation'];
-    firstName = json['firstName'];
-    lastName = json['lastName'];
-    position = json['position'];
+    customerId = json.getString('customerId');
+    type = json.getString('type');
+    type2 = json.getString('type2');
+    organization = json.getString('organization');
+    customerNo = json.getString('customerNo');
+    email = json.getString('email');
+    telephone = json.getString('telephone');
+    var billingMap = json.getMap('billing_address');
+    billingAddress = billingMap != null
+        ? BillingAddress.fromJson(billingMap)
+        : null;
+    salutation = json.getString('salutation');
+    firstName = json.getString('firstName');
+    lastName = json.getString('lastName');
+    position = json.getString('position');
   }
 
   Map<String, dynamic> toJson() {
@@ -1152,15 +1413,23 @@ class BillingAddress {
   String? customerId;
   dynamic iV;
 
-  BillingAddress({this.sId, this.street, this.zip, this.city, this.country, this.customerId, this.iV});
+  BillingAddress({
+    this.sId,
+    this.street,
+    this.zip,
+    this.city,
+    this.country,
+    this.customerId,
+    this.iV,
+  });
 
   BillingAddress.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    street = json['street'];
-    zip = json['zip'];
-    city = json['city'];
-    country = json['country'];
-    customerId = json['customerId'];
+    sId = json.getString('_id');
+    street = json.getString('street');
+    zip = json.getString('zip');
+    city = json.getString('city');
+    country = json.getString('country');
+    customerId = json.getString('customerId');
     iV = json['__v'];
   }
 
@@ -1209,23 +1478,26 @@ class DeviceData {
   });
 
   DeviceData.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    brand = json['brand'];
-    model = json['model'];
-    category = json['category'];
-    imei = json['imei'];
-    if (json['condition'] != null) {
+    sId = json.getString('_id');
+    brand = json.getString('brand');
+    model = json.getString('model');
+    category = json.getString('category');
+    imei = json.getString('imei');
+    var condList = json.getList('condition');
+    if (condList != null) {
       condition = <Condition>[];
-      json['condition'].forEach((v) {
-        condition!.add(Condition.fromJson(v));
-      });
+      for (var v in condList) {
+        if (v is Map<String, dynamic>) {
+          condition!.add(Condition.fromJson(v));
+        }
+      }
     }
 
-    deviceSecurity = json['deviceSecurity'];
+    deviceSecurity = json.getString('deviceSecurity');
 
-    color = json['color'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    color = json.getString('color');
+    createdAt = json.getString('createdAt');
+    updatedAt = json.getString('updatedAt');
     iV = json['__v'];
   }
 
@@ -1252,8 +1524,8 @@ class ServiceItemList {
   dynamic priceExclVat;
   dynamic vat;
   dynamic priceInclVat;
-  String? id;
-  String? itemNumber;
+  dynamic id;
+  dynamic itemNumber;
   dynamic unit;
   String? physicalLocation;
   dynamic stockQty;
@@ -1293,24 +1565,24 @@ class ServiceItemList {
   });
 
   ServiceItemList.fromJson(Map<String, dynamic> json) {
-    productName = json['productName'];
+    productName = json.getString('productName');
     priceExclVat = json['price_excl_vat'];
     vat = json['vat'];
     priceInclVat = json['price_incl_vat'];
     id = json['id'];
     itemNumber = json['itemNumber'];
     unit = json['unit'];
-    physicalLocation = json['physicalLocation'];
+    physicalLocation = json.getString('physicalLocation');
     stockQty = json['stockQty'];
     amount = json['amount'];
-    description = json['description'];
-    manufacturer = json['manufacturer'];
-    manufacturerNumber = json['manufacturerNumber'];
-    color = json['color'];
-    condition = json['condition'];
-    category = json['category'];
-    serialNoManagement = json['serialNoManagement'];
-    lineItemId = json['lineItemId'];
+    description = json.getString('description');
+    manufacturer = json.getString('manufacturer');
+    manufacturerNumber = json.getString('manufacturerNumber');
+    color = json.getString('color');
+    condition = json.getString('condition');
+    category = json.getString('category');
+    serialNoManagement = json.getBool('serialNoManagement');
+    lineItemId = json.getString('lineItemId');
     discountedIncl = json['discounted_incl'];
     discountedExcl = json['discounted_excl'];
   }
@@ -1349,14 +1621,21 @@ class Status {
   String? colorCode;
   dynamic createdAt;
 
-  Status({this.title, this.userId, this.priority, this.email, this.colorCode, this.createdAt});
+  Status({
+    this.title,
+    this.userId,
+    this.priority,
+    this.email,
+    this.colorCode,
+    this.createdAt,
+  });
 
   Status.fromJson(Map<String, dynamic> json) {
-    title = json['title'];
-    userId = json['userId'];
+    title = json.getString('title');
+    userId = json.getString('userId');
     priority = json['priority'];
-    email = json['email'];
-    colorCode = json['colorCode'];
+    email = json.getString('email');
+    colorCode = json.getString('colorCode');
     createdAt = json['createdAt'];
   }
 
@@ -1379,14 +1658,23 @@ class ReceiptFooter {
   Contact? contact;
   Bank? bank;
 
-  ReceiptFooter({this.companyLogo, this.companyLogoURL, this.address, this.contact, this.bank});
+  ReceiptFooter({
+    this.companyLogo,
+    this.companyLogoURL,
+    this.address,
+    this.contact,
+    this.bank,
+  });
 
   ReceiptFooter.fromJson(Map<String, dynamic> json) {
-    companyLogo = json['companyLogo'];
-    companyLogoURL = json['companyLogoURL'];
-    address = json['address'] != null ? Address.fromJson(json['address']) : null;
-    contact = json['contact'] != null ? Contact.fromJson(json['contact']) : null;
-    bank = json['bank'] != null ? Bank.fromJson(json['bank']) : null;
+    companyLogo = json.getString('companyLogo');
+    companyLogoURL = json.getString('companyLogoURL');
+    var addrMap = json.getMap('address');
+    address = addrMap != null ? Address.fromJson(addrMap) : null;
+    var contMap = json.getMap('contact');
+    contact = contMap != null ? Contact.fromJson(contMap) : null;
+    var bankMap = json.getMap('bank');
+    bank = bankMap != null ? Bank.fromJson(bankMap) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -1414,15 +1702,22 @@ class Address {
   String? city;
   String? country;
 
-  Address({this.companyName, this.street, this.num, this.zip, this.city, this.country});
+  Address({
+    this.companyName,
+    this.street,
+    this.num,
+    this.zip,
+    this.city,
+    this.country,
+  });
 
   Address.fromJson(Map<String, dynamic> json) {
-    companyName = json['companyName'];
-    street = json['street'];
-    num = json['num'];
-    zip = json['zip'];
-    city = json['city'];
-    country = json['country'];
+    companyName = json.getString('companyName');
+    street = json.getString('street');
+    num = json.getString('num');
+    zip = json.getString('zip');
+    city = json.getString('city');
+    country = json.getString('country');
   }
 
   Map<String, dynamic> toJson() {
@@ -1446,10 +1741,10 @@ class Contact {
   Contact({this.ceo, this.telephone, this.email, this.website});
 
   Contact.fromJson(Map<String, dynamic> json) {
-    ceo = json['ceo'];
-    telephone = json['telephone'];
-    email = json['email'];
-    website = json['website'];
+    ceo = json.getString('ceo');
+    telephone = json.getString('telephone');
+    email = json.getString('email');
+    website = json.getString('website');
   }
 
   Map<String, dynamic> toJson() {
@@ -1470,9 +1765,9 @@ class Bank {
   Bank({this.bankName, this.iban, this.bic});
 
   Bank.fromJson(Map<String, dynamic> json) {
-    bankName = json['bankName'];
-    iban = json['iban'];
-    bic = json['bic'];
+    bankName = json.getString('bankName');
+    iban = json.getString('iban');
+    bic = json.getString('bic');
   }
 
   Map<String, dynamic> toJson() {
@@ -1493,10 +1788,10 @@ class LoggedUserId {
   LoggedUserId({this.sId, this.email, this.fullName, this.id});
 
   LoggedUserId.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    email = json['email'];
-    fullName = json['fullName'];
-    id = json['id'];
+    sId = json.getString('_id');
+    email = json.getString('email');
+    fullName = json.getString('fullName');
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
@@ -1589,48 +1884,54 @@ class Quotation {
   });
 
   Quotation.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    quotationNo = json['quotationNo'];
-    companyId = json['companyId'];
-    jobId = json['jobId'];
-    text = json['text'];
-    status = json['status'];
+    sId = json.getString('_id');
+    quotationNo = json.getString('quotationNo');
+    companyId = json.getString('companyId');
+    jobId = json.getString('jobId');
+    text = json.getString('text');
+    status = json.getString('status');
     subTotal = json['subTotal'];
     total = json['total'];
     discount = json['discount'];
     rejectAmount = json['rejectAmount'];
     acceptAmount = json['acceptAmount'];
-    quotationName = json['quotationName'];
-    send = json['send'];
-    anyTimeSend = json['anyTimeSend'];
-    changed = json['changed'];
-    paid = json['paid'];
-    rejectPaid = json['rejectPaid'];
-    accepted = json['accepted'];
-    rejected = json['rejected'];
-    if (json['serviceItemList'] != null) {
+    quotationName = json.getString('quotationName');
+    send = json.getBool('send');
+    anyTimeSend = json.getBool('anyTimeSend');
+    changed = json.getBool('changed');
+    paid = json.getBool('paid');
+    rejectPaid = json.getBool('rejectPaid');
+    accepted = json.getBool('accepted');
+    rejected = json.getBool('rejected');
+    var items = json.getList('serviceItemList');
+    if (items != null) {
       serviceItemList = <ServiceItemList>[];
-      json['serviceItemList'].forEach((v) {
-        serviceItemList!.add(ServiceItemList.fromJson(v));
-      });
+      for (var v in items) {
+        if (v is Map<String, dynamic>) {
+          serviceItemList!.add(ServiceItemList.fromJson(v));
+        }
+      }
     }
     vat = json['vat'];
-    customerDetails = json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null;
-    userName = json['userName'];
-    onlinePaymentActived = json['onlinePaymentActived'];
-    userId = json['userId'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    var customerMap = json.getMap('customerDetails');
+    customerDetails = customerMap != null
+        ? CustomerDetails.fromJson(customerMap)
+        : null;
+    userName = json.getString('userName');
+    onlinePaymentActived = json.getBool('onlinePaymentActived');
+    userId = json.getString('userId');
+    createdAt = json.getString('createdAt');
+    updatedAt = json.getString('updatedAt');
     iV = json['__v'];
-    paymentId = json['paymentId'];
-    rejectPaymentId = json['rejectPaymentId'];
-    paymentMethod = json['paymentMethod'];
-    paymentStatus = json['paymentStatus'];
-    paymentLink = json['paymentLink'];
-    rejectPaymentLink = json['rejectPaymentLink'];
-    id = json['id'];
-    paidId = json['paidId'];
-    rejectPaidId = json['rejectPaidId'];
+    paymentId = json.getString('paymentId');
+    rejectPaymentId = json.getString('rejectPaymentId');
+    paymentMethod = json.getString('paymentMethod');
+    paymentStatus = json.getString('paymentStatus');
+    paymentLink = json.getString('paymentLink');
+    rejectPaymentLink = json.getString('rejectPaymentLink');
+    id = json.getString('id');
+    paidId = json.getString('paidId');
+    rejectPaidId = json.getString('rejectPaidId');
   }
 
   Map<String, dynamic> toJson() {
@@ -1655,7 +1956,9 @@ class Quotation {
     data['accepted'] = accepted;
     data['rejected'] = rejected;
     if (serviceItemList != null) {
-      data['serviceItemList'] = serviceItemList!.map((v) => v.toJson()).toList();
+      data['serviceItemList'] = serviceItemList!
+          .map((v) => v.toJson())
+          .toList();
     }
     data['vat'] = vat;
     if (customerDetails != null) {
@@ -1702,14 +2005,16 @@ class Notification {
   });
 
   Notification.fromJson(Map<String, dynamic> json) {
-    userId = json['userId'];
-    message = json['message'];
-    notificationId = json['notification_id'];
-    isRead = json['isRead'];
-    messageType = json['messageType'];
-    conversationId = json['conversationId'];
-    senderDetails = json['sender_details'] != null ? Sender.fromJson(json['sender_details']) : null;
-    receiverDetails = json['receiver_details'] != null ? Sender.fromJson(json['receiver_details']) : null;
+    userId = json.getString('userId');
+    message = json.getString('message');
+    notificationId = json.getString('notification_id');
+    isRead = json.getBool('isRead');
+    messageType = json.getString('messageType');
+    conversationId = json.getString('conversationId');
+    var senderMap = json.getMap('sender_details');
+    senderDetails = senderMap != null ? Sender.fromJson(senderMap) : null;
+    var receiverMap = json.getMap('receiver_details');
+    receiverDetails = receiverMap != null ? Sender.fromJson(receiverMap) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -1739,16 +2044,24 @@ class UserId {
   String? userType;
   String? id;
 
-  UserId({this.sId, this.email, this.fullName, this.avatar, this.position, this.userType, this.id});
+  UserId({
+    this.sId,
+    this.email,
+    this.fullName,
+    this.avatar,
+    this.position,
+    this.userType,
+    this.id,
+  });
 
   UserId.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    email = json['email'];
-    fullName = json['fullName'];
-    avatar = json['avatar'];
-    position = json['position'];
-    userType = json['userType'];
-    id = json['id'];
+    sId = json.getString('_id');
+    email = json.getString('email');
+    fullName = json.getString('fullName');
+    avatar = json.getString('avatar');
+    position = json.getString('position');
+    userType = json.getString('userType');
+    id = json.getString('id');
   }
 
   Map<String, dynamic> toJson() {
