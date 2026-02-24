@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/features/notifications/repository/fcm_token_repository.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/set_up_di.dart';
 
 /// Service for managing Firebase Cloud Messaging (FCM).
@@ -115,6 +116,15 @@ class FirebaseNotificationService {
   /// Sync FCM token to the backend
   Future<void> _syncTokenToBackend(String token) async {
     try {
+      // REQUIREMENT: Only call the sync API if the user is authenticated.
+      final authToken = storage.read('token');
+      if (authToken == null) {
+        debugPrint(
+          '⏭️ [FirebaseNotificationService] Skipping FCM sync: User not authenticated',
+        );
+        return;
+      }
+
       debugPrint(
         '⬆️ [FirebaseNotificationService] Syncing FCM token to backend...',
       );
@@ -127,6 +137,15 @@ class FirebaseNotificationService {
       debugPrint(
         '❌ [FirebaseNotificationService] Failed to sync FCM token: $e',
       );
+    }
+  }
+
+  /// Manually trigger FCM token synchronization with the backend.
+  /// Typically called after successful login or during app startup if already logged in.
+  Future<void> syncToken() async {
+    final token = await getToken();
+    if (token != null) {
+      await _syncTokenToBackend(token);
     }
   }
 

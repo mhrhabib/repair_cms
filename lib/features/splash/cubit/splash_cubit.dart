@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/services/firebase_notification_service.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
 import 'package:repair_cms/features/splash/cubit/splash_state.dart';
 
@@ -58,6 +59,10 @@ class SplashCubit extends Cubit<SplashState> {
 
       // Verify token with server
       await _profileRepository.getProfile();
+
+      // Trigger FCM token sync if authenticated
+      await FirebaseNotificationService().syncToken();
+
       return true;
     } on ProfileException catch (e) {
       if (e.statusCode == 401) {
