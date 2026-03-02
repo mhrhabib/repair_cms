@@ -14,5 +14,8 @@ class AppColors {
   static const Color greenColor = Color(0xFF48BB78);
   static const Color disabledButtonColor = Color(0xFFBDBDBD);
   static const Color warningColor = Color(0xFFFF8924);
+  static const Color kBlue = Color(0xFF007AFF);
+  static const Color kBg = Color(0xFFF2F2F7);
+  static const Color kCardBg = Colors.white;  
   // Add other colors as needed
 }

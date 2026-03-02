@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/core/app_exports.dart';
@@ -94,13 +95,14 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       debugPrint('⚠️ [MyJobsScreen] Widget not mounted, skipping load');
       return;
     }
-    
+
     try {
       debugPrint('📋 [MyJobsScreen] Loading jobs');
       if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
         context.read<JobCubit>().filterJobsByStatus(widget.initialStatus!);
       } else {
-        context.read<JobCubit>().getJobs();
+        // Explicitly reset the status filter so stale dashboard filters don't carry over
+        context.read<JobCubit>().getJobs(statusList: []);
       }
     } catch (e, stackTrace) {
       debugPrint('❌ [MyJobsScreen] Error loading jobs: $e');
@@ -283,7 +285,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       builder: (context, state) {
         if (state is JobLoading) {
           return Center(
-            child: CircularProgressIndicator(color: const Color(0xFF3B82F6)),
+            child: CupertinoActivityIndicator(
+              color: const Color(0xFF3B82F6),
+              radius: 16.r,
+            ),
           );
         }
 
@@ -348,8 +353,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 return Padding(
                   padding: EdgeInsets.all(16.h),
                   child: Center(
-                    child: CircularProgressIndicator(
+                    child: CupertinoActivityIndicator(
                       color: const Color(0xFF3B82F6),
+                      radius: 16.r,
                     ),
                   ),
                 );
@@ -625,8 +631,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 builder: (context, state) {
                   if (state is JobLoading) {
                     return Center(
-                      child: CircularProgressIndicator(
+                      child: CupertinoActivityIndicator(
                         color: const Color(0xFF3B82F6),
+                        radius: 16.r,
                       ),
                     );
                   }

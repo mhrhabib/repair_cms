@@ -239,18 +239,27 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.kBg,
       appBar: CupertinoNavigationBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.kBg,
         border: Border(
           bottom: BorderSide(color: Colors.grey.shade200, width: 1),
         ),
-        leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Icon(
-            CupertinoIcons.xmark,
-            size: 24.r,
-            color: Colors.grey.shade800,
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Container(
+            width: 36.w,
+            height: 36.h,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 251, 251, 251),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              CupertinoIcons.back,
+              color: const Color(0xFF3A4A67),
+              size: 20.r,
+            ),
           ),
         ),
         middle: Text(
@@ -261,9 +270,18 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
             color: Colors.grey.shade800,
           ),
         ),
-        trailing: GestureDetector(
-          onTap: _handlePrintTap,
-          child: Icon(Icons.print, size: 24.r, color: AppColors.primary),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: _handlePrintTap,
+          child: Container(
+            width: 36.w,
+            height: 36.h,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 251, 251, 251),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.print, size: 24.r, color: AppColors.primary),
+          ),
         ),
       ),
       body: Column(

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -162,7 +163,7 @@ class _JobThermalReceiptPreviewScreenState
       // Convert job data to Map for ESC/POS generator
       _talker.debug('📝 Converting job data to Map...');
       final jobDataMap = _convertJobDataToMap();
-      
+
       // Generate ESC/POS bytes (no image capture!)
       _talker.debug('🔧 Generating ESC/POS commands...');
       final escposBytes = EscPosGeneratorService.generateThermalReceipt(
@@ -246,7 +247,7 @@ class _JobThermalReceiptPreviewScreenState
   Map<String, dynamic> _convertJobDataToMap() {
     final jobModel = _completeJobData ?? _convertToSingleJobModel();
     final data = jobModel.data;
-    
+
     return {
       'sId': data?.sId,
       'jobNo': data?.jobNo,
@@ -262,57 +263,67 @@ class _JobThermalReceiptPreviewScreenState
       'subTotal': data?.subTotal,
       'total': data?.total,
       'assignedItems': data?.assignedItems,
-      'device': data?.device?.map((d) => {
-        'sId': d.sId,
-        'brand': d.brand,
-        'model': d.model,
-        'condition': d.condition?.map((c) => {
-          'value': c.value,
-          'id': c.id,
-        }).toList(),
-      }).toList(),
-      'defect': data?.defect?.map((d) => {
-        'sId': d.sId,
-        'description': d.description,
-        'defect': d.defect?.map((item) => {
-          'value': item.value,
-          'id': item.id,
-        }).toList(),
-      }).toList(),
-      'receiptFooter': data?.receiptFooter != null ? {
-        'companyLogoURL': data!.receiptFooter!.companyLogoURL,
-        'address': {
-          'companyName': data.receiptFooter!.address?.companyName,
-          'street': data.receiptFooter!.address?.street,
-          'num': data.receiptFooter!.address?.num,
-          'zip': data.receiptFooter!.address?.zip,
-          'city': data.receiptFooter!.address?.city,
-          'country': data.receiptFooter!.address?.country,
-        },
-        'contact': {
-          'ceo': data.receiptFooter!.contact?.ceo,
-          'telephone': data.receiptFooter!.contact?.telephone,
-          'email': data.receiptFooter!.contact?.email,
-          'website': data.receiptFooter!.contact?.website,
-        },
-        'bank': {
-          'bankName': data.receiptFooter!.bank?.bankName,
-          'iban': data.receiptFooter!.bank?.iban,
-          'bic': data.receiptFooter!.bank?.bic,
-        },
-      } : null,
-      'customerDetails': data?.customerDetails != null ? {
-        'customerId': data!.customerDetails!.customerId,
-        'type': data.customerDetails!.type,
-        'organization': data.customerDetails!.organization,
-        'customerNo': data.customerDetails!.customerNo,
-        'email': data.customerDetails!.email,
-        'telephone': data.customerDetails!.telephone,
-        'telephonePrefix': data.customerDetails!.telephonePrefix,
-        'salutation': data.customerDetails!.salutation,
-        'firstName': data.customerDetails!.firstName,
-        'lastName': data.customerDetails!.lastName,
-      } : null,
+      'device': data?.device
+          ?.map(
+            (d) => {
+              'sId': d.sId,
+              'brand': d.brand,
+              'model': d.model,
+              'condition': d.condition
+                  ?.map((c) => {'value': c.value, 'id': c.id})
+                  .toList(),
+            },
+          )
+          .toList(),
+      'defect': data?.defect
+          ?.map(
+            (d) => {
+              'sId': d.sId,
+              'description': d.description,
+              'defect': d.defect
+                  ?.map((item) => {'value': item.value, 'id': item.id})
+                  .toList(),
+            },
+          )
+          .toList(),
+      'receiptFooter': data?.receiptFooter != null
+          ? {
+              'companyLogoURL': data!.receiptFooter!.companyLogoURL,
+              'address': {
+                'companyName': data.receiptFooter!.address?.companyName,
+                'street': data.receiptFooter!.address?.street,
+                'num': data.receiptFooter!.address?.num,
+                'zip': data.receiptFooter!.address?.zip,
+                'city': data.receiptFooter!.address?.city,
+                'country': data.receiptFooter!.address?.country,
+              },
+              'contact': {
+                'ceo': data.receiptFooter!.contact?.ceo,
+                'telephone': data.receiptFooter!.contact?.telephone,
+                'email': data.receiptFooter!.contact?.email,
+                'website': data.receiptFooter!.contact?.website,
+              },
+              'bank': {
+                'bankName': data.receiptFooter!.bank?.bankName,
+                'iban': data.receiptFooter!.bank?.iban,
+                'bic': data.receiptFooter!.bank?.bic,
+              },
+            }
+          : null,
+      'customerDetails': data?.customerDetails != null
+          ? {
+              'customerId': data!.customerDetails!.customerId,
+              'type': data.customerDetails!.type,
+              'organization': data.customerDetails!.organization,
+              'customerNo': data.customerDetails!.customerNo,
+              'email': data.customerDetails!.email,
+              'telephone': data.customerDetails!.telephone,
+              'telephonePrefix': data.customerDetails!.telephonePrefix,
+              'salutation': data.customerDetails!.salutation,
+              'firstName': data.customerDetails!.firstName,
+              'lastName': data.customerDetails!.lastName,
+            }
+          : null,
     };
   }
 
@@ -477,13 +488,26 @@ class _JobThermalReceiptPreviewScreenState
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
+        backgroundColor: AppColors.kBg,
         appBar: AppBar(
-          backgroundColor: AppColors.whiteColor,
+          backgroundColor: AppColors.kBg,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.close),
+          leading: CupertinoButton(
+            padding: EdgeInsets.zero,
             onPressed: () => _goHome(),
+            child: Container(
+              width: 36.w,
+              height: 36.h,
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 251, 251, 251),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                CupertinoIcons.back,
+                color: const Color(0xFF3A4A67),
+                size: 20.r,
+              ),
+            ),
           ),
           title: Text(
             'Thermal Receipt Preview',
@@ -495,10 +519,22 @@ class _JobThermalReceiptPreviewScreenState
           ),
           centerTitle: true,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.print),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
               onPressed: _showPrinterSelection,
-              tooltip: 'Print',
+              child: Container(
+                width: 36.w,
+                height: 36.h,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 251, 251, 251),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.print,
+                  color: const Color(0xFF3A4A67),
+                  size: 20.r,
+                ),
+              ),
             ),
           ],
         ),

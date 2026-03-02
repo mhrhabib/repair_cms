@@ -13,7 +13,12 @@ class JobCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JobDetailsScreen(jobId: job.id),
+          ),
+        );
       },
       child: Container(
         padding: EdgeInsets.all(16.w),
@@ -21,7 +26,11 @@ class JobCardWidget extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Column(
@@ -47,7 +56,11 @@ class JobCardWidget extends StatelessWidget {
                     SizedBox(width: 8.w),
                     Text(
                       _getStatusText(job),
-                      style: GoogleFonts.roboto(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                      style: GoogleFonts.roboto(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
@@ -63,7 +76,11 @@ class JobCardWidget extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 4.w),
-                    Icon(Icons.flag, color: _getPriorityColor(job), size: 18.sp),
+                    Icon(
+                      Icons.flag,
+                      color: _getPriorityColor(job),
+                      size: 18.sp,
+                    ),
                   ],
                 ),
               ],
@@ -85,7 +102,11 @@ class JobCardWidget extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(Icons.chevron_right, color: const Color(0xFF94A3B8), size: 24.sp),
+                Icon(
+                  Icons.chevron_right,
+                  color: const Color(0xFF94A3B8),
+                  size: 24.sp,
+                ),
               ],
             ),
             SizedBox(height: 8.h),
@@ -106,7 +127,11 @@ class JobCardWidget extends StatelessWidget {
                   child: Center(
                     child: Text(
                       _getEmployeeInitial(),
-                      style: GoogleFonts.roboto(fontSize: 10.sp, fontWeight: FontWeight.w600, color: Colors.white),
+                      style: GoogleFonts.roboto(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -143,11 +168,15 @@ class JobCardWidget extends StatelessWidget {
   String _getCustomerName() {
     final firstName = job.customerDetails.firstName;
     final lastName = job.customerDetails.lastName;
-    return '$firstName $lastName'.trim().isNotEmpty ? '$firstName $lastName'.trim() : 'Unknown Customer';
+    return '$firstName $lastName'.trim().isNotEmpty
+        ? '$firstName $lastName'.trim()
+        : 'Unknown Customer';
   }
 
   String _getEmployeeName() {
-    return job.assignerName.trim().isNotEmpty ? job.assignerName.trim() : 'Unknown';
+    return job.assignerName.trim().isNotEmpty
+        ? job.assignerName.trim()
+        : 'Unknown';
   }
 
   String _getEmployeeInitial() {
@@ -190,33 +219,6 @@ class JobCardWidget extends StatelessWidget {
         return 'Draft';
       default:
         return status;
-    }
-  }
-
-  Color _getStatusColor(Job job) {
-    final status = job.status.toLowerCase().trim();
-
-    switch (status) {
-      case 'booked':
-        return const Color(0xFF3B82F6); // Blue
-      case 'in progress':
-      case 'in_progress':
-        return const Color(0xFFFF9800); // Orange
-      case 'accepted_quotes':
-        return const Color(0xFF10B981); // Green
-      case 'quotation_sent':
-        return const Color(0xFFEF4444); // Red
-      case 'parts_not_available':
-      case 'parts not available':
-        return const Color(0xFF8B5CF6); // Purple
-      case 'ready_to_return':
-        return const Color(0xFF14B8A6); // Teal
-      case 'completed':
-        return const Color(0xFF10B981); // Green
-      case 'draft':
-        return const Color(0xFF6B7280); // Gray
-      default:
-        return const Color(0xFF3B82F6); // Blue
     }
   }
 

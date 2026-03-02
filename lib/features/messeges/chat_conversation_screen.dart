@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -482,17 +483,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         }
 
         return Scaffold(
-          backgroundColor: Colors.grey[50],
+          backgroundColor: AppColors.kBg,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.kBg,
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios,
-                color: Colors.black87,
-                size: 20,
+            leading: CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 36.w,
+                height: 36.h,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 251, 251, 251),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  CupertinoIcons.back,
+                  color: const Color(0xFF3A4A67),
+                  size: 20.r,
+                ),
               ),
-              onPressed: () => Navigator.pop(context),
             ),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,15 +527,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             ),
             actions: [
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                width: 36.w,
+                height: 36.h,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4A90E2),
+                  color: const Color.fromARGB(255, 251, 251, 251),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   icon: const Icon(
                     Icons.info_outline,
-                    color: Colors.white,
+                    color: AppColors.kBlue,
                     size: 20,
                   ),
                   padding: EdgeInsets.zero,

@@ -954,21 +954,24 @@ class ReceiptScreen extends StatelessWidget {
     final Color figmaBlue = const Color(0xFF007AFF);
 
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: AppColors.kBg,
       appBar: CupertinoNavigationBar(
-        backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+        backgroundColor: AppColors.kBg,
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(CupertinoIcons.back, color: figmaBlue, size: 28.r),
-              Text(
-                'Back',
-                style: TextStyle(color: figmaBlue, fontSize: 17.sp),
-              ),
-            ],
+          child: Container(
+            width: 36.w,
+            height: 36.h,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 251, 251, 251),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              CupertinoIcons.back,
+              color: const Color(0xFF3A4A67),
+              size: 20.r,
+            ),
           ),
         ),
         middle: Text(
@@ -982,7 +985,15 @@ class ReceiptScreen extends StatelessWidget {
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => _showPrinterSelection(context),
-          child: Icon(CupertinoIcons.printer, color: figmaBlue, size: 24.r),
+          child: Container(
+            width: 36.w,
+            height: 36.h,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 251, 251, 251),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(CupertinoIcons.printer, color: figmaBlue, size: 24.r),
+          ),
         ),
       ),
       body: SingleChildScrollView(
