@@ -94,7 +94,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       debugPrint('⚠️ [MyJobsScreen] Widget not mounted, skipping load');
       return;
     }
-
+    
     try {
       debugPrint('📋 [MyJobsScreen] Loading jobs');
       if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
