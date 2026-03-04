@@ -1,13 +1,17 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  State<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends State<NotificationSettingsScreen> {
   // Push Notification Settings
   bool pushQuotesAccepted = false;
   bool pushQuotesRejected = true;
@@ -31,15 +35,19 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: CustomNavButton(
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: CupertinoIcons.back,
         ),
         title: const Text(
           'Notification Settings',
-          style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
@@ -51,7 +59,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Padding(
@@ -62,7 +74,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   // Push Notification Section
                   const Text(
                     'Push Notification',
-                    style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
@@ -132,7 +148,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   // Email Notification Section
                   const Text(
                     'Email Notification',
-                    style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
@@ -220,7 +240,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             children: [
               Text(
                 title,
-                style: const TextStyle(color: Colors.black54, fontSize: 16, fontWeight: FontWeight.w400),
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
               Transform.scale(
                 scale: 0.8,
@@ -236,7 +260,12 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             ],
           ),
         ),
-        if (!isLast) Container(height: 1, color: Colors.grey.shade100, margin: const EdgeInsets.symmetric(vertical: 4)),
+        if (!isLast)
+          Container(
+            height: 1,
+            color: Colors.grey.shade100,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+          ),
       ],
     );
   }

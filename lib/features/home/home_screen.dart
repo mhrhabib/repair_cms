@@ -153,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               _buildBottomNavItem(1, SolarIconsOutline.suitcaseTag, 'Jobs'),
               // Empty container to balance the space for the center button
               SizedBox(width: 56.w, height: 56.h),
-              _buildBottomNavItem(2, SolarIconsOutline.chatUnread, 'Messages'),
+              _buildBottomNavItem(2, SolarIconsOutline.dialog2, 'Messages'),
               _buildBottomNavItem(3, SolarIconsOutline.menuDots, 'More'),
             ],
           ),

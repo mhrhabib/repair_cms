@@ -4,6 +4,7 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
 import 'package:repair_cms/features/notifications/models/notificaiton_model.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -47,8 +48,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: CupertinoNavigationBar(
         backgroundColor: Colors.white,
         border: null,
-        leading: GestureDetector(
-          onTap: () {
+        leading: CustomNavButton(
+          onPressed: () {
             if (!mounted) return;
             try {
               debugPrint('🔄 [NotificationsScreen] Navigating back');
@@ -57,24 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               debugPrint('❌ [NotificationsScreen] Error navigating back: $e');
             }
           },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                CupertinoIcons.back,
-                size: 28.r,
-                color: AppColors.fontMainColor,
-              ),
-              SizedBox(width: 4.w),
-              Text(
-                'Back',
-                style: TextStyle(
-                  fontSize: 17.sp,
-                  color: AppColors.fontMainColor,
-                ),
-              ),
-            ],
-          ),
+          icon: CupertinoIcons.back,
         ),
         middle: Text(
           'Notifications',
@@ -86,13 +70,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         trailing: _notifications.isEmpty
             ? null
-            : GestureDetector(
-                onTap: _showNotificationSettings,
-                child: Icon(
-                  SolarIconsBold.settings,
-                  size: 24.r,
-                  color: AppColors.fontMainColor,
-                ),
+            : CustomNavButton(
+                onPressed: _showNotificationSettings,
+                icon: SolarIconsBold.settings,
+                size: 24.sp,
               ),
       ),
       body: BlocConsumer<NotificationCubit, NotificationState>(

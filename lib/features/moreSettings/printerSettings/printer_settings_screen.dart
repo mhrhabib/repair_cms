@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:solar_icons/solar_icons.dart';
 // Import the new screens
@@ -16,6 +18,10 @@ class PrinterSettingsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.scaffoldBackgroundColor,
         elevation: 0,
+        leading: CustomNavButton(
+          onPressed: () => Navigator.pop(context),
+          icon: CupertinoIcons.back,
+        ),
         title: const Text(
           'Printer Settings',
           style: TextStyle(

@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:repair_cms/features/moreSettings/labelContent/service/label_content_settings_service.dart';
@@ -184,9 +186,9 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+        leading: CustomNavButton(
           onPressed: () => Navigator.pop(context),
+          icon: CupertinoIcons.back,
         ),
         title: const Text(
           'Label Content',

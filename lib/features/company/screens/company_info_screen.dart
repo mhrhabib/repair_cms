@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
 import '../cubits/company_cubit.dart';
@@ -39,8 +41,15 @@ class _CompanyInfoScreenState extends State<CompanyInfoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: CustomNavButton(
+          onPressed: () => Navigator.pop(context),
+          icon: CupertinoIcons.back,
+        ),
         title: const Text('Company Information'),
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadCompanyInfo)],
+        actions: [
+          CustomNavButton(icon: Icons.refresh, onPressed: _loadCompanyInfo),
+          const SizedBox(width: 8),
+        ],
       ),
       body: BlocBuilder<CompanyCubit, CompanyState>(
         builder: (context, state) {
@@ -61,7 +70,10 @@ class _CompanyInfoScreenState extends State<CompanyInfoScreen> {
                     style: const TextStyle(color: Colors.red),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(onPressed: _loadCompanyInfo, child: const Text('Retry')),
+                  ElevatedButton(
+                    onPressed: _loadCompanyInfo,
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
             );
@@ -82,7 +94,13 @@ class _CompanyInfoScreenState extends State<CompanyInfoScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(company.companyName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                          Text(
+                            company.companyName,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           Text('Email: ${company.companyEmail}'),
                           Text('Phone: ${company.telephone}'),
@@ -95,14 +113,21 @@ class _CompanyInfoScreenState extends State<CompanyInfoScreen> {
                   const SizedBox(height: 16),
 
                   // Company Address
-                  if (company.companyAddress != null && company.companyAddress!.isNotEmpty)
+                  if (company.companyAddress != null &&
+                      company.companyAddress!.isNotEmpty)
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Address',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             ...company.companyAddress!.map(
                               (addr) => Column(
@@ -123,14 +148,21 @@ class _CompanyInfoScreenState extends State<CompanyInfoScreen> {
                   const SizedBox(height: 16),
 
                   // Contact Details
-                  if (company.companyContactDetail != null && company.companyContactDetail!.isNotEmpty)
+                  if (company.companyContactDetail != null &&
+                      company.companyContactDetail!.isNotEmpty)
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Contact Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Contact Details',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             ...company.companyContactDetail!.map(
                               (contact) => Column(
@@ -151,14 +183,21 @@ class _CompanyInfoScreenState extends State<CompanyInfoScreen> {
                   const SizedBox(height: 16),
 
                   // Tax Details
-                  if (company.companyTaxDetail != null && company.companyTaxDetail!.isNotEmpty)
+                  if (company.companyTaxDetail != null &&
+                      company.companyTaxDetail!.isNotEmpty)
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Tax Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Tax Details',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             ...company.companyTaxDetail!.map(
                               (tax) => Column(
@@ -179,14 +218,21 @@ class _CompanyInfoScreenState extends State<CompanyInfoScreen> {
                   const SizedBox(height: 16),
 
                   // Bank Details
-                  if (company.companyBankDetail != null && company.companyBankDetail!.isNotEmpty)
+                  if (company.companyBankDetail != null &&
+                      company.companyBankDetail!.isNotEmpty)
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Bank Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Bank Details',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             ...company.companyBankDetail!.map(
                               (bank) => Column(

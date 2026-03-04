@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
@@ -457,19 +458,9 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
       appBar: CupertinoNavigationBar(
         backgroundColor: AppColors.scaffoldBackgroundColor,
         border: null,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(CupertinoIcons.back, size: 28.r, color: const Color(0xFF007AFF)),
-              SizedBox(width: 4.w),
-              Text(
-                'Back',
-                style: TextStyle(fontSize: 17.sp, color: const Color(0xFF007AFF)),
-              ),
-            ],
-          ),
+        leading: CustomNavButton(
+          onPressed: () => Navigator.pop(context),
+          icon: CupertinoIcons.back,
         ),
         middle: Text(
           'A4 Printer',

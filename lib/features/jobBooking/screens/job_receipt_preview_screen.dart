@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -642,22 +643,13 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.kBg,
         elevation: 0,
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
+        leading: CustomNavButton(
           onPressed: () {
             Navigator.of(
               context,
             ).popUntil(ModalRoute.withName(RouteNames.home));
           },
-          child: Container(
-            width: 36.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 251, 251, 251),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.arrow_back, color: Colors.black87, size: 24.sp),
-          ),
+          icon: CupertinoIcons.back,
         ),
         title: Text(
           'Job Receipt',
@@ -669,18 +661,11 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         ),
         centerTitle: true,
         actions: [
-          CupertinoButton(
-            padding: EdgeInsets.zero,
+          CustomNavButton(
             onPressed: _showPrinterSelection,
-            child: Container(
-              width: 36.w,
-              height: 36.h,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 251, 251, 251),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.print, color: AppColors.primary, size: 24.sp),
-            ),
+            icon: CupertinoIcons.printer,
+            iconColor: AppColors.primary,
+            size: 24.sp,
           ),
         ],
       ),

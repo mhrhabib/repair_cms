@@ -13,6 +13,7 @@ import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_
 import 'package:repair_cms/features/moreSettings/labelContent/service/label_content_settings_service.dart';
 import 'package:repair_cms/core/helpers/show_toast.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 
 class JobDeviceLabelScreen extends StatefulWidget {
   final CreateJobResponse jobResponse;
@@ -245,22 +246,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         border: Border(
           bottom: BorderSide(color: Colors.grey.shade200, width: 1),
         ),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
+        leading: CustomNavButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Container(
-            width: 36.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 251, 251, 251),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              CupertinoIcons.back,
-              color: const Color(0xFF3A4A67),
-              size: 20.r,
-            ),
-          ),
+          icon: CupertinoIcons.back,
         ),
         middle: Text(
           'Device Label',
@@ -270,18 +258,11 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
             color: Colors.grey.shade800,
           ),
         ),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
+        trailing: CustomNavButton(
           onPressed: _handlePrintTap,
-          child: Container(
-            width: 36.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 251, 251, 251),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.print, size: 24.r, color: AppColors.primary),
-          ),
+          icon: Icons.print,
+          size: 24.sp,
+          iconColor: AppColors.primary,
         ),
       ),
       body: Column(

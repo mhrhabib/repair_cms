@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -492,22 +493,9 @@ class _JobThermalReceiptPreviewScreenState
         appBar: AppBar(
           backgroundColor: AppColors.kBg,
           elevation: 0,
-          leading: CupertinoButton(
-            padding: EdgeInsets.zero,
+          leading: CustomNavButton(
             onPressed: () => _goHome(),
-            child: Container(
-              width: 36.w,
-              height: 36.h,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 251, 251, 251),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                CupertinoIcons.back,
-                color: const Color(0xFF3A4A67),
-                size: 20.r,
-              ),
-            ),
+            icon: CupertinoIcons.back,
           ),
           title: Text(
             'Thermal Receipt Preview',
@@ -519,22 +507,11 @@ class _JobThermalReceiptPreviewScreenState
           ),
           centerTitle: true,
           actions: [
-            CupertinoButton(
-              padding: EdgeInsets.zero,
+            CustomNavButton(
               onPressed: _showPrinterSelection,
-              child: Container(
-                width: 36.w,
-                height: 36.h,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 251, 251, 251),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.print,
-                  color: const Color(0xFF3A4A67),
-                  size: 20.r,
-                ),
-              ),
+              icon: Icons.print,
+              size: 20.sp,
+              iconColor: const Color(0xFF3A4A67),
             ),
           ],
         ),

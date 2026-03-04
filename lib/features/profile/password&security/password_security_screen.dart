@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/password&security/widgets/change_password_bottom_sheet.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -171,7 +172,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
           appBar: AppBar(
             backgroundColor: AppColors.scaffoldBackgroundColor,
             elevation: 0,
-            leading: IconButton(
+            leading: CustomNavButton(
               onPressed: () {
                 if (!mounted) return;
                 try {
@@ -183,11 +184,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                   );
                 }
               },
-              icon: const Icon(
-                Icons.arrow_back_ios,
-                color: Colors.black87,
-                size: 20,
-              ),
+              icon: CupertinoIcons.back,
             ),
             title: const Text(
               'Password & Security',

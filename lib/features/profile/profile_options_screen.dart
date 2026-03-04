@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/profile/password&security/password_security_screen.dart';
 import 'package:repair_cms/features/profile/personalDetails/personal_details_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -13,7 +15,7 @@ class ProfileOptionsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.scaffoldBackgroundColor,
         elevation: 0,
-        leading: IconButton(
+        leading: CustomNavButton(
           onPressed: () {
             try {
               debugPrint('🔄 [ProfileOptionsScreen] Navigating back');
@@ -22,11 +24,7 @@ class ProfileOptionsScreen extends StatelessWidget {
               debugPrint('❌ [ProfileOptionsScreen] Error navigating back: $e');
             }
           },
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black87,
-            size: 20,
-          ),
+          icon: CupertinoIcons.back,
         ),
         title: const Text(
           'My Profile',
@@ -82,9 +80,9 @@ class ProfileOptionsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Language & Region',
               onTap: () {
-                //coming soon feature on toast center 
+                //coming soon feature on toast center
                 showCustomToast('Coming Soon!', isError: false);
-              }
+              },
             ),
             Container(
               height: 1,

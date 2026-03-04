@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -408,26 +409,9 @@ label printer's receipt mode.
       appBar: CupertinoNavigationBar(
         backgroundColor: AppColors.scaffoldBackgroundColor,
         border: null,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                CupertinoIcons.back,
-                size: 28.r,
-                color: const Color(0xFF007AFF),
-              ),
-              SizedBox(width: 4.w),
-              Text(
-                'Back',
-                style: TextStyle(
-                  fontSize: 17.sp,
-                  color: const Color(0xFF007AFF),
-                ),
-              ),
-            ],
-          ),
+        leading: CustomNavButton(
+          onPressed: () => Navigator.pop(context),
+          icon: CupertinoIcons.back,
         ),
         middle: Text(
           'Label Printer',

@@ -15,6 +15,7 @@ import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_thermal_receipt_preview_screen.dart';
 import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
@@ -28,7 +29,6 @@ import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
 // ─────────────────────────────────────────────
 // Colors
 // ─────────────────────────────────────────────
-
 
 // ─────────────────────────────────────────────
 // JobDetailsScreen – outer shell (loads job & orchestrates state)
@@ -92,14 +92,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               if (_currentJob != null)
                 return _UnifiedJobDetails(job: _currentJob!);
               if (state is JobLoading)
-                return const Center(child: CircularProgressIndicator());
+                return Center(child: CupertinoActivityIndicator(radius: 16.r));
               if (state is JobDetailSuccess) {
                 _currentJob = state.job;
                 return _UnifiedJobDetails(job: state.job);
               }
               if (state is JobError)
                 return Center(child: Text('Error: ${state.message}'));
-              return const Center(child: CircularProgressIndicator());
+              return Center(child: CupertinoActivityIndicator(radius: 16.r));
             },
           ),
         ),
@@ -166,14 +166,13 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     _internalNotes = d.defect?.isNotEmpty == true
         ? d.defect!.first.internalNote ?? []
         : [];
+    _setCurrentAssignee();
   }
 
   @override
   void didUpdateWidget(_UnifiedJobDetails old) {
     super.didUpdateWidget(old);
-    if (old.job.data?.sId != widget.job.data?.sId ||
-        old.job.data?.isJobCompleted != widget.job.data?.isJobCompleted ||
-        old.job.data?.isDeviceReturned != widget.job.data?.isDeviceReturned) {
+    if (old.job.data != widget.job.data) {
       _init();
     }
   }
@@ -296,7 +295,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           padding: EdgeInsets.all(10.r),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: BorderRadius.circular(28.r),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.12),
@@ -344,7 +343,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
         decoration: BoxDecoration(
           color: const Color(0xFFEEEFF4),
-          borderRadius: BorderRadius.circular(14.r),
+          borderRadius: BorderRadius.circular(28.r),
         ),
         child: Text(
           label,
@@ -399,7 +398,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                   children: [
                     Row(
                       children: [
-                        Icon(CupertinoIcons.mail, size: 18.sp, color: AppColors.kBlue),
+                        Icon(
+                          CupertinoIcons.mail,
+                          size: 18.sp,
+                          color: AppColors.kBlue,
+                        ),
                         SizedBox(width: 8.w),
                         Text(
                           'Send email to customer',
@@ -992,22 +995,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         backgroundColor: AppColors.kBg,
         appBar: CupertinoNavigationBar(
           backgroundColor: AppColors.kBg,
-          leading: CupertinoButton(
-            padding: EdgeInsets.zero,
+          leading: CustomNavButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Container(
-              width: 36.w,
-              height: 36.h,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 251, 251, 251),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                CupertinoIcons.back,
-                color: const Color(0xFF3A4A67),
-                size: 20.r,
-              ),
-            ),
+            icon: CupertinoIcons.back,
           ),
           middle: Text(
             'JOB-ID $jobNo',
@@ -1017,22 +1007,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               color: const Color(0xFF1E2D4D),
             ),
           ),
-          trailing: CupertinoButton(
-            padding: EdgeInsets.zero,
+          trailing: CustomNavButton(
             onPressed: _toggleMoreMenu,
-            child: Container(
-              width: 36.w,
-              height: 36.h,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 251, 251, 251),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                CupertinoIcons.ellipsis,
-                color: const Color(0xFF3A4A67),
-                size: 20.r,
-              ),
-            ),
+            icon: CupertinoIcons.ellipsis,
           ),
         ),
         body: BlocBuilder<JobCubit, JobStates>(
@@ -1057,11 +1034,14 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                       // ── 1. Contact & Communication ──────────
                       _sectionCard(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _infoRow(
-                              label: 'Contact',
-                              value: _contactName(),
-                              bold: true,
+                            Center(
+                              child: _infoRow(
+                                label: 'Contact',
+                                value: _contactName(),
+                                bold: true,
+                              ),
                             ),
                             Divider(height: 1, color: Colors.grey.shade200),
                             _arrowRow(
@@ -1139,6 +1119,25 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                         ),
                       ),
 
+                      // ── 2.5 Device Details ──────────────────
+                      _sectionLabel('DEVICE DETAILS'),
+                      _sectionCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _plainRow('Device', _deviceName()),
+                            Divider(height: 1, color: Colors.grey.shade200),
+                            _plainRow('IME/Serial', _imeiSerial()),
+                            Divider(height: 1, color: Colors.grey.shade200),
+                            _actionRow(
+                              'Security',
+                              'Show Security',
+                              _showSecurityDialog,
+                            ),
+                          ],
+                        ),
+                      ),
+
                       // ── 3. Job Details ──────────────────────
                       _sectionLabel('JOB DETAILS'),
                       _sectionCard(
@@ -1162,27 +1161,46 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
 
                       // ── 4. Receipts ─────────────────────────
                       _sectionLabel('RECEIPTS'),
+                      Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 0,
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.kCardBg,
+                          borderRadius: BorderRadius.circular(28.r),
+                          border: Border.all(color: AppColors.borderColor),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: _receiptRow(
+                          SolarIconsOutline.tagHorizontal,
+                          'Job Label',
+                          true,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => JobDeviceLabelScreen(
+                                  jobResponse: _toResponse(),
+                                  printOption: 'Device Label',
+                                  jobNo: job.data?.jobNo,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
                       _sectionCard(
                         child: Column(
                           children: [
-                            _receiptRow(
-                              SolarIconsOutline.tagHorizontal,
-                              'Job Label',
-                              true,
-                              () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => JobDeviceLabelScreen(
-                                      jobResponse: _toResponse(),
-                                      printOption: 'Device Label',
-                                      jobNo: job.data?.jobNo,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            Divider(height: 1, color: Colors.grey.shade200),
                             _receiptRow(
                               SolarIconsOutline.documentText,
                               'Job receipt',
@@ -1223,7 +1241,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                             ),
                             Divider(height: 1, color: Colors.grey.shade200),
                             _receiptRow(
-                              Icons.description_outlined,
+                              SolarIconsOutline.documentText,
                               'Service Report',
                               false,
                               () {},
@@ -1380,6 +1398,436 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     );
   }
 
+  // ─── selection pickers ──────────────────
+
+  void _showPrioritySheet() {
+    const priorities = [
+      {'label': 'Urgent', 'color': Color(0xFFE54D4D)},
+      {'label': 'High', 'color': Color(0xFFFF8C00)},
+      {'label': 'Neutral', 'color': Color(0xFF1E253A)},
+    ];
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 0),
+          decoration: BoxDecoration(
+            color: AppColors.kCardBg,
+            borderRadius: BorderRadius.circular(28.r),
+            border: Border.all(color: AppColors.borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Select priority',
+                    style: GoogleFonts.roboto(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E253A),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 32.h),
+                ...priorities.map((p) {
+                  return Container(
+                    width: double.infinity,
+                    margin: EdgeInsets.only(bottom: 12.h),
+                    height: 64.h,
+                    child: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(32.r),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.read<JobCubit>().updateJobPriority(
+                          widget.job.data!.sId!,
+                          (p['label'] as String).toLowerCase(),
+                        );
+                      },
+                      child: Text(
+                        p['label'] as String,
+                        style: GoogleFonts.roboto(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w500,
+                          color: p['color'] as Color,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDueDateDatePicker() {
+    DateTime selected = DateTime.now();
+    if (widget.job.data?.dueDate != null) {
+      try {
+        selected = DateTime.parse(widget.job.data!.dueDate!);
+      } catch (_) {}
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+      ),
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Text(
+                  'Update due date',
+                  style: GoogleFonts.roboto(
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1E253A),
+                  ),
+                ),
+                SizedBox(height: 24.h),
+                // Calendar Grid
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: AppColors.kBlue,
+                      onPrimary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: const Color(0xFF1E253A),
+                    ),
+                    textButtonTheme: TextButtonThemeData(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.kBlue,
+                      ),
+                    ),
+                  ),
+                  child: CalendarDatePicker(
+                    initialDate: selected,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                    onDateChanged: (dt) {
+                      setModalState(() {
+                        selected = DateTime(
+                          dt.year,
+                          dt.month,
+                          dt.day,
+                          selected.hour,
+                          selected.minute,
+                        );
+                      });
+                    },
+                  ),
+                ),
+                Divider(color: Colors.grey.shade200),
+                SizedBox(height: 16.h),
+                // Time Selection Row
+                Row(
+                  children: [
+                    Text(
+                      'Time',
+                      style: GoogleFonts.roboto(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E253A),
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () async {
+                        final time = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.fromDateTime(selected),
+                        );
+                        if (time != null) {
+                          setModalState(() {
+                            selected = DateTime(
+                              selected.year,
+                              selected.month,
+                              selected.day,
+                              time.hour,
+                              time.minute,
+                            );
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text(
+                          "${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}",
+                          style: GoogleFonts.roboto(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF1E253A),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    // AM/PM Toggle (Simplified representing the toggle in image)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              if (selected.hour >= 12) {
+                                setModalState(() {
+                                  selected = selected.subtract(
+                                    const Duration(hours: 12),
+                                  );
+                                });
+                              }
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 8.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: selected.hour < 12
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8.r),
+                                boxShadow: selected.hour < 12
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          blurRadius: 4,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Text(
+                                'AM',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: selected.hour < 12
+                                      ? const Color(0xFF1E253A)
+                                      : Colors.grey.shade500,
+                                ),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              if (selected.hour < 12) {
+                                setModalState(() {
+                                  selected = selected.add(
+                                    const Duration(hours: 12),
+                                  );
+                                });
+                              }
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 8.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: selected.hour >= 12
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8.r),
+                                boxShadow: selected.hour >= 12
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          blurRadius: 4,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Text(
+                                'PM',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: selected.hour >= 12
+                                      ? const Color(0xFF1E253A)
+                                      : Colors.grey.shade500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 32.h),
+                // Update Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56.h,
+                  child: CupertinoButton(
+                    color: AppColors.kBlue,
+                    borderRadius: BorderRadius.circular(16.r),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.read<JobCubit>().updateJobDueDate(
+                        widget.job.data!.sId!,
+                        selected,
+                      );
+                    },
+                    child: Text(
+                      'Update',
+                      style: GoogleFonts.roboto(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24.h),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAssigneeSheet() {
+    if (_availableUsers.isEmpty) {
+      SnackbarDemo(message: 'No users available').showCustomSnackbar(context);
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 0),
+          decoration: BoxDecoration(
+            color: AppColors.kCardBg,
+            borderRadius: BorderRadius.circular(28.r),
+            border: Border.all(color: AppColors.borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Select Assignee',
+                    style: GoogleFonts.roboto(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E253A),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24.h),
+                SizedBox(
+                  width: double.maxFinite,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _availableUsers.length,
+                    itemBuilder: (context, index) {
+                      final u = _availableUsers[index];
+                      final name = u.fullName ?? u.email;
+                      return Container(
+                        width: double.infinity,
+                        margin: EdgeInsets.only(bottom: 12.h),
+                        height: 64.h,
+                        child: CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(32.r),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.read<JobCubit>().updateJobAssignee(
+                              widget.job.data!.sId!,
+                              u.id,
+                              name,
+                            );
+                          },
+                          child: Text(
+                            name,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.roboto(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF1E253A),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ─── UI helpers ──────────────────────────
 
   Widget _sectionLabel(String text) => Padding(
@@ -1387,9 +1835,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     child: Text(
       text,
       style: GoogleFonts.roboto(
-        fontSize: 13.sp,
-        fontWeight: FontWeight.w500,
-        color: Colors.grey.shade500,
+        fontSize: 16.sp,
+        fontWeight: FontWeight.w400,
+        color: AppColors.lightFontColor,
         letterSpacing: 0.5,
       ),
     ),
@@ -1399,7 +1847,8 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 0),
     decoration: BoxDecoration(
       color: AppColors.kCardBg,
-      borderRadius: BorderRadius.circular(12.r),
+      borderRadius: BorderRadius.circular(28.r),
+      border: Border.all(color: AppColors.borderColor),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.05),
@@ -1419,22 +1868,27 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     padding: EdgeInsets.symmetric(vertical: 12.h),
     child: Row(
       children: [
-        Text(
-          label,
-          style: GoogleFonts.roboto(
-            fontSize: 15.sp,
-            color: Colors.grey.shade500,
+        SizedBox(
+          width: 90.w,
+          child: Text(
+            label,
+            textAlign: TextAlign.right,
+            style: GoogleFonts.roboto(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.lightFontColor,
+            ),
           ),
         ),
-        SizedBox(width: 12.w),
+        SizedBox(width: 24.w),
         Expanded(
           child: Text(
             value,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.left,
             style: GoogleFonts.roboto(
-              fontSize: 15.sp,
-              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
-              color: Colors.black87,
+              fontSize: 16.sp,
+              fontWeight: bold ? FontWeight.w500 : FontWeight.w400,
+              color: AppColors.fontMainColor,
             ),
           ),
         ),
@@ -1454,25 +1908,33 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       padding: EdgeInsets.symmetric(vertical: 14.h),
       child: Row(
         children: [
-          if (leading != null) ...[leading, SizedBox(width: 12.w)],
-          if (prefixLabel != null) ...[
-            Text(
-              prefixLabel,
-              style: GoogleFonts.roboto(
-                fontSize: 15.sp,
-                color: Colors.grey.shade500,
-              ),
+          SizedBox(
+            width: 90.w,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child:
+                  leading ??
+                  (prefixLabel != null
+                      ? Text(
+                          prefixLabel,
+                          style: GoogleFonts.roboto(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.lightFontColor,
+                          ),
+                        )
+                      : const SizedBox()),
             ),
-            SizedBox(width: 12.w),
-          ],
+          ),
+          SizedBox(width: 24.w),
           Expanded(
             child: Text(
               label,
-              textAlign: prefixLabel != null ? TextAlign.right : TextAlign.left,
+              textAlign: TextAlign.left,
               style: GoogleFonts.roboto(
-                fontSize: 15.sp,
-                fontWeight: boldValue ? FontWeight.w600 : FontWeight.w400,
-                color: Colors.black87,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.fontMainColor,
               ),
             ),
           ),
@@ -1480,29 +1942,133 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           Icon(
             Icons.arrow_forward_ios,
             size: 14.sp,
-            color: Colors.grey.shade400,
+            color: AppColors.fontMainColor,
           ),
         ],
       ),
     ),
   );
 
+  String _deviceName() {
+    final d = widget.job.data!;
+    String brand = d.deviceData?.brand ?? '';
+    String model = d.deviceData?.model ?? '';
+    if (d.device?.isNotEmpty == true) {
+      if (brand.isEmpty) brand = d.device!.first.brand ?? '';
+      if (model.isEmpty) model = d.device!.first.model ?? '';
+    }
+    final name = '$brand $model'.trim();
+    return name.isEmpty ? 'Not specified' : name;
+  }
+
+  String _imeiSerial() {
+    final d = widget.job.data!;
+    String serial = d.deviceData?.serialNo ?? '';
+    if (d.device?.isNotEmpty == true && serial.isEmpty) {
+      serial = d.device!.first.serialNo ?? '';
+    }
+    return serial.isEmpty ? 'Not specified' : serial;
+  }
+
+  void _showSecurityDialog() {
+    final d = widget.job.data!;
+    String securityMsg = 'No security details available';
+    if (d.device?.isNotEmpty == true &&
+        d.device!.first.securityLock?.isNotEmpty == true) {
+      final locks = d.device!.first.securityLock!;
+      securityMsg = locks
+          .map((e) {
+            if (e is Map) {
+              if (e.containsKey('value')) {
+                return 'Value: ${e['value']}${e.containsKey('type') ? ' (${e['type']})' : ''}';
+              }
+              return e.entries
+                  .map((ent) => '${ent.key}: ${ent.value}')
+                  .join(', ');
+            }
+            return e.toString();
+          })
+          .join('\n');
+    }
+
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (_) => CupertinoAlertDialog(
+        title: Text(
+          'Device Security',
+          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
+        ),
+        content: Padding(
+          padding: EdgeInsets.only(top: 8.h),
+          child: Text(securityMsg, style: TextStyle(fontSize: 13.sp)),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionRow(String label, String actionText, VoidCallback onTap) =>
+      Padding(
+        padding: EdgeInsets.symmetric(vertical: 12.h),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 90.w,
+              child: Text(
+                label,
+                textAlign: TextAlign.right,
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.lightFontColor,
+                ),
+              ),
+            ),
+            SizedBox(width: 24.w),
+            Expanded(
+              child: GestureDetector(
+                onTap: onTap,
+                child: Text(
+                  actionText,
+                  textAlign: TextAlign.left,
+                  style: GoogleFonts.roboto(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.kBlue,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
   Widget _plainRow(String label, String value) => Padding(
     padding: EdgeInsets.symmetric(vertical: 12.h),
     child: Row(
       children: [
-        Text(
-          label,
-          style: GoogleFonts.roboto(
-            fontSize: 15.sp,
-            color: Colors.grey.shade500,
+        SizedBox(
+          width: 90.w,
+          child: Text(
+            label,
+            textAlign: TextAlign.right,
+            style: GoogleFonts.roboto(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.lightFontColor,
+            ),
           ),
         ),
-        SizedBox(width: 12.w),
+        SizedBox(width: 24.w),
         Expanded(
           child: Text(
             value,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.left,
             style: GoogleFonts.roboto(
               fontSize: 15.sp,
               fontWeight: FontWeight.w500,
@@ -1522,8 +2088,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         child: Text(
           label,
           style: GoogleFonts.roboto(
-            fontSize: 15.sp,
-            color: Colors.grey.shade500,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.lightFontColor,
           ),
         ),
       ),
@@ -1539,53 +2106,82 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     ],
   );
 
-  Widget _priorityRow() => Padding(
-    padding: EdgeInsets.symmetric(vertical: 14.h),
-    child: Row(
-      children: [
-        Text(
-          'Priority',
-          style: GoogleFonts.roboto(
-            fontSize: 15.sp,
-            color: Colors.grey.shade500,
+  Widget _priorityRow() => InkWell(
+    onTap: _showPrioritySheet,
+    child: Padding(
+      padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 20.w),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70
+                .w, // Reduced width slightly to accommodate horizontal padding
+            child: Text(
+              'Priority',
+              textAlign: TextAlign.right,
+              style: GoogleFonts.roboto(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w400,
+                color: AppColors.lightFontColor,
+              ),
+            ),
           ),
-        ),
-        const Spacer(),
-        Icon(Icons.flag, color: _priorityColor(), size: 16.sp),
-        SizedBox(width: 4.w),
-        Text(
-          _priorityLabel(),
-          style: GoogleFonts.roboto(
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w600,
-            color: _priorityColor(),
+          SizedBox(width: 24.w),
+          Icon(Icons.flag, color: _priorityColor(), size: 16.sp),
+          SizedBox(width: 4.w),
+          Text(
+            _priorityLabel(),
+            style: GoogleFonts.roboto(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w600,
+              color: _priorityColor(),
+            ),
           ),
-        ),
-      ],
+          const Spacer(),
+          Icon(
+            CupertinoIcons.chevron_right,
+            size: 14.sp,
+            color: Colors.grey.shade400,
+          ),
+        ],
+      ),
     ),
   );
 
-  Widget _dueDateRow() => Padding(
-    padding: EdgeInsets.symmetric(vertical: 14.h),
-    child: Row(
-      children: [
-        Text(
-          'Due date',
-          style: GoogleFonts.roboto(
-            fontSize: 15.sp,
-            color: Colors.grey.shade500,
+  Widget _dueDateRow() => InkWell(
+    onTap: _showDueDateDatePicker,
+    child: Padding(
+      padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 20.w),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70.w,
+            child: Text(
+              'Due date',
+              textAlign: TextAlign.right,
+              style: GoogleFonts.roboto(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w400,
+                color: AppColors.lightFontColor,
+              ),
+            ),
           ),
-        ),
-        const Spacer(),
-        Text(
-          _selectedDueDate,
-          style: GoogleFonts.roboto(
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w500,
-            color: AppColors.kBlue,
+          SizedBox(width: 24.w),
+          Text(
+            _selectedDueDate,
+            style: GoogleFonts.roboto(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.kBlue,
+            ),
           ),
-        ),
-      ],
+          const Spacer(),
+          Icon(
+            CupertinoIcons.chevron_right,
+            size: 14.sp,
+            color: Colors.grey.shade400,
+          ),
+        ],
+      ),
     ),
   );
 
@@ -1593,48 +2189,62 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     final initials = _selectedUserId != null
         ? _initials(_selectedAssigneeName)
         : 'U';
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10.h),
-      child: Row(
-        children: [
-          Text(
-            'Assignee',
-            style: GoogleFonts.roboto(
-              fontSize: 15.sp,
-              color: Colors.grey.shade500,
-            ),
-          ),
-          const Spacer(),
-          if (_isLoadingUsers)
+    return InkWell(
+      onTap: _showAssigneeSheet,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 20.w),
+        child: Row(
+          children: [
             SizedBox(
-              width: 18.w,
-              height: 18.h,
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            )
-          else ...[
-            CircleAvatar(
-              radius: 14.r,
-              backgroundColor: Colors.green,
+              width: 70.w,
               child: Text(
-                initials,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.bold,
+                'Assignee',
+                textAlign: TextAlign.right,
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.lightFontColor,
                 ),
               ),
             ),
-            SizedBox(width: 8.w),
-            Text(
-              _selectedAssigneeName,
-              style: GoogleFonts.roboto(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
+            SizedBox(width: 24.w),
+            if (_isLoadingUsers)
+              SizedBox(
+                width: 18.w,
+                height: 18.h,
+                child: CupertinoActivityIndicator(radius: 16.r),
+              )
+            else ...[
+              CircleAvatar(
+                radius: 14.r,
+                backgroundColor: Colors.green,
+                child: Text(
+                  initials,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
+              SizedBox(width: 8.w),
+              Text(
+                _selectedAssigneeName,
+                style: GoogleFonts.roboto(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+            const Spacer(),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 14.sp,
+              color: Colors.grey.shade400,
             ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -1650,22 +2260,18 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       padding: EdgeInsets.symmetric(vertical: 14.h),
       child: Row(
         children: [
-          Container(
-            width: 28.w,
-            height: 28.h,
-            decoration: BoxDecoration(
-              color: enabled
-                  ? AppColors.kBlue.withValues(alpha: 0.1)
-                  : Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(6.r),
-            ),
-            child: Icon(
-              icon,
-              color: enabled ? AppColors.kBlue : Colors.grey,
-              size: 18.sp,
+          SizedBox(
+            width: 90.w,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Icon(
+                icon,
+                color: enabled ? Colors.grey : Colors.grey.shade300,
+                size: 24.sp,
+              ),
             ),
           ),
-          SizedBox(width: 12.w),
+          SizedBox(width: 24.w),
           Expanded(
             child: Text(
               title,
@@ -2085,9 +2691,9 @@ class _NoteSheetState extends State<_NoteSheet> {
                         ? SizedBox(
                             width: 20.w,
                             height: 20.h,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
+                            child: CupertinoActivityIndicator(
                               color: Colors.white,
+                              radius: 16.r,
                             ),
                           )
                         : Text(

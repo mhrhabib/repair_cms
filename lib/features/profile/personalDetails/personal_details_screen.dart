@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/error_screen.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -602,7 +604,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           appBar: AppBar(
             backgroundColor: AppColors.scaffoldBackgroundColor,
             elevation: 0,
-            leading: IconButton(
+            leading: CustomNavButton(
               onPressed: () {
                 if (!mounted) return;
                 try {
@@ -614,11 +616,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                   );
                 }
               },
-              icon: const Icon(
-                Icons.arrow_back_ios,
-                color: Colors.black87,
-                size: 20,
-              ),
+              icon: CupertinoIcons.back,
             ),
             title: const Text(
               'Personal Details',

@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -42,10 +44,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        // leading: IconButton(
-        //   icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
-        //   onPressed: () => Navigator.pop(context),
-        // ),
+        leading: CustomNavButton(
+          onPressed: () => Navigator.pop(context),
+          icon: CupertinoIcons.back,
+        ),
         title: Text(
           isSelectionMode ? 'Messages - remove selected' : 'Messages',
           style: const TextStyle(

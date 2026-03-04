@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
@@ -36,8 +37,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.initState();
     try {
       debugPrint('🚀 [DashboardScreen] Initializing dashboard');
-      debugPrint('👤 [DashboardScreen] User Type: ${context.read<SignInCubit>().userType}');
-      debugPrint('👤 [DashboardScreen] User ID: ${context.read<SignInCubit>().userId}');
+      debugPrint(
+        '👤 [DashboardScreen] User Type: ${context.read<SignInCubit>().userType}',
+      );
+      debugPrint(
+        '👤 [DashboardScreen] User ID: ${context.read<SignInCubit>().userId}',
+      );
 
       // Add observer to detect when app comes to foreground
       WidgetsBinding.instance.addObserver(this);
@@ -99,16 +104,24 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       // Fetch company info if companyId exists
       if (companyId != null && companyId.toString().isNotEmpty) {
-        debugPrint('📦 [DashboardScreen] Fetching company info for ID: $companyId');
-        context.read<CompanyCubit>().getCompanyInfo(companyId: companyId.toString());
+        debugPrint(
+          '📦 [DashboardScreen] Fetching company info for ID: $companyId',
+        );
+        context.read<CompanyCubit>().getCompanyInfo(
+          companyId: companyId.toString(),
+        );
       } else {
         debugPrint('⚠️ [DashboardScreen] No companyId found in storage');
       }
 
       // Fetch job receipt if userId exists
       if (userId != null && userId.toString().isNotEmpty) {
-        debugPrint('📋 [DashboardScreen] Fetching job receipt for user: $userId');
-        context.read<JobReceiptCubit>().getJobReceipt(userId: userId.toString());
+        debugPrint(
+          '📋 [DashboardScreen] Fetching job receipt for user: $userId',
+        );
+        context.read<JobReceiptCubit>().getJobReceipt(
+          userId: userId.toString(),
+        );
       } else {
         debugPrint('⚠️ [DashboardScreen] No userId found in storage');
       }
@@ -167,9 +180,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  IconButton(
+                  CustomNavButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close, size: 24.sp),
+                    icon: Icons.close,
                   ),
                 ],
               ),
@@ -318,12 +331,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                   '✅ [DashboardScreen] Company data loaded, storing in GetStorage',
                 );
                 // Store company data as JSON string
-                storage.write('companyData', jsonEncode(state.company.toJson()));
+                storage.write(
+                  'companyData',
+                  jsonEncode(state.company.toJson()),
+                );
                 debugPrint(
                   '📦 [DashboardScreen] Company name: ${state.company.name}',
                 );
               } catch (e) {
-                debugPrint('❌ [DashboardScreen] Error storing company data: $e');
+                debugPrint(
+                  '❌ [DashboardScreen] Error storing company data: $e',
+                );
               }
             } else if (state is CompanyError) {
               debugPrint('❌ [DashboardScreen] Company error: ${state.message}');
@@ -351,7 +369,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                   '📦 [DashboardScreen] QR Code Enabled: ${state.receipt.qrCodeEnabled}',
                 );
               } catch (e) {
-                debugPrint('❌ [DashboardScreen] Error storing receipt data: $e');
+                debugPrint(
+                  '❌ [DashboardScreen] Error storing receipt data: $e',
+                );
               }
             } else if (state is JobReceiptError) {
               debugPrint(

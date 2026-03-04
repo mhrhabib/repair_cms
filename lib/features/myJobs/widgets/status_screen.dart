@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 
@@ -82,22 +83,9 @@ class _StatusScreenState extends State<StatusScreen> {
               backgroundColor: AppColors.kBg,
               appBar: CupertinoNavigationBar(
                 backgroundColor: AppColors.kBg,
-                leading: CupertinoButton(
-                  padding: EdgeInsets.zero,
+                leading: CustomNavButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 36.w,
-                    height: 36.h,
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 251, 251, 251),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      CupertinoIcons.back,
-                      color: const Color(0xFF3A4A67),
-                      size: 20.r,
-                    ),
-                  ),
+                  icon: CupertinoIcons.back,
                 ),
                 middle: Text(
                   'Status',
@@ -107,22 +95,11 @@ class _StatusScreenState extends State<StatusScreen> {
                     color: CupertinoColors.label.resolveFrom(context),
                   ),
                 ),
-                trailing: CupertinoButton(
-                  padding: EdgeInsets.zero,
+                trailing: CustomNavButton(
                   onPressed: _showAddStatusBottomSheet,
-                  child: Container(
-                    width: 36.w,
-                    height: 36.h,
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 251, 251, 251),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      CupertinoIcons.add_circled_solid,
-                      color: figmaBlue,
-                      size: 28.r,
-                    ),
-                  ),
+                  icon: CupertinoIcons.add_circled_solid,
+                  size: 28.sp,
+                  iconColor: figmaBlue,
                 ),
               ),
               body: _buildStatusScreen(context, _cachedJobData!),

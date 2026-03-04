@@ -1,5 +1,7 @@
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 
 /// Job Scanner Screen - Scans QR/Barcode for Job IDs
@@ -26,8 +28,12 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
   void _onDetect(BarcodeCapture capture) async {
     // Always log the raw capture for debugging
     try {
-      debugPrint('🔍 BarcodeCapture received: ${capture.barcodes.map((b) => b.rawValue).toList()}');
-      debugPrint('🔎 Barcode formats: ${capture.barcodes.map((b) => b.format).toList()}');
+      debugPrint(
+        '🔍 BarcodeCapture received: ${capture.barcodes.map((b) => b.rawValue).toList()}',
+      );
+      debugPrint(
+        '🔎 Barcode formats: ${capture.barcodes.map((b) => b.format).toList()}',
+      );
     } catch (e) {
       debugPrint('💥 Error printing capture: $e');
     }
@@ -46,7 +52,9 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
 
     final code = barcodes.first.rawValue;
     if (code == null || code.isEmpty) {
-      debugPrint('❌ Invalid ${widget.isBarcodeMode ? 'barcode' : 'QR code'} (empty or null)');
+      debugPrint(
+        '❌ Invalid ${widget.isBarcodeMode ? 'barcode' : 'QR code'} (empty or null)',
+      );
       return;
     }
 
@@ -55,7 +63,9 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
       isProcessing = true;
     });
 
-    debugPrint('📱 ${widget.isBarcodeMode ? 'Barcode' : 'QR Code'} detected: $code');
+    debugPrint(
+      '📱 ${widget.isBarcodeMode ? 'Barcode' : 'QR Code'} detected: $code',
+    );
 
     // Stop camera
     await cameraController.stop();
@@ -70,7 +80,9 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
 
     // Show success message with job ID
     // Example: context.go('/job-details/$code');
-    SnackbarDemo(message: 'Job ID scanned: $code\nNavigate to job details manually').showCustomSnackbar(context);
+    SnackbarDemo(
+      message: 'Job ID scanned: $code\nNavigate to job details manually',
+    ).showCustomSnackbar(context);
   }
 
   @override
@@ -79,18 +91,26 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        leading: CustomNavButton(
           onPressed: () => Navigator.pop(context),
+          icon: CupertinoIcons.back,
+          iconColor: Colors.white,
         ),
         title: Text(
           widget.isBarcodeMode ? 'Barcode Scanner' : 'QR Code Scanner',
-          style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(cameraController.torchEnabled ? Icons.flash_on : Icons.flash_off, color: Colors.white),
+            icon: Icon(
+              cameraController.torchEnabled ? Icons.flash_on : Icons.flash_off,
+              color: Colors.white,
+            ),
             onPressed: () => cameraController.toggleTorch(),
           ),
         ],
@@ -109,7 +129,11 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
                         ? 'Align barcode within the frame to scan'
                         : 'Align QR code within the frame to scan',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   SizedBox(height: 40.h),
 
@@ -141,7 +165,10 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
                       _showManualEntryDialog();
                     },
                     icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                    label: const Text('Enter Job ID Manually', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    label: const Text(
+                      'Enter Job ID Manually',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ),
                   SizedBox(height: 20.h),
                 ],
@@ -152,7 +179,9 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
             if (isProcessing)
               Container(
                 color: Colors.black.withValues(alpha: 0.7),
-                child: Center(child: ProcessingLoader(isBarcodeMode: widget.isBarcodeMode)),
+                child: Center(
+                  child: ProcessingLoader(isBarcodeMode: widget.isBarcodeMode),
+                ),
               ),
           ],
         ),
@@ -166,7 +195,10 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Enter Job ID', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Enter Job ID',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
@@ -179,7 +211,10 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
           textCapitalization: TextCapitalization.characters,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               final jobId = controller.text.trim();
@@ -187,13 +222,16 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
                 Navigator.pop(context);
                 // Example: context.go('/job-details/$jobId');
                 SnackbarDemo(
-                  message: 'Job ID entered: $jobId\nNavigate to job details manually',
+                  message:
+                      'Job ID entered: $jobId\nNavigate to job details manually',
                 ).showCustomSnackbar(context);
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4A90E2),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Go to Job'),
           ),
@@ -213,7 +251,10 @@ class ProcessingLoader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(32.w),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -221,7 +262,11 @@ class ProcessingLoader extends StatelessWidget {
           SizedBox(height: 24.h),
           Text(
             isBarcodeMode ? 'Processing Barcode...' : 'Processing QR Code...',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.grey[800]),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
           ),
           SizedBox(height: 12.h),
           Text(
@@ -242,7 +287,8 @@ class ScanningAnimation extends StatefulWidget {
   State<ScanningAnimation> createState() => _ScanningAnimationState();
 }
 
-class _ScanningAnimationState extends State<ScanningAnimation> with SingleTickerProviderStateMixin {
+class _ScanningAnimationState extends State<ScanningAnimation>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _rotationAnimation;
   late Animation<double> _scaleAnimation;
@@ -250,7 +296,10 @@ class _ScanningAnimationState extends State<ScanningAnimation> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(duration: const Duration(milliseconds: 1200), vsync: this)..repeat();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat();
 
     _rotationAnimation = Tween<double>(
       begin: 0,
@@ -286,16 +335,29 @@ class _ScanningAnimationState extends State<ScanningAnimation> with SingleTicker
                   height: 80.h,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF4CAF50), width: 3),
-                    gradient: const SweepGradient(colors: [Color(0xFF4CAF50), Colors.transparent], stops: [0.0, 0.5]),
+                    border: Border.all(
+                      color: const Color(0xFF4CAF50),
+                      width: 3,
+                    ),
+                    gradient: const SweepGradient(
+                      colors: [Color(0xFF4CAF50), Colors.transparent],
+                      stops: [0.0, 0.5],
+                    ),
                   ),
                 ),
               ),
               Container(
                 width: 50.w,
                 height: 50.h,
-                decoration: BoxDecoration(color: const Color(0xFF4CAF50), borderRadius: BorderRadius.circular(8)),
-                child: Icon(Icons.qr_code_scanner, color: Colors.white, size: 30.sp),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.qr_code_scanner,
+                  color: Colors.white,
+                  size: 30.sp,
+                ),
               ),
             ],
           ),
@@ -325,14 +387,20 @@ class ScannerWidget extends StatelessWidget {
     return Container(
       height: 320.h,
       width: double.infinity,
-      decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: Colors.grey[800],
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           children: [
             MobileScanner(controller: controller, onDetect: onDetect),
             CustomPaint(
-              painter: ScannerOverlayPainter(isProcessing: isProcessing, isBarcodeMode: isBarcodeMode),
+              painter: ScannerOverlayPainter(
+                isProcessing: isProcessing,
+                isBarcodeMode: isBarcodeMode,
+              ),
               child: const SizedBox.expand(),
             ),
             if (isProcessing)
@@ -342,11 +410,19 @@ class ScannerWidget extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle, color: const Color(0xFF4CAF50), size: 60.sp),
+                      Icon(
+                        Icons.check_circle,
+                        color: const Color(0xFF4CAF50),
+                        size: 60.sp,
+                      ),
                       SizedBox(height: 12.h),
                       Text(
                         isBarcodeMode ? 'Barcode Detected' : 'QR Code Detected',
-                        style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -364,7 +440,10 @@ class ScannerOverlayPainter extends CustomPainter {
   final bool isProcessing;
   final bool isBarcodeMode;
 
-  ScannerOverlayPainter({this.isProcessing = false, this.isBarcodeMode = false});
+  ScannerOverlayPainter({
+    this.isProcessing = false,
+    this.isBarcodeMode = false,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -378,12 +457,28 @@ class ScannerOverlayPainter extends CustomPainter {
     const padding = 40.0;
 
     // Top-left
-    canvas.drawLine(const Offset(padding, padding), const Offset(padding + cornerLength, padding), paint);
-    canvas.drawLine(const Offset(padding, padding), const Offset(padding, padding + cornerLength), paint);
+    canvas.drawLine(
+      const Offset(padding, padding),
+      const Offset(padding + cornerLength, padding),
+      paint,
+    );
+    canvas.drawLine(
+      const Offset(padding, padding),
+      const Offset(padding, padding + cornerLength),
+      paint,
+    );
 
     // Top-right
-    canvas.drawLine(Offset(size.width - padding - cornerLength, padding), Offset(size.width - padding, padding), paint);
-    canvas.drawLine(Offset(size.width - padding, padding), Offset(size.width - padding, padding + cornerLength), paint);
+    canvas.drawLine(
+      Offset(size.width - padding - cornerLength, padding),
+      Offset(size.width - padding, padding),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width - padding, padding),
+      Offset(size.width - padding, padding + cornerLength),
+      paint,
+    );
 
     // Bottom-left
     canvas.drawLine(
@@ -440,5 +535,6 @@ class ScannerOverlayPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ScannerOverlayPainter oldDelegate) =>
-      oldDelegate.isProcessing != isProcessing || oldDelegate.isBarcodeMode != isBarcodeMode;
+      oldDelegate.isProcessing != isProcessing ||
+      oldDelegate.isBarcodeMode != isBarcodeMode;
 }

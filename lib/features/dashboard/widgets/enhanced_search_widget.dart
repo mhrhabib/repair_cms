@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/notifications/notifications_screen.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:repair_cms/features/profile/profile_options_screen.dart';
@@ -98,7 +99,7 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget>
       _searchController.clear();
     });
     _searchFocusNode.unfocus();
-    
+
     // Clear the search keyword in JobCubit to prevent it from affecting future job list calls
     context.read<JobCubit>().clearSearchKeyword();
   }
@@ -292,20 +293,12 @@ class _EnhancedSearchWidgetState extends State<EnhancedSearchWidget>
             child: Row(
               children: [
                 // QR Code Button
-                GestureDetector(
-                  onTap: widget.onQRScanPressed ?? () {},
-                  child: Container(
-                    padding: EdgeInsets.all(8.w),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Icon(
-                      Icons.qr_code_scanner,
-                      color: Colors.white,
-                      size: 24.sp,
-                    ),
-                  ),
+                CustomNavButton(
+                  onPressed: widget.onQRScanPressed ?? () {},
+                  icon: Icons.qr_code_scanner,
+                  iconColor: Colors.white,
+                  size: 40,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
                 ),
                 SizedBox(width: 12.w),
 

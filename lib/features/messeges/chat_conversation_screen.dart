@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
@@ -487,22 +488,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           appBar: AppBar(
             backgroundColor: AppColors.kBg,
             elevation: 0,
-            leading: CupertinoButton(
-              padding: EdgeInsets.zero,
+            leading: CustomNavButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Container(
-                width: 36.w,
-                height: 36.h,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 251, 251, 251),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  CupertinoIcons.back,
-                  color: const Color(0xFF3A4A67),
-                  size: 20.r,
-                ),
-              ),
+              icon: CupertinoIcons.back,
             ),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -526,22 +514,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               ],
             ),
             actions: [
-              Container(
-                width: 36.w,
-                height: 36.h,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 251, 251, 251),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.info_outline,
-                    color: AppColors.kBlue,
-                    size: 20,
-                  ),
-                  padding: EdgeInsets.zero,
-                  onPressed: () {},
-                ),
+              CustomNavButton(
+                onPressed: () {},
+                icon: Icons.info_outline,
+                iconColor: AppColors.kBlue,
               ),
               const SizedBox(width: 8),
             ],

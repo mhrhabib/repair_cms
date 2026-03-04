@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter/rendering.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -957,22 +958,9 @@ class ReceiptScreen extends StatelessWidget {
       backgroundColor: AppColors.kBg,
       appBar: CupertinoNavigationBar(
         backgroundColor: AppColors.kBg,
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
+        leading: CustomNavButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Container(
-            width: 36.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 251, 251, 251),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              CupertinoIcons.back,
-              color: const Color(0xFF3A4A67),
-              size: 20.r,
-            ),
-          ),
+          icon: CupertinoIcons.back,
         ),
         middle: Text(
           'Job Receipt',
@@ -982,18 +970,11 @@ class ReceiptScreen extends StatelessWidget {
             color: CupertinoColors.label.resolveFrom(context),
           ),
         ),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
+        trailing: CustomNavButton(
           onPressed: () => _showPrinterSelection(context),
-          child: Container(
-            width: 36.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 251, 251, 251),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(CupertinoIcons.printer, color: figmaBlue, size: 24.r),
-          ),
+          icon: CupertinoIcons.printer,
+          iconColor: figmaBlue,
+          size: 24.r,
         ),
       ),
       body: SingleChildScrollView(
@@ -1698,19 +1679,9 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
       backgroundColor: Colors.grey[200],
       appBar: CupertinoNavigationBar(
         backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
+        leading: CustomNavButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(CupertinoIcons.back, color: figmaBlue, size: 28.r),
-              Text(
-                'Back',
-                style: TextStyle(color: figmaBlue, fontSize: 17.sp),
-              ),
-            ],
-          ),
+          icon: CupertinoIcons.back,
         ),
         middle: Text(
           'Print Settings',
@@ -1720,10 +1691,11 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
             color: CupertinoColors.label.resolveFrom(context),
           ),
         ),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
+        trailing: CustomNavButton(
           onPressed: () {},
-          child: Icon(CupertinoIcons.ellipsis, color: figmaBlue, size: 22.r),
+          icon: CupertinoIcons.ellipsis,
+          iconColor: figmaBlue,
+          size: 22.r,
         ),
       ),
       body: Column(

@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
     as job_booking;
 import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
@@ -280,13 +282,9 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black87,
-            size: 20,
-          ),
+        leading: CustomNavButton(
           onPressed: () => Navigator.pop(context),
+          icon: CupertinoIcons.back,
         ),
         title: const Text(
           'Print',
