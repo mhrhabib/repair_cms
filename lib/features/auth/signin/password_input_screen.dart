@@ -29,6 +29,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   String? _authError;
 
   bool _hasStoredCredentials = false;
+  bool _shouldSaveBiometric = false;
   String _biometricType = 'Biometric'; // Default fallback
 
   @override
@@ -96,27 +97,31 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
         password: _passwordController.text,
         userId: userId,
       );
-      SnackbarDemo(
-        message: '$_biometricType authentication enabled',
-      ).showCustomSnackbar(context);
     } catch (e) {
-      SnackbarDemo(
-        message: 'Failed to save $_biometricType credentials',
-      ).showCustomSnackbar(context);
+      debugPrint('Error saving biometric credentials: $e');
     }
   }
 
   Future<void> _toggleBiometricAuthentication() async {
-    if (_hasStoredCredentials) {
+    if (_hasStoredCredentials || _shouldSaveBiometric) {
       // Disable biometric
       await BiometricStorageService.disableBiometric();
       setState(() {
         _hasStoredCredentials = false;
+        _shouldSaveBiometric = false;
       });
       SnackbarDemo(
         message: '$_biometricType authentication disabled',
       ).showCustomSnackbar(context);
     } else {
+      // Check if password has been entered
+      if (!_isPasswordValid) {
+        SnackbarDemo(
+          message: 'Please enter a valid password first',
+        ).showCustomSnackbar(context);
+        return;
+      }
+
       // Enable biometric - Show confirmation dialog
       bool? shouldEnable = await showDialog<bool>(
         context: context,
@@ -128,21 +133,25 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text('Enable'),
+              child: const Text('Enable'),
             ),
           ],
         ),
       );
 
       if (shouldEnable == true) {
-        await _saveBiometricCredentials();
         setState(() {
+          _shouldSaveBiometric = true;
+          // Optimistically show as enabled in the UI
           _hasStoredCredentials = true;
         });
+        SnackbarDemo(
+          message: '$_biometricType will be enabled upon successful login',
+        ).showCustomSnackbar(context);
       }
     }
   }
@@ -200,13 +209,16 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
               child: BlocConsumer<SignInCubit, SignInStates>(
                 listener: (context, state) {
                   if (state is LoginSuccess) {
-                    //SnackbarDemo(message: state.message).showCustomSnackbar(context);
-
                     // Navigate based on user role or other conditions
                     if (state.user != null) {
                       setState(() {
                         _authError = null;
                       });
+
+                      if (_shouldSaveBiometric) {
+                        _saveBiometricCredentials();
+                      }
+
                       _navigateToHome(state.user!);
                     }
                   } else if (state is SignInError) {

@@ -2,8 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class QuickTaskScreen extends StatefulWidget {
   const QuickTaskScreen({super.key});
@@ -56,33 +58,26 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
+      appBar: CupertinoNavigationBar(
+        backgroundColor: AppColors.kBg,
+        middle: Text(
           'To-Do\'s',
           style: AppTypography.fontSize20.copyWith(
             fontWeight: FontWeight.w600,
             color: AppColors.fontMainColor,
           ),
         ),
-        centerTitle: true,
-        backgroundColor: AppColors.whiteColor,
-        elevation: 0,
-        actions: [
-          Container(
-            margin: EdgeInsets.only(right: 16.w),
-            child: IconButton(
-              icon: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.add, size: 20.sp, color: AppColors.primary),
-              ),
-              onPressed: _showAddTodoDialog,
-            ),
-          ),
-        ],
+        leading: CustomNavButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: CupertinoIcons.back,
+        ),
+
+        trailing: CustomNavButton(
+          icon: Icons.add,
+          iconColor: Colors.white,
+          onPressed: _showAddTodoDialog,
+          backgroundColor: Colors.blue.shade200,
+        ),
       ),
       body: BlocBuilder<QuickTaskCubit, QuickTaskState>(
         builder: (context, state) {

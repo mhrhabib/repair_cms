@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
@@ -180,14 +181,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : Colors.grey.shade400,
+              color: isSelected ? AppColors.primary : AppColors.lightFontColor,
               size: 24.sp,
             ),
             SizedBox(height: 4.h),
             Text(
               label,
               style: AppTypography.fontSize10.copyWith(
-                color: isSelected ? AppColors.primary : Colors.grey.shade400,
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.lightFontColor,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -206,13 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: AppColors.primary,
           shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+
           border: Border.all(color: AppColors.whiteColor, width: 4.w),
         ),
         child: AnimatedBuilder(
@@ -221,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             return Transform.rotate(
               angle: _rotationAnimation.value * 4.2 * math.pi,
               child: Icon(
-                _isExpanded ? Icons.close : Icons.add,
+                _isExpanded ? FontAwesomeIcons.xmark : FontAwesomeIcons.plus,
                 color: AppColors.whiteColor,
                 size: 32.sp,
                 weight: 800,

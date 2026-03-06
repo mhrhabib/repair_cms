@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -38,8 +40,10 @@ class PrinterSettingsScreen extends StatelessWidget {
           children: [
             // A4 Receipt Printer
             _buildSettingsItem(
-              icon: SolarIconsOutline.document1,
-              iconColor: Colors.blue,
+              iconsWidget: Icon(
+                SolarIconsOutline.documentText,
+                color: Colors.blue,
+              ),
               title: 'A4 Receipt Printer',
               onTap: () {
                 try {
@@ -70,8 +74,11 @@ class PrinterSettingsScreen extends StatelessWidget {
 
             // Thermal Printer (80mm)
             _buildSettingsItem(
-              icon: SolarIconsOutline.documentMedicine,
-              iconColor: Colors.blue,
+              iconsWidget: Image.asset(
+                'assets/icon/Vector (Stroke).png',
+                height: 24,
+                width: 24,
+              ),
               title: 'Thermal Printer (80mm)',
               onTap: () {
                 try {
@@ -104,8 +111,11 @@ class PrinterSettingsScreen extends StatelessWidget {
 
             // Label Printer
             _buildSettingsItem(
-              icon: SolarIconsOutline.document,
-              iconColor: Colors.blue,
+              iconsWidget: Image.asset(
+                'assets/icon/label.png',
+                height: 24,
+                width: 24,
+              ),
               title: 'Label Printer',
               onTap: () {
                 try {
@@ -141,8 +151,7 @@ class PrinterSettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSettingsItem({
-    required IconData icon,
-    required Color iconColor,
+    required Widget iconsWidget,
     required String title,
     required VoidCallback onTap,
   }) {
@@ -160,21 +169,21 @@ class PrinterSettingsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: iconColor, size: 24),
+                child: iconsWidget,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 2),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
+                  style: AppTypography.sfProText15.copyWith(
+                    fontSize: 16.sp,
+                    color: AppColors.fontMainColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
               const Icon(
-                Icons.chevron_right,
+                Icons.arrow_forward_ios,
                 color: AppColors.fontMainColor,
                 size: 24,
               ),

@@ -1,8 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/notification_navigation_helper.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
@@ -18,8 +17,6 @@ class MessagesScreen extends StatefulWidget {
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
-  bool isSelectionMode = false;
-  Set<String> selectedConversations = {};
   List<Conversation> _conversations = [];
 
   @override
@@ -44,55 +41,15 @@ class _MessagesScreenState extends State<MessagesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: CustomNavButton(
-          onPressed: () => Navigator.pop(context),
-          icon: CupertinoIcons.back,
-        ),
-        title: Text(
-          isSelectionMode ? 'Messages - remove selected' : 'Messages',
-          style: const TextStyle(
+        title: const Text(
+          'Messages',
+          style: TextStyle(
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
-        actions: [
-          if (!isSelectionMode && _conversations.isNotEmpty)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.black),
-              onSelected: (value) {
-                if (value == 'select') {
-                  setState(() {
-                    isSelectionMode = true;
-                  });
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem<String>(
-                  value: 'select',
-                  child: Text('Select Messages'),
-                ),
-              ],
-            ),
-          if (isSelectionMode) ...[
-            TextButton(
-              onPressed: selectedConversations.isEmpty
-                  ? null
-                  : _removeSelectedMessages,
-              child: Text(
-                'Remove',
-                style: TextStyle(
-                  color: selectedConversations.isEmpty
-                      ? Colors.grey
-                      : const Color(0xFF4A90E2),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
       body: BlocConsumer<MessageCubit, MessageState>(
         listener: (context, state) {
@@ -125,43 +82,27 @@ class _MessagesScreenState extends State<MessagesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF4A90E2).withValues(alpha: 0.3),
-                  const Color(0xFF4A90E2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(60),
-            ),
-            child: const Icon(
-              Icons.chat_bubble_outline,
-              size: 60,
-              color: Colors.white,
-            ),
+          SizedBox(
+            height: 128.5.h,
+            width: 128.5.w,
+            child: Image.asset('assets/icon/Dialog 2.png'),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'No Messages yet',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
+            style: AppTypography.sfProHeadLineTextStyle28.copyWith(
+              fontWeight: FontWeight.w500,
+              color: AppColors.fontMainColor,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'When you get new Messages,\nthey\'ll show up here',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              height: 1.4,
+            style: AppTypography.sfProHeadLineTextStyle22.copyWith(
+              fontWeight: FontWeight.w400,
+              fontSize: 20.sp,
+              color: AppColors.lightFontColor,
             ),
           ),
         ],
@@ -170,82 +111,61 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Widget _buildMessagesList() {
-    return Column(
-      children: [
-        if (isSelectionMode)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.blue[50],
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Select messages to remove',
-                  style: TextStyle(
-                    color: Colors.blue[700],
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      isSelectionMode = false;
-                      selectedConversations.clear();
-                    });
-                  },
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _conversations.length,
+      itemBuilder: (context, index) {
+        final conversation = _conversations[index];
+        return Dismissible(
+          key: Key(conversation.conversationId ?? index.toString()),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF007F), // Figma vibrant pink
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: const Text(
+              'remove',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _conversations.length,
-            itemBuilder: (context, index) {
-              return _buildMessageItem(_conversations[index]);
-            },
-          ),
-        ),
-      ],
+          onDismissed: (direction) {
+            final deletedId = conversation.conversationId;
+            setState(() {
+              _conversations.removeAt(index);
+            });
+            if (deletedId != null && deletedId.isNotEmpty) {
+              context.read<MessageCubit>().deleteConversationLocally(deletedId);
+            }
+            SnackbarDemo(
+              message: 'Conversation removed',
+            ).showCustomSnackbar(context);
+            debugPrint(
+              '🗑️ [MessagesScreen] Message $deletedId removed via swipe',
+            );
+          },
+          child: _buildMessageItem(conversation),
+        );
+      },
     );
   }
 
   Widget _buildMessageItem(Conversation conversation) {
-    final isSelected = selectedConversations.contains(
-      conversation.conversationId,
-    );
-
     return GestureDetector(
-      onTap: () {
-        if (isSelectionMode) {
-          setState(() {
-            final convId = conversation.conversationId ?? '';
-            if (isSelected) {
-              selectedConversations.remove(convId);
-            } else {
-              selectedConversations.add(convId);
-            }
-          });
-        } else {
-          _openChatDetail(conversation);
-        }
-      },
+      onTap: () => _openChatDetail(conversation),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue[50] : Colors.white,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: isSelected
-              ? Border.all(color: const Color(0xFF4A90E2), width: 2)
-              : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -256,19 +176,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
         ),
         child: Row(
           children: [
-            if (isSelectionMode)
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                child: Icon(
-                  isSelected
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                  color: isSelected
-                      ? const Color(0xFF4A90E2)
-                      : Colors.grey[400],
-                  size: 24,
-                ),
-              ),
             Stack(
               children: [
                 CircleAvatar(
@@ -278,7 +185,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     (conversation.sender?.name ??
                             conversation.receiver?.name ??
                             'U')
-                        .substring(0, 2)
+                        .substring(0, 1) // Using 1 char for better fit usually
                         .toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
@@ -340,6 +247,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
           ],
         ),
       ),
@@ -393,90 +302,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
       if (mounted) {
         SnackbarDemo(
           message: 'Failed to open conversation',
-        ).showCustomSnackbar(context);
-      }
-    }
-  }
-
-  void _removeSelectedMessages() {
-    if (!mounted) {
-      debugPrint('⚠️ [MessagesScreen] Widget not mounted, skipping dialog');
-      return;
-    }
-
-    try {
-      debugPrint(
-        '🗑️ [MessagesScreen] Removing ${selectedConversations.length} messages',
-      );
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: const Text(
-            'Remove Messages',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          content: Text(
-            'Are you sure you want to remove ${selectedConversations.length} selected message${selectedConversations.length > 1 ? 's' : ''}?',
-            style: const TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey[600], fontSize: 16),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                try {
-                  Navigator.pop(context);
-                  if (mounted) {
-                    setState(() {
-                      _conversations.removeWhere(
-                        (conv) =>
-                            selectedConversations.contains(conv.conversationId),
-                      );
-                      selectedConversations.clear();
-                      isSelectionMode = false;
-                    });
-                    debugPrint(
-                      '✅ [MessagesScreen] Messages removed successfully',
-                    );
-                    SnackbarDemo(
-                      message: 'Selected messages removed',
-                    ).showCustomSnackbar(context);
-                  }
-                } catch (e) {
-                  debugPrint('❌ [MessagesScreen] Error removing messages: $e');
-                  if (mounted) {
-                    SnackbarDemo(
-                      message: 'Failed to remove messages',
-                    ).showCustomSnackbar(context);
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Remove', style: TextStyle(fontSize: 16)),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      debugPrint('❌ [MessagesScreen] Error showing dialog: $e');
-      if (mounted) {
-        SnackbarDemo(
-          message: 'Failed to show dialog',
         ).showCustomSnackbar(context);
       }
     }

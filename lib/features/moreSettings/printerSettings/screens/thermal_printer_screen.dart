@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dart:io';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_typography.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
@@ -120,47 +120,6 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
       _selectedProtocol = 'TCP';
       _setAsDefault = false;
     });
-  }
-
-  Future<void> _testConnection() async {
-    final ip = _ipController.text.trim();
-    final port = int.tryParse(_portController.text.trim()) ?? 9100;
-
-    if (ip.isEmpty) {
-      SnackbarDemo(
-        message: 'Please enter IP address to test connection',
-      ).showCustomSnackbar(context);
-      return;
-    }
-
-    SnackbarDemo(
-      message: 'Testing connection to $ip:$port...',
-    ).showCustomSnackbar(context);
-
-    try {
-      debugPrint('🔍 [ConnectionTest] Attempting to connect to $ip:$port');
-      final socket = await Socket.connect(
-        ip,
-        port,
-        timeout: const Duration(seconds: 5),
-      );
-      socket.destroy();
-      debugPrint('✅ [ConnectionTest] Successfully connected to $ip:$port');
-      SnackbarDemo(
-        message: '✅ Connection successful! Printer is reachable.',
-      ).showCustomSnackbar(context);
-    } catch (e) {
-      debugPrint('❌ [ConnectionTest] Failed to connect: $e');
-      String errorMsg = '❌ Connection failed: ';
-      if (e.toString().contains('timeout')) {
-        errorMsg += 'Timeout. Check if printer is on and IP is correct.';
-      } else if (e.toString().contains('refused')) {
-        errorMsg += 'Connection refused. Check port number or firewall.';
-      } else {
-        errorMsg += 'Check network, IP address, and printer power.';
-      }
-      SnackbarDemo(message: errorMsg).showCustomSnackbar(context);
-    }
   }
 
   Future<void> _deletePrinter(PrinterConfigModel printer) async {
@@ -330,415 +289,456 @@ thermal printer configuration.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CupertinoNavigationBar(
+      backgroundColor: AppColors.scaffoldBackgroundColor,
+      appBar: AppBar(
         backgroundColor: AppColors.scaffoldBackgroundColor,
-        border: null,
-        leading: CustomNavButton(
-          onPressed: () => Navigator.pop(context),
-          icon: CupertinoIcons.back,
+        elevation: 0,
+        centerTitle: true,
+        leading: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+          child: CustomNavButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icons.arrow_back_ios_new,
+          ),
         ),
-        middle: Text(
-          'Thermal Printer (80mm)',
-          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
+        title: Text(
+          'Thermal Printer',
+          style: AppTypography.sfProHeadLineTextStyle22,
         ),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.w),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Saved Printers List
-            if (_savedPrinters.isNotEmpty) ...[
-              Text(
-                'Saved Printers',
-                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 12.h),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _savedPrinters.length,
-                itemBuilder: (context, index) {
-                  final printer = _savedPrinters[index];
-                  return Card(
-                    margin: EdgeInsets.only(bottom: 8.h),
-                    child: ListTile(
-                      leading: Container(
-                        padding: EdgeInsets.all(8.w),
-                        decoration: BoxDecoration(
-                          color: printer.isDefault
-                              ? Colors.green.shade50
-                              : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Icon(
-                          Icons.print,
-                          color: printer.isDefault
-                              ? Colors.green.shade700
-                              : Colors.grey.shade700,
-                          size: 24.sp,
-                        ),
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${printer.printerBrand} ${printer.printerModel ?? ""}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15.sp,
-                              ),
-                            ),
-                          ),
-                          if (printer.isDefault)
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 2.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                              child: Text(
-                                'DEFAULT',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      subtitle: Text(
-                        '${printer.ipAddress}:${printer.port} (${printer.paperWidth}mm)',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'use') {
-                            _fillFormFromPrinter(printer);
-                          } else if (value == 'default') {
-                            _setAsDefaultPrinter(printer);
-                          } else if (value == 'delete') {
-                            _deletePrinter(printer);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(value: 'use', child: Text('Use')),
-                          if (!printer.isDefault)
-                            const PopupMenuItem(
-                              value: 'default',
-                              child: Text('Set as Default'),
-                            ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text(
-                              'Delete',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
+            Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Container(
+                padding: EdgeInsets.all(20.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Printer Configuration',
+                      style: AppTypography.sfProText15.copyWith(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  );
-                },
+                    SizedBox(height: 20.h),
+
+                    // Brand Selection
+                    _buildLabel('Printer Brand'),
+                    _buildDropdownField(
+                      hint: 'Select Brand',
+                      value: _selectedBrand,
+                      items: _supportedBrands,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedBrand = value!;
+                          _selectedModel = null;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 16.h),
+
+                    // Model Selection
+                    _buildLabel('Printer Model'),
+                    _buildDropdownField(
+                      hint: 'Select Model',
+                      value: _selectedModel,
+                      items: _brandModels[_selectedBrand] ?? [],
+                      onChanged: (value) =>
+                          setState(() => _selectedModel = value),
+                    ),
+                    SizedBox(height: 16.h),
+
+                    // Paper Width
+                    _buildLabel('Paper Width'),
+                    _buildDropdownFieldGeneric<int>(
+                      hint: 'Select Width',
+                      value: _paperWidth,
+                      items: [80, 58],
+                      itemBuilder: (width) =>
+                          '${width}mm ${width == 80 ? '(Standard)' : '(Compact)'}',
+                      onChanged: (value) =>
+                          setState(() => _paperWidth = value!),
+                    ),
+                    SizedBox(height: 16.h),
+
+                    // IP Address
+                    _buildLabel('IP Address'),
+                    _buildInputField(
+                      controller: _ipController,
+                      hint: '192.169.5.1',
+                      suffixIcon: GestureDetector(
+                        onTap: _showWiFiScanner,
+                        child: Icon(
+                          Icons.wifi_find,
+                          color: AppColors.primary,
+                          size: 22.sp,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+
+                    // Port
+                    _buildLabel('Port'),
+                    _buildInputField(
+                      controller: _portController,
+                      hint: '9100',
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: 16.h),
+
+                    // Protocol
+                    _buildLabel('Printer Protocol'),
+                    _buildDropdownField(
+                      hint: 'Protocol',
+                      value: _selectedProtocol,
+                      items: ['TCP', 'USB'],
+                      onChanged: (value) =>
+                          setState(() => _selectedProtocol = value!),
+                    ),
+
+                    SizedBox(height: 16.h),
+
+                    // Default switch
+                    Row(
+                      children: [
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: Checkbox(
+                            value: _setAsDefault,
+                            onChanged: (val) =>
+                                setState(() => _setAsDefault = val!),
+                            activeColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Set as default printer',
+                          style: AppTypography.sfProText15.copyWith(
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 24.h),
+
+                    // Action Buttons
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52.h,
+                      child: ElevatedButton(
+                        onPressed: _isSaving ? null : _saveSettings,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        child: _isSaving
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : Text(
+                                'Save Settings',
+                                style: AppTypography.primaryButtonTextStyle
+                                    .copyWith(fontSize: 16.sp),
+                              ),
+                      ),
+                    ),
+                    if (_ipController.text.trim().isNotEmpty) ...[
+                      SizedBox(height: 12.h),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52.h,
+                        child: OutlinedButton(
+                          onPressed: isPrinting ? null : _testPrint,
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppColors.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          child: Text(
+                            'Test Print',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              SizedBox(height: 24.h),
-              Divider(height: 1.h),
-              SizedBox(height: 24.h),
+            ),
+
+            // Saved Printers Section
+            if (_savedPrinters.isNotEmpty) ...[
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Saved Printers',
+                      style: AppTypography.sfProText15.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    ..._savedPrinters.map(
+                      (printer) => _buildSavedPrinterCard(printer),
+                    ),
+                    SizedBox(height: 30.h),
+                  ],
+                ),
+              ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Form Title
-            Text(
-              'Add New Printer',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16.h),
+  Widget _buildLabel(String label) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h, left: 4.w),
+      child: Text(
+        label,
+        style: AppTypography.sfProText15.copyWith(
+          fontSize: 14.sp,
+          color: AppColors.fontSecondaryColor.withValues(alpha: 0.7),
+        ),
+      ),
+    );
+  }
 
-            // Brand Selection
-            Text(
-              'Printer Brand',
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8.h),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedBrand,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 12.h,
-                ),
-              ),
-              items: _supportedBrands.map((brand) {
-                return DropdownMenuItem(value: brand, child: Text(brand));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedBrand = value!;
-                  _selectedModel = null; // Reset model when brand changes
-                });
-              },
-            ),
-            SizedBox(height: 16.h),
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String hint,
+    Widget? suffixIcon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: AppTypography.sfProText15,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: AppTypography.sfProText15.copyWith(
+          color: AppColors.fontSecondaryColor.withValues(alpha: 0.3),
+        ),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: const BorderSide(color: AppColors.borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      ),
+    );
+  }
 
-            // Model Selection
-            Text(
-              'Printer Model',
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+  Widget _buildDropdownField({
+    required String hint,
+    String? value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: items.contains(value) ? value : null,
+          hint: Text(
+            hint,
+            style: AppTypography.sfProText15.copyWith(
+              color: AppColors.fontSecondaryColor.withValues(alpha: 0.3),
             ),
-            SizedBox(height: 8.h),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedModel,
-              hint: const Text('Select Model (Optional)'),
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 12.h,
-                ),
-              ),
-              items: _brandModels[_selectedBrand]?.map((model) {
-                return DropdownMenuItem(value: model, child: Text(model));
-              }).toList(),
-              onChanged: (value) => setState(() => _selectedModel = value),
-            ),
-            SizedBox(height: 16.h),
+          ),
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.primary,
+            size: 24.sp,
+          ),
+          isExpanded: true,
+          style: AppTypography.sfProText15,
+          items: items.map((String item) {
+            return DropdownMenuItem<String>(value: item, child: Text(item));
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
 
-            // Paper Width Selection
-            Text(
-              'Paper Width',
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+  Widget _buildDropdownFieldGeneric<T>({
+    required String hint,
+    T? value,
+    required List<T> items,
+    required String Function(T) itemBuilder,
+    required void Function(T?) onChanged,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: items.contains(value) ? value : null,
+          hint: Text(
+            hint,
+            style: AppTypography.sfProText15.copyWith(
+              color: AppColors.fontSecondaryColor.withValues(alpha: 0.3),
             ),
-            SizedBox(height: 8.h),
-            DropdownButtonFormField<int>(
-              initialValue: _paperWidth,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 12.h,
-                ),
-                prefixIcon: Icon(Icons.straighten, color: AppColors.primary),
-              ),
-              items: [80, 58].map((width) {
-                return DropdownMenuItem(
-                  value: width,
-                  child: Text(
-                    '${width}mm ${width == 80 ? '(Standard)' : '(Compact)'}',
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() => _paperWidth = value!),
-            ),
-            SizedBox(height: 16.h),
+          ),
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.primary,
+            size: 24.sp,
+          ),
+          isExpanded: true,
+          style: AppTypography.sfProText15,
+          items: items.map((T item) {
+            return DropdownMenuItem<T>(
+              value: item,
+              child: Text(itemBuilder(item)),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
 
-            // IP Address with WiFi scan button
-            Row(
+  Widget _buildSavedPrinterCard(PrinterConfigModel printer) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: printer.isDefault
+              ? AppColors.primary.withValues(alpha: 0.3)
+              : AppColors.borderColor,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: AppColors.scaffoldBackgroundColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.print_rounded,
+              color: AppColors.primary,
+              size: 24.sp,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'IP Address',
-                  style: TextStyle(
-                    fontSize: 16.sp,
+                  '${printer.printerBrand} ${printer.printerModel ?? ""}',
+                  style: AppTypography.sfProText15.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => _showWiFiScanner(),
-                  icon: Icon(Icons.wifi_find, size: 18.sp),
-                  label: const Text('Scan WiFi'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primary,
+                Text(
+                  '${printer.ipAddress} • ${printer.paperWidth}mm',
+                  style: AppTypography.sfProText15.copyWith(
+                    fontSize: 12.sp,
+                    color: AppColors.fontSecondaryColor.withValues(alpha: 0.7),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 8.h),
-            TextField(
-              controller: _ipController,
-              decoration: InputDecoration(
-                hintText: 'e.g., 192.168.1.100',
-                border: OutlineInputBorder(
+          ),
+          if (printer.isDefault)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 12.h,
-                ),
-                suffixIcon: Icon(Icons.router, color: Colors.grey.shade400),
-              ),
-              keyboardType: TextInputType.text,
-            ),
-            SizedBox(height: 16.h),
-
-            // Port
-            Text(
-              'Port',
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8.h),
-            TextField(
-              controller: _portController,
-              decoration: InputDecoration(
-                hintText: 'Default: 9100',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 12.h,
-                ),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 16.h),
-
-            // Protocol Selection
-            Text(
-              'Protocol',
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8.h),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedProtocol,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 12.h,
-                ),
-              ),
-              items: ['TCP', 'USB'].map((protocol) {
-                return DropdownMenuItem(value: protocol, child: Text(protocol));
-              }).toList(),
-              onChanged: (value) => setState(() => _selectedProtocol = value!),
-            ),
-            SizedBox(height: 16.h),
-
-            // Set as Default Checkbox
-            CheckboxListTile(
-              title: const Text('Set as default thermal printer'),
-              value: _setAsDefault,
-              onChanged: (value) => setState(() => _setAsDefault = value!),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-            ),
-            SizedBox(height: 24.h),
-            // Connection Test Button
-            if (_ipController.text.trim().isNotEmpty)
-              SizedBox(
-                width: double.infinity,
-                height: 48.h,
-                child: OutlinedButton(
-                  onPressed: _testConnection,
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    side: const BorderSide(color: Colors.blue),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.network_check, color: Colors.blue),
-                      SizedBox(width: 8.w),
-                      Text(
-                        'Test Connection',
-                        style: TextStyle(fontSize: 16.sp, color: Colors.blue),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (_ipController.text.trim().isNotEmpty) SizedBox(height: 12.h),
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              height: 48.h,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _saveSettings,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                ),
-                child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Save Settings',
-                        style: TextStyle(fontSize: 16.sp, color: Colors.white),
-                      ),
-              ),
-            ),
-            SizedBox(height: 12.h),
-
-            // Test Print Button
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: isPrinting ? null : _testPrint,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: isPrinting
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : const Text(
-                            'Test Print',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                child: Text(
+                  'DEFAULT',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert_rounded,
+              color: AppColors.fontSecondaryColor,
+            ),
+            onSelected: (value) {
+              if (value == 'use')
+                _fillFormFromPrinter(printer);
+              else if (value == 'default')
+                _setAsDefaultPrinter(printer);
+              else if (value == 'delete')
+                _deletePrinter(printer);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'use', child: Text('Use')),
+              if (!printer.isDefault)
+                const PopupMenuItem(
+                  value: 'default',
+                  child: Text('Set as Default'),
+                ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

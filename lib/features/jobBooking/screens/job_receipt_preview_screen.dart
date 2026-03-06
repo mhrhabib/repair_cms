@@ -667,6 +667,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
             iconColor: AppColors.primary,
             size: 24.sp,
           ),
+          SizedBox(width: 8),
         ],
       ),
       body: Container(

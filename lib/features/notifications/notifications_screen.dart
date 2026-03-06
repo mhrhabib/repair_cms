@@ -44,9 +44,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.kBg,
       appBar: CupertinoNavigationBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.kBg,
         border: null,
         leading: CustomNavButton(
           onPressed: () {
@@ -88,12 +88,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             }
             if (state is NotificationError) {
               debugPrint('❌ [NotificationsScreen] Error: ${state.message}');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              showCustomToast(state.message, isError: true);
             }
           } catch (e) {
             debugPrint('❌ [NotificationsScreen] Error in listener: $e');
@@ -240,7 +235,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: notification.isRead! ? Colors.white : Color(0xFFCDE3FF),
+        color: notification.isRead! ? AppColors.whiteColor : AppColors.kBg,
         // borderRadius: BorderRadius.circular(12),
         //boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
@@ -301,9 +296,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   debugPrint(
                     '✅ [NotificationsScreen] Marking notification as read',
                   );
-                  setState(() {
-                    notification.isRead = true;
-                  });
+                  final userId = storage.read('userId') ?? '';
+                  final notificationId = notification.sId ?? '';
+
+                  if (notificationId.isNotEmpty &&
+                      userId.toString().isNotEmpty) {
+                    context.read<NotificationCubit>().markAsRead(
+                      notificationId: notificationId,
+                      userId: userId.toString(),
+                    );
+                  }
                 }
               } catch (e) {
                 debugPrint('❌ [NotificationsScreen] Error in popup menu: $e');
@@ -344,7 +346,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         );
       default:
         return const Icon(
-          Icons.notifications_none,
+          SolarIconsOutline.bell,
           size: 20,
           color: Colors.black,
         );
@@ -437,13 +439,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       userId: userId.toString(),
                                     );
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Notification deleted'),
-                                      backgroundColor: Colors.green,
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
+                                  showCustomToast('Notification deleted');
+                                 
                                 }
                               }
                             } catch (e) {
@@ -451,14 +448,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 '❌ [NotificationsScreen] Error deleting notification: $e',
                               );
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Failed to delete notification',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
+                                showCustomToast('Failed to delete notification', isError: true);
                               }
                             }
                           },
@@ -547,12 +537,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               n.isRead = true;
                             }
                           });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('All notifications marked as read'),
-                              backgroundColor: Color(0xFF4A90E2),
-                            ),
-                          );
+                          showCustomToast('All notifications marked as read');
+                           
                         }
                       } catch (e) {
                         debugPrint(
@@ -659,12 +645,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   setState(() {
                     _notifications.clear();
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('All notifications deleted'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  showCustomToast('All notifications deleted');
                 }
               } catch (e) {
                 debugPrint('❌ [NotificationsScreen] Error deleting all: $e');

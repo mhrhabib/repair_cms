@@ -9,6 +9,7 @@ import 'package:repair_cms/features/notifications/models/notificaiton_model.dart
 abstract class NotificationRepository {
   Future<List<Notifications>> getNotifications({required String userId});
   Future<void> deleteNotification({required String notificationId});
+  Future<void> markAsRead({required String notificationId});
 }
 
 class NotificationRepositoryImpl implements NotificationRepository {
@@ -16,10 +17,14 @@ class NotificationRepositoryImpl implements NotificationRepository {
   Future<List<Notifications>> getNotifications({required String userId}) async {
     try {
       debugPrint('🚀 [NotificationRepository] Fetching notifications list');
-      debugPrint('   📍 URL: ${ApiEndpoints.getAllNotifications.replaceAll('<id>', userId)}');
+      debugPrint(
+        '   📍 URL: ${ApiEndpoints.getAllNotifications.replaceAll('<id>', userId)}',
+      );
       debugPrint('   👤 User ID: $userId');
 
-      dio.Response response = await BaseClient.get(url: ApiEndpoints.getAllNotifications.replaceAll('<id>', userId));
+      dio.Response response = await BaseClient.get(
+        url: ApiEndpoints.getAllNotifications.replaceAll('<id>', userId),
+      );
 
       debugPrint('✅ [NotificationRepository] Notifications response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');
@@ -34,24 +39,37 @@ class NotificationRepositoryImpl implements NotificationRepository {
         }
 
         if (responseData is List) {
-          final notifications = (responseData).map((json) => Notifications.fromJson(json)).toList();
+          final notifications = (responseData)
+              .map((json) => Notifications.fromJson(json))
+              .toList();
           debugPrint('   📦 Parsed ${notifications.length} notifications');
           return notifications;
         } else if (responseData is Map) {
           final data = responseData;
-          if (data.containsKey('notifications') && data['notifications'] is List) {
-            final notifications = (data['notifications'] as List).map((json) => Notifications.fromJson(json)).toList();
-            debugPrint('   📦 Parsed ${notifications.length} notifications from "notifications" key');
+          if (data.containsKey('notifications') &&
+              data['notifications'] is List) {
+            final notifications = (data['notifications'] as List)
+                .map((json) => Notifications.fromJson(json))
+                .toList();
+            debugPrint(
+              '   📦 Parsed ${notifications.length} notifications from "notifications" key',
+            );
             return notifications;
           } else if (data.containsKey('data') && data['data'] is List) {
-            final notifications = (data['data'] as List).map((json) => Notifications.fromJson(json)).toList();
-            debugPrint('   📦 Parsed ${notifications.length} notifications from "data" key');
+            final notifications = (data['data'] as List)
+                .map((json) => Notifications.fromJson(json))
+                .toList();
+            debugPrint(
+              '   📦 Parsed ${notifications.length} notifications from "data" key',
+            );
             return notifications;
           }
         }
 
         debugPrint('   ⚠️ Unexpected response format: $responseData');
-        throw NotificationException(message: 'Unexpected response format from server');
+        throw NotificationException(
+          message: 'Unexpected response format from server',
+        );
       } else {
         throw NotificationException(
           message: 'Failed to load notifications: ${response.statusCode}',
@@ -63,7 +81,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
       debugPrint('   💥 Error: ${e.message}');
       debugPrint('   📍 Type: ${e.type}');
       debugPrint('   🔧 Response: ${e.response?.data}');
-      throw NotificationException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw NotificationException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e, stackTrace) {
       debugPrint('💥 [NotificationRepository] Unexpected error:');
       debugPrint('   💥 Error: $e');
@@ -76,14 +97,18 @@ class NotificationRepositoryImpl implements NotificationRepository {
   Future<void> deleteNotification({required String notificationId}) async {
     try {
       debugPrint('🚀 [NotificationRepository] Deleting notification');
-      debugPrint('   📍 URL: ${ApiEndpoints.deleteNotification.replaceAll('<id>', notificationId)}');
+      debugPrint(
+        '   📍 URL: ${ApiEndpoints.deleteNotification.replaceAll('<id>', notificationId)}',
+      );
       debugPrint('   🗑️ Notification ID: $notificationId');
 
       dio.Response response = await BaseClient.delete(
         url: ApiEndpoints.deleteNotification.replaceAll('<id>', notificationId),
       );
 
-      debugPrint('✅ [NotificationRepository] Delete notification response received:');
+      debugPrint(
+        '✅ [NotificationRepository] Delete notification response received:',
+      );
       debugPrint('   📊 Status Code: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
@@ -100,9 +125,56 @@ class NotificationRepositoryImpl implements NotificationRepository {
       debugPrint('   💥 Error: ${e.message}');
       debugPrint('   📍 Type: ${e.type}');
       debugPrint('   🔧 Response: ${e.response?.data}');
-      throw NotificationException(message: 'Network error: ${e.message}', statusCode: e.response?.statusCode);
+      throw NotificationException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e, stackTrace) {
       debugPrint('💥 [NotificationRepository] Unexpected error during delete:');
+      debugPrint('   💥 Error: $e');
+      debugPrint('   📋 Stack: $stackTrace');
+      throw NotificationException(message: 'Unexpected error: $e');
+    }
+  }
+
+  @override
+  Future<void> markAsRead({required String notificationId}) async {
+    try {
+      debugPrint('🚀 [NotificationRepository] Marking notification as read');
+      debugPrint(
+        '   📍 URL: ${ApiEndpoints.markNotificationAsRead.replaceAll('<id>', notificationId)}',
+      );
+      debugPrint('   🔔 Notification ID: $notificationId');
+
+      dio.Response response = await BaseClient.patch(
+        url: ApiEndpoints.markNotificationAsRead.replaceAll('<id>', notificationId),
+      );
+
+      debugPrint(
+        '✅ [NotificationRepository] Mark as read response received:',
+      );
+      debugPrint('   📊 Status Code: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint('   ✅ Notification marked as read successfully');
+        return;
+      } else {
+        throw NotificationException(
+          message: 'Failed to mark notification as read: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint('🌐 [NotificationRepository] DioException during mark as read:');
+      debugPrint('   💥 Error: ${e.message}');
+      debugPrint('   📍 Type: ${e.type}');
+      debugPrint('   🔧 Response: ${e.response?.data}');
+      throw NotificationException(
+        message: 'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('💥 [NotificationRepository] Unexpected error during mark as read:');
       debugPrint('   💥 Error: $e');
       debugPrint('   📋 Stack: $stackTrace');
       throw NotificationException(message: 'Unexpected error: $e');
@@ -117,5 +189,6 @@ class NotificationException implements Exception {
   NotificationException({required this.message, this.statusCode});
 
   @override
-  String toString() => 'NotificationException: $message${statusCode != null ? ' ($statusCode)' : ''}';
+  String toString() =>
+      'NotificationException: $message${statusCode != null ? ' ($statusCode)' : ''}';
 }

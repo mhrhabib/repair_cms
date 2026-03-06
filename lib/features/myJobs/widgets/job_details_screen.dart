@@ -92,14 +92,24 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               if (_currentJob != null)
                 return _UnifiedJobDetails(job: _currentJob!);
               if (state is JobLoading)
-                return Center(child: CupertinoActivityIndicator(radius: 16.r));
+                return Center(
+                  child: CupertinoActivityIndicator(
+                    radius: 16.r,
+                    color: Colors.blue,
+                  ),
+                );
               if (state is JobDetailSuccess) {
                 _currentJob = state.job;
                 return _UnifiedJobDetails(job: state.job);
               }
               if (state is JobError)
                 return Center(child: Text('Error: ${state.message}'));
-              return Center(child: CupertinoActivityIndicator(radius: 16.r));
+              return Center(
+                child: CupertinoActivityIndicator(
+                  radius: 16.r,
+                  color: Colors.blue,
+                ),
+              );
             },
           ),
         ),
@@ -588,26 +598,96 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   void _deleteNote(InternalNote note) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete Note'),
-        content: const Text('Are you sure you want to delete this note?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60.w,
+                height: 60.h,
+                decoration: BoxDecoration(
+                  color: AppColors.warningColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  SolarIconsOutline.trashBin2,
+                  size: 30.sp,
+                  color: AppColors.warningColor,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'Delete Note?',
+                style: AppTypography.fontSize20.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.fontMainColor,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'Are you sure you want to delete this note? This action cannot be undone.',
+                style: AppTypography.fontSize14.copyWith(
+                  color: AppColors.lightFontColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: AppTypography.fontSize14.copyWith(
+                          color: AppColors.lightFontColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.read<JobCubit>().deleteJobNote(
+                          jobId: widget.job.data?.sId ?? '',
+                          noteId: note.id ?? '',
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.warningColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: Text(
+                        'Delete',
+                        style: AppTypography.fontSize14.copyWith(
+                          color: AppColors.whiteColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<JobCubit>().deleteJobNote(
-                jobId: widget.job.data?.sId ?? '',
-                noteId: note.id ?? '',
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -729,26 +809,96 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   void _deleteFile(String filePath) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete File'),
-        content: const Text('Are you sure?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60.w,
+                height: 60.h,
+                decoration: BoxDecoration(
+                  color: AppColors.warningColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  SolarIconsOutline.trashBin2,
+                  size: 30.sp,
+                  color: AppColors.warningColor,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'Delete File?',
+                style: AppTypography.fontSize20.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.fontMainColor,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'Are you sure you want to delete this file? This action cannot be undone.',
+                style: AppTypography.fontSize14.copyWith(
+                  color: AppColors.lightFontColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: AppTypography.fontSize14.copyWith(
+                          color: AppColors.lightFontColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.read<JobCubit>().deleteJobFile(
+                          jobId: widget.job.data?.sId ?? '',
+                          filePath: filePath,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.warningColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: Text(
+                        'Delete',
+                        style: AppTypography.fontSize14.copyWith(
+                          color: AppColors.whiteColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<JobCubit>().deleteJobFile(
-                jobId: widget.job.data?.sId ?? '',
-                filePath: filePath,
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1374,27 +1524,8 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   }
 
   Widget _loadingOverlay() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: Colors.black.withValues(alpha: 0.15),
-      child: Center(
-        child: Container(
-          padding: EdgeInsets.all(24.r),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: CupertinoActivityIndicator(radius: 16.r),
-        ),
-      ),
+    return Center(
+      child: CupertinoActivityIndicator(radius: 16.r, color: Colors.blue),
     );
   }
 
@@ -2212,7 +2343,10 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               SizedBox(
                 width: 18.w,
                 height: 18.h,
-                child: CupertinoActivityIndicator(radius: 16.r),
+                child: CupertinoActivityIndicator(
+                  radius: 16.r,
+                  color: Colors.blue,
+                ),
               )
             else ...[
               CircleAvatar(
@@ -2369,9 +2503,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                           ],
                         ),
                         child: const Icon(
-                          Icons.delete_outline,
+                          SolarIconsOutline.trashBin2,
                           size: 16,
-                          color: Color(0xFFFF3B30),
+                          color: AppColors.fontSecondaryColor,
                         ),
                       ),
                     ),
@@ -2474,7 +2608,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     onTap: () => _deleteNote(note),
                     child: Row(
                       children: [
-                        Icon(Icons.delete, size: 14.r, color: Colors.red),
+                        Icon(
+                          SolarIconsOutline.trashBin2,
+                          size: 14.r,
+                          color: Colors.red,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
                           'Delete',
@@ -2692,7 +2830,7 @@ class _NoteSheetState extends State<_NoteSheet> {
                             width: 20.w,
                             height: 20.h,
                             child: CupertinoActivityIndicator(
-                              color: Colors.white,
+                              color: Colors.blue,
                               radius: 16.r,
                             ),
                           )

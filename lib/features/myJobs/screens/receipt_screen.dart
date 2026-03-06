@@ -955,27 +955,33 @@ class ReceiptScreen extends StatelessWidget {
     final Color figmaBlue = const Color(0xFF007AFF);
 
     return Scaffold(
-      backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
-        leading: CustomNavButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: CupertinoIcons.back,
-        ),
-        middle: Text(
-          'Job Receipt',
-          style: TextStyle(
-            fontSize: 17.sp,
-            fontWeight: FontWeight.w600,
-            color: CupertinoColors.label.resolveFrom(context),
+      backgroundColor: AppColors.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.scaffoldBackgroundColor,
+        elevation: 0,
+        centerTitle: true,
+        leading: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+          child: CustomNavButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icons.arrow_back_ios_new,
           ),
         ),
-        trailing: CustomNavButton(
-          onPressed: () => _showPrinterSelection(context),
-          icon: CupertinoIcons.printer,
-          iconColor: figmaBlue,
-          size: 24.r,
+        title: Text(
+          'Job Receipt',
+          style: AppTypography.sfProHeadLineTextStyle22,
         ),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 10.w),
+            child: CustomNavButton(
+              onPressed: () => _showPrinterSelection(context),
+              icon: CupertinoIcons.printer,
+              iconColor: figmaBlue,
+              size: 24.r,
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Center(
@@ -984,10 +990,11 @@ class ReceiptScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 800),
             decoration: BoxDecoration(
               color: Colors.white,
+              borderRadius: BorderRadius.circular(20.r),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
+                  blurRadius: 15,
                   offset: const Offset(0, 5),
                 ),
               ],

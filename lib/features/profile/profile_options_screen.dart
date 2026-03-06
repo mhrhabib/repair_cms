@@ -157,7 +157,7 @@ class ProfileOptionsScreen extends StatelessWidget {
                 ),
                 child: Icon(icon, color: iconColor, size: 24.sp),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
@@ -169,7 +169,7 @@ class ProfileOptionsScreen extends StatelessWidget {
                 ),
               ),
               const Icon(
-                Icons.chevron_right,
+                Icons.arrow_forward_ios,
                 color: AppColors.fontMainColor,
                 size: 24,
               ),

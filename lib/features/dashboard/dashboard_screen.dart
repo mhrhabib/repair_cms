@@ -8,6 +8,9 @@ import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
 import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
+import 'package:repair_cms/features/notifications/notifications_screen.dart';
+import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
+import 'package:repair_cms/features/profile/profile_options_screen.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/screens/quick_task_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -31,6 +34,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
+  String? _avatarSignedUrl;
+  String? _lastAvatarUrl;
 
   @override
   void initState() {
@@ -56,6 +61,8 @@ class _DashboardScreenState extends State<DashboardScreen>
           context.read<QuickTaskCubit>().getTodos();
           // Fetch company and receipt data
           _fetchAndStoreCompanyAndReceiptData();
+          // Load user profile to ensure profile image is updated
+          context.read<ProfileCubit>().getUserProfile();
         }
       });
     } catch (e) {
@@ -73,6 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       );
       _loadAllDashboardData();
       context.read<QuickTaskCubit>().getTodos();
+      context.read<ProfileCubit>().getUserProfile();
     }
   }
 
@@ -89,6 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         );
         _loadAllDashboardData();
         context.read<QuickTaskCubit>().getTodos();
+        context.read<ProfileCubit>().getUserProfile();
       });
     }
   }
@@ -394,14 +403,14 @@ class _DashboardScreenState extends State<DashboardScreen>
               children: [
                 Column(
                   children: [
-                    SizedBox(height: 28.h),
+                    // SizedBox(height: 28.h),
                     Expanded(
                       child: SingleChildScrollView(
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(height: 12.h),
+                            // SizedBox(height: 12.h),
                             // Greeting Section
                             _buildGreetingSection(),
                             SizedBox(height: 12.h),
@@ -427,21 +436,21 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
 
                 // Enhanced Search Widget positioned at top
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: EnhancedSearchWidget(
-                    onSearchChanged: (query) {
-                      // Handle search query changes
-                      debugPrint('Search query: $query');
-                    },
-                    onQRScanPressed: () {
-                      // Handle QR scan button press
-                      _showQRScanDialog();
-                    },
-                  ),
-                ),
+                // Positioned(
+                //   top: 0,
+                //   left: 0,
+                //   right: 0,
+                //   child: EnhancedSearchWidget(
+                //     onSearchChanged: (query) {
+                //       // Handle search query changes
+                //       debugPrint('Search query: $query');
+                //     },
+                //     onQRScanPressed: () {
+                //       // Handle QR scan button press
+                //       _showQRScanDialog();
+                //     },
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -458,25 +467,162 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              'Good Morning, $firstName',
-              textHeightBehavior: const TextHeightBehavior(
-                applyHeightToFirstAscent: false,
-                applyHeightToLastDescent: false,
+        FittedBox(
+          child: Row(
+            children: [
+              Text(
+                'Good Morning, $firstName',
+                textHeightBehavior: const TextHeightBehavior(
+                  applyHeightToFirstAscent: false,
+                  applyHeightToLastDescent: false,
+                ),
+                style: AppTypography.fontSize22.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              style: AppTypography.fontSize22.copyWith(
-                fontWeight: FontWeight.w500,
+              SizedBox(width: 8.w),
+              Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.rotationY(math.pi),
+                child: Text('👋', style: TextStyle(fontSize: 24.sp)),
               ),
-            ),
-            SizedBox(width: 8.w),
-            Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.rotationY(math.pi),
-              child: Text('👋', style: TextStyle(fontSize: 24.sp)),
-            ),
-          ],
+              Row(
+                children: [
+                  // Search field will be handled by EnhancedSearchWidget overlay
+                  SizedBox(width: 12.w),
+                  Stack(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => NotificationsScreen(),
+                            ),
+                          );
+                        },
+                        child: Icon(
+                          SolarIconsBold.bell,
+                          color: Colors.grey.shade600,
+                          size: 24.sp,
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8.w,
+                          height: 8.h,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(width: 12.w),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ProfileOptionsScreen(),
+                        ),
+                      );
+                    },
+                    child: BlocBuilder<ProfileCubit, ProfileStates>(
+                      builder: (context, state) {
+                        String? avatarUrl;
+                        bool isLoading = false;
+
+                        // Extract avatar URL from state
+                        if (state is ProfileLoaded) {
+                          avatarUrl = state.user.avatar;
+
+                          // Fetch signed URL if we have an S3 path and haven't fetched it yet, or if the avatar path changed
+                          if (avatarUrl != null &&
+                              avatarUrl.isNotEmpty &&
+                              !avatarUrl.startsWith('http') &&
+                              (_avatarSignedUrl == null ||
+                                  _lastAvatarUrl != avatarUrl)) {
+                            _lastAvatarUrl = avatarUrl;
+
+                            // Fetch signed URL in background
+                            context
+                                .read<ProfileCubit>()
+                                .getImageUrl(avatarUrl)
+                                .then((signedUrl) {
+                                  if (mounted) {
+                                    setState(() {
+                                      _avatarSignedUrl = signedUrl;
+                                    });
+                                  }
+                                })
+                                .catchError((error) {
+                                  debugPrint(
+                                    'Failed to fetch avatar signed URL: $error',
+                                  );
+                                });
+                          }
+                        } else if (state is ProfileLoading) {
+                          isLoading = true;
+                        }
+
+                        return Stack(
+                          children: [
+                            // Profile Avatar
+                            CircleAvatar(
+                              radius: 16.r,
+                              backgroundImage:
+                                  _avatarSignedUrl != null &&
+                                      _avatarSignedUrl!.isNotEmpty
+                                  ? NetworkImage(_avatarSignedUrl!)
+                                  : (avatarUrl != null &&
+                                            avatarUrl.startsWith('http')
+                                        ? NetworkImage(avatarUrl)
+                                        : const AssetImage(
+                                                'assets/icon/icon.png',
+                                              )
+                                              as ImageProvider),
+                              backgroundColor: Colors.grey.shade300,
+                              onBackgroundImageError: (exception, stackTrace) {
+                                debugPrint(
+                                  'Profile image load error: $exception',
+                                );
+                              },
+                            ),
+
+                            // Loading indicator overlay
+                            if (isLoading)
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 12.r,
+                                      height: 12.r,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         Text(
           DateFormat('dd.MMM.yyyy').format(DateTime.now()),
@@ -510,7 +656,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
               color: AppColors.whiteColor,
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(28.r),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -549,7 +695,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.whiteColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8.r),
+                    borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(color: AppColors.borderColor),
                   ),
                   child: Row(
@@ -610,7 +756,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(28.r),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -629,7 +775,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     height: 40.h,
                     decoration: BoxDecoration(
                       color: const Color(0xFFC507FF),
-                      borderRadius: BorderRadius.circular(8.r),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Icon(
                       SolarIconsBold.suitcaseTag,
@@ -642,7 +788,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: AppColors.borderColor,
-                      borderRadius: BorderRadius.circular(8.r),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: GestureDetector(
                       onTap: _showDateRangePicker,
@@ -657,7 +803,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           ),
                           SizedBox(width: 2.w),
                           Container(
-                            height: 28.h,
+                            height: 25.h,
                             color: const Color(0x898FA0B2),
                             width: 2.w,
                           ),

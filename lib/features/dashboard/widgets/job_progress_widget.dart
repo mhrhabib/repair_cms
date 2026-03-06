@@ -30,7 +30,7 @@ class JobProgressWidget extends StatelessWidget {
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(28.r),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),

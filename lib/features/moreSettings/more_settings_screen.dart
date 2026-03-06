@@ -156,14 +156,7 @@ class MoreSettingsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text(
-          'More',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text('More', style: AppTypography.sfProHeadLineTextStyle22),
         centerTitle: true,
         leading: Container(), // Empty container to hide back button
       ),
@@ -173,8 +166,7 @@ class MoreSettingsScreen extends StatelessWidget {
           children: [
             // Printer Settings
             _buildSettingsItem(
-              icon: SolarIconsOutline.printer,
-              iconColor: Colors.blue,
+              iconsWidget: Icon(SolarIconsOutline.printer, color: Colors.blue),
               title: 'Printer Settings',
               onTap: () {
                 try {
@@ -207,8 +199,11 @@ class MoreSettingsScreen extends StatelessWidget {
 
             // Label Content
             _buildSettingsItem(
-              icon: SolarIconsOutline.laptop2,
-              iconColor: Colors.blue,
+              iconsWidget: Image.asset(
+                'assets/icon/label.png',
+                width: 24,
+                height: 24,
+              ),
               title: 'Label Content',
               onTap: () {
                 try {
@@ -239,8 +234,7 @@ class MoreSettingsScreen extends StatelessWidget {
 
             // Notification Settings
             _buildSettingsItem(
-              icon: SolarIconsOutline.bell,
-              iconColor: Colors.blue,
+              iconsWidget: Icon(SolarIconsOutline.bell, color: Colors.blue),
               title: 'Notification Settings',
               onTap: () {
                 try {
@@ -273,8 +267,7 @@ class MoreSettingsScreen extends StatelessWidget {
 
             // Debug Logs - For remote troubleshooting
             _buildSettingsItem(
-              icon: SolarIconsOutline.bug,
-              iconColor: Colors.purple,
+              iconsWidget: Icon(SolarIconsOutline.bug, color: Colors.purple),
               title: 'Debug Logs',
               subtitle: 'Printer troubleshooting',
               onTap: () {
@@ -309,8 +302,8 @@ class MoreSettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSettingsItem({
-    required IconData icon,
-    required Color iconColor,
+    required Widget iconsWidget,
+
     required String title,
     String? subtitle,
     required VoidCallback onTap,
@@ -329,34 +322,34 @@ class MoreSettingsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: iconColor, size: 24),
+                child: iconsWidget,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
+                      style: AppTypography.sfProText15.copyWith(
+                        fontSize: 16.sp,
+                        color: AppColors.fontMainColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     if (subtitle != null)
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
+                        style: AppTypography.sfProText15.copyWith(
                           fontSize: 12,
+                          color: AppColors.fontMainColor,
                         ),
                       ),
                   ],
                 ),
               ),
               const Icon(
-                Icons.chevron_right,
+                Icons.arrow_forward_ios,
                 color: AppColors.fontMainColor,
                 size: 24,
               ),
@@ -399,7 +392,7 @@ class MoreSettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.red, size: 24),
+              const Icon(Icons.arrow_forward_ios, color: Colors.red, size: 24),
             ],
           ),
         ),

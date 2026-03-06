@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -7,6 +8,7 @@ import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
 import 'package:repair_cms/features/messeges/models/sub_user_model.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final String conversationId;
@@ -492,38 +494,49 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               onPressed: () => Navigator.of(context).pop(),
               icon: CupertinoIcons.back,
             ),
+            centerTitle: true,
             title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   participantName,
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  style: AppTypography.sfProHeadLineTextStyle22.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.fontMainColor,
+                    fontSize: 20.sp,
                   ),
                 ),
                 Text(
                   'Online',
-                  style: TextStyle(
-                    color: Colors.green[600],
-                    fontSize: 12,
+                  style: AppTypography.sfProHeadLineTextStyle22.copyWith(
                     fontWeight: FontWeight.w400,
+                    fontSize: 12.sp,
+                    color: AppColors.fontMainColor,
                   ),
                 ),
               ],
             ),
             actions: [
-              CustomNavButton(
-                onPressed: () {},
-                icon: Icons.info_outline,
-                iconColor: AppColors.kBlue,
+              SizedBox(
+                height: 30.h,
+                width: 30.w,
+                child: CustomNavButton(
+                  onPressed: () {},
+                  icon: SolarIconsOutline.mentionCircle,
+                  iconColor: AppColors.kBg,
+                  backgroundColor: AppColors.kBlue,
+                ),
               ),
               const SizedBox(width: 8),
             ],
           ),
           body: state is MessageLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                  child: CupertinoActivityIndicator(
+                    color: Colors.blue,
+                    radius: 16.r,
+                  ),
+                )
               : Column(
                   children: [
                     Expanded(
@@ -628,24 +641,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
+          SizedBox(
             width: 100,
             height: 100,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF4A90E2).withValues(alpha: 0.3),
-                  const Color(0xFF4A90E2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Icon(
-              Icons.chat_bubble_outline,
-              size: 50,
-              color: Colors.white,
+
+            child: Image.asset(
+              "assets/icon/Dialog 2.png",
+              height: 50,
+              width: 50,
             ),
           ),
           const SizedBox(height: 24),
@@ -675,8 +678,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   Widget _buildMessageBubble(Conversation message, bool isMe) {
     final messageText = message.message?.message ?? '';
     final messageType = message.message?.messageType ?? 'standard';
-    final hasAttachments =
-        false; // Conversation model doesn't have attachments field
+    final hasAttachments = false;
     final hasQuotation =
         messageType == 'quotation' && message.message?.quotation != null;
     final hasComment =
@@ -685,112 +687,95 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: isMe
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: isMe
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
+          if (!isMe) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: const Color(0xFF4A90E2),
+              child: Text(
+                message.sender?.name?.substring(0, 1).toUpperCase() ?? '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Column(
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
-                if (!isMe) ...[
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: const Color(0xFF4A90E2),
+                if (!isMe)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4, left: 4),
                     child: Text(
-                      message.sender?.name?.substring(0, 1).toUpperCase() ??
-                          '?',
+                      message.sender?.name ?? 'Unknown',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.fontSecondaryColor,
+                      ),
+                    ),
+                  ),
+                if (isMe)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4, right: 4),
+                    child: Text(
+                      'Jake Jung', // Fallback for me as seen in image
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.fontSecondaryColor,
+                      ),
+                    ),
+                  ),
+                if (hasComment) ...[
+                  if (message.comments != null && message.comments!.isNotEmpty)
+                    for (var c in message.comments!) _buildCommentMessage(c)
+                  else if (message.comment != null)
+                    _buildCommentMessage(message.comment!),
+                ] else if (hasQuotation)
+                  _buildQuotationCard(message.message!.quotation!, isMe)
+                else
+                  _buildStandardMessage(
+                    messageText,
+                    messageType,
+                    hasAttachments,
+                    message,
+                    isMe,
+                  ),
+              ],
+            ),
+          ),
+          if (isMe) ...[
+            const SizedBox(width: 8),
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: const Color(0xFF4A90E2),
+              backgroundImage: storage.read('avatar') != null
+                  ? NetworkImage(storage.read('avatar'))
+                  : null,
+              child: storage.read('avatar') == null
+                  ? Text(
+                      'M', // Fallback
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Column(
-                  crossAxisAlignment: isMe
-                      ? CrossAxisAlignment.end
-                      : CrossAxisAlignment.start,
-                  children: [
-                    if (!isMe)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          message.sender?.name ?? 'Unknown',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    if (hasComment) ...[
-                      if (message.comments != null &&
-                          message.comments!.isNotEmpty)
-                        for (var c in message.comments!) _buildCommentMessage(c)
-                      else if (message.comment != null)
-                        _buildCommentMessage(message.comment!),
-                    ] else if (hasQuotation)
-                      _buildQuotationCard(message.message!.quotation!, isMe)
-                    else
-                      _buildStandardMessage(
-                        messageText,
-                        messageType,
-                        hasAttachments,
-                        message,
-                        isMe,
-                      ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (hasComment) ...[
-                          Icon(Icons.lock, size: 14, color: Colors.yellow[700]),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(
-                          messageText.isNotEmpty || hasQuotation || hasComment
-                              ? (messageText.isNotEmpty || hasComment
-                                    ? 'Today'
-                                    : 'Today')
-                              : '',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 11,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatTimeOnly(_parseDateTime(message.createdAt)),
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 11,
-                          ),
-                        ),
-                        if (isMe) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            message.seen == true ? Icons.done_all : Icons.done,
-                            size: 12,
-                            color: message.seen == true
-                                ? const Color(0xFF4A90E2)
-                                : Colors.grey[400],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                    )
+                  : null,
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -803,68 +788,102 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     Conversation message,
     bool isMe,
   ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-      children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.7,
+    final timestamp = _formatTimeOnly(_parseDateTime(message.createdAt));
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.7,
+      ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+        decoration: BoxDecoration(
+          color: isMe ? const Color(0xFFDFEEFF) : const Color(0xFFE7E8EC),
+          borderRadius: BorderRadius.only(
+            topLeft: isMe ? const Radius.circular(16) : Radius.zero,
+            topRight: isMe ? Radius.zero : const Radius.circular(16),
+            bottomLeft: const Radius.circular(16),
+            bottomRight: const Radius.circular(16),
           ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isMe ? const Color(0xFFD6E8FF) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (messageType == 'comment')
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isMe
-                          ? Colors.white.withValues(alpha: 0.5)
-                          : Colors.orange[50],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Internal Comment',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isMe
-                            ? const Color(0xFF4A90E2)
-                            : Colors.orange[700],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                if (messageText.isNotEmpty)
-                  Text(
-                    messageText,
-                    style: TextStyle(
-                      color: isMe ? const Color(0xFF1E3A5F) : Colors.black87,
-                      fontSize: 14,
-                      height: 1.4,
-                    ),
-                  ),
-              ],
-            ),
+          ],
+          border: Border.all(
+            color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9),
+            width: 1,
           ),
         ),
-      ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (messageType == 'comment')
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isMe
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : Colors.orange[50],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Internal Comment',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isMe ? const Color(0xFF4A90E2) : Colors.orange[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            if (messageText.isNotEmpty)
+              Text(
+                messageText,
+                style: TextStyle(
+                  color: AppColors.fontMainColor,
+                  fontSize: 15.sp,
+                  height: 1.4,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Spacer(),
+                Text(
+                  'Today',
+                  style: TextStyle(
+                    color: AppColors.fontSecondaryColor.withValues(alpha: 0.6),
+                    fontSize: 11.sp,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  timestamp,
+                  style: TextStyle(
+                    color: AppColors.fontSecondaryColor.withValues(alpha: 0.6),
+                    fontSize: 11.sp,
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    message.seen == true ? Icons.done_all : Icons.done,
+                    size: 14.sp,
+                    color: message.seen == true
+                        ? AppColors.primary
+                        : AppColors.fontSecondaryColor.withValues(alpha: 0.4),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -966,82 +985,114 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   Widget _buildQuotationCard(Quotation quotation, bool isMe) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.85,
-      padding: const EdgeInsets.all(16),
+      width: MediaQuery.of(context).size.width * 0.75,
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isMe ? const Color(0xFFD6E8FF) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        color: isMe ? const Color(0xFFE0F2FE) : Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16.r),
+          bottomLeft: Radius.circular(16.r),
+          bottomRight: Radius.circular(16.r),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(
+          color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row
           Row(
             children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: isMe
+                      ? const Color(0xFFBAE6FD)
+                      : const Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  SolarIconsOutline.documentText,
+                  size: 16.sp,
+                  color: const Color(0xFF3B82F6),
+                ),
+              ),
+              SizedBox(width: 8.w),
               Text(
                 'Quotation',
-                style: TextStyle(
-                  fontSize: 15,
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
+                  color: const Color(0xFF1E293B),
                 ),
               ),
               const Spacer(),
               Text(
                 _formatTimeOnly(_parseDateTime(quotation.createdAt)),
-                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                style: GoogleFonts.roboto(
+                  fontSize: 12.sp,
+                  color: const Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 16.h),
+
           // Service header row
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 flex: 3,
                 child: Text(
-                  'Service',
-                  style: TextStyle(
-                    fontSize: 12,
+                  'SERVICE',
+                  style: GoogleFonts.roboto(
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black54,
+                    color: const Color(0xFF94A3B8),
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
-              const Expanded(
+              Expanded(
                 flex: 1,
                 child: Text(
-                  'Unit',
+                  'UNIT',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: GoogleFonts.roboto(
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black54,
+                    color: const Color(0xFF94A3B8),
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
-              const Expanded(
+              Expanded(
                 flex: 1,
                 child: Text(
-                  'Price',
+                  'PRICE',
                   textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: GoogleFonts.roboto(
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black54,
+                    color: const Color(0xFF94A3B8),
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
+
           // Service details
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1053,19 +1104,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   children: [
                     Text(
                       quotation.quotationName ?? 'Service',
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: GoogleFonts.roboto(
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
                     if (quotation.text != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 4),
+                        padding: EdgeInsets.only(top: 4.h),
                         child: Text(
                           quotation.text!,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
+                          style: GoogleFonts.roboto(
+                            fontSize: 13.sp,
+                            color: const Color(0xFF64748B),
+                            height: 1.4,
                           ),
                         ),
                       ),
@@ -1075,9 +1128,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               Expanded(
                 flex: 1,
                 child: Text(
-                  '${quotation.serviceItemList?.length ?? 0} items',
+                  '${quotation.serviceItemList?.length ?? 0}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  style: GoogleFonts.roboto(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF475569),
+                  ),
                 ),
               ),
               Expanded(
@@ -1085,148 +1142,176 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 child: Text(
                   '€${((quotation.subTotal ?? 0) / 100).toStringAsFixed(2)}',
                   textAlign: TextAlign.right,
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  style: GoogleFonts.roboto(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1E293B),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey[300]),
-          const SizedBox(height: 12),
+          SizedBox(height: 16.h),
+
+          // Divider
+          Container(height: 1, color: const Color(0xFFE2E8F0)),
+          SizedBox(height: 16.h),
+
           // Subtotal and VAT
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Subtotal excl. VAT',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w400,
+                ),
               ),
               Text(
                 '€${((quotation.subTotal ?? 0) / 100).toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 12, color: Colors.black87),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF475569),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 6.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'VAT',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w400,
+                ),
               ),
               Text(
                 '€${((quotation.vat?.toInt() ?? 0) / 100).toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 12, color: Colors.black87),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF475569),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 12.h),
+
           // Total amount
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Total Amount',
-                style: TextStyle(
-                  fontSize: 14,
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: const Color(0xFF0F172A),
                 ),
               ),
               Text(
                 '€${((quotation.total?.toInt() ?? 0) / 100).toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: const Color(0xFF3B82F6), // Accent color for total
                 ),
               ),
             ],
           ),
-          if (quotation.accepted == true) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Color(0xFF4CAF50),
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Quotation Accepted',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2E7D32),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          if (quotation.paymentStatus != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                color: quotation.paymentStatus == 'Paid'
-                    ? const Color(0xFFE8F5E9)
-                    : const Color(0xFFFFEBEE),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    quotation.paymentStatus == 'Paid'
-                        ? Icons.credit_card
-                        : Icons.credit_card_off,
-                    color: quotation.paymentStatus == 'Paid'
-                        ? const Color(0xFF4CAF50)
-                        : const Color(0xFFE53935),
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Online Payment Status',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
+
+          if (quotation.accepted == true ||
+              quotation.paymentStatus != null) ...[
+            SizedBox(height: 16.h),
+            Container(height: 1, color: const Color(0xFFE2E8F0)),
+            SizedBox(height: 16.h),
+
+            // Status Tags
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: [
+                if (quotation.accepted == true)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
+                    padding: EdgeInsets.symmetric(
+                      vertical: 6.h,
+                      horizontal: 12.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      border: Border.all(color: const Color(0xFF86EFAC)),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          SolarIconsBold.checkCircle,
+                          color: const Color(0xFF16A34A),
+                          size: 14.sp,
+                        ),
+                        SizedBox(width: 6.w),
+                        Text(
+                          'Accepted',
+                          style: GoogleFonts.roboto(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF16A34A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (quotation.paymentStatus != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 6.h,
+                      horizontal: 12.w,
                     ),
                     decoration: BoxDecoration(
                       color: quotation.paymentStatus == 'Paid'
-                          ? const Color(0xFF4CAF50)
-                          : const Color(0xFFE53935),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      quotation.paymentStatus!,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                          ? const Color(0xFFDCFCE7)
+                          : const Color(0xFFFEE2E2),
+                      border: Border.all(
+                        color: quotation.paymentStatus == 'Paid'
+                            ? const Color(0xFF86EFAC)
+                            : const Color(0xFFFCA5A5),
                       ),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          quotation.paymentStatus == 'Paid'
+                              ? Icons.credit_card
+                              : Icons.credit_card_off,
+                          color: quotation.paymentStatus == 'Paid'
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFEF4444),
+                          size: 14.sp,
+                        ),
+                        SizedBox(width: 6.w),
+                        Text(
+                          'Payment: ${quotation.paymentStatus}',
+                          style: GoogleFonts.roboto(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: quotation.paymentStatus == 'Paid'
+                                ? const Color(0xFF16A34A)
+                                : const Color(0xFFEF4444),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
           ],
         ],
@@ -1235,75 +1320,98 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Widget _buildMessageInput(List<Conversation> currentMessages) {
-    // Compact single-line message input
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      color: Colors.transparent, // Background handled by individual components
       padding: EdgeInsets.only(
-        left: 8,
-        right: 8,
-        top: 8,
-        bottom: 8 + MediaQuery.of(context).padding.bottom,
+        left: 16,
+        right: 16,
+        top: 6,
+        bottom: 12 + MediaQuery.of(context).padding.bottom,
       ),
       child: Row(
         children: [
-          IconButton(
-            icon: Icon(Icons.add, color: Colors.grey[700], size: 22),
-            onPressed: _showAttachmentOptions,
+          // Separate circular add button
+          GestureDetector(
+            onTap: _showAttachmentOptions,
+            child: Container(
+              width: 44.r,
+              height: 44.r,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.add,
+                color: AppColors.fontMainColor.withValues(alpha: 0.7),
+                size: 24.sp,
+              ),
+            ),
           ),
+          const SizedBox(width: 12),
+          // Unified pill-shaped input bar
           Expanded(
             child: Container(
-              constraints: BoxConstraints(minHeight: 40, maxHeight: 120),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              height: 48.h,
               decoration: BoxDecoration(
-                color: _isInternalMode
-                    ? const Color(0xFF5B6B7D)
-                    : Colors.grey[100],
-                borderRadius: BorderRadius.circular(20),
+                color: _isInternalMode ? const Color(0xFF5B6B7D) : Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  const SizedBox(width: 20),
                   Expanded(
                     child: TextField(
                       controller: _messageController,
                       focusNode: _messageFocusNode,
                       style: TextStyle(
-                        color: _isInternalMode ? Colors.white : Colors.black87,
-                        fontSize: 14,
+                        color: _isInternalMode
+                            ? Colors.white
+                            : AppColors.fontMainColor,
+                        fontSize: 15.sp,
                       ),
                       decoration: InputDecoration(
                         hintText: _isInternalMode
-                            ? 'Internal message... @mention'
+                            ? 'Internal message...'
                             : 'Write a message...',
+                        hintStyle: TextStyle(
+                          color: _isInternalMode
+                              ? Colors.white70
+                              : AppColors.fontSecondaryColor.withValues(
+                                  alpha: 0.4,
+                                ),
+                          fontSize: 15.sp,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 12,
                         ),
                       ),
-                      maxLines: null,
-                      minLines: 1,
-                      keyboardType: TextInputType.multiline,
-                      textInputAction: TextInputAction.newline,
-                      //onSubmitted: (_) => _sendMessage(currentMessages),
+                      maxLines:
+                          1, // Keep it single line as per image or allow expansion? Image shows single line
                     ),
                   ),
                   IconButton(
                     icon: Icon(
-                      _isInternalMode ? Icons.lock : Icons.lock_open,
+                      _isInternalMode ? Icons.lock : Icons.lock_open_outlined,
                       color: _isInternalMode
                           ? Colors.yellow[700]
-                          : Colors.grey[600],
-                      size: 20,
+                          : AppColors.fontSecondaryColor.withValues(alpha: 0.6),
+                      size: 22.sp,
                     ),
                     onPressed: () {
                       setState(() {
@@ -1313,43 +1421,24 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           _showMentionSuggestions = false;
                         }
                       });
-                      // SnackbarDemo(
-                      //   message: _isInternalMode
-                      //       ? 'Internal mode ON - Message will be private'
-                      //       : 'Internal mode OFF - Message will be visible to all',
-                      // ).showCustomSnackbar(context);
                     },
                   ),
+                  // Vertical Divider
+                  Container(width: 1, height: 24.h, color: Colors.grey[300]),
+                  const SizedBox(width: 4),
                   IconButton(
                     icon: Icon(
-                      Icons.attach_file,
+                      Icons.send_rounded,
                       color: _isInternalMode
-                          ? Colors.white70
-                          : Colors.grey[600],
-                      size: 20,
+                          ? Colors.white
+                          : AppColors.fontSecondaryColor.withValues(alpha: 0.3),
+                      size: 22.sp,
                     ),
-                    onPressed: _showAttachmentOptions,
+                    onPressed: () => _sendMessage(currentMessages),
                   ),
+                  const SizedBox(width: 8),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: _isInternalMode
-                    ? [const Color(0xFF5B6B7D), const Color(0xFF404955)]
-                    : [const Color(0xFF4A90E2), const Color(0xFF357ABD)],
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.send, color: Colors.white, size: 20),
-              onPressed: () => _sendMessage(currentMessages),
-              padding: EdgeInsets.zero,
             ),
           ),
         ],

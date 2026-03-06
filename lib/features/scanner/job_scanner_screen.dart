@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 
 /// Job Scanner Screen - Scans QR/Barcode for Job IDs
 class JobScannerScreen extends StatefulWidget {
@@ -78,25 +79,29 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
     // Navigate to Job Details screen with the scanned job ID
     Navigator.pop(context); // Close scanner
 
-    // Show success message with job ID
-    // Example: context.go('/job-details/$code');
-    SnackbarDemo(
-      message: 'Job ID scanned: $code\nNavigate to job details manually',
-    ).showCustomSnackbar(context);
+    // Use MaterialPageRoute to navigate exactly like my_jobs_screen.dart
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: code)),
+    );
+
+    // Optional: Keep the snackbar if you still want to show a toast,
+    // or remove it since the screen transition might be obvious enough.
+    SnackbarDemo(message: 'Job ID scanned: $code').showCustomSnackbar(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
+      appBar: CupertinoNavigationBar(
         backgroundColor: Colors.black,
         leading: CustomNavButton(
           onPressed: () => Navigator.pop(context),
           icon: CupertinoIcons.back,
-          iconColor: Colors.white,
+          iconColor: Colors.black,
         ),
-        title: Text(
+        middle: Text(
           widget.isBarcodeMode ? 'Barcode Scanner' : 'QR Code Scanner',
           style: TextStyle(
             color: Colors.white,
@@ -104,16 +109,14 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              cameraController.torchEnabled ? Icons.flash_on : Icons.flash_off,
-              color: Colors.white,
-            ),
-            onPressed: () => cameraController.toggleTorch(),
+
+        trailing: IconButton(
+          icon: Icon(
+            cameraController.torchEnabled ? Icons.flash_on : Icons.flash_off,
+            color: Colors.white,
           ),
-        ],
+          onPressed: () => cameraController.toggleTorch(),
+        ),
       ),
       body: SafeArea(
         child: Stack(
@@ -220,10 +223,14 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
               final jobId = controller.text.trim();
               if (jobId.isNotEmpty) {
                 Navigator.pop(context);
-                // Example: context.go('/job-details/$jobId');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => JobDetailsScreen(jobId: jobId),
+                  ),
+                );
                 SnackbarDemo(
-                  message:
-                      'Job ID entered: $jobId\nNavigate to job details manually',
+                  message: 'Job ID entered: $jobId',
                 ).showCustomSnackbar(context);
               }
             },

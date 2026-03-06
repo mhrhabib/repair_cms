@@ -48,12 +48,12 @@ class JobCardWidget extends StatelessWidget {
                           ? intl.DateFormat('dd.MM.yyyy').format(job.dueDate!)
                           : intl.DateFormat('dd.MM.yyyy').format(job.createdAt),
                       style: GoogleFonts.roboto(
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                         color: const Color(0xFF64748B),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-                    SizedBox(width: 8.w),
+                    SizedBox(width: 2.w),
                     Text(
                       _getStatusText(job),
                       style: GoogleFonts.roboto(
@@ -116,35 +116,41 @@ class JobCardWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Employee Avatar
-                Container(
-                  width: 24.w,
-                  height: 24.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _getEmployeeInitial(),
-                      style: GoogleFonts.roboto(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24.w,
+                        height: 24.h,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _getEmployeeInitial(),
+                            style: GoogleFonts.roboto(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        _getEmployeeName(),
+                        style: GoogleFonts.roboto(
+                          fontSize: 14.sp,
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(width: 8.w),
-                Text(
-                  _getEmployeeName(),
-                  style: GoogleFonts.roboto(
-                    fontSize: 14.sp,
-                    color: const Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Spacer(),
+
                 Expanded(
                   child: Text(
                     _getDeviceInfo(),

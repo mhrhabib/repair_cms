@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/constants/box_decoration_extention.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_card_widget.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
@@ -131,15 +132,12 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                           width: 48.w,
                           height: 48.h,
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            color: const Color(0xFFF7F7F8),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.whiteColor,
+                              width: 1,
+                            ),
                           ),
                           child: Icon(
                             SolarIconsOutline.sortVertical,
@@ -222,8 +220,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                       // Title and Sort Icon
                       Text(
                         'Jobs',
-                        style: GoogleFonts.roboto(
-                          fontSize: 36.sp,
+                        style: AppTypography.sfProHeadLineTextStyle28.copyWith(
+                          fontSize: 32.sp,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1E293B),
                           letterSpacing: -0.5,
@@ -239,15 +237,17 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                         },
                         child: Container(
                           height: 48.h,
-                          decoration: BoxDecoration(
+                          decoration: boxDecoration(
                             color: const Color(0xFFE2E8F0),
-                            borderRadius: BorderRadius.circular(12.r),
+                            radius: 22.r,
+                            borderWidth: 0.3,
+                            borderColor: AppColors.whiteColor,
                           ),
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Row(
                             children: [
                               Icon(
-                                Icons.search,
+                                SolarIconsOutline.magnifier,
                                 color: const Color(0xFF94A3B8),
                                 size: 22.sp,
                               ),
@@ -534,9 +534,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   Expanded(
                     child: Container(
                       height: 44.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12.r),
+                      decoration: boxDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        radius: 46.r,
+                        borderWidth: 1,
+                        borderColor: AppColors.whiteColor,
                       ),
                       child: TextField(
                         controller: _searchController,
@@ -545,14 +547,20 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                           fontSize: 16.sp,
                           color: const Color(0xFF1E293B),
                         ),
+                        cursorColor: AppColors.warningColor,
                         decoration: InputDecoration(
                           hintText: 'Customer, Job-ID, Device ....',
                           hintStyle: GoogleFonts.roboto(
                             fontSize: 16.sp,
                             color: const Color(0xFF94A3B8),
                           ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 8.h,
+                          ),
+
                           prefixIcon: Icon(
-                            Icons.search,
+                            SolarIconsOutline.magnifier,
                             color: const Color(0xFF64748B),
                             size: 22.sp,
                           ),
@@ -580,12 +588,29 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                   ),
                                 )
                               : null,
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 12.h,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(46.r),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFF7F7F8),
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(46.r),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFF7F7F8),
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(46.r),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFF7F7F8),
+                              width: 1,
+                            ),
                           ),
                         ),
+
                         onChanged: (query) {
                           setState(() {});
                           if (query.isNotEmpty) {
@@ -610,9 +635,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     child: Container(
                       width: 44.w,
                       height: 44.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12.r),
+                      decoration: boxDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        radius: 46.r,
+                        borderWidth: 1,
+                        borderColor: AppColors.whiteColor,
                       ),
                       child: Icon(
                         Icons.close,
@@ -1080,7 +1107,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
         decoration: BoxDecoration(
           color: const Color(0xFFE2E8F0),
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(28.r),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1129,7 +1156,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(32.r),
       ),
       child: Column(
         children: [

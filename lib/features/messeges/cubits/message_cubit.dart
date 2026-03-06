@@ -30,8 +30,11 @@ class MessageCubit extends Cubit<MessageState> {
 
   String? _currentConversationId;
 
-  MessageCubit({required this.socketService, required this.messageRepository, required this.notificationService})
-    : super(MessageInitial()) {
+  MessageCubit({
+    required this.socketService,
+    required this.messageRepository,
+    required this.notificationService,
+  }) : super(MessageInitial()) {
     _initializeListeners();
   }
 
@@ -52,7 +55,9 @@ class MessageCubit extends Cubit<MessageState> {
       emit(MessageLoading());
 
       _currentConversationId = conversationId;
-      final conversationModel = await messageRepository.getConversation(conversationId: conversationId);
+      final conversationModel = await messageRepository.getConversation(
+        conversationId: conversationId,
+      );
 
       // Clear existing conversations
       _conversations.clear();
@@ -64,8 +69,12 @@ class MessageCubit extends Cubit<MessageState> {
 
         debugPrint('📋 [MessageCubit] Messages sorted by date (oldest first)');
         if (_conversations.isNotEmpty) {
-          debugPrint('   First message: ${_conversations.first.message?.message} (${_conversations.first.createdAt})');
-          debugPrint('   Last message: ${_conversations.last.message?.message} (${_conversations.last.createdAt})');
+          debugPrint(
+            '   First message: ${_conversations.first.message?.message} (${_conversations.first.createdAt})',
+          );
+          debugPrint(
+            '   Last message: ${_conversations.last.message?.message} (${_conversations.last.createdAt})',
+          );
         }
       }
 
@@ -75,11 +84,17 @@ class MessageCubit extends Cubit<MessageState> {
       );
 
       // Always emit MessagesLoaded, even if empty (let UI show empty state)
-      emit(MessagesLoaded(messages: List.from(_conversations), conversationId: conversationId));
+      emit(
+        MessagesLoaded(
+          messages: List.from(_conversations),
+          conversationId: conversationId,
+        ),
+      );
 
       // Only emit error if there's an actual error AND no data was returned
       if (conversationModel.success == false && messageCount == 0) {
-        final errorMsg = conversationModel.message ?? conversationModel.error ?? '';
+        final errorMsg =
+            conversationModel.message ?? conversationModel.error ?? '';
         // Only log as info if it's just "not found" (empty conversation)
         if (errorMsg.toLowerCase().contains('not found')) {
           debugPrint('ℹ️ [MessageCubit] Empty conversation: $errorMsg');
@@ -171,7 +186,9 @@ class MessageCubit extends Cubit<MessageState> {
 
     try {
       if (data == null) return;
-      final message = Conversation.fromJson(data is String ? jsonDecode(data) : data);
+      final message = Conversation.fromJson(
+        data is String ? jsonDecode(data) : data,
+      );
       _handleNewMessage(message);
     } catch (e) {
       debugPrint('❌ [MessageCubit] Error parsing socket message: $e');
@@ -184,8 +201,10 @@ class MessageCubit extends Cubit<MessageState> {
       // Check for duplicates (by id or content/timestamp)
       final isDuplicate = _conversations.any((c) {
         // Match by server-side ID if available
-        if (c.sId != null && message.sId != null && c.sId == message.sId) return true;
-        if (c.id != null && message.id != null && c.id == message.id) return true;
+        if (c.sId != null && message.sId != null && c.sId == message.sId)
+          return true;
+        if (c.id != null && message.id != null && c.id == message.id)
+          return true;
 
         // Fallback: match by sender, message content and timestamp
         // (with a small tolerance for local vs server timestamps)
@@ -203,11 +222,15 @@ class MessageCubit extends Cubit<MessageState> {
       });
 
       if (isDuplicate) {
-        debugPrint('ℹ️ [MessageCubit] Duplicate message received, skipping addition to list');
+        debugPrint(
+          'ℹ️ [MessageCubit] Duplicate message received, skipping addition to list',
+        );
       } else {
         _conversations.add(message);
         _sortMessages();
-        debugPrint('📝 [MessageCubit] Added new socket message to list. Total: ${_conversations.length}');
+        debugPrint(
+          '📝 [MessageCubit] Added new socket message to list. Total: ${_conversations.length}',
+        );
       }
     }
 
@@ -234,7 +257,9 @@ class MessageCubit extends Cubit<MessageState> {
       final currentUserEmail = storage.read('email');
 
       // Don't show notification if user sent this message
-      final isOwnMessage = message.sender?.email == currentUserEmail || message.loggedUserId == currentUserId;
+      final isOwnMessage =
+          message.sender?.email == currentUserEmail ||
+          message.loggedUserId == currentUserId;
 
       if (isOwnMessage) {
         debugPrint('ℹ️ [MessageCubit] Skipping notification - own message');
@@ -287,7 +312,12 @@ class MessageCubit extends Cubit<MessageState> {
         }
       }
       if (_currentConversationId != null) {
-        emit(MessagesLoaded(messages: List.from(_conversations), conversationId: _currentConversationId!));
+        emit(
+          MessagesLoaded(
+            messages: List.from(_conversations),
+            conversationId: _currentConversationId!,
+          ),
+        );
       }
     }
   }
@@ -305,7 +335,9 @@ class MessageCubit extends Cubit<MessageState> {
       if (data == null) return;
 
       // Parse the {message, comment} structure
-      final Map<String, dynamic> parsedData = data is String ? jsonDecode(data) : data;
+      final Map<String, dynamic> parsedData = data is String
+          ? jsonDecode(data)
+          : data;
 
       // Extract message and comment
       final messageData = parsedData['message'];
@@ -313,7 +345,9 @@ class MessageCubit extends Cubit<MessageState> {
 
       if (messageData != null) {
         final message = Conversation.fromJson(messageData);
-        debugPrint('💬 [MessageCubit] Processing message part: ${message.conversationId}');
+        debugPrint(
+          '💬 [MessageCubit] Processing message part: ${message.conversationId}',
+        );
 
         // Handle the message part like a regular incoming message
         _handleNewMessage(message);
@@ -321,16 +355,22 @@ class MessageCubit extends Cubit<MessageState> {
 
       if (commentData != null) {
         final comment = Comment.fromJson(commentData);
-        debugPrint('💬 [MessageCubit] Processing comment part: ${comment.messageId}');
+        debugPrint(
+          '💬 [MessageCubit] Processing comment part: ${comment.messageId}',
+        );
 
         // For now, just log the comment. You can emit a specific state or handle it differently
-        debugPrint('💬 [MessageCubit] Comment received: ${comment.text} by ${comment.authorId}');
+        debugPrint(
+          '💬 [MessageCubit] Comment received: ${comment.text} by ${comment.authorId}',
+        );
         // Attach comment to existing conversation if possible
         try {
           // Find existing conversation by message id or conversationId
           final existingIndex = _conversations.indexWhere(
             (c) =>
-                (comment.messageId != null && c.sId != null && c.sId == comment.messageId) ||
+                (comment.messageId != null &&
+                    c.sId != null &&
+                    c.sId == comment.messageId) ||
                 (comment.conversationId != null &&
                     c.conversationId != null &&
                     c.conversationId == comment.conversationId),
@@ -340,13 +380,16 @@ class MessageCubit extends Cubit<MessageState> {
             final existing = _conversations[existingIndex];
             existing.comments = existing.comments ?? [];
             existing.comments!.add(comment);
-            debugPrint('📝 [MessageCubit] Attached comment to existing conversation at index $existingIndex');
+            debugPrint(
+              '📝 [MessageCubit] Attached comment to existing conversation at index $existingIndex',
+            );
             _sortMessages();
             emit(
               MessageReceived(
                 message: existing,
                 messages: List.from(_conversations),
-                conversationId: _currentConversationId ?? existing.conversationId ?? '',
+                conversationId:
+                    _currentConversationId ?? existing.conversationId ?? '',
               ),
             );
           } else {
@@ -371,25 +414,43 @@ class MessageCubit extends Cubit<MessageState> {
         }
       }
     } catch (e) {
-      debugPrint('❌ [MessageCubit] Error handling internal comment from RCMS: $e');
+      debugPrint(
+        '❌ [MessageCubit] Error handling internal comment from RCMS: $e',
+      );
     }
   }
 
   void _updateConversationWithNewMessage(Conversation message) {
-    final existingIndex = _conversations.indexWhere((c) => c.conversationId == message.conversationId);
+    final existingIndex = _conversations.indexWhere(
+      (c) => c.conversationId == message.conversationId,
+    );
 
     if (existingIndex != -1) {
       // Update existing conversation
       final existing = _conversations[existingIndex];
-      final updated = Conversation(conversationId: existing.conversationId, participants: existing.participants);
+      final updated = Conversation(
+        conversationId: existing.conversationId,
+        participants: existing.participants,
+      );
       _conversations[existingIndex] = updated;
     } else {
       // Add new conversation
-      final newConversation = Conversation(conversationId: message.conversationId, participants: message.participants);
+      final newConversation = Conversation(
+        conversationId: message.conversationId,
+        participants: message.participants,
+      );
       _conversations.insert(0, newConversation);
     }
 
     emit(ConversationsLoaded(conversations: List.from(_conversations)));
+  }
+
+  void deleteConversationLocally(String conversationId) {
+    debugPrint(
+      '🗑️ [MessageCubit] Removing conversation locally: $conversationId',
+    );
+    _conversations.removeWhere((c) => c.conversationId == conversationId);
+    loadConversations();
   }
 
   void loadConversations() {
@@ -411,7 +472,8 @@ class MessageCubit extends Cubit<MessageState> {
         final existingDate = _parseDateTime(conversationMap[convId]!.createdAt);
         final newDate = _parseDateTime(message.createdAt);
 
-        if (newDate != null && (existingDate == null || newDate.isAfter(existingDate))) {
+        if (newDate != null &&
+            (existingDate == null || newDate.isAfter(existingDate))) {
           conversationMap[convId] = message;
         }
       }
@@ -442,13 +504,20 @@ class MessageCubit extends Cubit<MessageState> {
   }
 
   void loadMessages(String conversationId) {
-    debugPrint('📋 [MessageCubit] Loading messages for conversation: $conversationId');
+    debugPrint(
+      '📋 [MessageCubit] Loading messages for conversation: $conversationId',
+    );
     emit(MessageLoading());
     _currentConversationId = conversationId;
 
     // In production, fetch messages from API
     // For now, emit empty list
-    emit(MessagesLoaded(messages: List.from(_conversations), conversationId: conversationId));
+    emit(
+      MessagesLoaded(
+        messages: List.from(_conversations),
+        conversationId: conversationId,
+      ),
+    );
   }
 
   void sendMessage({
@@ -462,13 +531,19 @@ class MessageCubit extends Cubit<MessageState> {
     required String loggedUserId,
   }) async {
     debugPrint('📤 [MessageCubit] Sending message');
-    debugPrint('📤 [MessageCubit] Current conversation ID: $_currentConversationId');
+    debugPrint(
+      '📤 [MessageCubit] Current conversation ID: $_currentConversationId',
+    );
     debugPrint('📤 [MessageCubit] Target conversation ID: $conversationId');
-    debugPrint('📤 [MessageCubit] Socket connected: ${socketService.isConnected}');
+    debugPrint(
+      '📤 [MessageCubit] Socket connected: ${socketService.isConnected}',
+    );
 
     // Check if socket is connected, if not, try to reconnect
     if (!socketService.isConnected) {
-      debugPrint('⚠️ [MessageCubit] Socket disconnected. Attempting to reconnect...');
+      debugPrint(
+        '⚠️ [MessageCubit] Socket disconnected. Attempting to reconnect...',
+      );
       socketService.reconnect();
 
       // Wait a bit for reconnection (max 2 seconds)
@@ -481,7 +556,9 @@ class MessageCubit extends Cubit<MessageState> {
       if (socketService.isConnected) {
         debugPrint('✅ [MessageCubit] Socket reconnected successfully!');
       } else {
-        debugPrint('❌ [MessageCubit] Failed to reconnect socket. Message will be sent but may not reach server.');
+        debugPrint(
+          '❌ [MessageCubit] Failed to reconnect socket. Message will be sent but may not reach server.',
+        );
       }
     }
 
@@ -489,7 +566,11 @@ class MessageCubit extends Cubit<MessageState> {
     final messageModel = MessageModel(
       sender: sender,
       receiver: receiver,
-      message: MessageContent(message: messageText, messageType: messageType, jobId: jobId),
+      message: MessageContent(
+        message: messageText,
+        messageType: messageType,
+        jobId: jobId,
+      ),
       seen: false,
       conversationId: conversationId,
       userId: userId,
@@ -506,7 +587,11 @@ class MessageCubit extends Cubit<MessageState> {
     final localConversation = Conversation(
       sender: Sender(email: sender.email, name: sender.name),
       receiver: Sender(email: receiver.email, name: receiver.name),
-      message: Message(message: messageText, messageType: messageType, jobId: jobId),
+      message: Message(
+        message: messageText,
+        messageType: messageType,
+        jobId: jobId,
+      ),
       seen: false,
       conversationId: conversationId,
       participants: '${sender.email}-${jobId ?? 'general'}-${receiver.email}',
@@ -515,9 +600,19 @@ class MessageCubit extends Cubit<MessageState> {
     );
 
     _conversations.add(localConversation);
-    debugPrint('📝 [MessageCubit] Added message to list. Total messages: ${_conversations.length}');
-    debugPrint('📝 [MessageCubit] Emitting MessageSent with ${_conversations.length} messages');
-    emit(MessageSent(message: localConversation, messages: List.from(_conversations), conversationId: conversationId));
+    debugPrint(
+      '📝 [MessageCubit] Added message to list. Total messages: ${_conversations.length}',
+    );
+    debugPrint(
+      '📝 [MessageCubit] Emitting MessageSent with ${_conversations.length} messages',
+    );
+    emit(
+      MessageSent(
+        message: localConversation,
+        messages: List.from(_conversations),
+        conversationId: conversationId,
+      ),
+    );
   }
 
   void markAsRead(Conversation message) {
@@ -529,13 +624,19 @@ class MessageCubit extends Cubit<MessageState> {
     socketService.markAsRead(message.toJson());
   }
 
-  Future<void> sendInternalComment({required Map<String, dynamic> comment}) async {
+  Future<void> sendInternalComment({
+    required Map<String, dynamic> comment,
+  }) async {
     debugPrint('💬 [MessageCubit] Sending internal comment');
-    debugPrint('💬 [MessageCubit] Socket connected: ${socketService.isConnected}');
+    debugPrint(
+      '💬 [MessageCubit] Socket connected: ${socketService.isConnected}',
+    );
 
     // Check if socket is connected, if not, try to reconnect
     if (!socketService.isConnected) {
-      debugPrint('⚠️ [MessageCubit] Socket disconnected for comment. Attempting to reconnect...');
+      debugPrint(
+        '⚠️ [MessageCubit] Socket disconnected for comment. Attempting to reconnect...',
+      );
       socketService.reconnect();
 
       // Wait a bit for reconnection (max 2 seconds)
@@ -548,7 +649,9 @@ class MessageCubit extends Cubit<MessageState> {
       if (socketService.isConnected) {
         debugPrint('✅ [MessageCubit] Socket reconnected successfully!');
       } else {
-        debugPrint('❌ [MessageCubit] Failed to reconnect socket. Comment will be sent but may not reach server.');
+        debugPrint(
+          '❌ [MessageCubit] Failed to reconnect socket. Comment will be sent but may not reach server.',
+        );
       }
     }
 
@@ -556,22 +659,28 @@ class MessageCubit extends Cubit<MessageState> {
     try {
       String? readField(String key) {
         try {
-          if (comment.containsKey(key) && comment[key] != null) return comment[key] as String?;
+          if (comment.containsKey(key) && comment[key] != null)
+            return comment[key] as String?;
         } catch (_) {}
         try {
           final nested = comment['comment'];
-          if (nested is Map && nested.containsKey(key) && nested[key] != null) return nested[key] as String?;
+          if (nested is Map && nested.containsKey(key) && nested[key] != null)
+            return nested[key] as String?;
         } catch (_) {}
         return null;
       }
 
       dynamic readMentions() {
         try {
-          if (comment.containsKey('mentions') && comment['mentions'] != null) return comment['mentions'];
+          if (comment.containsKey('mentions') && comment['mentions'] != null)
+            return comment['mentions'];
         } catch (_) {}
         try {
           final nested = comment['comment'];
-          if (nested is Map && nested.containsKey('mentions') && nested['mentions'] != null) return nested['mentions'];
+          if (nested is Map &&
+              nested.containsKey('mentions') &&
+              nested['mentions'] != null)
+            return nested['mentions'];
         } catch (_) {}
         return null;
       }
@@ -583,20 +692,27 @@ class MessageCubit extends Cubit<MessageState> {
         messageId: readField('messageId'),
         conversationId: readField('conversationId'),
         parentCommentId: readField('parentCommentId'),
-        mentions: readMentions() != null ? List<String>.from(readMentions()) : null,
+        mentions: readMentions() != null
+            ? List<String>.from(readMentions())
+            : null,
       );
 
       // Try to populate sender/receiver from payload for better optimistic UI
       Sender? optimisticSender;
       Sender? optimisticReceiver;
       try {
-        final senderData = comment['sender'] ?? (comment['message'] != null ? comment['message']['sender'] : null);
+        final senderData =
+            comment['sender'] ??
+            (comment['message'] != null ? comment['message']['sender'] : null);
         if (senderData != null && senderData is Map<String, dynamic>) {
           optimisticSender = Sender.fromJson(senderData);
         }
 
         final receiverData =
-            comment['receiver'] ?? (comment['message'] != null ? comment['message']['receiver'] : null);
+            comment['receiver'] ??
+            (comment['message'] != null
+                ? comment['message']['receiver']
+                : null);
         if (receiverData != null && receiverData is Map<String, dynamic>) {
           optimisticReceiver = Sender.fromJson(receiverData);
         }

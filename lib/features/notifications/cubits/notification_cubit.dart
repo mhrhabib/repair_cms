@@ -8,16 +8,23 @@ part 'notification_state.dart';
 class NotificationCubit extends Cubit<NotificationState> {
   final NotificationRepository notificationRepository;
 
-  NotificationCubit({required this.notificationRepository}) : super(NotificationInitial());
+  NotificationCubit({required this.notificationRepository})
+    : super(NotificationInitial());
 
   Future<void> getNotifications({required String userId}) async {
-    debugPrint('🚀 [NotificationCubit] Fetching notifications for user: $userId');
+    debugPrint(
+      '🚀 [NotificationCubit] Fetching notifications for user: $userId',
+    );
 
     emit(NotificationLoading());
 
     try {
-      final notifications = await notificationRepository.getNotifications(userId: userId);
-      debugPrint('✅ [NotificationCubit] Loaded ${notifications.length} notifications');
+      final notifications = await notificationRepository.getNotifications(
+        userId: userId,
+      );
+      debugPrint(
+        '✅ [NotificationCubit] Loaded ${notifications.length} notifications',
+      );
       emit(NotificationLoaded(notifications: notifications));
     } on NotificationException catch (e) {
       debugPrint('❌ [NotificationCubit] Error: ${e.message}');
@@ -28,21 +35,53 @@ class NotificationCubit extends Cubit<NotificationState> {
     }
   }
 
-  Future<void> deleteNotification({required String notificationId, required String userId}) async {
+  Future<void> deleteNotification({
+    required String notificationId,
+    required String userId,
+  }) async {
     debugPrint('🚀 [NotificationCubit] Deleting notification: $notificationId');
 
     try {
-      await notificationRepository.deleteNotification(notificationId: notificationId);
+      await notificationRepository.deleteNotification(
+        notificationId: notificationId,
+      );
       debugPrint('✅ [NotificationCubit] Notification deleted successfully');
 
       // Refresh the notifications list after deletion
       await getNotifications(userId: userId);
     } on NotificationException catch (e) {
-      debugPrint('❌ [NotificationCubit] Error deleting notification: ${e.message}');
+      debugPrint(
+        '❌ [NotificationCubit] Error deleting notification: ${e.message}',
+      );
       emit(NotificationError(message: e.message));
     } catch (e) {
       debugPrint('💥 [NotificationCubit] Unexpected error during delete: $e');
       emit(NotificationError(message: 'Failed to delete notification'));
+    }
+  }
+
+  Future<void> markAsRead({
+    required String notificationId,
+    required String userId,
+  }) async {
+    debugPrint('🚀 [NotificationCubit] Marking notification as read: $notificationId');
+
+    try {
+      await notificationRepository.markAsRead(
+        notificationId: notificationId,
+      );
+      debugPrint('✅ [NotificationCubit] Notification marked as read successfully');
+
+      // Refresh the notifications list after marking as read
+      await getNotifications(userId: userId);
+    } on NotificationException catch (e) {
+      debugPrint(
+        '❌ [NotificationCubit] Error marking notification as read: ${e.message}',
+      );
+      emit(NotificationError(message: e.message));
+    } catch (e) {
+      debugPrint('💥 [NotificationCubit] Unexpected error during mark as read: $e');
+      emit(NotificationError(message: 'Failed to mark notification as read'));
     }
   }
 }
