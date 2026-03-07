@@ -4,6 +4,7 @@ import 'package:repair_cms/features/jobBooking/cubits/accessories/accessories_cu
 import 'package:repair_cms/features/jobBooking/models/accessories_model.dart';
 import 'package:repair_cms/features/jobBooking/screens/four/job_booking_imei_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:repair_cms/features/jobBooking/widgets/job_booking_top_bar.dart';
 
 class JobBookingAccessoriesScreen extends StatefulWidget {
   const JobBookingAccessoriesScreen({super.key});
@@ -98,99 +99,36 @@ class _JobBookingAccessoriesScreenState
           slivers: [
             SliverToBoxAdapter(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(
-                    height: 12.h,
-                    width: MediaQuery.of(context).size.width * .071 * 3,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(6),
-                        topRight: Radius.circular(0),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.shade300,
-                          blurRadius: 1,
-                          blurStyle: BlurStyle.outer,
+                  SizedBox(height: 8.h),
+                  JobBookingTopBar(
+                    stepNumber: 3,
+                    onBack: () => Navigator.of(context).pop(),
+                  ),
+                  SizedBox(height: 24.h),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Any Accessories included?',
+                          style: AppTypography.fontSize22,
+                          textAlign: TextAlign.center,
                         ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          '(Cable, Battery, Case...)',
+                          style: AppTypography.fontSize22.copyWith(
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
+                        SizedBox(height: 32.h),
                       ],
                     ),
                   ),
                 ],
-              ),
-            ),
-
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 8.h),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          padding: EdgeInsets.all(4.w),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF71788F),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 24.sp,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Step indicator
-                    Align(
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 42.w,
-                        height: 42.h,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '3',
-                            style: AppTypography.fontSize24.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 24.h),
-
-                    // Question text
-                    Text(
-                      'Any Accessories included?',
-                      style: AppTypography.fontSize22,
-                      textAlign: TextAlign.center,
-                    ),
-
-                    SizedBox(height: 4.h),
-
-                    Text(
-                      '(Cable, Battery, Case...)',
-                      style: AppTypography.fontSize22.copyWith(
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-
-                    SizedBox(height: 32.h),
-                  ],
-                ),
               ),
             ),
 
@@ -581,7 +519,7 @@ class _JobBookingAccessoriesScreenState
                           JobBookingImeiScreen(),
                       transitionsBuilder:
                           (context, animation, secondaryAnimation, child) {
-                            const begin = Offset(0.0, 1.0);
+                            const begin = Offset(1.0, 0.0);
                             const end = Offset.zero;
                             const curve = Curves.easeInOut;
                             var tween = Tween(

@@ -6,6 +6,7 @@ import 'package:repair_cms/features/jobBooking/models/business_model.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/jobBooking/screens/eight/job_booking_job_type_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:repair_cms/features/jobBooking/widgets/job_booking_top_bar.dart';
 
 class JobBookingAddressScreen extends StatefulWidget {
   final bool isNewProfile; // Indicates if we're creating a new profile
@@ -380,7 +381,7 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
         pageBuilder: (context, animation, secondaryAnimation) =>
             const JobBookingJobTypeScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
+          const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
           var tween = Tween(
@@ -442,116 +443,24 @@ class _JobBookingAddressScreenState extends State<JobBookingAddressScreen> {
         body: SafeArea(
           child: CustomScrollView(
             slivers: [
-              // Progress bar
-              SliverToBoxAdapter(
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.grey[300],
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      height: 12.h,
-                      width: MediaQuery.of(context).size.width * .071 * 7,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(6),
-                          topRight: Radius.circular(0),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.shade300,
-                            blurRadius: 1,
-                            blurStyle: BlurStyle.outer,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
               // Header with back button
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(
-                          context,
-                        ).popUntil(ModalRoute.withName(RouteNames.home)),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[600],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      // Show profile info
-                      // if (widget.isNewProfile)
-                      //   Text(
-                      //     'New ${widget.selectedProfile?.type2 ?? 'profile'}',
-                      //     style: TextStyle(color: Colors.green[600], fontWeight: FontWeight.w500),
-                      //   ),
-                      if (!widget.isNewProfile &&
-                          widget.selectedProfile != null)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Existing profile',
-                              style: TextStyle(
-                                color: Colors.blue[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (_hasChanges)
-                              Text(
-                                'Changes detected',
-                                style: TextStyle(
-                                  color: Colors.orange[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                          ],
-                        ),
-                    ],
+                  padding: const EdgeInsets.only(
+                    top: 12,
+                    left: 16,
+                    right: 16,
+                    bottom: 0,
+                  ),
+                  child: JobBookingTopBar(
+                    padding: 2,
+                    stepNumber: 7,
+                    onBack: () => Navigator.of(context).pop(),
                   ),
                 ),
               ),
 
               // Step indicator
-              SliverToBoxAdapter(
-                child: Center(
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${7}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
               SliverToBoxAdapter(child: const SizedBox(height: 24)),
 
               // Title

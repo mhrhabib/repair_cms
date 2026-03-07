@@ -4,16 +4,19 @@ import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cu
 import 'package:repair_cms/features/jobBooking/screens/five/widgets/pattern_input_widget.dart';
 import 'package:repair_cms/features/jobBooking/screens/six/choose_contact_type_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:repair_cms/features/jobBooking/widgets/job_booking_top_bar.dart';
 
 // Main Screen Widget
 class JobBookingDeviceSecurityScreen extends StatefulWidget {
   const JobBookingDeviceSecurityScreen({super.key});
 
   @override
-  State<JobBookingDeviceSecurityScreen> createState() => _JobBookingDeviceSecurityScreenState();
+  State<JobBookingDeviceSecurityScreen> createState() =>
+      _JobBookingDeviceSecurityScreenState();
 }
 
-class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurityScreen> {
+class _JobBookingDeviceSecurityScreenState
+    extends State<JobBookingDeviceSecurityScreen> {
   final TextEditingController _passwordController = TextEditingController();
   String selectedOption = 'none'; // Default to "No Security"
   List<int> connectedDots = []; // Stores the confirmed pattern
@@ -53,7 +56,9 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
         if (securityValue.isEmpty) securityType = 'none';
         break;
       case 'pattern':
-        securityValue = connectedDots.join(','); // Store pattern as a comma-separated string
+        securityValue = connectedDots.join(
+          ',',
+        ); // Store pattern as a comma-separated string
         if (securityValue.isEmpty) securityType = 'none';
         break;
       case 'none':
@@ -77,18 +82,24 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
     // Validation check
     if ((selectedOption == 'password' && _passwordController.text.isEmpty) ||
         (selectedOption == 'pattern' && connectedDots.isEmpty)) {
-      SnackbarDemo(message: 'Please enter the $selectedOption or select "No Security".').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Please enter the $selectedOption or select "No Security".',
+      ).showCustomSnackbar(context);
       return;
     }
 
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const ChooseContactTypeScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const ChooseContactTypeScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
+          const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           var offsetAnimation = animation.drive(tween);
           return SlideTransition(position: offsetAnimation, child: child);
         },
@@ -124,59 +135,23 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // Top Progress Bar
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 12.h,
-                    width: MediaQuery.of(context).size.width * .071 * 5,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color.fromARGB(255, 75, 41, 41),
-                          blurRadius: 1,
-                          blurStyle: BlurStyle.outer,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Header
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Column(
                   children: [
                     SizedBox(height: 8.h),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          padding: EdgeInsets.all(4.w),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF71788F),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Icon(Icons.close, color: Colors.white, size: 24.sp),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 42.w,
-                      height: 42.h,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                      child: Text('5', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
+                    JobBookingTopBar(
+                      padding: 2,
+                      stepNumber: 5,
+                      onBack: () => Navigator.of(context).pop(),
                     ),
                     SizedBox(height: 12.h),
-                    Text('Device Security', style: AppTypography.fontSize22, textAlign: TextAlign.center),
+                    Text(
+                      'Device Security',
+                      style: AppTypography.fontSize22,
+                      textAlign: TextAlign.center,
+                    ),
                     SizedBox(height: 24.h),
                   ],
                 ),
@@ -232,7 +207,10 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
             if (selectedOption == 'password')
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: 16.h,
+                  ),
                   child: _buildPasswordInput(),
                 ),
               ),
@@ -242,7 +220,9 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
                 child: BlocBuilder<JobBookingCubit, JobBookingState>(
                   builder: (context, state) {
-                    final deviceSecurity = state is JobBookingData ? state.device.deviceSecurity : 'none';
+                    final deviceSecurity = state is JobBookingData
+                        ? state.device.deviceSecurity
+                        : 'none';
                     String securityText;
                     switch (deviceSecurity) {
                       case 'password':
@@ -265,7 +245,11 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue.shade600, size: 16.sp),
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.blue.shade600,
+                            size: 16.sp,
+                          ),
                           SizedBox(width: 8.w),
                           Text(
                             'Security Status: $securityText',
@@ -281,13 +265,18 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
                 ),
               ),
             ),
-            SliverFillRemaining(hasScrollBody: false, child: Container()), // Pushes content up
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Container(),
+            ), // Pushes content up
           ],
         ),
       ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 8.h : 24.h,
+          bottom: MediaQuery.of(context).viewInsets.bottom > 0
+              ? MediaQuery.of(context).viewInsets.bottom + 8.h
+              : 24.h,
           left: 24.w,
           right: 24.w,
         ),
@@ -312,8 +301,17 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade300, width: isSelected ? 2 : 1),
-          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -321,10 +319,16 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
               width: 40.w,
               height: 40.h,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.shade100,
+                color: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8.r),
               ),
-              child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade600, size: 24.sp),
+              child: Icon(
+                icon,
+                color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                size: 24.sp,
+              ),
             ),
             SizedBox(width: 12.w),
             Expanded(
@@ -334,21 +338,28 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
                   Text(
                     title,
                     style: AppTypography.fontSize16.copyWith(
-                      color: isSelected ? AppColors.primary : Colors.grey.shade800,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.grey.shade800,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                     ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     subtitle,
                     style: AppTypography.fontSize12.copyWith(
-                      color: isSelected ? AppColors.primary.withValues(alpha: 0.8) : Colors.grey.shade600,
+                      color: isSelected
+                          ? AppColors.primary.withValues(alpha: 0.8)
+                          : Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
             ),
-            if (isSelected) Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
+            if (isSelected)
+              Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
           ],
         ),
       ),
@@ -363,12 +374,23 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Enter Device Password / PIN', style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade800)),
+          Text(
+            'Enter Device Password / PIN',
+            style: AppTypography.fontSize14.copyWith(
+              color: Colors.grey.shade800,
+            ),
+          ),
           SizedBox(height: 8.h),
           TextField(
             controller: _passwordController,
@@ -383,7 +405,10 @@ class _JobBookingDeviceSecurityScreenState extends State<JobBookingDeviceSecurit
                 borderRadius: BorderRadius.circular(8.r),
                 borderSide: BorderSide(color: AppColors.primary, width: 2),
               ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12.w,
+                vertical: 12.h,
+              ),
             ),
             style: AppTypography.fontSize16,
           ),
@@ -423,12 +448,20 @@ class _PatternBottomSheetState extends State<_PatternBottomSheet> {
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r), topRight: Radius.circular(20.r)),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.r),
+          topRight: Radius.circular(20.r),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Draw Security Pattern', style: AppTypography.fontSize16Bold.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            'Draw Security Pattern',
+            style: AppTypography.fontSize16Bold.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           SizedBox(height: 16.h),
           PatternInputWidget(
             initialPattern: connectedDots,
@@ -440,7 +473,9 @@ class _PatternBottomSheetState extends State<_PatternBottomSheet> {
           if (connectedDots.isNotEmpty)
             Text(
               'Pattern: ${connectedDots.map((dot) => dot + 1).join(' → ')}',
-              style: AppTypography.fontSize14.copyWith(color: Colors.green.shade700),
+              style: AppTypography.fontSize14.copyWith(
+                color: Colors.green.shade700,
+              ),
               textAlign: TextAlign.center,
             ),
           SizedBox(height: 24.h),
@@ -465,7 +500,9 @@ class _PatternBottomSheetState extends State<_PatternBottomSheet> {
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.check),
                   label: const Text('Confirm'),
-                  onPressed: connectedDots.isNotEmpty ? () => Navigator.of(context).pop(connectedDots) : null,
+                  onPressed: connectedDots.isNotEmpty
+                      ? () => Navigator.of(context).pop(connectedDots)
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,

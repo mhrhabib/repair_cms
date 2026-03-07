@@ -8,12 +8,14 @@ import 'package:repair_cms/features/jobBooking/screens/nine/job_booking_problem_
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/models/job_type_model.dart';
+import 'package:repair_cms/features/jobBooking/widgets/job_booking_top_bar.dart';
 
 class JobBookingJobTypeScreen extends StatefulWidget {
   const JobBookingJobTypeScreen({super.key});
 
   @override
-  State<JobBookingJobTypeScreen> createState() => _JobBookingJobTypeScreenState();
+  State<JobBookingJobTypeScreen> createState() =>
+      _JobBookingJobTypeScreenState();
 }
 
 class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
@@ -52,7 +54,11 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
     setState(() => _isAddingJobType = true);
 
     try {
-      await context.read<JobTypeCubit>().createJobType(name: jobTypeName, userId: _userId, locationId: _locationId);
+      await context.read<JobTypeCubit>().createJobType(
+        name: jobTypeName,
+        userId: _userId,
+        locationId: _locationId,
+      );
 
       if (!mounted) return;
 
@@ -69,9 +75,15 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
           _jobTypeController.text = jobTypeName;
         });
 
-        showCustomToast('Job type "$jobTypeName" added successfully!', isError: false);
+        showCustomToast(
+          'Job type "$jobTypeName" added successfully!',
+          isError: false,
+        );
       } else if (state is JobTypeError) {
-        showCustomToast('Failed to add job type: ${state.message}', isError: true);
+        showCustomToast(
+          'Failed to add job type: ${state.message}',
+          isError: true,
+        );
       }
     } catch (e) {
       showCustomToast('Failed to add job type: $e', isError: true);
@@ -95,12 +107,16 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
       Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const JobBookingProblemDescriptionScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const JobBookingProblemDescriptionScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(0.0, 1.0);
+            const begin = Offset(1.0, 0.0);
             const end = Offset.zero;
             const curve = Curves.easeInOut;
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
             var offsetAnimation = animation.drive(tween);
             return SlideTransition(position: offsetAnimation, child: child);
           },
@@ -123,58 +139,20 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
         child: CustomScrollView(
           slivers: [
             // Progress bar
-            SliverToBoxAdapter(
-              child: Container(
-                height: 12.h,
-                width: double.infinity,
-                color: Colors.grey[300],
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    height: 12.h,
-                    width: MediaQuery.of(context).size.width * .071 * 8,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                      boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
-                    ),
-                  ),
-                ),
-              ),
-            ),
 
             // Header
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).popUntil(ModalRoute.withName(RouteNames.home)),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.close, color: Colors.white, size: 20),
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.only(
+                  top: 12,
+                  left: 16,
+                  right: 16,
+                  bottom: 0,
                 ),
-              ),
-            ),
-
-            // Step indicator
-            SliverToBoxAdapter(
-              child: Center(
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                  child: const Center(
-                    child: Text(
-                      '8',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                child: JobBookingTopBar(
+                  padding: 2,
+                  stepNumber: 8,
+                  onBack: () => Navigator.of(context).pop(),
                 ),
               ),
             ),
@@ -187,10 +165,17 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                 children: [
                   Text(
                     'Job Type',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
                   ),
                   SizedBox(height: 8),
-                  Text('(Warranty, ReRepair, Quote req...)', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                  Text(
+                    '(Warranty, ReRepair, Quote req...)',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -218,7 +203,10 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                         if (state is JobTypeError) {
                           return Container(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(
+                              color: Colors.red[50],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Text(
                               'Failed to load job types: ${state.message}',
                               style: const TextStyle(color: Colors.red),
@@ -242,8 +230,10 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                           displayAllSuggestionWhenTap: true,
                           isMultiSelectDropdown: false,
                           onSuggestionSelected: (JobType jobType) async {
-                            if (jobType.sId == null && jobType.name?.startsWith('Add "') == true) {
-                              final jobTypeName = jobType.name?.split('"')[1] ?? '';
+                            if (jobType.sId == null &&
+                                jobType.name?.startsWith('Add "') == true) {
+                              final jobTypeName =
+                                  jobType.name?.split('"')[1] ?? '';
                               if (jobTypeName.isNotEmpty) {
                                 await _addNewJobType(jobTypeName);
                               }
@@ -256,13 +246,18 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                             }
                           },
                           itemBuilder: (BuildContext context, JobType jobType) {
-                            final isNewOption = jobType.sId == null && jobType.name?.startsWith('Add "') == true;
+                            final isNewOption =
+                                jobType.sId == null &&
+                                jobType.name?.startsWith('Add "') == true;
 
                             if (isNewOption) {
                               return Container(
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFE3F2FD),
-                                  border: Border.all(color: AppColors.primary, width: 1.5),
+                                  border: Border.all(
+                                    color: AppColors.primary,
+                                    width: 1.5,
+                                  ),
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: ListTile(
@@ -270,24 +265,31 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                                     children: [
                                       Text(
                                         jobType.name?.split('"')[1] ?? '',
-                                        style: AppTypography.fontSize16.copyWith(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: AppTypography.fontSize16
+                                            .copyWith(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                       SizedBox(width: 8.w),
                                       Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8.w,
+                                          vertical: 2.h,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary,
-                                          borderRadius: BorderRadius.circular(4.r),
+                                          borderRadius: BorderRadius.circular(
+                                            4.r,
+                                          ),
                                         ),
                                         child: Text(
                                           'NEW',
-                                          style: AppTypography.fontSize12.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          style: AppTypography.fontSize12
+                                              .copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -298,7 +300,9 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
 
                             return Container(
                               decoration: BoxDecoration(
-                                color: selectedJobType == jobType.name ? const Color(0xFFFFF59D) : Colors.transparent,
+                                color: selectedJobType == jobType.name
+                                    ? const Color(0xFFFFF59D)
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
                               child: ListTile(
@@ -316,15 +320,27 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                             if (pattern.isEmpty) return allJobTypes;
 
                             final filteredJobTypes = allJobTypes
-                                .where((jobType) => (jobType.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
+                                .where(
+                                  (jobType) => (jobType.name ?? '')
+                                      .toLowerCase()
+                                      .contains(pattern.toLowerCase()),
+                                )
                                 .toList();
 
                             final exactMatch = filteredJobTypes.any(
-                              (jobType) => jobType.name?.toLowerCase() == pattern.toLowerCase(),
+                              (jobType) =>
+                                  jobType.name?.toLowerCase() ==
+                                  pattern.toLowerCase(),
                             );
 
                             if (!exactMatch && pattern.isNotEmpty) {
-                              filteredJobTypes.insert(0, JobType(sId: null, name: 'Add "$pattern" as new job type'));
+                              filteredJobTypes.insert(
+                                0,
+                                JobType(
+                                  sId: null,
+                                  name: 'Add "$pattern" as new job type',
+                                ),
+                              );
                             }
 
                             return filteredJobTypes;
@@ -342,9 +358,18 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(width: 16.w, height: 16.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                            SizedBox(
+                              width: 16.w,
+                              height: 16.h,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                             SizedBox(width: 8.w),
-                            Text('Adding job type...', style: AppTypography.fontSize14.copyWith(color: Colors.grey)),
+                            Text(
+                              'Adding job type...',
+                              style: AppTypography.fontSize14.copyWith(
+                                color: Colors.grey,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -354,7 +379,11 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                     // Reference field
                     const Text(
                       'Reference',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
 
                     const SizedBox(height: 8),
@@ -363,11 +392,22 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                       controller: _referenceController,
                       decoration: InputDecoration(
                         hintText: 'Enter reference',
-                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-                        border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 16,
+                        ),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                       style: const TextStyle(fontSize: 16),
                     ),
@@ -385,12 +425,20 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle, color: Colors.green[600], size: 20),
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green[600],
+                              size: 20,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Selected: $selectedJobType',
-                                style: TextStyle(fontSize: 14, color: Colors.green[800], fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.green[800],
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ],
@@ -399,7 +447,9 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
                       const SizedBox(height: 16),
                     ],
 
-                    const SizedBox(height: 100), // Extra space for bottom button
+                    const SizedBox(
+                      height: 100,
+                    ), // Extra space for bottom button
                   ],
                 ),
               ),
@@ -408,7 +458,11 @@ class _JobBookingJobTypeScreenState extends State<JobBookingJobTypeScreen> {
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8, left: 24, right: 24),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+          left: 24,
+          right: 24,
+        ),
         child: BottomButtonsGroup(onPressed: _handleContinue),
       ),
     );

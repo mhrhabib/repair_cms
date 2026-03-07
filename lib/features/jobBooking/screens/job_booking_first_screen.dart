@@ -178,12 +178,12 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                     // Top colored bar
                     Container(
                       height: 12.h,
-                      width: MediaQuery.of(context).size.width * .071,
+                      width: MediaQuery.of(context).size.width * 1,
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(6),
-                          topRight: Radius.circular(0),
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -203,11 +203,12 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                       child: GestureDetector(
                         onTap: () => Navigator.of(context).pop(),
                         child: Container(
-                          width: 32.w,
-                          height: 32.h,
+                          width: 40.w,
+                          height: 40.h,
                           decoration: BoxDecoration(
-                            color: Color(0xFF71788F),
-                            borderRadius: BorderRadius.circular(8.r),
+                            color: const Color(0xFF4B4B69),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1),
                           ),
                           child: Icon(
                             Icons.close,

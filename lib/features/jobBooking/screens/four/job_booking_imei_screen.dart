@@ -2,6 +2,7 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:repair_cms/features/jobBooking/widgets/job_booking_top_bar.dart';
 import '../five/job_booking_device_security_screen.dart';
 
 class JobBookingImeiScreen extends StatefulWidget {
@@ -50,51 +51,18 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 12.h,
-              width: MediaQuery.of(context).size.width * .071 * 4,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(0)),
-                boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
-              ),
-            ),
             Expanded(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(height: 8.h),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          padding: EdgeInsets.all(4.w),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF71788F),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Icon(Icons.close, color: Colors.white, size: 24.sp),
-                        ),
-                      ),
+                    JobBookingTopBar(
+                      padding: 2,
+                      stepNumber: 4,
+                      onBack: () => Navigator.of(context).pop(),
                     ),
-
-                    // Step indicator
-                    Align(
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 42.w,
-                        height: 42.h,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                        child: Center(
-                          child: Text('4', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
-                        ),
-                      ),
-                    ),
-
                     SizedBox(height: 24.h),
 
                     // Question text
@@ -136,10 +104,17 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                           borderRadius: BorderRadius.circular(8.r),
                           borderSide: BorderSide(color: AppColors.primary),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
                         suffixIcon: _imeiController.text.isNotEmpty
                             ? IconButton(
-                                icon: Icon(Icons.clear, color: Colors.grey, size: 20.sp),
+                                icon: Icon(
+                                  Icons.clear,
+                                  color: Colors.grey,
+                                  size: 20.sp,
+                                ),
                                 onPressed: () {
                                   _imeiController.clear();
                                   _updateImeiInCubit();
@@ -233,7 +208,6 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
                     // ),
 
                     // const Spacer(),
-
                     SizedBox(height: 32.h),
                   ],
                 ),
@@ -244,7 +218,9 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
       ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? MediaQuery.of(context).viewInsets.bottom + 8.h : 8.h,
+          bottom: MediaQuery.of(context).viewInsets.bottom > 0
+              ? MediaQuery.of(context).viewInsets.bottom + 8.h
+              : 8.h,
           left: 24.w,
           right: 24.w,
         ),
@@ -272,12 +248,16 @@ class _JobBookingImeiScreenState extends State<JobBookingImeiScreen> {
 
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => JobBookingDeviceSecurityScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            JobBookingDeviceSecurityScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
+          const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           var offsetAnimation = animation.drive(tween);
           return SlideTransition(position: offsetAnimation, child: child);
         },
