@@ -2267,12 +2267,6 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               color: _priorityColor(),
             ),
           ),
-          const Spacer(),
-          Icon(
-            CupertinoIcons.chevron_right,
-            size: 14.sp,
-            color: Colors.grey.shade400,
-          ),
         ],
       ),
     ),
@@ -2305,12 +2299,6 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               color: AppColors.kBlue,
             ),
           ),
-          const Spacer(),
-          Icon(
-            CupertinoIcons.chevron_right,
-            size: 14.sp,
-            color: Colors.grey.shade400,
-          ),
         ],
       ),
     ),
@@ -2327,14 +2315,16 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         child: Row(
           children: [
             SizedBox(
-              width: 70.w,
-              child: Text(
-                'Assignee',
-                textAlign: TextAlign.right,
-                style: GoogleFonts.roboto(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.lightFontColor,
+              width: 72.w,
+              child: FittedBox(
+                child: Text(
+                  'Assignee',
+                  textAlign: TextAlign.right,
+                  style: GoogleFonts.roboto(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.lightFontColor,
+                  ),
                 ),
               ),
             ),
@@ -2371,12 +2361,6 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 ),
               ),
             ],
-            const Spacer(),
-            Icon(
-              CupertinoIcons.chevron_right,
-              size: 14.sp,
-              color: Colors.grey.shade400,
-            ),
           ],
         ),
       ),

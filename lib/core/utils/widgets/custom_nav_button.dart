@@ -31,6 +31,13 @@ class CustomNavButton extends StatelessWidget {
           color: backgroundColor ?? const Color(0xFFF7F7F8),
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.whiteColor, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0x1C000000),
+              blurRadius: 20.r,
+              offset: Offset.zero,
+            ),
+          ],
         ),
         child: Icon(
           icon,

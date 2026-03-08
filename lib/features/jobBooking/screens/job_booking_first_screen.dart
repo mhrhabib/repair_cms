@@ -3,7 +3,7 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/service/service_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/service_response_model.dart';
-import 'one/job_booking_start_booking_job_screen.dart';
+import 'job_booking_wizard_screen.dart';
 
 class JobBookingFirstScreen extends StatefulWidget {
   const JobBookingFirstScreen({super.key});
@@ -735,12 +735,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 2,
-          left: 12.w,
-          right: 12.w,
-          top: 2,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -761,7 +756,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                     Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
-                            const JobBookingStartBookingJobScreen(),
+                            const JobBookingWizardScreen(),
                         transitionsBuilder:
                             (context, animation, secondaryAnimation, child) {
                               const begin = Offset(1.0, 0.0);

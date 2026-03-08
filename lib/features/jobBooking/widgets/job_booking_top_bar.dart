@@ -91,115 +91,61 @@ class _JobBookingTopBarState extends State<JobBookingTopBar>
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // ── Row: back button + step label + cancel button ─────────────────
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: widget.padding.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // ← Back arrow
-              GestureDetector(
-                onTap: widget.onBack,
+        // ── Typeform-style animated progress bar at the very top ──────────
+        Container(
+          height: 12.h,
+          width: double.infinity,
+          color: const Color(0xFFE3F2FD),
+          child: AnimatedBuilder(
+            animation: _progressAnimation,
+            builder: (context, _) {
+              return FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: _progressAnimation.value.clamp(0.0, 1.0),
                 child: Container(
-                  width: 40.w,
-                  height: 40.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4B4B69),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1),
-                  ),
-                  child: Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.white,
-                    size: 18.sp,
-                  ),
+                  decoration: const BoxDecoration(color: Color(0xFF2196F3)),
                 ),
-              ),
-
-              // Step label
-              Text(
-                'Step ${widget.stepNumber} of ${widget.totalSteps}',
-                style: AppTypography.fontSize12.copyWith(
-                  color: Colors.grey.shade500,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-
-              // ✕ Cancel
-              if (widget.showCancelButton)
-                GestureDetector(
-                  onTap: () => _onCancel(context),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: 6.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(20.r),
-                      border: Border.all(
-                        color: Colors.red.shade300,
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.close,
-                          color: Colors.red.shade700,
-                          size: 13.sp,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          'Cancel',
-                          style: AppTypography.fontSize12.copyWith(
-                            color: Colors.red.shade700,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                SizedBox(width: 72.w),
-            ],
+              );
+            },
           ),
         ),
 
-        SizedBox(height: 10.h),
+        SizedBox(height: 16.h),
 
-        // ── Typeform-style animated progress bar ──────────────────────────
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: widget.padding.w),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10.r),
-            child: Container(
-              height: 5.h,
-              width: double.infinity,
-              color: Colors.grey.shade200,
-              child: AnimatedBuilder(
-                animation: _progressAnimation,
-                builder: (context, _) {
-                  return FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: _progressAnimation.value.clamp(0.0, 1.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
+        // ── Close button on the right ─────────────────────────────────────
+        if (widget.showCancelButton)
+          Padding(
+            padding: EdgeInsets.only(right: 24.w),
+            child: GestureDetector(
+              onTap: () => _onCancel(context),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF7F7F8),
+                  borderRadius: BorderRadius.circular(30.r),
+                  border: Border.all(color: Colors.white, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0x1C000000),
+                      blurRadius: 20,
+                      offset: const Offset(0, 0),
                     ),
-                  );
-                },
+                  ],
+                ),
+                child: Text(
+                  'Close',
+                  style: AppTypography.fontSize16.copyWith(
+                    color: const Color(0xFF4B4B69),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
 
-        SizedBox(height: 6.h),
+        SizedBox(height: 8.h),
       ],
     );
   }

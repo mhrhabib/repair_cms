@@ -37,22 +37,28 @@ class CustomDropdownSearch<T> extends StatelessWidget {
       textFieldConfiguration: TextFieldConfiguration(
         controller: controller,
         decoration: InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 16.h,
+          ),
+          border: UnderlineInputBorder(
             borderSide: BorderSide(color: Colors.grey.shade300),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
+          enabledBorder: UnderlineInputBorder(
             borderSide: BorderSide(color: Colors.grey.shade300),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
-            borderSide: BorderSide(color: Colors.blue), // You can customize this
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(
+              color: Colors.blue,
+            ), // You can customize this
           ),
           hintText: hintText,
           hintStyle: TextStyle(fontSize: 16, color: Colors.grey.shade400),
-          suffixIcon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade600, size: 24),
+          suffixIcon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.grey.shade600,
+            size: 24,
+          ),
         ),
       ),
       onSuggestionSelected: onSuggestionSelected,

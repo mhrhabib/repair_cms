@@ -1,0 +1,230 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
+
+/// Step 13 – Customer Signature
+class StepSignatureWidget extends StatefulWidget {
+  const StepSignatureWidget({super.key, required this.onCanProceedChanged});
+
+  final void Function(bool canProceed) onCanProceedChanged;
+
+  @override
+  State<StepSignatureWidget> createState() => StepSignatureWidgetState();
+}
+
+class StepSignatureWidgetState extends State<StepSignatureWidget> {
+  bool _hasSignature = false;
+  bool _isSaving = false;
+  final List<List<Offset>> _signaturePaths = [];
+  final List<Offset> _currentPath = [];
+  final GlobalKey _signatureKey = GlobalKey();
+
+  void _resetSignature() {
+    setState(() {
+      _hasSignature = false;
+      _signaturePaths.clear();
+      _currentPath.clear();
+    });
+    widget.onCanProceedChanged(false);
+  }
+
+  void _onPanStart(DragStartDetails details) {
+    final RenderBox box =
+        _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final localPosition = box.globalToLocal(details.globalPosition);
+    if (localPosition.dx >= 0 &&
+        localPosition.dx <= box.size.width &&
+        localPosition.dy >= 0 &&
+        localPosition.dy <= box.size.height) {
+      setState(() {
+        _currentPath.clear();
+        _currentPath.add(localPosition);
+        _hasSignature = true;
+      });
+      widget.onCanProceedChanged(true);
+    }
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    final RenderBox box =
+        _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final localPosition = box.globalToLocal(details.globalPosition);
+    if (localPosition.dx >= 0 &&
+        localPosition.dx <= box.size.width &&
+        localPosition.dy >= 0 &&
+        localPosition.dy <= box.size.height) {
+      setState(() {
+        _currentPath.add(localPosition);
+      });
+    }
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    setState(() {
+      if (_currentPath.isNotEmpty) {
+        _signaturePaths.add(List.from(_currentPath));
+        _currentPath.clear();
+      }
+    });
+  }
+
+  Future<String> _captureSignatureAsBase64() async {
+    try {
+      final RenderRepaintBoundary boundary =
+          _signatureKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      final Uint8List pngBytes = byteData!.buffer.asUint8List();
+      return 'data:image/png;base64,${base64Encode(pngBytes)}';
+    } catch (e) {
+      throw Exception('Failed to capture signature: $e');
+    }
+  }
+
+  /// Exposed for wizard navigation
+  Future<bool> validate() async {
+    if (!_hasSignature || _isSaving) return false;
+    setState(() => _isSaving = true);
+    try {
+      final base64 = await _captureSignatureAsBase64();
+      context.read<JobBookingCubit>().updateCustomerSignature(base64);
+      setState(() => _isSaving = false);
+      return true;
+    } catch (e) {
+      showCustomToast('Error saving signature: $e', isError: true);
+      setState(() => _isSaving = false);
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            children: [
+              SizedBox(height: 24.h),
+              TitleWidget(
+                stepNumber: 13,
+                title: 'Customer Signature',
+                subTitle: 'Please sign on the pad below',
+              ),
+              SizedBox(height: 32.h),
+            ],
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: 280.h,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300, width: 2),
+                    borderRadius: BorderRadius.circular(8.r),
+                    color: Colors.white,
+                  ),
+                  child: Stack(
+                    children: [
+                      RepaintBoundary(
+                        key: _signatureKey,
+                        child: GestureDetector(
+                          onPanStart: _onPanStart,
+                          onPanUpdate: _onPanUpdate,
+                          onPanEnd: _onPanEnd,
+                          child: Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color: Colors.white,
+                            child: CustomPaint(
+                              painter: SignaturePainter(
+                                signaturePaths: _signaturePaths,
+                                currentPath: _currentPath,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'SIGN HERE',
+                                  style: TextStyle(
+                                    color: _hasSignature
+                                        ? Colors.transparent
+                                        : Colors.grey.shade300,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8.h,
+                        right: 8.w,
+                        child: IconButton(
+                          icon: const Icon(Icons.refresh),
+                          onPressed: _resetSignature,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  'Please sign above to confirm service agreement and device condition acknowledgment',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                SizedBox(height: 32.h),
+              ],
+            ),
+          ),
+        ),
+        const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
+      ],
+    );
+  }
+}
+
+class SignaturePainter extends CustomPainter {
+  final List<List<Offset>> signaturePaths;
+  final List<Offset> currentPath;
+  SignaturePainter({required this.signaturePaths, required this.currentPath});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black87
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+    for (final path in signaturePaths) {
+      if (path.isNotEmpty) {
+        final p = Path()..moveTo(path.first.dx, path.first.dy);
+        for (int i = 1; i < path.length; i++) p.lineTo(path[i].dx, path[i].dy);
+        canvas.drawPath(p, paint);
+      }
+    }
+    if (currentPath.isNotEmpty) {
+      final p = Path()..moveTo(currentPath.first.dx, currentPath.first.dy);
+      for (int i = 1; i < currentPath.length; i++)
+        p.lineTo(currentPath[i].dx, currentPath[i].dy);
+      canvas.drawPath(p, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => true;
+}

@@ -1,9 +1,15 @@
 import 'package:repair_cms/core/app_exports.dart';
 
 class BottomButtonsGroup extends StatelessWidget {
-  const BottomButtonsGroup({super.key, required this.onPressed, this.okButtonText = 'OK'});
+  const BottomButtonsGroup({
+    super.key,
+    required this.onPressed,
+    this.onBack,
+    this.okButtonText = 'OK',
+  });
 
   final VoidCallback? onPressed;
+  final VoidCallback? onBack;
   final String okButtonText;
 
   @override
@@ -12,8 +18,12 @@ class BottomButtonsGroup extends StatelessWidget {
       children: [
         // Back button
         GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: SizedBox(width: 81.w, height: 52.h, child: Image.asset(AssetsConstant.liquiedButton)),
+          onTap: onBack ?? () => Navigator.of(context).pop(),
+          child: SizedBox(
+            width: 81.w,
+            height: 52.h,
+            child: Image.asset(AssetsConstant.liquiedButton),
+          ),
         ),
 
         SizedBox(width: 16.w),
@@ -27,10 +37,17 @@ class BottomButtonsGroup extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: Colors.grey.shade300,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24.r),
+                ),
                 elevation: 0,
               ),
-              child: Text(okButtonText, style: AppTypography.fontSize16Bold.copyWith(color: Colors.white)),
+              child: Text(
+                okButtonText,
+                style: AppTypography.fontSize16Bold.copyWith(
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ),
