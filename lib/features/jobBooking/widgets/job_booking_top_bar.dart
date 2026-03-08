@@ -4,10 +4,10 @@ import 'package:repair_cms/core/app_exports.dart';
 ///
 /// Contains:
 ///   - Back arrow (top-left)
-///   - An inline compact stepper showing steps 1…[totalSteps] with
-///     connecting lines, highlighting the current [stepNumber].
+///   - "Step X of Y" label (centered)
 ///   - A red "Cancel" pill (top-right) that exits the entire flow.
-class JobBookingTopBar extends StatelessWidget {
+///   - A Typeform-style slim animated linear progress bar below the row.
+class JobBookingTopBar extends StatefulWidget {
   const JobBookingTopBar({
     super.key,
     required this.stepNumber,
@@ -23,6 +23,64 @@ class JobBookingTopBar extends StatelessWidget {
   final int totalSteps;
   final double padding;
 
+  @override
+  State<JobBookingTopBar> createState() => _JobBookingTopBarState();
+}
+
+class _JobBookingTopBarState extends State<JobBookingTopBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _progressAnimation;
+  late double _targetProgress;
+
+  @override
+  void initState() {
+    super.initState();
+    _targetProgress = widget.stepNumber / widget.totalSteps;
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _progressAnimation = Tween<double>(
+      begin: _targetProgress,
+      end: _targetProgress,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    // Animate in from 0 on first build
+    _progressAnimation = Tween<double>(
+      begin: 0.0,
+      end: _targetProgress,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant JobBookingTopBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.stepNumber != widget.stepNumber) {
+      final double oldProgress = oldWidget.stepNumber / widget.totalSteps;
+      _targetProgress = widget.stepNumber / widget.totalSteps;
+
+      _progressAnimation = Tween<double>(
+        begin: oldProgress,
+        end: _targetProgress,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+      _controller
+        ..reset()
+        ..forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   void _onCancel(BuildContext context) {
     Navigator.of(
       context,
@@ -34,15 +92,15 @@ class JobBookingTopBar extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ── Row: back button + cancel button ──────────────────────────────
+        // ── Row: back button + step label + cancel button ─────────────────
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: padding.w),
+          padding: EdgeInsets.symmetric(horizontal: widget.padding.w),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // ← Back arrow
               GestureDetector(
-                onTap: onBack,
+                onTap: widget.onBack,
                 child: Container(
                   width: 40.w,
                   height: 40.h,
@@ -59,9 +117,9 @@ class JobBookingTopBar extends StatelessWidget {
                 ),
               ),
 
-              // Step label text
+              // Step label
               Text(
-                'Step $stepNumber of $totalSteps',
+                'Step ${widget.stepNumber} of ${widget.totalSteps}',
                 style: AppTypography.fontSize12.copyWith(
                   color: Colors.grey.shade500,
                   fontWeight: FontWeight.w500,
@@ -69,7 +127,7 @@ class JobBookingTopBar extends StatelessWidget {
               ),
 
               // ✕ Cancel
-              if (showCancelButton)
+              if (widget.showCancelButton)
                 GestureDetector(
                   onTap: () => _onCancel(context),
                   child: Container(
@@ -111,134 +169,38 @@ class JobBookingTopBar extends StatelessWidget {
           ),
         ),
 
-        SizedBox(height: 12.h),
+        SizedBox(height: 10.h),
 
-        // ── Compact stepper ───────────────────────────────────────────────
+        // ── Typeform-style animated progress bar ──────────────────────────
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: _StepperBar(currentStep: stepNumber, totalSteps: totalSteps),
-        ),
-
-        SizedBox(height: 6.h),
-      ],
-    );
-  }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Internal compact stepper widget
-// ──────────────────────────────────────────────────────────────────────────────
-
-class _StepperBar extends StatelessWidget {
-  const _StepperBar({required this.currentStep, required this.totalSteps});
-
-  final int currentStep;
-  final int totalSteps;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(totalSteps * 2 - 1, (index) {
-        // Even indexes → step dots; Odd indexes → connector lines
-        if (index.isOdd) {
-          final stepBefore = (index ~/ 2) + 1; // step to the left of this line
-          final isDone = stepBefore < currentStep;
-          return Expanded(
+          padding: EdgeInsets.symmetric(horizontal: widget.padding.w),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10.r),
             child: Container(
-              height: 2.5.h,
-              decoration: BoxDecoration(
-                gradient: isDone
-                    ? LinearGradient(
-                        colors: [AppColors.primary, AppColors.primary],
-                      )
-                    : null,
-                color: isDone ? null : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
-          );
-        }
-
-        final step = index ~/ 2 + 1;
-        final isDone = step < currentStep;
-        final isCurrent = step == currentStep;
-
-        return _StepDot(step: step, isDone: isDone, isCurrent: isCurrent);
-      }),
-    );
-  }
-}
-
-class _StepDot extends StatelessWidget {
-  const _StepDot({
-    required this.step,
-    required this.isDone,
-    required this.isCurrent,
-  });
-
-  final int step;
-  final bool isDone;
-  final bool isCurrent;
-
-  @override
-  Widget build(BuildContext context) {
-    final double dotSize = isCurrent ? 28.w : (isDone ? 20.w : 16.w);
-
-    if (isDone) {
-      // Completed step: filled primary circle with check
-      return Container(
-        width: dotSize,
-        height: dotSize,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.check, color: Colors.white, size: 10.sp),
-      );
-    }
-
-    if (isCurrent) {
-      // Current step: outer glow ring + filled center
-      return Container(
-        width: dotSize,
-        height: dotSize,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.primary.withValues(alpha: 0.15),
-          border: Border.all(color: AppColors.primary, width: 2),
-        ),
-        child: Center(
-          child: Container(
-            width: 16.w,
-            height: 16.w,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '$step',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.bold,
-                ),
+              height: 5.h,
+              width: double.infinity,
+              color: Colors.grey.shade200,
+              child: AnimatedBuilder(
+                animation: _progressAnimation,
+                builder: (context, _) {
+                  return FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: _progressAnimation.value.clamp(0.0, 1.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
         ),
-      );
-    }
 
-    // Future step: small grey dot
-    return Container(
-      width: dotSize,
-      height: dotSize,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.grey.shade200,
-        border: Border.all(color: Colors.grey.shade300, width: 1),
-      ),
+        SizedBox(height: 6.h),
+      ],
     );
   }
 }
