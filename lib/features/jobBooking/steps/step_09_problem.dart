@@ -13,7 +13,8 @@ class StepProblemWidget extends StatefulWidget {
 }
 
 class StepProblemWidgetState extends State<StepProblemWidget> {
-  final TextEditingController _problemDescriptionController = TextEditingController();
+  final TextEditingController _problemDescriptionController =
+      TextEditingController();
   final TextEditingController _internalNoteController = TextEditingController();
 
   @override
@@ -24,7 +25,9 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
 
     // Initial check
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.onCanProceedChanged(_problemDescriptionController.text.trim().isNotEmpty);
+      widget.onCanProceedChanged(
+        _problemDescriptionController.text.trim().isNotEmpty,
+      );
     });
   }
 
@@ -43,7 +46,9 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
 
   void _updateCanProceed() {
     if (mounted) {
-      widget.onCanProceedChanged(_problemDescriptionController.text.trim().isNotEmpty);
+      widget.onCanProceedChanged(
+        _problemDescriptionController.text.trim().isNotEmpty,
+      );
     }
   }
 
@@ -78,7 +83,14 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
           child: Column(
             children: [
               SizedBox(height: 24.h),
-              TitleWidget(stepNumber: 9, title: 'Problem Description', subTitle: '(Describe the defect and issue)'),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: TitleWidget(
+                  stepNumber: 9,
+                  title: 'Problem Description',
+                  subTitle: '(Describe the defect and issue)',
+                ),
+              ),
               SizedBox(height: 32.h),
             ],
           ),

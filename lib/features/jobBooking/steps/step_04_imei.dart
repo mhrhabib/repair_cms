@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
@@ -49,7 +50,7 @@ class StepImeiWidgetState extends State<StepImeiWidget> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -63,18 +64,28 @@ class StepImeiWidgetState extends State<StepImeiWidget> {
           TextField(
             controller: _imeiController,
             focusNode: _imeiFocusNode,
+            style: GoogleFonts.roboto(
+              fontSize: 32.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.fontMainColor,
+            ),
             decoration: InputDecoration(
-              hintText: 'Enter IMEI or Serial Number...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+              hintText: 'Answer here',
+              hintStyle: GoogleFonts.roboto(
+                fontSize: 32.sp,
+                color: const Color(0xFFB2B5BE),
+                fontWeight: FontWeight.w400,
+              ),
+              border: UnderlineInputBorder(
+                // borderRadius: BorderRadius.circular(8.r),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+              enabledBorder: UnderlineInputBorder(
+                // borderRadius: BorderRadius.circular(8.r),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+              focusedBorder: UnderlineInputBorder(
+                // borderRadius: BorderRadius.circular(8.r),
                 borderSide: BorderSide(color: AppColors.primary),
               ),
               contentPadding: EdgeInsets.symmetric(

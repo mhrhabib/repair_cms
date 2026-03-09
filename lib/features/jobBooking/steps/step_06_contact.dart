@@ -6,6 +6,8 @@ import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cu
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/jobBooking/models/business_model.dart';
 import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 
 /// Step 6 – Contact Selection (Existing Search or New Entry)
 class StepContactWidget extends StatefulWidget {
@@ -32,6 +34,16 @@ class StepContactWidgetState extends State<StepContactWidget> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController organizationController = TextEditingController();
 
+  final FocusNode searchFocusNode = FocusNode();
+  final ScrollController scrollController = ScrollController();
+  final FocusNode firstNameFocusNode = FocusNode();
+  final FocusNode lastNameFocusNode = FocusNode();
+  final FocusNode emailFocusNode = FocusNode();
+  final FocusNode phoneFocusNode = FocusNode();
+  final FocusNode organizationFocusNode = FocusNode();
+  String selectedPhoneCode = '+1';
+  final countryPicker = const FlCountryCodePicker();
+
   List<Customersorsuppliers> searchResults = [];
   bool showSearchResults = false;
   bool showContactForm = false;
@@ -47,10 +59,39 @@ class StepContactWidgetState extends State<StepContactWidget> {
   void initState() {
     super.initState();
     searchController.addListener(_onSearchChanged);
+    _setupFocusListeners();
     // Initial validation check
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onCanProceedChanged(_isFormValid);
     });
+  }
+
+  void _setupFocusListeners() {
+    firstNameFocusNode.addListener(
+      () => _scrollToFocus(firstNameFocusNode, 80.h),
+    );
+    lastNameFocusNode.addListener(
+      () => _scrollToFocus(lastNameFocusNode, 140.h),
+    );
+    emailFocusNode.addListener(() => _scrollToFocus(emailFocusNode, 200.h));
+    phoneFocusNode.addListener(() => _scrollToFocus(phoneFocusNode, 260.h));
+    organizationFocusNode.addListener(
+      () => _scrollToFocus(organizationFocusNode, 40.h),
+    );
+  }
+
+  void _scrollToFocus(FocusNode node, double offset) {
+    if (node.hasFocus && mounted) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && scrollController.hasClients) {
+          scrollController.animateTo(
+            offset,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
   }
 
   void _onSearchChanged() {
@@ -128,6 +169,19 @@ class StepContactWidgetState extends State<StepContactWidget> {
   }
 
   void _selectNewProfile() {
+    // Clear any previous address data in cubit to ensure a fresh start for new profile
+    final jobBookingCubit = context.read<JobBookingCubit>();
+    final emptyAddress = CustomerAddress(
+      street: '',
+      no: '',
+      city: '',
+      zip: '',
+      state: '',
+      country: '',
+    );
+    jobBookingCubit.updateShippingAddress(emptyAddress);
+    jobBookingCubit.updateBillingAddress(emptyAddress);
+
     if (mounted) {
       setState(() {
         if (selectedContactType == 'business') {
@@ -148,6 +202,22 @@ class StepContactWidgetState extends State<StepContactWidget> {
         _isSearching = false;
       });
       widget.onCanProceedChanged(_isFormValid);
+
+      // Scroll to form and focus first field
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          scrollController.animateTo(
+            80.h,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+          if (selectedContactType == 'business') {
+            organizationFocusNode.requestFocus();
+          } else {
+            firstNameFocusNode.requestFocus();
+          }
+        }
+      });
     }
   }
 
@@ -209,7 +279,7 @@ class StepContactWidgetState extends State<StepContactWidget> {
       firstName: firstNameController.text,
       lastName: lastNameController.text,
       telephone: phoneController.text.replaceAll(RegExp(r'[^\d+]'), ''),
-      telephonePrefix: "+1",
+      telephonePrefix: selectedPhoneCode,
       email: emailController.text,
       customerId: '',
     );
@@ -258,22 +328,24 @@ class StepContactWidgetState extends State<StepContactWidget> {
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
+      controller: scrollController,
       slivers: [
-        if (!showContactForm && !isExistingProfileSelected) ...[
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                SizedBox(height: 24.h),
-                TitleWidget(
+        SliverToBoxAdapter(
+          child: Column(
+            children: [
+              SizedBox(height: 24.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: TitleWidget(
                   stepNumber: 6,
                   title: 'Choose the contact type',
                   subTitle: 'Personal or Business account',
                 ),
-                SizedBox(height: 32.h),
-              ],
-            ),
+              ),
+              SizedBox(height: 32.h),
+            ],
           ),
-        ],
+        ),
         SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -293,6 +365,17 @@ class StepContactWidgetState extends State<StepContactWidget> {
                         showSearchResults = false;
                       });
                       widget.onCanProceedChanged(false);
+                      // Auto focus search and scroll
+                      searchFocusNode.requestFocus();
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (mounted) {
+                          scrollController.animateTo(
+                            100.h,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOut,
+                          );
+                        }
+                      });
                     },
                   ),
                   SizedBox(height: 16.h),
@@ -308,6 +391,17 @@ class StepContactWidgetState extends State<StepContactWidget> {
                         showSearchResults = false;
                       });
                       widget.onCanProceedChanged(false);
+                      // Auto focus search and scroll
+                      searchFocusNode.requestFocus();
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (mounted) {
+                          scrollController.animateTo(
+                            180.h,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOut,
+                          );
+                        }
+                      });
                     },
                   ),
                   SizedBox(height: 32.h),
@@ -319,15 +413,29 @@ class StepContactWidgetState extends State<StepContactWidget> {
                     SizedBox(height: 8.h),
                     TextField(
                       controller: searchController,
+                      focusNode: searchFocusNode,
+                      style: GoogleFonts.roboto(
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.fontMainColor,
+                      ),
                       decoration: InputDecoration(
-                        hintText: selectedContactType == 'business'
-                            ? 'Company name'
-                            : 'Person name',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        hintText: 'Search here...',
+                        hintStyle: GoogleFonts.roboto(
+                          fontSize: 24.sp,
+                          color: const Color(0xFFB2B5BE),
+                          fontWeight: FontWeight.w400,
                         ),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.primary),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(vertical: 8.h),
                       ),
                     ),
                     if (showSearchResults && currentSearchQuery.isNotEmpty) ...[
@@ -341,6 +449,7 @@ class StepContactWidgetState extends State<StepContactWidget> {
             ),
           ),
         ),
+        SliverToBoxAdapter(child: SizedBox(height: 400.h)),
         const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
       ],
     );
@@ -469,22 +578,27 @@ class StepContactWidgetState extends State<StepContactWidget> {
         if (selectedContactType == 'business') ...[
           Text('Company name*', style: AppTypography.fontSize16),
           SizedBox(height: 8.h),
-          _buildTextField(organizationController, 'Company name'),
+          _buildTextField(
+            organizationFocusNode,
+            organizationController,
+            'Company name',
+          ),
           SizedBox(height: 24.h),
           Text('Contact Person', style: AppTypography.fontSize16),
           SizedBox(height: 16.h),
         ],
         Text('First Name*', style: AppTypography.fontSize14),
         SizedBox(height: 8.h),
-        _buildTextField(firstNameController, 'John'),
+        _buildTextField(firstNameFocusNode, firstNameController, 'John'),
         SizedBox(height: 16.h),
         Text('Last Name*', style: AppTypography.fontSize14),
         SizedBox(height: 8.h),
-        _buildTextField(lastNameController, 'Markinson'),
+        _buildTextField(lastNameFocusNode, lastNameController, 'Markinson'),
         SizedBox(height: 16.h),
         Text('Email', style: AppTypography.fontSize14),
         SizedBox(height: 8.h),
         _buildTextField(
+          emailFocusNode,
           emailController,
           'name@company.com',
           keyboardType: TextInputType.emailAddress,
@@ -492,39 +606,102 @@ class StepContactWidgetState extends State<StepContactWidget> {
         SizedBox(height: 16.h),
         Text('Telephone (Mobile)', style: AppTypography.fontSize14),
         SizedBox(height: 8.h),
-        _buildTextField(
-          phoneController,
-          '+1-123456789',
-          keyboardType: TextInputType.phone,
+        Row(
+          children: [
+            GestureDetector(
+              onTap: _showPhoneCodePicker,
+              child: Container(
+                width: 90.w,
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      selectedPhoneCode,
+                      style: GoogleFonts.roboto(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.fontMainColor,
+                      ),
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16.sp,
+                      color: Colors.grey,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _buildTextField(
+                phoneFocusNode,
+                phoneController,
+                '123456789',
+                keyboardType: TextInputType.phone,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 32.h),
       ],
     );
   }
 
+  Future<void> _showPhoneCodePicker() async {
+    final code = await countryPicker.showPicker(context: context);
+    if (code != null && mounted) {
+      setState(() {
+        selectedPhoneCode = code.dialCode;
+      });
+      widget.onCanProceedChanged(_isFormValid);
+    }
+  }
+
   Widget _buildTextField(
+    FocusNode focusNode,
     TextEditingController controller,
     String hint, {
     TextInputType keyboardType = TextInputType.text,
   }) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: keyboardType,
+      textInputAction: TextInputAction.next,
+      style: GoogleFonts.roboto(
+        fontSize: 18.sp,
+        fontWeight: FontWeight.w400,
+        color: AppColors.fontMainColor,
+      ),
       onChanged: (_) {
         setState(() {});
         widget.onCanProceedChanged(_isFormValid);
       },
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+        hintStyle: GoogleFonts.roboto(
+          fontSize: 18.sp,
+          color: const Color(0xFFB2B5BE),
+          fontWeight: FontWeight.w400,
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+
+        border: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.primary),
+        ),
+        contentPadding: EdgeInsets.symmetric(vertical: 8.h),
       ),
     );
   }
@@ -599,6 +776,13 @@ class StepContactWidgetState extends State<StepContactWidget> {
     emailController.dispose();
     phoneController.dispose();
     organizationController.dispose();
+    searchFocusNode.dispose();
+    scrollController.dispose();
+    firstNameFocusNode.dispose();
+    lastNameFocusNode.dispose();
+    emailFocusNode.dispose();
+    phoneFocusNode.dispose();
+    organizationFocusNode.dispose();
     super.dispose();
   }
 }

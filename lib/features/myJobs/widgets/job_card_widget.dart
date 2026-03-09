@@ -14,14 +14,30 @@ class JobCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JobDetailsScreen(jobId: job.id),
+          ),
+        );
       },
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: ShapeDecoration(
           color: Colors.white,
-          shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 16.r, cornerSmoothing: 1.0)),
-          shadows: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+          shape: SmoothRectangleBorder(
+            borderRadius: SmoothBorderRadius(
+              cornerRadius: 16.r,
+              cornerSmoothing: 1.0,
+            ),
+          ),
+          shadows: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,7 +54,7 @@ class JobCardWidget extends StatelessWidget {
                           ? intl.DateFormat('dd.MM.yyyy').format(job.dueDate!)
                           : intl.DateFormat('dd.MM.yyyy').format(job.createdAt),
                       style: GoogleFonts.roboto(
-                        fontSize: 12.sp,
+                        fontSize: 14.sp,
                         color: const Color(0xFF64748B),
                         fontWeight: FontWeight.w400,
                       ),
@@ -46,7 +62,11 @@ class JobCardWidget extends StatelessWidget {
                     SizedBox(width: 2.w),
                     Text(
                       _getStatusText(job),
-                      style: GoogleFonts.roboto(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                      style: GoogleFonts.roboto(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
@@ -62,7 +82,11 @@ class JobCardWidget extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 4.w),
-                    Icon(Icons.flag, color: _getPriorityColor(job), size: 18.sp),
+                    Icon(
+                      Icons.flag,
+                      color: _getPriorityColor(job),
+                      size: 18.sp,
+                    ),
                   ],
                 ),
               ],
@@ -84,7 +108,11 @@ class JobCardWidget extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(Icons.chevron_right, color: const Color(0xFF94A3B8), size: 24.sp),
+                Icon(
+                  Icons.chevron_right,
+                  color: const Color(0xFF94A3B8),
+                  size: 24.sp,
+                ),
               ],
             ),
             SizedBox(height: 8.h),
@@ -152,11 +180,15 @@ class JobCardWidget extends StatelessWidget {
   String _getCustomerName() {
     final firstName = job.customerDetails.firstName;
     final lastName = job.customerDetails.lastName;
-    return '$firstName $lastName'.trim().isNotEmpty ? '$firstName $lastName'.trim() : 'Unknown Customer';
+    return '$firstName $lastName'.trim().isNotEmpty
+        ? '$firstName $lastName'.trim()
+        : 'Unknown Customer';
   }
 
   String _getEmployeeName() {
-    return job.assignerName.trim().isNotEmpty ? job.assignerName.trim() : 'Unknown';
+    return job.assignerName.trim().isNotEmpty
+        ? job.assignerName.trim()
+        : 'Unknown';
   }
 
   String _getEmployeeInitial() {

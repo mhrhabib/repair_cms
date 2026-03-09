@@ -474,7 +474,13 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
               ),
             )
             .toList(),
-        signatureFilePath: data?.signatureFilePath,
+        signatureFilePath:
+            (data?.signatureFilePath != null &&
+                data!.signatureFilePath!.isNotEmpty)
+            ? data.signatureFilePath
+            : (jobBookingState is JobBookingData
+                  ? jobBookingState.job.signatureFilePath
+                  : null),
         printOption: data?.printOption,
         printDeviceLabel: data?.printDeviceLabel,
         jobStatus: data?.jobStatus

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -494,6 +495,26 @@ class ThermalReceiptWidget extends StatelessWidget {
   }
 
   Widget _buildSignature(String signaturePath) {
+    if (signaturePath.startsWith('data:image')) {
+      try {
+        final base64String = signaturePath.split(',').last;
+        final bytes = base64Decode(base64String);
+        return Center(
+          child: Image.memory(
+            bytes,
+            height: 60,
+            width: 100,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) =>
+                const SizedBox.shrink(),
+          ),
+        );
+      } catch (e) {
+        debugPrint('Error decoding base64 signature: $e');
+        return const SizedBox.shrink();
+      }
+    }
+
     final url = signaturePath.startsWith('http')
         ? signaturePath
         : 'https://api.repaircms.com/file-upload/download/new?imagePath=$signaturePath';

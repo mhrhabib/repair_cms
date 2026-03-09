@@ -35,7 +35,9 @@ class StepLocationWidgetState extends State<StepLocationWidget> {
   /// Exposed for wizard navigation
   bool validate() {
     if (_locationController.text.trim().isNotEmpty) {
-      context.read<JobBookingCubit>().updatePhysicalLocation(_locationController.text.trim());
+      context.read<JobBookingCubit>().updatePhysicalLocation(
+        _locationController.text.trim(),
+      );
       return true;
     }
     showCustomToast('Please specify a storage location', isError: true);
@@ -50,7 +52,14 @@ class StepLocationWidgetState extends State<StepLocationWidget> {
           child: Column(
             children: [
               SizedBox(height: 24.h),
-              TitleWidget(stepNumber: 12, title: 'Physical Location', subTitle: '(Storage during service)'),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: TitleWidget(
+                  stepNumber: 12,
+                  title: 'Physical Location',
+                  subTitle: '(Storage during service)',
+                ),
+              ),
               SizedBox(height: 32.h),
             ],
           ),
@@ -63,17 +72,30 @@ class StepLocationWidgetState extends State<StepLocationWidget> {
               children: [
                 TextField(
                   controller: _locationController,
+                  style: GoogleFonts.roboto(fontSize: 32.sp),
                   decoration: InputDecoration(
                     hintText: 'Answer here',
-                    hintStyle: GoogleFonts.roboto(fontSize: 32.sp, color: Color(0xFFB2B5BE)),
+                    hintStyle: GoogleFonts.roboto(
+                      fontSize: 32.sp,
+                      color: Color(0xFFB2B5BE),
+                    ),
                     border: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                      borderSide: BorderSide(
+                        color: AppColors.lightFontColor,
+                        width: 1,
+                      ),
                     ),
                     enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                      borderSide: BorderSide(
+                        color: AppColors.lightFontColor,
+                        width: 1,
+                      ),
                     ),
                     focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                      borderSide: BorderSide(
+                        color: AppColors.lightFontColor,
+                        width: 1,
+                      ),
                     ),
                   ),
                 ),

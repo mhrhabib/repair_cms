@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/cubits/contactType/contact_type_cubit.dart';
@@ -52,6 +53,14 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
     if (!widget.isNewProfile && widget.selectedProfile != null) {
       _loadExistingProfileAddressData();
+    } else if (widget.isNewProfile &&
+        (context.read<JobBookingCubit>().state as JobBookingData)
+            .contact
+            .shippingAddress
+            .street!
+            .isEmpty) {
+      // Ensure we start with empty fields for a new profile if the cubit was just cleared
+      _syncOriginals();
     } else {
       _loadExistingAddressDataFromJobBooking();
     }
@@ -293,10 +302,13 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
                 child: Column(
                   children: [
                     SizedBox(height: 24.h),
-                    TitleWidget(
-                      stepNumber: 7,
-                      title: 'Address details',
-                      subTitle: 'Enter or confirm customer address',
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: TitleWidget(
+                        stepNumber: 7,
+                        title: 'Address details',
+                        subTitle: 'Enter or confirm customer address',
+                      ),
                     ),
                     SizedBox(height: 32.h),
                   ],
@@ -386,6 +398,12 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          textInputAction: TextInputAction.next,
+          style: GoogleFonts.roboto(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.fontMainColor,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.grey[400]),

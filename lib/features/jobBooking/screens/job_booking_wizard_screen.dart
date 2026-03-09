@@ -4,6 +4,7 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/models/business_model.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_receipt_preview_screen.dart';
+import 'package:repair_cms/features/jobBooking/screens/job_thermal_receipt_preview_screen.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import 'package:repair_cms/features/jobBooking/widgets/job_booking_top_bar.dart';
 
@@ -67,9 +68,9 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
       if (state is StepBrandWidgetState)
         success = state.validate();
       else if (state is StepModelWidgetState)
-        success = await state.validate();
+        success = state.validate();
       else if (state is StepAccessoriesWidgetState)
-        success = await state.validate();
+        success = state.validate();
       else if (state is StepImeiWidgetState)
         success = state.validate();
       else if (state is StepSecurityWidgetState)
@@ -95,23 +96,39 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
     }
 
     if (success && _currentStep < _totalSteps - 1) {
-      _nextPage();
+      if (_currentStep == 5 && !_isNewProfile && _selectedProfile != null) {
+        _nextPage(steps: 2); // Jump from Step 6 to Step 8
+      } else {
+        _nextPage();
+      }
     }
   }
 
-  void _nextPage() {
-    _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  void _nextPage({int steps = 1}) {
+    _pageController.animateToPage(
+      _currentStep + steps,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
     setState(() {
-      _currentStep++;
+      _currentStep += steps;
       _canProceed = false; // Reset for next step
     });
   }
 
   void _prevPage() {
     if (_currentStep > 0) {
-      _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      int steps = 1;
+      if (_currentStep == 7 && !_isNewProfile && _selectedProfile != null) {
+        steps = 2; // Jump back from Step 8 to Step 6
+      }
+      _pageController.animateToPage(
+        _currentStep - steps,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
       setState(() {
-        _currentStep--;
+        _currentStep -= steps;
         _canProceed = true; // Assume previous step was valid
       });
     } else {
@@ -126,9 +143,8 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
       _isNewProfile = isNew;
     });
     // If an existing profile was selected, step logic often triggers navigation immediately
-    // or we can just call _nextPage() here if step 6 logic dictates it.
     if (profile != null && !isNew) {
-      _nextPage();
+      _nextPage(steps: 2); // Jump to Step 8 direct from 6
     }
   }
 
@@ -141,12 +157,27 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
 
   void _onJobBooked(String printerType, CreateJobResponse response) {
     // Final navigation to receipt preview based on what was selected
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => JobReceiptPreviewScreen(jobResponse: response, printOption: printerType),
-      ),
-    );
+    if (printerType == 'Thermal Receipt') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => JobThermalReceiptPreviewScreen(
+            jobResponse: response,
+            printOption: printerType,
+          ),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => JobReceiptPreviewScreen(
+            jobResponse: response,
+            printOption: printerType,
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -156,11 +187,16 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            JobBookingTopBar(padding: 2, stepNumber: _currentStep + 1, onBack: _prevPage),
+            JobBookingTopBar(
+              padding: 2,
+              stepNumber: _currentStep + 1,
+              onBack: _prevPage,
+            ),
             Expanded(
               child: PageView(
                 controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(), // Control via buttons
+                physics:
+                    const NeverScrollableScrollPhysics(), // Control via buttons
                 children: [
                   StepBrandWidget(
                     key: _stepKeys[0],
@@ -174,9 +210,18 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
                     brandId: _selectedBrandId ?? '',
                     onCanProceedChanged: _onCanProceedChanged,
                   ),
-                  StepAccessoriesWidget(key: _stepKeys[2], onCanProceedChanged: _onCanProceedChanged),
-                  StepImeiWidget(key: _stepKeys[3], onCanProceedChanged: _onCanProceedChanged),
-                  StepSecurityWidget(key: _stepKeys[4], onCanProceedChanged: _onCanProceedChanged),
+                  StepAccessoriesWidget(
+                    key: _stepKeys[2],
+                    onCanProceedChanged: _onCanProceedChanged,
+                  ),
+                  StepImeiWidget(
+                    key: _stepKeys[3],
+                    onCanProceedChanged: _onCanProceedChanged,
+                  ),
+                  StepSecurityWidget(
+                    key: _stepKeys[4],
+                    onCanProceedChanged: _onCanProceedChanged,
+                  ),
                   StepContactWidget(
                     key: _stepKeys[5],
                     onCanProceedChanged: _onCanProceedChanged,
@@ -189,8 +234,14 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
                     selectedProfile: _selectedProfile,
                     onSuccess: _nextPage,
                   ),
-                  StepJobTypeWidget(key: _stepKeys[7], onCanProceedChanged: _onCanProceedChanged),
-                  StepProblemWidget(key: _stepKeys[8], onCanProceedChanged: _onCanProceedChanged),
+                  StepJobTypeWidget(
+                    key: _stepKeys[7],
+                    onCanProceedChanged: _onCanProceedChanged,
+                  ),
+                  StepProblemWidget(
+                    key: _stepKeys[8],
+                    onCanProceedChanged: _onCanProceedChanged,
+                  ),
                   StepAddItemsWidget(
                     key: _stepKeys[9],
                     onCanProceedChanged: _onCanProceedChanged,
@@ -202,8 +253,14 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
                     jobId: _jobId ?? '',
                     onSuccess: _nextPage,
                   ),
-                  StepLocationWidget(key: _stepKeys[11], onCanProceedChanged: _onCanProceedChanged),
-                  StepSignatureWidget(key: _stepKeys[12], onCanProceedChanged: _onCanProceedChanged),
+                  StepLocationWidget(
+                    key: _stepKeys[11],
+                    onCanProceedChanged: _onCanProceedChanged,
+                  ),
+                  StepSignatureWidget(
+                    key: _stepKeys[12],
+                    onCanProceedChanged: _onCanProceedChanged,
+                  ),
                   StepPrinterWidget(
                     key: _stepKeys[13],
                     onCanProceedChanged: _onCanProceedChanged,
@@ -218,7 +275,9 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
               child: BottomButtonsGroup(
                 onPressed: _canProceed ? _handleNext : null,
                 onBack: _prevPage,
-                okButtonText: (_currentStep == 9) ? 'Create Job' : (_currentStep == 13 ? 'Finish' : 'Continue'),
+                okButtonText: (_currentStep == 9)
+                    ? 'Create Job'
+                    : (_currentStep == 13 ? 'Finish' : 'Continue'),
               ),
             ),
           ],

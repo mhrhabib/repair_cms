@@ -88,6 +88,7 @@ dependencies:
   image: ^4.5.4
   url_launcher: ^6.3.2
   figma_squircle: ^0.6.3
+  fl_country_code_picker: ^0.0.4
 
 
 dev_dependencies:

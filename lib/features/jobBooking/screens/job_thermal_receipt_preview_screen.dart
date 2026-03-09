@@ -385,7 +385,13 @@ class _JobThermalReceiptPreviewScreenState
         jobTypes: data?.jobType,
         model: data?.model,
         physicalLocation: data?.physicalLocation,
-        signatureFilePath: data?.signatureFilePath,
+        signatureFilePath:
+            (data?.signatureFilePath != null &&
+                data!.signatureFilePath!.isNotEmpty)
+            ? data.signatureFilePath
+            : (jobBookingState is JobBookingData
+                  ? jobBookingState.job.signatureFilePath
+                  : null),
         jobNo: data?.jobNo ?? data?.model ?? data?.sId ?? 'N/A',
         createdAt: data?.createdAt,
         updatedAt: data?.updatedAt,

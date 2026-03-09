@@ -53,7 +53,11 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
   Future<void> _addNewJobType(String jobTypeName) async {
     setState(() => _isAddingJobType = true);
     try {
-      await context.read<JobTypeCubit>().createJobType(name: jobTypeName, userId: _userId, locationId: _locationId);
+      await context.read<JobTypeCubit>().createJobType(
+        name: jobTypeName,
+        userId: _userId,
+        locationId: _locationId,
+      );
       if (!mounted) return;
       final state = context.read<JobTypeCubit>().state;
       if (state is JobTypeLoaded) {
@@ -98,7 +102,14 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
           child: Column(
             children: [
               SizedBox(height: 24.h),
-              TitleWidget(stepNumber: 8, title: 'Job Type', subTitle: '(Warranty, ReRepair, Quote req...)'),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: TitleWidget(
+                  stepNumber: 8,
+                  title: 'Job Type',
+                  subTitle: '(Warranty, ReRepair, Quote req...)',
+                ),
+              ),
               SizedBox(height: 32.h),
             ],
           ),
@@ -115,10 +126,15 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
                       return const Center(child: ShimmerLoader());
                     }
                     if (state is JobTypeError) {
-                      return Text('Error: ${state.message}', style: const TextStyle(color: Colors.red));
+                      return Text(
+                        'Error: ${state.message}',
+                        style: const TextStyle(color: Colors.red),
+                      );
                     }
 
-                    final jobTypes = state is JobTypeLoaded ? state.jobTypes : <JobType>[];
+                    final jobTypes = state is JobTypeLoaded
+                        ? state.jobTypes
+                        : <JobType>[];
                     return CustomDropdownSearch<JobType>(
                       controller: _jobTypeController,
                       items: jobTypes,
@@ -126,7 +142,8 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
                       noItemsText: 'No job types found',
                       displayAllSuggestionWhenTap: true,
                       onSuggestionSelected: (jt) async {
-                        if (jt.sId == null && jt.name?.startsWith('Add "') == true) {
+                        if (jt.sId == null &&
+                            jt.name?.startsWith('Add "') == true) {
                           final name = jt.name?.split('"')[1] ?? '';
                           if (name.isNotEmpty) await _addNewJobType(name);
                         } else {
@@ -138,7 +155,9 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
                         }
                       },
                       itemBuilder: (ctx, jt) {
-                        final isNew = jt.sId == null && jt.name?.startsWith('Add "') == true;
+                        final isNew =
+                            jt.sId == null &&
+                            jt.name?.startsWith('Add "') == true;
                         if (isNew) {
                           return Container(
                             margin: EdgeInsets.symmetric(vertical: 4.h),
@@ -150,7 +169,10 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
                             child: ListTile(
                               title: Text(
                                 jt.name?.split('"')[1] ?? '',
-                                style: GoogleFonts.roboto(fontSize: 22.sp, color: AppColors.fontMainColor),
+                                style: GoogleFonts.roboto(
+                                  fontSize: 22.sp,
+                                  color: AppColors.fontMainColor,
+                                ),
                               ),
                             ),
                           );
@@ -158,18 +180,35 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
                         return ListTile(
                           title: Text(
                             jt.name ?? '',
-                            style: GoogleFonts.roboto(fontSize: 22.sp, color: AppColors.fontMainColor),
+                            style: GoogleFonts.roboto(
+                              fontSize: 22.sp,
+                              color: AppColors.fontMainColor,
+                            ),
                           ),
                         );
                       },
                       suggestionsCallback: (pattern) {
                         if (pattern.isEmpty) return jobTypes;
                         final filtered = jobTypes
-                            .where((jt) => (jt.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
+                            .where(
+                              (jt) => (jt.name ?? '').toLowerCase().contains(
+                                pattern.toLowerCase(),
+                              ),
+                            )
                             .toList();
-                        if (!filtered.any((jt) => jt.name?.toLowerCase() == pattern.toLowerCase()) &&
+                        if (!filtered.any(
+                              (jt) =>
+                                  jt.name?.toLowerCase() ==
+                                  pattern.toLowerCase(),
+                            ) &&
                             pattern.isNotEmpty) {
-                          filtered.insert(0, JobType(sId: null, name: 'Add "$pattern" as new job type'));
+                          filtered.insert(
+                            0,
+                            JobType(
+                              sId: null,
+                              name: 'Add "$pattern" as new job type',
+                            ),
+                          );
                         }
                         return filtered;
                       },
@@ -179,23 +218,39 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
                 if (_isAddingJobType)
                   Padding(
                     padding: EdgeInsets.only(top: 8.h),
-                    child: const Text('Adding...', style: TextStyle(color: Colors.grey)),
+                    child: const Text(
+                      'Adding...',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 SizedBox(height: 24.h),
 
                 TextField(
                   controller: _referenceController,
+                  style: AppTypography.fontSize22.copyWith(fontSize: 32.sp),
                   decoration: InputDecoration(
                     hintText: 'Enter reference',
-                    hintStyle: GoogleFonts.roboto(fontSize: 32.sp, color: Color(0xFFB2B5BE)),
+                    hintStyle: GoogleFonts.roboto(
+                      fontSize: 32.sp,
+                      color: Color(0xFFB2B5BE),
+                    ),
                     border: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                      borderSide: BorderSide(
+                        color: AppColors.lightFontColor,
+                        width: 1,
+                      ),
                     ),
                     enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                      borderSide: BorderSide(
+                        color: AppColors.lightFontColor,
+                        width: 1,
+                      ),
                     ),
                     focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                      borderSide: BorderSide(
+                        color: AppColors.lightFontColor,
+                        width: 1,
+                      ),
                     ),
                   ),
                 ),

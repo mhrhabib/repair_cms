@@ -125,8 +125,9 @@ class StepFileUploadWidgetState extends State<StepFileUploadWidget> {
       },
       child: BlocBuilder<JobBookingCubit, JobBookingState>(
         builder: (context, state) {
-          if (state is! JobBookingData)
+          if (state is! JobBookingData) {
             return const Center(child: CircularProgressIndicator());
+          }
           final uploadedFiles = state.localFiles;
 
           return Stack(
@@ -137,10 +138,13 @@ class StepFileUploadWidgetState extends State<StepFileUploadWidget> {
                     child: Column(
                       children: [
                         SizedBox(height: 24.h),
-                        TitleWidget(
-                          stepNumber: 11,
-                          title: 'File Upload',
-                          subTitle: '(Optional - Images or Docs)',
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          child: TitleWidget(
+                            stepNumber: 11,
+                            title: 'File Upload',
+                            subTitle: '(Optional - Images or Docs)',
+                          ),
                         ),
                         Padding(
                           padding: EdgeInsets.symmetric(

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
@@ -692,14 +693,7 @@ class JobReceiptWidgetNew extends StatelessWidget {
                       style: TextStyle(fontSize: 10),
                     ),
                     // const SizedBox(width: 10),
-                    Image.network(
-                      '$baseUrl/file-upload/download/new?imagePath=${data!.signatureFilePath}',
-                      height: 60,
-                      width: 100,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const SizedBox.shrink(),
-                    ),
+                    _buildSignatureImage(data!.signatureFilePath!),
                   ],
                 ),
                 Container(
@@ -720,6 +714,33 @@ class JobReceiptWidgetNew extends StatelessWidget {
         else
           const SizedBox.shrink(),
       ],
+    );
+  }
+
+  Widget _buildSignatureImage(String signaturePath) {
+    if (signaturePath.startsWith('data:image')) {
+      try {
+        final base64String = signaturePath.split(',').last;
+        final bytes = base64Decode(base64String);
+        return Image.memory(
+          bytes,
+          height: 60,
+          width: 100,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+        );
+      } catch (e) {
+        debugPrint('Error decoding base64 signature: $e');
+        return const SizedBox.shrink();
+      }
+    }
+
+    return Image.network(
+      '$baseUrl/file-upload/download/new?imagePath=$signaturePath',
+      height: 60,
+      width: 100,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
     );
   }
 
