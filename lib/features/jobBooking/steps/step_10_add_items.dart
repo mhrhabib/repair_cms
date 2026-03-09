@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
@@ -9,11 +10,7 @@ import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
 /// Step 10 – Add Items (Protection case, Insurance, etc.)
 /// This step ALSO triggers the initial Job Creation via JobCreateCubit.
 class StepAddItemsWidget extends StatefulWidget {
-  const StepAddItemsWidget({
-    super.key,
-    required this.onCanProceedChanged,
-    required this.onJobCreated,
-  });
+  const StepAddItemsWidget({super.key, required this.onCanProceedChanged, required this.onJobCreated});
 
   final void Function(bool canProceed) onCanProceedChanged;
   final void Function(String jobId) onJobCreated;
@@ -41,10 +38,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
     if (query.isNotEmpty) {
       final userId = storage.read('userId');
       if (userId != null) {
-        context.read<JobItemCubit>().searchItems(
-          userId: userId,
-          keyword: query,
-        );
+        context.read<JobItemCubit>().searchItems(userId: userId, keyword: query);
       }
     } else {
       context.read<JobItemCubit>().clearSearch();
@@ -103,9 +97,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
         if (state is JobCreateCreated) {
           final jobId = state.response.data?.sId;
           if (state.response.data != null) {
-            context.read<JobBookingCubit>().updateJobFromResponse(
-              state.response.data!,
-            );
+            context.read<JobBookingCubit>().updateJobFromResponse(state.response.data!);
             if (jobId != null) {
               context.read<JobBookingCubit>().setJobId(jobId);
               widget.onJobCreated(jobId);
@@ -113,10 +105,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
           }
           setState(() => _isCreatingJob = false);
         } else if (state is JobCreateError) {
-          showCustomToast(
-            'Failed to create job: ${state.message}',
-            isError: true,
-          );
+          showCustomToast('Failed to create job: ${state.message}', isError: true);
           setState(() => _isCreatingJob = false);
         }
       },
@@ -128,11 +117,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
                 child: Column(
                   children: [
                     SizedBox(height: 24.h),
-                    TitleWidget(
-                      stepNumber: 10,
-                      title: 'Add Items',
-                      subTitle: '(Protection case, Insurance...)',
-                    ),
+                    TitleWidget(stepNumber: 10, title: 'Add Items', subTitle: '(Protection case, Insurance...)'),
                     SizedBox(height: 32.h),
                   ],
                 ),
@@ -144,24 +129,26 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
                     controller: _itemController,
                     focusNode: _itemFocusNode,
                     onChanged: _onSearchChanged,
+                    style: GoogleFonts.roboto(fontSize: 32.sp, color: AppColors.fontMainColor),
                     decoration: InputDecoration(
-                      hintText: 'Search items by name...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
+                      hintText: 'Answer here',
+                      hintStyle: GoogleFonts.roboto(fontSize: 32.sp, color: const Color(0xFFB2B5BE)),
+                      // prefixIcon: Padding(
+                      //   padding: EdgeInsets.only(right: 12.w),
+                      //   child: Icon(Icons.qr_code_scanner, color: AppColors.primary, size: 40.sp),
+                      // ),
+                      suffixIcon: Icon(Icons.keyboard_arrow_up_rounded, color: AppColors.fontMainColor, size: 32.sp),
+                      border: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
                     ),
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
               _buildSearchResults(),
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
               _buildSelectedItemsList(),
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: SizedBox(),
-              ),
+              const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
             ],
           ),
           if (_isCreatingJob) const Center(child: CircularProgressIndicator()),
@@ -173,27 +160,112 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
   Widget _buildSearchResults() {
     return BlocBuilder<JobItemCubit, JobItemState>(
       builder: (context, state) {
-        if (state is JobItemLoading)
-          return const SliverToBoxAdapter(
-            child: Center(child: CircularProgressIndicator()),
-          );
-        if (state is JobItemLoaded) {
-          return SliverList(
-            delegate: SliverChildBuilderDelegate((ctx, index) {
-              final item = state.itemsResponse.items![index];
-              return ListTile(
-                title: Text(item.productName ?? ''),
-                subtitle: Text(
-                  '${item.salePriceIncVat?.toStringAsFixed(2) ?? '0.00'} €',
+        if (state is JobItemLoading) {
+          return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
+        }
+        if (state is JobItemLoaded && state.itemsResponse.items != null && state.itemsResponse.items!.isNotEmpty) {
+          final items = state.itemsResponse.items!;
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              child: Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
                 ),
-                trailing: const Icon(Icons.add_circle_outline),
-                onTap: () => _addItem(item),
-              );
-            }, childCount: state.itemsResponse.items!.length),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: items.length,
+                  separatorBuilder: (context, index) => SizedBox(height: 8.h),
+                  itemBuilder: (ctx, index) {
+                    final item = items[index];
+                    final query = _itemController.text;
+                    final isFirst = index == 0;
+
+                    return InkWell(
+                      onTap: () => _addItem(item),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: isFirst ? AppColors.primary : Colors.grey.withOpacity(0.2)),
+                          color: isFirst ? AppColors.primary.withOpacity(0.05) : Colors.transparent,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(child: _highlightText(item.productName ?? '', query)),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${item.salePriceIncVat?.toStringAsFixed(2) ?? '0.00'} €',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                Text(
+                                  'incl. ${item.vatPercent ?? 20}% VAT',
+                                  style: GoogleFonts.roboto(fontSize: 12.sp, color: AppColors.lightFontColor),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
           );
         }
         return const SliverToBoxAdapter(child: SizedBox.shrink());
       },
+    );
+  }
+
+  Widget _highlightText(String text, String query) {
+    if (query.isEmpty || !text.toLowerCase().contains(query.toLowerCase())) {
+      return Text(
+        text,
+        style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
+      );
+    }
+    final List<TextSpan> spans = [];
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    int start = 0;
+    int index = lowerText.indexOf(lowerQuery);
+    while (index != -1) {
+      if (index > start) {
+        spans.add(TextSpan(text: text.substring(start, index)));
+      }
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style: TextStyle(backgroundColor: const Color(0xFFFFF176), color: Colors.black),
+        ),
+      );
+      start = index + query.length;
+      index = lowerText.indexOf(lowerQuery, start);
+    }
+    if (start < text.length) {
+      spans.add(TextSpan(text: text.substring(start)));
+    }
+    return RichText(
+      text: TextSpan(
+        style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
+        children: spans,
+      ),
     );
   }
 

@@ -1,8 +1,8 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/constants/box_decoration_extention.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_card_widget.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
@@ -74,11 +74,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         final response = await repository.getAssignUserList(userId);
 
         if (mounted) {
-          final names = response.data
-              .map(
-                (u) => u.fullName?.isNotEmpty == true ? u.fullName! : u.email,
-              )
-              .toList();
+          final names = response.data.map((u) => u.fullName?.isNotEmpty == true ? u.fullName! : u.email).toList();
 
           setState(() {
             _assigneeUsers = response.data;
@@ -134,16 +130,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFF7F7F8),
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.whiteColor,
-                              width: 1,
-                            ),
+                            border: Border.all(color: AppColors.whiteColor, width: 1),
                           ),
-                          child: Icon(
-                            SolarIconsOutline.sortVertical,
-                            color: const Color(0xFF3B82F6),
-                            size: 24.sp,
-                          ),
+                          child: Icon(SolarIconsOutline.sortVertical, color: const Color(0xFF3B82F6), size: 24.sp),
                         ),
                       ),
                     ),
@@ -152,14 +141,13 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   Padding(
                     padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
                     child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 10.h,
-                      ),
-                      decoration: BoxDecoration(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                      decoration: ShapeDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(30.r),
-                        boxShadow: [
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(cornerRadius: 30.r, cornerSmoothing: 1.0),
+                        ),
+                        shadows: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
@@ -170,11 +158,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                       child: Row(
                         children: [
                           // Fixed left icon
-                          Icon(
-                            SolarIconsOutline.sortVertical,
-                            color: const Color(0xFF3B82F6),
-                            size: 24.sp,
-                          ),
+                          Icon(SolarIconsOutline.sortVertical, color: const Color(0xFF3B82F6), size: 24.sp),
                           SizedBox(width: 12.w),
                           // Scrollable middle section with filters
                           Expanded(
@@ -196,15 +180,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                             onTap: () => _clearAllFilters(),
                             child: Container(
                               padding: EdgeInsets.all(6.w),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF3B82F6),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 18.sp,
-                              ),
+                              decoration: BoxDecoration(color: const Color(0xFF3B82F6), shape: BoxShape.circle),
+                              child: Icon(Icons.close, color: Colors.white, size: 18.sp),
                             ),
                           ),
                         ],
@@ -237,27 +214,21 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                         },
                         child: Container(
                           height: 48.h,
-                          decoration: boxDecoration(
+                          decoration: ShapeDecoration(
                             color: const Color(0xFFE2E8F0),
-                            radius: 22.r,
-                            borderWidth: 0.3,
-                            borderColor: AppColors.whiteColor,
+                            shape: SmoothRectangleBorder(
+                              borderRadius: SmoothBorderRadius(cornerRadius: 22.r, cornerSmoothing: 1.0),
+                              side: const BorderSide(color: AppColors.whiteColor, width: 0.3),
+                            ),
                           ),
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Row(
                             children: [
-                              Icon(
-                                SolarIconsOutline.magnifier,
-                                color: const Color(0xFF94A3B8),
-                                size: 22.sp,
-                              ),
+                              Icon(SolarIconsOutline.magnifier, color: const Color(0xFF94A3B8), size: 22.sp),
                               SizedBox(width: 12.w),
                               Text(
                                 'Customer, Job-ID, Device ....',
-                                style: GoogleFonts.roboto(
-                                  fontSize: 15.sp,
-                                  color: const Color(0xFF94A3B8),
-                                ),
+                                style: GoogleFonts.roboto(fontSize: 15.sp, color: const Color(0xFF94A3B8)),
                               ),
                             ],
                           ),
@@ -285,10 +256,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       builder: (context, state) {
         if (state is JobLoading) {
           return Center(
-            child: CupertinoActivityIndicator(
-              color: const Color(0xFF3B82F6),
-              radius: 16.r,
-            ),
+            child: CupertinoActivityIndicator(color: const Color(0xFF3B82F6), radius: 16.r),
           );
         }
 
@@ -301,10 +269,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 children: [
                   Text(
                     'Error loading jobs',
-                    style: GoogleFonts.roboto(
-                      fontSize: 16.sp,
-                      color: Colors.red,
-                    ),
+                    style: GoogleFonts.roboto(fontSize: 16.sp, color: Colors.red),
                   ),
                   SizedBox(height: 16.h),
                   ElevatedButton(
@@ -313,9 +278,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
                     ),
                     child: const Text('Retry'),
                   ),
@@ -334,10 +297,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 padding: EdgeInsets.all(32.w),
                 child: Text(
                   'No jobs found',
-                  style: GoogleFonts.roboto(
-                    fontSize: 16.sp,
-                    color: const Color(0xFF94A3B8),
-                  ),
+                  style: GoogleFonts.roboto(fontSize: 16.sp, color: const Color(0xFF94A3B8)),
                 ),
               ),
             );
@@ -353,10 +313,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 return Padding(
                   padding: EdgeInsets.all(16.h),
                   child: Center(
-                    child: CupertinoActivityIndicator(
-                      color: const Color(0xFF3B82F6),
-                      radius: 16.r,
-                    ),
+                    child: CupertinoActivityIndicator(color: const Color(0xFF3B82F6), radius: 16.r),
                   ),
                 );
               }
@@ -372,10 +329,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
             padding: EdgeInsets.all(32.w),
             child: Text(
               'No jobs available',
-              style: GoogleFonts.roboto(
-                fontSize: 16.sp,
-                color: const Color(0xFF94A3B8),
-              ),
+              style: GoogleFonts.roboto(fontSize: 16.sp, color: const Color(0xFF94A3B8)),
             ),
           ),
         );
@@ -421,12 +375,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       startDate = intl.DateFormat('yyyy-MM-dd').format(firstDay);
       endDate = intl.DateFormat('yyyy-MM-dd').format(lastDay);
     } else if (_dueDate == 'This month') {
-      startDate = intl.DateFormat(
-        'yyyy-MM-dd',
-      ).format(DateTime(now.year, now.month, 1));
-      endDate = intl.DateFormat(
-        'yyyy-MM-dd',
-      ).format(DateTime(now.year, now.month + 1, 0));
+      startDate = intl.DateFormat('yyyy-MM-dd').format(DateTime(now.year, now.month, 1));
+      endDate = intl.DateFormat('yyyy-MM-dd').format(DateTime(now.year, now.month + 1, 0));
     }
     // 'Overdue' would require different logic (endDate < today), handled by backend ideally or simple date check
 
@@ -472,9 +422,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     if (_assignee != 'None') {
       try {
         final user = _assigneeUsers.firstWhere(
-          (u) =>
-              (u.fullName?.isNotEmpty == true ? u.fullName! : u.email) ==
-              _assignee,
+          (u) => (u.fullName?.isNotEmpty == true ? u.fullName! : u.email) == _assignee,
         );
         assignUserId = user.id;
       } catch (e) {
@@ -485,9 +433,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     context.read<JobCubit>().getJobs(
       sortBy: _sortBy,
       location: _location,
-      statusList: backendStatus != null
-          ? [backendStatus]
-          : ['accepted_quotes', 'booked'],
+      statusList: backendStatus != null ? [backendStatus] : ['accepted_quotes', 'booked'],
       priority: backendPriority,
       assignee: assignUserId,
       dueDate: backendDueDate,
@@ -518,14 +464,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
             // Search Header
             Container(
               padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
+                shape: const SmoothRectangleBorder(borderRadius: SmoothBorderRadius.zero),
+                shadows: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
               child: Row(
@@ -534,80 +477,50 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   Expanded(
                     child: Container(
                       height: 44.h,
-                      decoration: boxDecoration(
+                      decoration: ShapeDecoration(
                         color: const Color(0xFFF7F7F8),
-                        radius: 46.r,
-                        borderWidth: 1,
-                        borderColor: AppColors.whiteColor,
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(cornerRadius: 46.r, cornerSmoothing: 1.0),
+                          side: const BorderSide(color: AppColors.whiteColor, width: 1),
+                        ),
                       ),
                       child: TextField(
                         controller: _searchController,
                         autofocus: true,
-                        style: GoogleFonts.roboto(
-                          fontSize: 16.sp,
-                          color: const Color(0xFF1E293B),
-                        ),
+                        style: GoogleFonts.roboto(fontSize: 16.sp, color: const Color(0xFF1E293B)),
                         cursorColor: AppColors.warningColor,
                         decoration: InputDecoration(
                           hintText: 'Customer, Job-ID, Device ....',
-                          hintStyle: GoogleFonts.roboto(
-                            fontSize: 16.sp,
-                            color: const Color(0xFF94A3B8),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 8.h,
-                          ),
+                          hintStyle: GoogleFonts.roboto(fontSize: 16.sp, color: const Color(0xFF94A3B8)),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
 
-                          prefixIcon: Icon(
-                            SolarIconsOutline.magnifier,
-                            color: const Color(0xFF64748B),
-                            size: 22.sp,
-                          ),
+                          prefixIcon: Icon(SolarIconsOutline.magnifier, color: const Color(0xFF64748B), size: 22.sp),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? GestureDetector(
                                   onTap: () {
                                     setState(() {
                                       _searchController.clear();
                                     });
-                                    context
-                                        .read<JobCubit>()
-                                        .clearSearchKeyword();
+                                    context.read<JobCubit>().clearSearchKeyword();
                                   },
                                   child: Container(
                                     margin: EdgeInsets.all(10.w),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFCBD5E1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.close,
-                                      color: Colors.white,
-                                      size: 16.sp,
-                                    ),
+                                    decoration: BoxDecoration(color: const Color(0xFFCBD5E1), shape: BoxShape.circle),
+                                    child: Icon(Icons.close, color: Colors.white, size: 16.sp),
                                   ),
                                 )
                               : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(46.r),
-                            borderSide: BorderSide(
-                              color: const Color(0xFFF7F7F8),
-                              width: 1,
-                            ),
+                            borderSide: BorderSide(color: const Color(0xFFF7F7F8), width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(46.r),
-                            borderSide: BorderSide(
-                              color: const Color(0xFFF7F7F8),
-                              width: 1,
-                            ),
+                            borderSide: BorderSide(color: const Color(0xFFF7F7F8), width: 1),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(46.r),
-                            borderSide: BorderSide(
-                              color: const Color(0xFFF7F7F8),
-                              width: 1,
-                            ),
+                            borderSide: BorderSide(color: const Color(0xFFF7F7F8), width: 1),
                           ),
                         ),
 
@@ -635,17 +548,14 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     child: Container(
                       width: 44.w,
                       height: 44.h,
-                      decoration: boxDecoration(
+                      decoration: ShapeDecoration(
                         color: const Color(0xFFF7F7F8),
-                        radius: 46.r,
-                        borderWidth: 1,
-                        borderColor: AppColors.whiteColor,
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(cornerRadius: 46.r, cornerSmoothing: 1.0),
+                          side: const BorderSide(color: AppColors.whiteColor, width: 1),
+                        ),
                       ),
-                      child: Icon(
-                        Icons.close,
-                        color: const Color(0xFF64748B),
-                        size: 24.sp,
-                      ),
+                      child: Icon(Icons.close, color: const Color(0xFF64748B), size: 24.sp),
                     ),
                   ),
                 ],
@@ -658,10 +568,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 builder: (context, state) {
                   if (state is JobLoading) {
                     return Center(
-                      child: CupertinoActivityIndicator(
-                        color: const Color(0xFF3B82F6),
-                        radius: 16.r,
-                      ),
+                      child: CupertinoActivityIndicator(color: const Color(0xFF3B82F6), radius: 16.r),
                     );
                   }
 
@@ -676,15 +583,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                             Container(
                               width: 56.w,
                               height: 56.h,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.info_outline,
-                                color: const Color(0xFF64748B),
-                                size: 28.sp,
-                              ),
+                              decoration: BoxDecoration(color: const Color(0xFFF1F5F9), shape: BoxShape.circle),
+                              child: Icon(Icons.info_outline, color: const Color(0xFF64748B), size: 28.sp),
                             ),
                             SizedBox(height: 16.h),
                             Text(
@@ -698,10 +598,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                             SizedBox(height: 4.h),
                             Text(
                               'Please verify your input or filters',
-                              style: GoogleFonts.roboto(
-                                fontSize: 14.sp,
-                                color: const Color(0xFF64748B),
-                              ),
+                              style: GoogleFonts.roboto(fontSize: 14.sp, color: const Color(0xFF64748B)),
                             ),
                           ],
                         ),
@@ -723,18 +620,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 48.sp,
-                          ),
+                          Icon(Icons.error_outline, color: Colors.red, size: 48.sp),
                           SizedBox(height: 16.h),
                           Text(
                             'Error: ${state.message}',
-                            style: GoogleFonts.roboto(
-                              fontSize: 14.sp,
-                              color: Colors.red,
-                            ),
+                            style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.red),
                           ),
                         ],
                       ),
@@ -754,9 +644,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   Widget _buildSearchResultItem(Job job) {
     final searchQuery = _searchController.text.toLowerCase();
     final formattedDate = intl.DateFormat('dd.MM.yyyy').format(job.createdAt);
-    final customerName =
-        '${job.customerDetails.firstName} ${job.customerDetails.lastName}'
-            .trim();
+    final customerName = '${job.customerDetails.firstName} ${job.customerDetails.lastName}'.trim();
     final deviceBrand = job.deviceData.brand ?? '';
     final deviceModel = job.deviceData.model ?? '';
     final deviceInfo = '$deviceBrand $deviceModel'.trim();
@@ -769,20 +657,13 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
           _searchController.clear();
         });
         context.read<JobCubit>().clearKeywordOnly();
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => JobDetailsScreen(jobId: job.id),
-          ),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(
-            bottom: BorderSide(color: const Color(0xFFF1F5F9), width: 1),
-          ),
+          border: Border(bottom: BorderSide(color: const Color(0xFFF1F5F9), width: 1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -795,10 +676,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   children: [
                     Text(
                       formattedDate,
-                      style: GoogleFonts.roboto(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF64748B),
-                      ),
+                      style: GoogleFonts.roboto(fontSize: 14.sp, color: const Color(0xFF64748B)),
                     ),
                     SizedBox(width: 8.w),
                     Text(
@@ -815,17 +693,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   children: [
                     Text(
                       _getPriorityText(job),
-                      style: GoogleFonts.roboto(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF64748B),
-                      ),
+                      style: GoogleFonts.roboto(fontSize: 14.sp, color: const Color(0xFF64748B)),
                     ),
                     SizedBox(width: 4.w),
-                    Icon(
-                      Icons.flag,
-                      color: _getPriorityColor(job),
-                      size: 16.sp,
-                    ),
+                    Icon(Icons.flag, color: _getPriorityColor(job), size: 16.sp),
                   ],
                 ),
               ],
@@ -850,11 +721,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: const Color(0xFF94A3B8),
-                  size: 24.sp,
-                ),
+                Icon(Icons.chevron_right, color: const Color(0xFF94A3B8), size: 24.sp),
               ],
             ),
             SizedBox(height: 8.h),
@@ -865,39 +732,24 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 Container(
                   width: 20.w,
                   height: 20.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: const Color(0xFF10B981), shape: BoxShape.circle),
                   child: Center(
                     child: Text(
-                      employeeName.isNotEmpty
-                          ? employeeName[0].toUpperCase()
-                          : 'U',
-                      style: GoogleFonts.roboto(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                      employeeName.isNotEmpty ? employeeName[0].toUpperCase() : 'U',
+                      style: GoogleFonts.roboto(fontSize: 10.sp, fontWeight: FontWeight.w600, color: Colors.white),
                     ),
                   ),
                 ),
                 SizedBox(width: 6.w),
                 Text(
                   employeeName,
-                  style: GoogleFonts.roboto(
-                    fontSize: 14.sp,
-                    color: const Color(0xFF64748B),
-                  ),
+                  style: GoogleFonts.roboto(fontSize: 14.sp, color: const Color(0xFF64748B)),
                 ),
                 SizedBox(width: 16.w),
                 Expanded(
                   child: Text(
                     deviceInfo.isNotEmpty ? deviceInfo : 'Unknown Device',
-                    style: GoogleFonts.roboto(
-                      fontSize: 14.sp,
-                      color: const Color(0xFF64748B),
-                    ),
+                    style: GoogleFonts.roboto(fontSize: 14.sp, color: const Color(0xFF64748B)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -910,11 +762,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     );
   }
 
-  List<TextSpan> _highlightText(
-    String text,
-    String query,
-    TextStyle baseStyle,
-  ) {
+  List<TextSpan> _highlightText(String text, String query, TextStyle baseStyle) {
     if (query.isEmpty) {
       return [TextSpan(text: text, style: baseStyle)];
     }
@@ -929,21 +777,13 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     while ((indexOfHighlight = lowerText.indexOf(lowerQuery, start)) != -1) {
       // Add text before highlight
       if (indexOfHighlight > start) {
-        spans.add(
-          TextSpan(
-            text: text.substring(start, indexOfHighlight),
-            style: baseStyle,
-          ),
-        );
+        spans.add(TextSpan(text: text.substring(start, indexOfHighlight), style: baseStyle));
       }
 
       // Add highlighted text
       spans.add(
         TextSpan(
-          text: text.substring(
-            indexOfHighlight,
-            indexOfHighlight + query.length,
-          ),
+          text: text.substring(indexOfHighlight, indexOfHighlight + query.length),
           style: baseStyle.copyWith(
             backgroundColor: const Color(0xFFFEF3C7), // Yellow highlight
             color: const Color(0xFF1E293B),
@@ -1025,11 +865,13 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20.r),
-                  topRight: Radius.circular(20.r),
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius.only(
+                    topLeft: SmoothRadius(cornerRadius: 20.r, cornerSmoothing: 1.0),
+                    topRight: SmoothRadius(cornerRadius: 20.r, cornerSmoothing: 1.0),
+                  ),
                 ),
               ),
               padding: EdgeInsets.only(
@@ -1045,19 +887,12 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   Container(
                     width: 40.w,
                     height: 4.h,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2E8F0),
-                      borderRadius: BorderRadius.circular(2.r),
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2.r)),
                   ),
                   SizedBox(height: 24.h),
 
                   // Sort by
-                  _buildFilterRow(
-                    'Sort by',
-                    _sortBy,
-                    () => _showSortByOptions(context, setModalState),
-                  ),
+                  _buildFilterRow('Sort by', _sortBy, () => _showSortByOptions(context, setModalState)),
                   SizedBox(height: 16.h),
 
                   // Location and Status
@@ -1083,11 +918,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   SizedBox(height: 16.h),
 
                   // Assignee
-                  _buildFilterRow(
-                    'Assignee',
-                    _assignee,
-                    () => _showAssigneeOptions(context, setModalState),
-                  ),
+                  _buildFilterRow('Assignee', _assignee, () => _showAssigneeOptions(context, setModalState)),
                   SizedBox(height: 24.h),
                 ],
               ),
@@ -1105,20 +936,16 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: const Color(0xFFE2E8F0),
-          borderRadius: BorderRadius.circular(28.r),
+          shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               label,
-              style: GoogleFonts.roboto(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF1E293B),
-              ),
+              style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: const Color(0xFF1E293B)),
             ),
             Row(
               children: [
@@ -1131,11 +958,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   ),
                 ),
                 SizedBox(width: 8.w),
-                Icon(
-                  Icons.unfold_more,
-                  color: const Color(0xFF64748B),
-                  size: 20.sp,
-                ),
+                Icon(Icons.unfold_more, color: const Color(0xFF64748B), size: 20.sp),
               ],
             ),
           ],
@@ -1154,9 +977,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   ) {
     return Container(
       padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(32.r),
+        shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 32.r, cornerSmoothing: 1.0)),
       ),
       child: Column(
         children: [
@@ -1168,11 +991,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     );
   }
 
-  Widget _buildFilterRowInSection(
-    String label,
-    String value,
-    VoidCallback onTap,
-  ) {
+  Widget _buildFilterRowInSection(String label, String value, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Row(
@@ -1180,28 +999,16 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF1E293B),
-            ),
+            style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: const Color(0xFF1E293B)),
           ),
           Row(
             children: [
               Text(
                 value,
-                style: GoogleFonts.roboto(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w400,
-                  color: const Color(0xFF64748B),
-                ),
+                style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: const Color(0xFF64748B)),
               ),
               SizedBox(width: 8.w),
-              Icon(
-                Icons.unfold_more,
-                color: const Color(0xFF64748B),
-                size: 20.sp,
-              ),
+              Icon(Icons.unfold_more, color: const Color(0xFF64748B), size: 20.sp),
             ],
           ),
         ],
@@ -1210,44 +1017,24 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   }
 
   void _showSortByOptions(BuildContext context, StateSetter setModalState) {
-    _showOptionsDialog(
-      context,
-      'Sort by',
-      ['Last created', 'First created', 'Due date', 'Priority'],
-      _sortBy,
-      (value) {
-        setState(() => _sortBy = value);
-        setModalState(() => _sortBy = value);
-      },
-    );
+    _showOptionsDialog(context, 'Sort by', ['Last created', 'First created', 'Due date', 'Priority'], _sortBy, (value) {
+      setState(() => _sortBy = value);
+      setModalState(() => _sortBy = value);
+    });
   }
 
   void _showLocationOptions(BuildContext context, StateSetter setModalState) {
-    _showOptionsDialog(
-      context,
-      'Location',
-      ['My location', 'All locations'],
-      _location,
-      (value) {
-        setState(() => _location = value);
-        setModalState(() => _location = value);
-      },
-    );
+    _showOptionsDialog(context, 'Location', ['My location', 'All locations'], _location, (value) {
+      setState(() => _location = value);
+      setModalState(() => _location = value);
+    });
   }
 
   void _showStatusOptions(BuildContext context, StateSetter setModalState) {
     _showOptionsDialog(
       context,
       'Status',
-      [
-        'All',
-        'Booked In',
-        'In Progress',
-        'Quote Accepted',
-        'Quote Rejected',
-        'Parts not available',
-        'Ready To Return',
-      ],
+      ['All', 'Booked In', 'In Progress', 'Quote Accepted', 'Quote Rejected', 'Parts not available', 'Ready To Return'],
       _status,
       (value) {
         setState(() => _status = value);
@@ -1257,35 +1044,21 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   }
 
   void _showPriorityOptions(BuildContext context, StateSetter setModalState) {
-    _showOptionsDialog(
-      context,
-      'Priority',
-      ['All', 'Urgent', 'High', 'Neutral'],
-      _priority,
-      (value) {
-        setState(() => _priority = value);
-        setModalState(() => _priority = value);
-      },
-    );
+    _showOptionsDialog(context, 'Priority', ['All', 'Urgent', 'High', 'Neutral'], _priority, (value) {
+      setState(() => _priority = value);
+      setModalState(() => _priority = value);
+    });
   }
 
   void _showDueOptions(BuildContext context, StateSetter setModalState) {
-    _showOptionsDialog(
-      context,
-      'Due',
-      ['None', 'Today', 'This week', 'This month', 'Overdue'],
-      _dueDate,
-      (value) {
-        setState(() => _dueDate = value);
-        setModalState(() => _dueDate = value);
-      },
-    );
+    _showOptionsDialog(context, 'Due', ['None', 'Today', 'This week', 'This month', 'Overdue'], _dueDate, (value) {
+      setState(() => _dueDate = value);
+      setModalState(() => _dueDate = value);
+    });
   }
 
   void _showAssigneeOptions(BuildContext context, StateSetter setModalState) {
-    _showOptionsDialog(context, 'Assignee', _assigneeOptions, _assignee, (
-      value,
-    ) {
+    _showOptionsDialog(context, 'Assignee', _assigneeOptions, _assignee, (value) {
       setState(() => _assignee = value);
       setModalState(() => _assignee = value);
     });
@@ -1302,19 +1075,14 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
+          shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 16.r, cornerSmoothing: 1.0)),
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 16.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20.w,
-                    vertical: 8.h,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
                   child: Text(
                     title,
                     style: GoogleFonts.roboto(
@@ -1326,9 +1094,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 ),
                 Divider(height: 1),
                 ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.6,
-                  ),
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
                   child: ListView.builder(
                     shrinkWrap: true,
                     itemCount: options.length,
@@ -1340,21 +1106,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                           option,
                           style: GoogleFonts.roboto(
                             fontSize: 16.sp,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: isSelected
-                                ? const Color(0xFF3B82F6)
-                                : const Color(0xFF1E293B),
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF1E293B),
                           ),
                         ),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check,
-                                color: const Color(0xFF3B82F6),
-                                size: 24.sp,
-                              )
-                            : null,
+                        trailing: isSelected ? Icon(Icons.check, color: const Color(0xFF3B82F6), size: 24.sp) : null,
                         onTap: () {
                           onSelect(option);
                           Navigator.pop(context);

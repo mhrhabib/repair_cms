@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
@@ -34,9 +35,7 @@ class StepLocationWidgetState extends State<StepLocationWidget> {
   /// Exposed for wizard navigation
   bool validate() {
     if (_locationController.text.trim().isNotEmpty) {
-      context.read<JobBookingCubit>().updatePhysicalLocation(
-        _locationController.text.trim(),
-      );
+      context.read<JobBookingCubit>().updatePhysicalLocation(_locationController.text.trim());
       return true;
     }
     showCustomToast('Please specify a storage location', isError: true);
@@ -51,11 +50,7 @@ class StepLocationWidgetState extends State<StepLocationWidget> {
           child: Column(
             children: [
               SizedBox(height: 24.h),
-              TitleWidget(
-                stepNumber: 12,
-                title: 'Physical Location',
-                subTitle: '(Storage during service)',
-              ),
+              TitleWidget(stepNumber: 12, title: 'Physical Location', subTitle: '(Storage during service)'),
               SizedBox(height: 32.h),
             ],
           ),
@@ -69,8 +64,17 @@ class StepLocationWidgetState extends State<StepLocationWidget> {
                 TextField(
                   controller: _locationController,
                   decoration: InputDecoration(
-                    hintText: 'Enter storage location',
-                    border: const UnderlineInputBorder(),
+                    hintText: 'Answer here',
+                    hintStyle: GoogleFonts.roboto(fontSize: 32.sp, color: Color(0xFFB2B5BE)),
+                    border: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                    ),
+                    enabledBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.lightFontColor, width: 1),
+                    ),
                   ),
                 ),
                 SizedBox(height: 16.h),

@@ -1,4 +1,5 @@
 import 'package:drop_down_search_field/drop_down_search_field.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 
 class CustomDropdownSearch<T> extends StatelessWidget {
@@ -36,29 +37,17 @@ class CustomDropdownSearch<T> extends StatelessWidget {
       suggestionsCallback: suggestionsCallback,
       textFieldConfiguration: TextFieldConfiguration(
         controller: controller,
+        style: GoogleFonts.roboto(fontSize: 32.sp, color: AppColors.fontMainColor),
         decoration: InputDecoration(
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 16.w,
-            vertical: 16.h,
-          ),
-          border: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
+          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
           focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: Colors.blue,
-            ), // You can customize this
+            borderSide: BorderSide(color: Colors.blue), // You can customize this
           ),
           hintText: hintText,
-          hintStyle: TextStyle(fontSize: 16, color: Colors.grey.shade400),
-          suffixIcon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey.shade600,
-            size: 24,
-          ),
+          hintStyle: GoogleFonts.roboto(fontSize: 32.sp, color: Color(0xFFB2B5BE)),
+          suffixIcon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.fontMainColor, size: 32),
         ),
       ),
       onSuggestionSelected: onSuggestionSelected,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:intl/intl.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
@@ -16,7 +17,6 @@ import 'package:repair_cms/features/quickTask/screens/quick_task_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'dart:math' as math;
-import 'widgets/enhanced_search_widget.dart';
 import 'widgets/job_progress_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -26,8 +26,7 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
-    with WidgetsBindingObserver {
+class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   Shader linearGradient = const LinearGradient(
     colors: <Color>[Color(0xFFDB00FF), Color(0xFF432BFF)],
   ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0));
@@ -42,12 +41,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.initState();
     try {
       debugPrint('🚀 [DashboardScreen] Initializing dashboard');
-      debugPrint(
-        '👤 [DashboardScreen] User Type: ${context.read<SignInCubit>().userType}',
-      );
-      debugPrint(
-        '👤 [DashboardScreen] User ID: ${context.read<SignInCubit>().userId}',
-      );
+      debugPrint('👤 [DashboardScreen] User Type: ${context.read<SignInCubit>().userType}');
+      debugPrint('👤 [DashboardScreen] User ID: ${context.read<SignInCubit>().userId}');
 
       // Add observer to detect when app comes to foreground
       WidgetsBinding.instance.addObserver(this);
@@ -75,9 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.didChangeAppLifecycleState(state);
     // Refresh dashboard when app comes back to foreground
     if (state == AppLifecycleState.resumed) {
-      debugPrint(
-        '🔄 [DashboardScreen] App resumed - refreshing dashboard data',
-      );
+      debugPrint('🔄 [DashboardScreen] App resumed - refreshing dashboard data');
       _loadAllDashboardData();
       context.read<QuickTaskCubit>().getTodos();
       context.read<ProfileCubit>().getUserProfile();
@@ -92,9 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     if (route != null && route.isCurrent && route.settings.name == null) {
       // This runs when navigating back to this screen
       Future.microtask(() {
-        debugPrint(
-          '🔄 [DashboardScreen] Returned to dashboard - refreshing data',
-        );
+        debugPrint('🔄 [DashboardScreen] Returned to dashboard - refreshing data');
         _loadAllDashboardData();
         context.read<QuickTaskCubit>().getTodos();
         context.read<ProfileCubit>().getUserProfile();
@@ -113,24 +104,16 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       // Fetch company info if companyId exists
       if (companyId != null && companyId.toString().isNotEmpty) {
-        debugPrint(
-          '📦 [DashboardScreen] Fetching company info for ID: $companyId',
-        );
-        context.read<CompanyCubit>().getCompanyInfo(
-          companyId: companyId.toString(),
-        );
+        debugPrint('📦 [DashboardScreen] Fetching company info for ID: $companyId');
+        context.read<CompanyCubit>().getCompanyInfo(companyId: companyId.toString());
       } else {
         debugPrint('⚠️ [DashboardScreen] No companyId found in storage');
       }
 
       // Fetch job receipt if userId exists
       if (userId != null && userId.toString().isNotEmpty) {
-        debugPrint(
-          '📋 [DashboardScreen] Fetching job receipt for user: $userId',
-        );
-        context.read<JobReceiptCubit>().getJobReceipt(
-          userId: userId.toString(),
-        );
+        debugPrint('📋 [DashboardScreen] Fetching job receipt for user: $userId');
+        context.read<JobReceiptCubit>().getJobReceipt(userId: userId.toString());
       } else {
         debugPrint('⚠️ [DashboardScreen] No userId found in storage');
       }
@@ -170,11 +153,13 @@ class _DashboardScreenState extends State<DashboardScreen>
         builder: (context, setModalState) => Container(
           height: MediaQuery.of(context).size.height * 0.7,
           padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: AppColors.whiteColor,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20.r),
-              topRight: Radius.circular(20.r),
+            shape: SmoothRectangleBorder(
+              borderRadius: SmoothBorderRadius.only(
+                topLeft: SmoothRadius(cornerRadius: 20.r, cornerSmoothing: 1.0),
+                topRight: SmoothRadius(cornerRadius: 20.r, cornerSmoothing: 1.0),
+              ),
             ),
           ),
           child: Column(
@@ -183,16 +168,8 @@ class _DashboardScreenState extends State<DashboardScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Select date Range',
-                    style: AppTypography.fontSize20.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  CustomNavButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icons.close,
-                  ),
+                  Text('Select date Range', style: AppTypography.fontSize20.copyWith(fontWeight: FontWeight.bold)),
+                  CustomNavButton(onPressed: () => Navigator.pop(context), icon: Icons.close),
                 ],
               ),
               SizedBox(height: 16.h),
@@ -200,9 +177,11 @@ class _DashboardScreenState extends State<DashboardScreen>
               // Selected Date Range Display
               Container(
                 padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: AppColors.borderColor,
-                  borderRadius: BorderRadius.circular(8.r),
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: 8.r, cornerSmoothing: 1.0),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -211,9 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       tempStartDate != null && tempEndDate != null
                           ? '${DateFormat('dd.MM.yyyy').format(tempStartDate!)} - ${DateFormat('dd.MM.yyyy').format(tempEndDate!)}'
                           : 'Select start and end dates',
-                      style: AppTypography.fontSize16.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppTypography.fontSize16.copyWith(fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -224,22 +201,18 @@ class _DashboardScreenState extends State<DashboardScreen>
               Expanded(
                 child: SfDateRangePicker(
                   selectionMode: DateRangePickerSelectionMode.range,
-                  initialSelectedRange:
-                      tempStartDate != null && tempEndDate != null
+                  initialSelectedRange: tempStartDate != null && tempEndDate != null
                       ? PickerDateRange(tempStartDate, tempEndDate)
                       : null,
-                  onSelectionChanged:
-                      (DateRangePickerSelectionChangedArgs args) {
-                        if (args.value is PickerDateRange) {
-                          setModalState(() {
-                            tempStartDate = args.value.startDate;
-                            tempEndDate = args.value.endDate;
-                          });
-                        }
-                      },
-                  monthViewSettings: const DateRangePickerMonthViewSettings(
-                    enableSwipeSelection: false,
-                  ),
+                  onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
+                    if (args.value is PickerDateRange) {
+                      setModalState(() {
+                        tempStartDate = args.value.startDate;
+                        tempEndDate = args.value.endDate;
+                      });
+                    }
+                  },
+                  monthViewSettings: const DateRangePickerMonthViewSettings(enableSwipeSelection: false),
                   selectionColor: AppColors.primary,
                   startRangeSelectionColor: AppColors.primary,
                   endRangeSelectionColor: AppColors.primary,
@@ -264,16 +237,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         side: BorderSide(color: AppColors.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r),
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(cornerRadius: 8.r, cornerSmoothing: 1.0),
                         ),
                       ),
-                      child: Text(
-                        'Clear',
-                        style: AppTypography.fontSize16.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
+                      child: Text('Clear', style: AppTypography.fontSize16.copyWith(color: AppColors.primary)),
                     ),
                   ),
                   SizedBox(width: 12.w),
@@ -298,24 +266,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                               );
 
                               // Show success message
-                              SnackbarDemo(
-                                message: 'Date range applied successfully',
-                              ).showCustomSnackbar(context);
+                              SnackbarDemo(message: 'Date range applied successfully').showCustomSnackbar(context);
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r),
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(cornerRadius: 8.r, cornerSmoothing: 1.0),
                         ),
                       ),
-                      child: Text(
-                        'Apply',
-                        style: AppTypography.fontSize16.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: Text('Apply', style: AppTypography.fontSize16.copyWith(color: Colors.white)),
                     ),
                   ),
                 ],
@@ -336,28 +297,17 @@ class _DashboardScreenState extends State<DashboardScreen>
           listener: (context, state) {
             if (state is CompanyLoaded) {
               try {
-                debugPrint(
-                  '✅ [DashboardScreen] Company data loaded, storing in GetStorage',
-                );
+                debugPrint('✅ [DashboardScreen] Company data loaded, storing in GetStorage');
                 // Store company data as JSON string
-                storage.write(
-                  'companyData',
-                  jsonEncode(state.company.toJson()),
-                );
-                debugPrint(
-                  '📦 [DashboardScreen] Company name: ${state.company.name}',
-                );
+                storage.write('companyData', jsonEncode(state.company.toJson()));
+                debugPrint('📦 [DashboardScreen] Company name: ${state.company.name}');
               } catch (e) {
-                debugPrint(
-                  '❌ [DashboardScreen] Error storing company data: $e',
-                );
+                debugPrint('❌ [DashboardScreen] Error storing company data: $e');
               }
             } else if (state is CompanyError) {
               debugPrint('❌ [DashboardScreen] Company error: ${state.message}');
               // Optionally show a toast notification
-              SnackbarDemo(
-                message: 'Failed to load company info',
-              ).showCustomSnackbar(context);
+              SnackbarDemo(message: 'Failed to load company info').showCustomSnackbar(context);
             }
           },
         ),
@@ -366,30 +316,17 @@ class _DashboardScreenState extends State<DashboardScreen>
           listener: (context, state) {
             if (state is JobReceiptLoaded) {
               try {
-                debugPrint(
-                  '✅ [DashboardScreen] Job receipt data loaded, storing in GetStorage',
-                );
+                debugPrint('✅ [DashboardScreen] Job receipt data loaded, storing in GetStorage');
                 // Store receipt data as JSON string
-                storage.write(
-                  'jobReceiptData',
-                  jsonEncode(state.receipt.toJson()),
-                );
-                debugPrint(
-                  '📦 [DashboardScreen] QR Code Enabled: ${state.receipt.qrCodeEnabled}',
-                );
+                storage.write('jobReceiptData', jsonEncode(state.receipt.toJson()));
+                debugPrint('📦 [DashboardScreen] QR Code Enabled: ${state.receipt.qrCodeEnabled}');
               } catch (e) {
-                debugPrint(
-                  '❌ [DashboardScreen] Error storing receipt data: $e',
-                );
+                debugPrint('❌ [DashboardScreen] Error storing receipt data: $e');
               }
             } else if (state is JobReceiptError) {
-              debugPrint(
-                '❌ [DashboardScreen] Job receipt error: ${state.message}',
-              );
+              debugPrint('❌ [DashboardScreen] Job receipt error: ${state.message}');
               // Optionally show a toast notification
-              SnackbarDemo(
-                message: 'Failed to load receipt settings',
-              ).showCustomSnackbar(context);
+              SnackbarDemo(message: 'Failed to load receipt settings').showCustomSnackbar(context);
             }
           },
         ),
@@ -476,9 +413,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   applyHeightToFirstAscent: false,
                   applyHeightToLastDescent: false,
                 ),
-                style: AppTypography.fontSize22.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTypography.fontSize22.copyWith(fontWeight: FontWeight.w500),
               ),
               SizedBox(width: 8.w),
               Transform(
@@ -494,17 +429,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                     children: [
                       GestureDetector(
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => NotificationsScreen(),
-                            ),
-                          );
+                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationsScreen()));
                         },
-                        child: Icon(
-                          SolarIconsBold.bell,
-                          color: Colors.grey.shade600,
-                          size: 24.sp,
-                        ),
+                        child: Icon(SolarIconsBold.bell, color: Colors.grey.shade600, size: 24.sp),
                       ),
                       Positioned(
                         right: 0,
@@ -512,10 +439,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                         child: Container(
                           width: 8.w,
                           height: 8.h,
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                         ),
                       ),
                     ],
@@ -523,11 +447,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   SizedBox(width: 12.w),
                   GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ProfileOptionsScreen(),
-                        ),
-                      );
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProfileOptionsScreen()));
                     },
                     child: BlocBuilder<ProfileCubit, ProfileStates>(
                       builder: (context, state) {
@@ -542,8 +462,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           if (avatarUrl != null &&
                               avatarUrl.isNotEmpty &&
                               !avatarUrl.startsWith('http') &&
-                              (_avatarSignedUrl == null ||
-                                  _lastAvatarUrl != avatarUrl)) {
+                              (_avatarSignedUrl == null || _lastAvatarUrl != avatarUrl)) {
                             _lastAvatarUrl = avatarUrl;
 
                             // Fetch signed URL in background
@@ -558,9 +477,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   }
                                 })
                                 .catchError((error) {
-                                  debugPrint(
-                                    'Failed to fetch avatar signed URL: $error',
-                                  );
+                                  debugPrint('Failed to fetch avatar signed URL: $error');
                                 });
                           }
                         } else if (state is ProfileLoading) {
@@ -572,22 +489,14 @@ class _DashboardScreenState extends State<DashboardScreen>
                             // Profile Avatar
                             CircleAvatar(
                               radius: 16.r,
-                              backgroundImage:
-                                  _avatarSignedUrl != null &&
-                                      _avatarSignedUrl!.isNotEmpty
+                              backgroundImage: _avatarSignedUrl != null && _avatarSignedUrl!.isNotEmpty
                                   ? NetworkImage(_avatarSignedUrl!)
-                                  : (avatarUrl != null &&
-                                            avatarUrl.startsWith('http')
+                                  : (avatarUrl != null && avatarUrl.startsWith('http')
                                         ? NetworkImage(avatarUrl)
-                                        : const AssetImage(
-                                                'assets/icon/icon.png',
-                                              )
-                                              as ImageProvider),
+                                        : const AssetImage('assets/icon/icon.png') as ImageProvider),
                               backgroundColor: Colors.grey.shade300,
                               onBackgroundImageError: (exception, stackTrace) {
-                                debugPrint(
-                                  'Profile image load error: $exception',
-                                );
+                                debugPrint('Profile image load error: $exception');
                               },
                             ),
 
@@ -605,10 +514,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                       height: 12.r,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                       ),
                                     ),
                                   ),
@@ -630,9 +536,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             applyHeightToFirstAscent: false,
             applyHeightToLastDescent: false,
           ),
-          style: AppTypography.fontSize14.copyWith(
-            color: AppColors.lightFontColor,
-          ),
+          style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
         ),
       ],
     );
@@ -641,28 +545,19 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildIncompleteToDoCard(BuildContext context) {
     return BlocBuilder<QuickTaskCubit, QuickTaskState>(
       builder: (context, state) {
-        final incompleteCount = context
-            .read<QuickTaskCubit>()
-            .getIncompleteTodosCount();
+        final incompleteCount = context.read<QuickTaskCubit>().getIncompleteTodosCount();
 
         return GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => QuickTaskScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (context) => QuickTaskScreen()));
           },
           child: Container(
             padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: AppColors.whiteColor,
-              borderRadius: BorderRadius.circular(28.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
+              shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0)),
+              shadows: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
               ],
             ),
             child: Row(
@@ -673,46 +568,31 @@ class _DashboardScreenState extends State<DashboardScreen>
                     children: [
                       Text(
                         'Incomplete To-Do\'s',
-                        style: AppTypography.fontSize16.copyWith(
-                          color: AppColors.lightFontColor,
-                        ),
+                        style: AppTypography.fontSize16.copyWith(color: AppColors.lightFontColor),
                       ),
                       SizedBox(height: 8.h),
-                      Text(
-                        '$incompleteCount',
-                        style: AppTypography.fontSize28.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text('$incompleteCount', style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
                 SizedBox(width: 8.w),
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 12.h,
-                  ),
-                  decoration: BoxDecoration(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                  decoration: ShapeDecoration(
                     color: AppColors.whiteColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColors.borderColor),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(cornerRadius: 12.r, cornerSmoothing: 1.0),
+                      side: BorderSide(color: AppColors.borderColor),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.today_rounded,
-                        color: AppColors.primary,
-                        size: 22.sp,
-                      ),
+                      Icon(Icons.today_rounded, color: AppColors.primary, size: 22.sp),
                       SizedBox(width: 4.w),
                       Text(
                         'See All To-Do\'s',
-                        style: AppTypography.fontSize16.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: AppTypography.fontSize16.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
@@ -736,8 +616,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
           // Format the date range from the API response
           final filterRange = state.dashboardStats!.filterRange;
-          if (filterRange.startDate.isNotEmpty &&
-              filterRange.endDate.isNotEmpty) {
+          if (filterRange.startDate.isNotEmpty && filterRange.endDate.isNotEmpty) {
             try {
               final startDate = DateTime.parse(filterRange.startDate);
               final endDate = DateTime.parse(filterRange.endDate);
@@ -754,15 +633,11 @@ class _DashboardScreenState extends State<DashboardScreen>
 
         return Container(
           padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: AppColors.whiteColor,
-            borderRadius: BorderRadius.circular(28.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
+            shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0)),
+            shadows: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
             ],
           ),
           child: Column(
@@ -773,50 +648,38 @@ class _DashboardScreenState extends State<DashboardScreen>
                   Container(
                     width: 40.w,
                     height: 40.h,
-                    decoration: BoxDecoration(
+                    decoration: ShapeDecoration(
                       color: const Color(0xFFC507FF),
-                      borderRadius: BorderRadius.circular(12.r),
+                      shape: SmoothRectangleBorder(
+                        borderRadius: SmoothBorderRadius(cornerRadius: 12.r, cornerSmoothing: 1.0),
+                      ),
                     ),
-                    child: Icon(
-                      SolarIconsBold.suitcaseTag,
-                      color: Colors.white,
-                      size: 30.sp,
-                    ),
+                    child: Icon(SolarIconsBold.suitcaseTag, color: Colors.white, size: 30.sp),
                   ),
                   SizedBox(width: 16.w),
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
+                    decoration: ShapeDecoration(
                       color: AppColors.borderColor,
-                      borderRadius: BorderRadius.circular(12.r),
+                      shape: SmoothRectangleBorder(
+                        borderRadius: SmoothBorderRadius(cornerRadius: 12.r, cornerSmoothing: 1.0),
+                      ),
                     ),
                     child: GestureDetector(
                       onTap: _showDateRangePicker,
                       child: Row(
                         children: [
                           Text(
-                            _selectedStartDate != null &&
-                                    _selectedEndDate != null
+                            _selectedStartDate != null && _selectedEndDate != null
                                 ? '${DateFormat('dd.MM.yyyy').format(_selectedStartDate!)} - ${DateFormat('dd.MM.yyyy').format(_selectedEndDate!)}'
                                 : 'This Month',
                             style: AppTypography.fontSize16,
                           ),
                           SizedBox(width: 2.w),
-                          Container(
-                            height: 25.h,
-                            color: const Color(0x898FA0B2),
-                            width: 2.w,
-                          ),
+                          Container(height: 25.h, color: const Color(0x898FA0B2), width: 2.w),
                           SizedBox(width: 2.w),
-                          const Icon(
-                            Icons.calendar_month,
-                            color: Color(0xFF2589F6),
-                          ),
-                          Icon(
-                            Icons.keyboard_arrow_down,
-                            color: const Color(0xFF2589F6),
-                            size: 20.sp,
-                          ),
+                          const Icon(Icons.calendar_month, color: Color(0xFF2589F6)),
+                          Icon(Icons.keyboard_arrow_down, color: const Color(0xFF2589F6), size: 20.sp),
                         ],
                       ),
                     ),
@@ -830,12 +693,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        dateRangeText,
-                        style: AppTypography.fontSize14.copyWith(
-                          color: AppColors.fontMainColor,
-                        ),
-                      ),
+                      Text(dateRangeText, style: AppTypography.fontSize14.copyWith(color: AppColors.fontMainColor)),
                       Text(
                         'Completed Jobs',
                         style: AppTypography.fontSize24.copyWith(
@@ -845,12 +703,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       ),
                     ],
                   ),
-                  Text(
-                    completedJobs.toString(),
-                    style: AppTypography.fontSize28.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  Text(completedJobs.toString(), style: AppTypography.fontSize28.copyWith(fontWeight: FontWeight.w800)),
                 ],
               ),
 
@@ -868,21 +721,18 @@ class _DashboardScreenState extends State<DashboardScreen>
                 SizedBox(height: 12.h),
                 Container(
                   padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8.r),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(cornerRadius: 8.r, cornerSmoothing: 1.0),
+                    ),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.error_outline, color: Colors.red, size: 16.sp),
                       SizedBox(width: 8.w),
                       Expanded(
-                        child: Text(
-                          'Failed to load data',
-                          style: AppTypography.fontSize12.copyWith(
-                            color: Colors.red,
-                          ),
-                        ),
+                        child: Text('Failed to load data', style: AppTypography.fontSize12.copyWith(color: Colors.red)),
                       ),
                       GestureDetector(
                         onTap: _loadAllDashboardData,
@@ -909,17 +759,21 @@ class _DashboardScreenState extends State<DashboardScreen>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('QR Scanner'),
-          content: const Text(
-            'QR Scanner functionality would be implemented here.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
+        return Dialog(
+          shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 16.r, cornerSmoothing: 1.0)),
+          child: Padding(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('QR Scanner', style: AppTypography.fontSize20),
+                SizedBox(height: 16.h),
+                const Text('QR Scanner functionality would be implemented here.', textAlign: TextAlign.center),
+                SizedBox(height: 20.h),
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+              ],
             ),
-          ],
+          ),
         );
       },
     );

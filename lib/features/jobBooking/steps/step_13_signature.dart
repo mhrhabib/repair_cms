@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
@@ -33,8 +34,7 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
   }
 
   void _onPanStart(DragStartDetails details) {
-    final RenderBox box =
-        _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox box = _signatureKey.currentContext!.findRenderObject() as RenderBox;
     final localPosition = box.globalToLocal(details.globalPosition);
     if (localPosition.dx >= 0 &&
         localPosition.dx <= box.size.width &&
@@ -50,8 +50,7 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
-    final RenderBox box =
-        _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox box = _signatureKey.currentContext!.findRenderObject() as RenderBox;
     final localPosition = box.globalToLocal(details.globalPosition);
     if (localPosition.dx >= 0 &&
         localPosition.dx <= box.size.width &&
@@ -74,13 +73,9 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
 
   Future<String> _captureSignatureAsBase64() async {
     try {
-      final RenderRepaintBoundary boundary =
-          _signatureKey.currentContext!.findRenderObject()
-              as RenderRepaintBoundary;
+      final RenderRepaintBoundary boundary = _signatureKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List pngBytes = byteData!.buffer.asUint8List();
       return 'data:image/png;base64,${base64Encode(pngBytes)}';
     } catch (e) {
@@ -107,16 +102,13 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
+      physics: NeverScrollableScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(
           child: Column(
             children: [
               SizedBox(height: 24.h),
-              TitleWidget(
-                stepNumber: 13,
-                title: 'Customer Signature',
-                subTitle: 'Please sign on the pad below',
-              ),
+              TitleWidget(stepNumber: 13, title: 'Customer Signature', subTitle: 'Please sign on the pad below'),
               SizedBox(height: 32.h),
             ],
           ),
@@ -126,66 +118,95 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: Column(
               children: [
-                Container(
-                  width: double.infinity,
-                  height: 280.h,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300, width: 2),
-                    borderRadius: BorderRadius.circular(8.r),
-                    color: Colors.white,
+                CustomPaint(
+                  painter: DashedBorderPainter(
+                    color: AppColors.primary,
+                    borderRadius: 20.r,
+                    dashWidth: 8,
+                    dashSpace: 6,
                   ),
-                  child: Stack(
-                    children: [
-                      RepaintBoundary(
-                        key: _signatureKey,
-                        child: GestureDetector(
-                          onPanStart: _onPanStart,
-                          onPanUpdate: _onPanUpdate,
-                          onPanEnd: _onPanEnd,
-                          child: Container(
-                            width: double.infinity,
-                            height: double.infinity,
-                            color: Colors.white,
+                  child: Container(
+                    width: double.infinity,
+                    height: 420.h,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F4F7),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Stack(
+                      children: [
+                        RepaintBoundary(
+                          key: _signatureKey,
+                          child: GestureDetector(
+                            onPanStart: _onPanStart,
+                            onPanUpdate: _onPanUpdate,
+                            onPanEnd: _onPanEnd,
                             child: CustomPaint(
-                              painter: SignaturePainter(
-                                signaturePaths: _signaturePaths,
-                                currentPath: _currentPath,
+                              painter: DashedBorderPainter(
+                                color: AppColors.primary,
+                                borderRadius: 20.r,
+                                dashWidth: 8,
+                                dashSpace: 6,
                               ),
-                              child: Center(
-                                child: Text(
-                                  'SIGN HERE',
-                                  style: TextStyle(
-                                    color: _hasSignature
-                                        ? Colors.transparent
-                                        : Colors.grey.shade300,
-                                    letterSpacing: 2,
+                              child: Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  // border: Border.all(color: Colors.blue, style: BorderStyle.solid),
+                                ),
+                                child: CustomPaint(
+                                  painter: SignaturePainter(signaturePaths: _signaturePaths, currentPath: _currentPath),
+                                  child: Center(
+                                    child: Opacity(
+                                      opacity: _hasSignature ? 0 : 0.15,
+                                      child: Text(
+                                        'SIGN HERE',
+                                        style: GoogleFonts.roboto(
+                                          color: AppColors.primary,
+                                          fontSize: 32.sp,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 4,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        top: 8.h,
-                        right: 8.w,
-                        child: IconButton(
-                          icon: const Icon(Icons.refresh),
-                          onPressed: _resetSignature,
+                        Positioned(
+                          top: 16.h,
+                          right: 16.w,
+                          child: InkWell(
+                            onTap: _resetSignature,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 14.r,
+                                  backgroundColor: AppColors.primary,
+                                  child: Icon(Icons.refresh, color: Colors.white, size: 18.sp),
+                                ),
+                                SizedBox(width: 8.w),
+                                Text(
+                                  'Reset',
+                                  style: GoogleFonts.roboto(
+                                    color: AppColors.primary,
+                                    fontSize: 22.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(height: 16.h),
-                Text(
-                  'Please sign above to confirm service agreement and device condition acknowledgment',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
+
                 SizedBox(height: 32.h),
               ],
             ),
@@ -195,6 +216,51 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
       ],
     );
   }
+}
+
+class DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+  final double borderRadius;
+
+  DashedBorderPainter({
+    required this.color,
+    this.strokeWidth = 2.0,
+    this.dashWidth = 5.0,
+    this.dashSpace = 5.0,
+    this.borderRadius = 8.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2, size.width - strokeWidth, size.height - strokeWidth),
+          Radius.circular(borderRadius),
+        ),
+      );
+
+    final dashPath = Path();
+    for (ui.PathMetric pathMetric in path.computeMetrics()) {
+      double distance = 0.0;
+      while (distance < pathMetric.length) {
+        dashPath.addPath(pathMetric.extractPath(distance, distance + dashWidth), Offset.zero);
+        distance += dashWidth + dashSpace;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 class SignaturePainter extends CustomPainter {
@@ -219,8 +285,7 @@ class SignaturePainter extends CustomPainter {
     }
     if (currentPath.isNotEmpty) {
       final p = Path()..moveTo(currentPath.first.dx, currentPath.first.dy);
-      for (int i = 1; i < currentPath.length; i++)
-        p.lineTo(currentPath[i].dx, currentPath[i].dy);
+      for (int i = 1; i < currentPath.length; i++) p.lineTo(currentPath[i].dx, currentPath[i].dy);
       canvas.drawPath(p, paint);
     }
   }

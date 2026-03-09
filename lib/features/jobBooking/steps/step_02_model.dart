@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
+import 'package:repair_cms/core/utils/widgets/shimmer_loader.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
 import 'package:repair_cms/features/jobReceipt/cubits/job_receipt_cubit.dart';
@@ -12,11 +13,7 @@ import 'package:repair_cms/features/jobBooking/cubits/model/models_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/models_model.dart';
 
 class StepModelWidget extends StatefulWidget {
-  const StepModelWidget({
-    super.key,
-    required this.brandId,
-    required this.onCanProceedChanged,
-  });
+  const StepModelWidget({super.key, required this.brandId, required this.onCanProceedChanged});
 
   final String brandId;
   final void Function(bool canProceed) onCanProceedChanged;
@@ -83,9 +80,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
 
     final companyState = context.read<CompanyCubit>().state;
     if (companyState is CompanyLoaded) {
-      context.read<JobBookingCubit>().updateReceiptFooterFromCompany(
-        companyState.company,
-      );
+      context.read<JobBookingCubit>().updateReceiptFooterFromCompany(companyState.company);
     }
 
     final jobReceiptState = context.read<JobReceiptCubit>().state;
@@ -102,11 +97,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
   Future<void> _addNewModel(String modelName) async {
     setState(() => _isAddingModel = true);
 
-    await context.read<ModelsCubit>().createModel(
-      name: modelName,
-      userId: _userId,
-      brandId: widget.brandId,
-    );
+    await context.read<ModelsCubit>().createModel(name: modelName, userId: _userId, brandId: widget.brandId);
 
     if (!mounted) return;
 
@@ -117,13 +108,9 @@ class StepModelWidgetState extends State<StepModelWidget> {
         orElse: () => ModelsModel(),
       );
       _selectModel(modelName, newModel.sId ?? '');
-      SnackbarDemo(
-        message: 'Model "$modelName" added successfully!',
-      ).showCustomSnackbar(context);
+      SnackbarDemo(message: 'Model "$modelName" added successfully!').showCustomSnackbar(context);
     } else if (state is ModelsError) {
-      SnackbarDemo(
-        message: 'Failed to add model: ${state.message}',
-      ).showCustomSnackbar(context);
+      SnackbarDemo(message: 'Failed to add model: ${state.message}').showCustomSnackbar(context);
     }
 
     setState(() => _isAddingModel = false);
@@ -140,11 +127,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: 24.h),
-                TitleWidget(
-                  stepNumber: 2,
-                  title: 'Enter the device Model',
-                  subTitle: '(E.g. iPhone 16, Galaxy S24)',
-                ),
+                TitleWidget(stepNumber: 2, title: 'Enter the device Model', subTitle: '(E.g. iPhone 16, Galaxy S24)'),
 
                 SizedBox(height: 32.h),
               ],
@@ -161,7 +144,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
                 if (state is ModelsLoading) {
                   return SizedBox(
                     height: 60.h,
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(child: ShimmerLoader()),
                   );
                 }
                 if (state is ModelsError) {
@@ -174,17 +157,10 @@ class StepModelWidgetState extends State<StepModelWidget> {
                     ),
                     child: Column(
                       children: [
-                        Text(
-                          'Failed to load models',
-                          style: AppTypography.fontSize14.copyWith(
-                            color: Colors.red,
-                          ),
-                        ),
+                        Text('Failed to load models', style: AppTypography.fontSize14.copyWith(color: Colors.red)),
                         SizedBox(height: 8.h),
                         ElevatedButton(
-                          onPressed: () => context
-                              .read<ModelsCubit>()
-                              .getModels(brandId: widget.brandId),
+                          onPressed: () => context.read<ModelsCubit>().getModels(brandId: widget.brandId),
                           child: Text('Retry'),
                         ),
                       ],
@@ -192,44 +168,31 @@ class StepModelWidgetState extends State<StepModelWidget> {
                   );
                 }
                 if (state is ModelsLoaded || state is ModelsSearchResult) {
-                  final models = state is ModelsLoaded
-                      ? state.models
-                      : (state as ModelsSearchResult).models;
-                  final allModels = state is ModelsLoaded
-                      ? state.models
-                      : (state as ModelsSearchResult).allModels;
+                  final models = state is ModelsLoaded ? state.models : (state as ModelsSearchResult).models;
+                  final allModels = state is ModelsLoaded ? state.models : (state as ModelsSearchResult).allModels;
 
                   return CustomDropdownSearch<ModelsModel>(
                     controller: _searchController,
                     items: models,
-                    hintText: 'Search and select model...',
+                    hintText: 'Answer here',
                     noItemsText: 'No models found',
                     displayAllSuggestionWhenTap: true,
                     isMultiSelectDropdown: false,
                     onSuggestionSelected: (model) async {
-                      if (model.sId == null &&
-                          model.name?.startsWith('Add "') == true) {
+                      if (model.sId == null && model.name?.startsWith('Add "') == true) {
                         final modelName = model.name?.split('"')[1] ?? '';
                         if (modelName.isNotEmpty) await _addNewModel(modelName);
                       } else {
-                        _selectModel(
-                          model.name ?? 'Unknown Model',
-                          model.sId ?? '',
-                        );
+                        _selectModel(model.name ?? 'Unknown Model', model.sId ?? '');
                       }
                     },
                     itemBuilder: (context, model) {
-                      final isNewOption =
-                          model.sId == null &&
-                          model.name?.startsWith('Add "') == true;
+                      final isNewOption = model.sId == null && model.name?.startsWith('Add "') == true;
                       if (isNewOption) {
                         return Container(
                           decoration: BoxDecoration(
                             color: const Color(0xFFE3F2FD),
-                            border: Border.all(
-                              color: AppColors.primary,
-                              width: 1.5,
-                            ),
+                            border: Border.all(color: AppColors.primary, width: 1.5),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: ListTile(
@@ -244,10 +207,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
                                 ),
                                 SizedBox(width: 8.w),
                                 Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w,
-                                    vertical: 2.h,
-                                  ),
+                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                                   decoration: BoxDecoration(
                                     color: AppColors.primary,
                                     borderRadius: BorderRadius.circular(4.r),
@@ -267,18 +227,13 @@ class StepModelWidgetState extends State<StepModelWidget> {
                       }
                       return Container(
                         decoration: BoxDecoration(
-                          color: _selectedModel == model.name
-                              ? const Color(0xFFFFF59D)
-                              : Colors.transparent,
+                          color: _selectedModel == model.name ? const Color(0xFFFFF59D) : Colors.transparent,
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: ListTile(
                           title: Text(
                             model.name ?? 'Unknown Model',
-                            style: AppTypography.fontSize16.copyWith(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppTypography.fontSize16.copyWith(color: Colors.black, fontWeight: FontWeight.w500),
                           ),
                         ),
                       );
@@ -286,23 +241,11 @@ class StepModelWidgetState extends State<StepModelWidget> {
                     suggestionsCallback: (pattern) {
                       if (pattern.isEmpty) return allModels;
                       final filtered = allModels
-                          .where(
-                            (m) => (m.name ?? '').toLowerCase().contains(
-                              pattern.toLowerCase(),
-                            ),
-                          )
+                          .where((m) => (m.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
                           .toList();
-                      final exactMatch = filtered.any(
-                        (m) => m.name?.toLowerCase() == pattern.toLowerCase(),
-                      );
+                      final exactMatch = filtered.any((m) => m.name?.toLowerCase() == pattern.toLowerCase());
                       if (!exactMatch && pattern.isNotEmpty) {
-                        filtered.insert(
-                          0,
-                          ModelsModel(
-                            sId: null,
-                            name: 'Add "$pattern" as new model',
-                          ),
-                        );
+                        filtered.insert(0, ModelsModel(sId: null, name: 'Add "$pattern" as new model'));
                       }
                       return filtered;
                     },
@@ -316,8 +259,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
                   displayAllSuggestionWhenTap: false,
                   isMultiSelectDropdown: false,
                   onSuggestionSelected: (model) {},
-                  itemBuilder: (context, model) =>
-                      ListTile(title: Text(model.name ?? 'Unknown')),
+                  itemBuilder: (context, model) => ListTile(title: Text(model.name ?? 'Unknown')),
                   suggestionsCallback: (pattern) => [],
                 );
               },
@@ -405,43 +347,31 @@ class StepModelWidgetState extends State<StepModelWidget> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 16.w,
-                    height: 16.h,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
+                  SizedBox(width: 16.w, height: 16.h, child: CircularProgressIndicator(strokeWidth: 2)),
                   SizedBox(width: 8.w),
-                  Text(
-                    'Adding model...',
-                    style: AppTypography.fontSize14.copyWith(
-                      color: Colors.grey,
-                    ),
-                  ),
+                  Text('Adding model...', style: AppTypography.fontSize14.copyWith(color: Colors.grey)),
                 ],
               ),
             ),
           ),
 
-        BlocBuilder<ModelsCubit, ModelsState>(
-          builder: (context, state) {
-            if (state is ModelsLoaded && state.models.isNotEmpty) {
-              return SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: Text(
-                    '${state.models.length} models available',
-                    style: AppTypography.fontSize12.copyWith(
-                      color: Colors.grey.shade600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            }
-            return const SliverToBoxAdapter(child: SizedBox.shrink());
-          },
-        ),
-
+        // BlocBuilder<ModelsCubit, ModelsState>(
+        //   builder: (context, state) {
+        //     if (state is ModelsLoaded && state.models.isNotEmpty) {
+        //       return SliverToBoxAdapter(
+        //         child: Padding(
+        //           padding: EdgeInsets.symmetric(horizontal: 24.w),
+        //           child: Text(
+        //             '${state.models.length} models available',
+        //             style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+        //             textAlign: TextAlign.center,
+        //           ),
+        //         ),
+        //       );
+        //     }
+        //     return const SliverToBoxAdapter(child: SizedBox.shrink());
+        //   },
+        // ),
         const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
       ],
     );

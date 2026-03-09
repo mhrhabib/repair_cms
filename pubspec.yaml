@@ -87,6 +87,7 @@ dependencies:
   flutter_widget_from_html: ^0.17.1
   image: ^4.5.4
   url_launcher: ^6.3.2
+  figma_squircle: ^0.6.3
 
 
 dev_dependencies:

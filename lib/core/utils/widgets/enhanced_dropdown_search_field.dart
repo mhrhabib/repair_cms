@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 
 class EnhancedDropdownSearch<T> extends StatefulWidget {
@@ -195,23 +196,17 @@ class _EnhancedDropdownSearchState<T> extends State<EnhancedDropdownSearch<T>> {
       child: TextField(
         controller: widget.controller,
         focusNode: _effectiveFocusNode,
+        style: GoogleFonts.roboto(fontSize: 32.sp, color: AppColors.fontMainColor),
         decoration: InputDecoration(
           contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
-            borderSide: const BorderSide(color: Colors.blue),
+          border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
+          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.blue), // You can customize this
           ),
           hintText: widget.hintText,
-          hintStyle: TextStyle(fontSize: 16, color: Colors.grey.shade400),
-          suffixIcon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade600, size: 24),
+          hintStyle: GoogleFonts.roboto(fontSize: 32.sp, color: const Color(0xFFB2B5BE)),
+          suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.fontMainColor, size: 32),
         ),
         onTap: () {
           if (!_effectiveFocusNode.hasFocus) {
