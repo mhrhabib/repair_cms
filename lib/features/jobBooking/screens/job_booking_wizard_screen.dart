@@ -161,20 +161,14 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => JobThermalReceiptPreviewScreen(
-            jobResponse: response,
-            printOption: printerType,
-          ),
+          builder: (context) => JobThermalReceiptPreviewScreen(jobResponse: response, printOption: printerType),
         ),
       );
     } else {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => JobReceiptPreviewScreen(
-            jobResponse: response,
-            printOption: printerType,
-          ),
+          builder: (context) => JobReceiptPreviewScreen(jobResponse: response, printOption: printerType),
         ),
       );
     }
@@ -187,16 +181,11 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            JobBookingTopBar(
-              padding: 2,
-              stepNumber: _currentStep + 1,
-              onBack: _prevPage,
-            ),
+            JobBookingTopBar(padding: 2, stepNumber: _currentStep + 1, onBack: _prevPage),
             Expanded(
               child: PageView(
                 controller: _pageController,
-                physics:
-                    const NeverScrollableScrollPhysics(), // Control via buttons
+                physics: const NeverScrollableScrollPhysics(), // Control via buttons
                 children: [
                   StepBrandWidget(
                     key: _stepKeys[0],
@@ -210,18 +199,9 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
                     brandId: _selectedBrandId ?? '',
                     onCanProceedChanged: _onCanProceedChanged,
                   ),
-                  StepAccessoriesWidget(
-                    key: _stepKeys[2],
-                    onCanProceedChanged: _onCanProceedChanged,
-                  ),
-                  StepImeiWidget(
-                    key: _stepKeys[3],
-                    onCanProceedChanged: _onCanProceedChanged,
-                  ),
-                  StepSecurityWidget(
-                    key: _stepKeys[4],
-                    onCanProceedChanged: _onCanProceedChanged,
-                  ),
+                  StepAccessoriesWidget(key: _stepKeys[2], onCanProceedChanged: _onCanProceedChanged),
+                  StepImeiWidget(key: _stepKeys[3], onCanProceedChanged: _onCanProceedChanged),
+                  StepSecurityWidget(key: _stepKeys[4], onCanProceedChanged: _onCanProceedChanged),
                   StepContactWidget(
                     key: _stepKeys[5],
                     onCanProceedChanged: _onCanProceedChanged,
@@ -234,14 +214,8 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
                     selectedProfile: _selectedProfile,
                     onSuccess: _nextPage,
                   ),
-                  StepJobTypeWidget(
-                    key: _stepKeys[7],
-                    onCanProceedChanged: _onCanProceedChanged,
-                  ),
-                  StepProblemWidget(
-                    key: _stepKeys[8],
-                    onCanProceedChanged: _onCanProceedChanged,
-                  ),
+                  StepJobTypeWidget(key: _stepKeys[7], onCanProceedChanged: _onCanProceedChanged),
+                  StepProblemWidget(key: _stepKeys[8], onCanProceedChanged: _onCanProceedChanged),
                   StepAddItemsWidget(
                     key: _stepKeys[9],
                     onCanProceedChanged: _onCanProceedChanged,
@@ -253,14 +227,8 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
                     jobId: _jobId ?? '',
                     onSuccess: _nextPage,
                   ),
-                  StepLocationWidget(
-                    key: _stepKeys[11],
-                    onCanProceedChanged: _onCanProceedChanged,
-                  ),
-                  StepSignatureWidget(
-                    key: _stepKeys[12],
-                    onCanProceedChanged: _onCanProceedChanged,
-                  ),
+                  StepLocationWidget(key: _stepKeys[11], onCanProceedChanged: _onCanProceedChanged),
+                  StepSignatureWidget(key: _stepKeys[12], onCanProceedChanged: _onCanProceedChanged),
                   StepPrinterWidget(
                     key: _stepKeys[13],
                     onCanProceedChanged: _onCanProceedChanged,
@@ -275,9 +243,7 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
               child: BottomButtonsGroup(
                 onPressed: _canProceed ? _handleNext : null,
                 onBack: _prevPage,
-                okButtonText: (_currentStep == 9)
-                    ? 'Create Job'
-                    : (_currentStep == 13 ? 'Finish' : 'Continue'),
+                okButtonText: (_currentStep == 13 ? 'Finish' : 'Continue'),
               ),
             ),
           ],

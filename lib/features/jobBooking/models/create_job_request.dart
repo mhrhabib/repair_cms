@@ -235,7 +235,7 @@ class JobStatus {
   final String colorCode;
   final String userName;
   final int createAtStatus;
-  final bool notifications;
+  final dynamic notifications;
   final String notes;
   final String? email;
 
@@ -257,7 +257,7 @@ class JobStatus {
       colorCode: json['colorCode'] ?? '',
       userName: json['userName'] ?? '',
       createAtStatus: json['createAtStatus'] ?? 0,
-      notifications: json['notifications'] ?? false,
+      notifications: json['notifications'] ?? '',
       notes: json['notes'] ?? '',
       email: json['email'],
     );
@@ -414,7 +414,7 @@ class CustomerAddress {
     return CustomerAddress(
       id: json['_id'],
       street: json['street'] ?? '',
-      no: json['no'] ?? '',
+      // no: json['no'] ?? '',
       zip: json['zip'] ?? '',
       city: json['city'] ?? '',
       state: json['state'] ?? '',
@@ -426,7 +426,7 @@ class CustomerAddress {
     return {
       if (id != null) '_id': id,
       'street': street,
-      'no': no,
+      // 'no': no,
       'zip': zip,
       'city': city,
       'state': state,
@@ -437,7 +437,7 @@ class CustomerAddress {
   CustomerAddress copyWith({
     String? id,
     String? street,
-    String? no,
+    // String? no,
     String? zip,
     String? city,
     String? state,
@@ -446,7 +446,7 @@ class CustomerAddress {
     return CustomerAddress(
       id: id ?? this.id,
       street: street ?? this.street,
-      no: no ?? this.no,
+      // no: no ?? this.no,
       zip: zip ?? this.zip,
       city: city ?? this.city,
       state: state ?? this.state,
@@ -1111,6 +1111,8 @@ class DeviceData {
   final String? brand;
   final String? model;
   final String? imei;
+  final String? serialNo;
+  final String? category;
   final List<ConditionItem>? condition;
   final String? deviceSecurity;
   final String? createdAt;
@@ -1122,6 +1124,8 @@ class DeviceData {
     this.brand,
     this.model,
     this.imei,
+    this.serialNo,
+    this.category,
     this.condition,
     this.deviceSecurity,
     this.createdAt,
@@ -1135,6 +1139,8 @@ class DeviceData {
       brand: json['brand'],
       model: json['model'],
       imei: json['imei'],
+      serialNo: json['serial_no'],
+      category: json['category'],
       condition: json['condition'] != null
           ? (json['condition'] as List).map((item) => ConditionItem.fromJson(item)).toList()
           : null,

@@ -330,6 +330,24 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             }
           },
         ),
+        // Listen to profile cubit and store data
+        BlocListener<ProfileCubit, ProfileStates>(
+          listener: (context, state) {
+            if (state is ProfileLoaded) {
+              try {
+                debugPrint('✅ [DashboardScreen] Profile data loaded, storing in GetStorage');
+                storage.write('user', state.user.toJson());
+                storage.write('fullName', state.user.fullName);
+                storage.write('userId', state.user.id);
+                if (state.user.location != null) {
+                  storage.write('locationId', state.user.location!.id);
+                }
+              } catch (e) {
+                debugPrint('❌ [DashboardScreen] Error storing profile data: $e');
+              }
+            }
+          },
+        ),
       ],
       child: BlocProvider<DashboardCubit>(
         create: (context) => context.read<DashboardCubit>(),
@@ -755,27 +773,27 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     );
   }
 
-  void _showQRScanDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 16.r, cornerSmoothing: 1.0)),
-          child: Padding(
-            padding: EdgeInsets.all(20.w),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('QR Scanner', style: AppTypography.fontSize20),
-                SizedBox(height: 16.h),
-                const Text('QR Scanner functionality would be implemented here.', textAlign: TextAlign.center),
-                SizedBox(height: 20.h),
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // void _showQRScanDialog() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return Dialog(
+  //         shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 16.r, cornerSmoothing: 1.0)),
+  //         child: Padding(
+  //           padding: EdgeInsets.all(20.w),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Text('QR Scanner', style: AppTypography.fontSize20),
+  //               SizedBox(height: 16.h),
+  //               const Text('QR Scanner functionality would be implemented here.', textAlign: TextAlign.center),
+  //               SizedBox(height: 20.h),
+  //               TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 }

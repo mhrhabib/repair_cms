@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
@@ -5,6 +6,7 @@ import 'package:repair_cms/features/jobBooking/cubits/contactType/contact_type_c
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/business_model.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
+import 'package:repair_cms/features/profile/models/profile_response_model.dart';
 import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
 
 /// Step 7 – Address Details (Manual entry or prefilled from profile)
@@ -28,7 +30,7 @@ class StepAddressWidget extends StatefulWidget {
 
 class StepAddressWidgetState extends State<StepAddressWidget> {
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _houseNumberController = TextEditingController();
+  // final TextEditingController _houseNumberController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _postalCodeController = TextEditingController();
   final TextEditingController _provinceController = TextEditingController();
@@ -40,7 +42,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   // Original values to detect changes
   String _originalStreet = '';
-  String _originalHouseNumber = '';
+  // String _originalHouseNumber = '';
   String _originalCity = '';
   String _originalPostalCode = '';
   String _originalProvince = '';
@@ -51,14 +53,32 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     super.initState();
     _countryController.text = "";
 
+    // Pre-select country from SaaS Profile
+    final userData = storage.read('user');
+    if (userData != null) {
+      try {
+        UserData user;
+        if (userData is String) {
+          user = UserData.fromJson(jsonDecode(userData));
+        } else {
+          user = UserData.fromJson(userData);
+        }
+
+        final country = user.location?.country;
+        if (country != null && country.toString().trim().isNotEmpty) {
+          _countryController.text = country.toString().trim();
+          debugPrint('StepAddressWidget - Pre-selected Country: ${_countryController.text}');
+          _syncOriginals();
+        }
+      } catch (e) {
+        debugPrint('StepAddressWidget - Error loading SaaS profile for country: $e');
+      }
+    }
+
     if (!widget.isNewProfile && widget.selectedProfile != null) {
       _loadExistingProfileAddressData();
     } else if (widget.isNewProfile &&
-        (context.read<JobBookingCubit>().state as JobBookingData)
-            .contact
-            .shippingAddress
-            .street!
-            .isEmpty) {
+        (context.read<JobBookingCubit>().state as JobBookingData).contact.shippingAddress.street!.isEmpty) {
       // Ensure we start with empty fields for a new profile if the cubit was just cleared
       _syncOriginals();
     } else {
@@ -75,7 +95,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     void checkForChanges() {
       final hasChanges =
           _addressController.text != _originalStreet ||
-          _houseNumberController.text != _originalHouseNumber ||
+          // _houseNumberController.text != _originalHouseNumber ||
           _cityController.text != _originalCity ||
           _postalCodeController.text != _originalPostalCode ||
           _provinceController.text != _originalProvince ||
@@ -88,7 +108,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     }
 
     _addressController.addListener(checkForChanges);
-    _houseNumberController.addListener(checkForChanges);
+    // _houseNumberController.addListener(checkForChanges);
     _cityController.addListener(checkForChanges);
     _postalCodeController.addListener(checkForChanges);
     _provinceController.addListener(checkForChanges);
@@ -97,16 +117,13 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   void _loadExistingProfileAddressData() {
     final contactTypeCubit = context.read<ContactTypeCubit>();
-    final shippingAddress = contactTypeCubit.getPrimaryShippingAddress(
-      widget.selectedProfile!,
-    );
+    final shippingAddress = contactTypeCubit.getPrimaryShippingAddress(widget.selectedProfile!);
     if (shippingAddress != null) {
       _addressController.text = shippingAddress.street ?? '';
-      _houseNumberController.text = shippingAddress.iV?.toString() ?? '';
+      // _houseNumberController.text = shippingAddress.iV?.toString() ?? '';
       _cityController.text = shippingAddress.city ?? '';
       _postalCodeController.text = shippingAddress.zip ?? '';
-      _provinceController.text =
-          shippingAddress.city ?? ''; // Assuming city as province if missing
+      _provinceController.text = shippingAddress.city ?? ''; // Assuming city as province if missing
       _countryController.text = shippingAddress.country ?? "";
       _syncOriginals();
     }
@@ -117,7 +134,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     if (state is JobBookingData) {
       final sa = state.contact.shippingAddress;
       _addressController.text = sa.street ?? '';
-      _houseNumberController.text = sa.no ?? '';
+      // _houseNumberController.text = sa.no ?? '';
       _cityController.text = sa.city ?? '';
       _postalCodeController.text = sa.zip ?? '';
       _provinceController.text = sa.state ?? '';
@@ -128,7 +145,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   void _syncOriginals() {
     _originalStreet = _addressController.text;
-    _originalHouseNumber = _houseNumberController.text;
+    //  _originalHouseNumber = _houseNumberController.text;
     _originalCity = _cityController.text;
     _originalPostalCode = _postalCodeController.text;
     _originalProvince = _provinceController.text;
@@ -137,7 +154,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   bool get _isFormValid =>
       _addressController.text.isNotEmpty &&
-      _houseNumberController.text.isNotEmpty &&
+      // _houseNumberController.text.isNotEmpty &&
       _cityController.text.isNotEmpty &&
       _postalCodeController.text.isNotEmpty;
 
@@ -153,12 +170,10 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     final address = CustomerAddress(
       id: "",
       street: _addressController.text,
-      no: _houseNumberController.text,
+      // no: _houseNumberController.text,
       city: _cityController.text,
       zip: _postalCodeController.text,
-      state: _provinceController.text.isNotEmpty
-          ? _provinceController.text
-          : 'N/A',
+      state: _provinceController.text.isNotEmpty ? _provinceController.text : 'N/A',
       country: _countryController.text,
     );
 
@@ -179,11 +194,10 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   void _createProfileWithAddress() {
     final contactTypeCubit = context.read<ContactTypeCubit>();
-    final contact =
-        (context.read<JobBookingCubit>().state as JobBookingData).contact;
+    final contact = (context.read<JobBookingCubit>().state as JobBookingData).contact;
     final addressData = {
       "street": _addressController.text,
-      "no": _houseNumberController.text,
+      // "no": _houseNumberController.text,
       "city": _cityController.text,
       "zip": _postalCodeController.text,
       "state": _provinceController.text,
@@ -223,11 +237,10 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   void _updateProfileWithAddress() {
     final contactTypeCubit = context.read<ContactTypeCubit>();
-    final contact =
-        (context.read<JobBookingCubit>().state as JobBookingData).contact;
+    final contact = (context.read<JobBookingCubit>().state as JobBookingData).contact;
     final addressData = {
       "street": _addressController.text,
-      "no": _houseNumberController.text,
+      // "no": _houseNumberController.text,
       "city": _cityController.text,
       "zip": _postalCodeController.text,
       "state": _provinceController.text,
@@ -262,10 +275,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
             ]
           : null,
     );
-    contactTypeCubit.updateBusiness(
-      profileId: widget.selectedProfile!.sId!,
-      payload: payload,
-    );
+    contactTypeCubit.updateBusiness(profileId: widget.selectedProfile!.sId!, payload: payload);
   }
 
   @override
@@ -315,10 +325,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
                 ),
               ),
               SliverToBoxAdapter(child: _buildAddressForm()),
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: SizedBox(),
-              ),
+              const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
             ],
           ),
           if (_isLoading) const Center(child: CircularProgressIndicator()),
@@ -335,50 +342,31 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
         children: [
           Row(
             children: [
-              Expanded(
-                flex: 2,
-                child: _buildUnderlineField(
-                  _addressController,
-                  'Address*',
-                  'Street',
-                ),
-              ),
+              Expanded(flex: 2, child: _buildUnderlineField(_addressController, 'Address*', 'Street')),
               SizedBox(width: 16.w),
-              Expanded(
-                flex: 1,
-                child: _buildUnderlineField(
-                  _houseNumberController,
-                  'No*',
-                  '123',
-                  keyboardType: TextInputType.number,
-                ),
-              ),
+              // Expanded(
+              //   flex: 1,
+              //   child: _buildUnderlineField(
+              //     _houseNumberController,
+              //     'No*',
+              //     '123',
+              //     keyboardType: TextInputType.number,
+              //   ),
+              // ),
             ],
           ),
           SizedBox(height: 24.h),
           _buildUnderlineField(_cityController, 'City*', 'City name'),
           SizedBox(height: 24.h),
-          _buildUnderlineField(
-            _postalCodeController,
-            'Postal Code*',
-            'Post code',
-            keyboardType: TextInputType.number,
-          ),
+          _buildUnderlineField(_postalCodeController, 'Postal Code*', 'Post code', keyboardType: TextInputType.number),
           SizedBox(height: 24.h),
-          _buildUnderlineField(
-            _provinceController,
-            'Province',
-            'Province name',
-          ),
+          _buildUnderlineField(_provinceController, 'Province', 'Province name'),
           SizedBox(height: 24.h),
           _buildUnderlineField(_countryController, 'Country', 'Country name'),
           SizedBox(height: 32.h),
           Text(
             '* Required fields',
-            style: AppTypography.fontSize12.copyWith(
-              color: Colors.grey,
-              fontStyle: FontStyle.italic,
-            ),
+            style: AppTypography.fontSize12.copyWith(color: Colors.grey, fontStyle: FontStyle.italic),
           ),
         ],
       ),
@@ -399,11 +387,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
           controller: controller,
           keyboardType: keyboardType,
           textInputAction: TextInputAction.next,
-          style: GoogleFonts.roboto(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w400,
-            color: AppColors.fontMainColor,
-          ),
+          style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w400, color: AppColors.fontMainColor),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.grey[400]),
@@ -417,7 +401,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
   @override
   void dispose() {
     _addressController.dispose();
-    _houseNumberController.dispose();
+    // _houseNumberController.dispose();
     _cityController.dispose();
     _postalCodeController.dispose();
     _provinceController.dispose();

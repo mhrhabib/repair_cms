@@ -18,8 +18,7 @@ class StepPrinterWidget extends StatefulWidget {
 
   final void Function(bool canProceed) onCanProceedChanged;
   final String jobId;
-  final void Function(String printerType, CreateJobResponse response)
-  onJobBooked;
+  final void Function(String printerType, CreateJobResponse response) onJobBooked;
 
   @override
   State<StepPrinterWidget> createState() => StepPrinterWidgetState();
@@ -34,6 +33,9 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
     super.initState();
     // Always can proceed since default is selected
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FocusScope.of(context).unfocus();
+      }
       widget.onCanProceedChanged(true);
     });
   }
@@ -56,18 +58,11 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
 
     if (state is JobBookingData) {
       // Update status to 'booked'
-      jobBookingCubit.updateJobStatusToBooked(
-        userId: userId,
-        userName: userName,
-        email: state.contact.email,
-      );
+      jobBookingCubit.updateJobStatusToBooked(userId: userId, userName: userName, email: state.contact.email);
 
       try {
         final jobRequest = jobBookingCubit.getCreateJobRequest();
-        context.read<JobCreateCubit>().updateJob(
-          request: jobRequest,
-          jobId: widget.jobId,
-        );
+        context.read<JobCreateCubit>().updateJob(request: jobRequest, jobId: widget.jobId);
         return false; // Wait for BlocListener in build()
       } catch (e) {
         showCustomToast('Error updating job: $e', isError: true);
@@ -89,10 +84,7 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
               setState(() => _isLoading = false);
               widget.onJobBooked(_selectedPrinterType, state.response);
             } else if (state is JobCreateError) {
-              showCustomToast(
-                'Failed to update job: ${state.message}',
-                isError: true,
-              );
+              showCustomToast('Failed to update job: ${state.message}', isError: true);
               setState(() => _isLoading = false);
             }
           },
@@ -125,11 +117,7 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
                     children: [
                       Expanded(
                         child: _buildPrinterOption(
-                          iconWidget: Icon(
-                            SolarIconsOutline.printer,
-                            size: 32.sp,
-                            color: AppColors.fontMainColor,
-                          ),
+                          iconWidget: Icon(SolarIconsOutline.printer, size: 32.sp, color: AppColors.fontMainColor),
                           label: 'A4\nReceipt',
                           type: 'A4 Receipt',
                         ),
@@ -137,11 +125,7 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
                       SizedBox(width: 16.w),
                       Expanded(
                         child: _buildPrinterOption(
-                          iconWidget: Image.asset(
-                            'assets/icon/pos-bon.png',
-                            height: 32.h,
-                            width: 32.w,
-                          ),
+                          iconWidget: Image.asset('assets/icon/pos-bon.png', height: 32.h, width: 32.w),
                           label: 'Thermal\nReceipt',
                           type: 'Thermal Receipt',
                         ),
@@ -150,10 +134,7 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
                   ),
                 ),
               ),
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: SizedBox(),
-              ),
+              const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
             ],
           ),
           if (_isLoading) const Center(child: CircularProgressIndicator()),
@@ -162,11 +143,7 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
     );
   }
 
-  Widget _buildPrinterOption({
-    required Widget iconWidget,
-    required String label,
-    required String type,
-  }) {
+  Widget _buildPrinterOption({required Widget iconWidget, required String label, required String type}) {
     final isSelected = _selectedPrinterType == type;
     return GestureDetector(
       onTap: () => _selectPrinterType(type),
@@ -175,10 +152,7 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
         decoration: BoxDecoration(
           color: Color(0xFFF0F3F7),
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade300, width: isSelected ? 2 : 1),
         ),
         child: Stack(
           alignment: Alignment.center,
@@ -192,9 +166,7 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
                 Text(
                   label,
                   textAlign: TextAlign.center,
-                  style: AppTypography.fontSize16Normal.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTypography.fontSize16Normal.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -202,11 +174,7 @@ class StepPrinterWidgetState extends State<StepPrinterWidget> {
               Positioned(
                 top: 8,
                 right: 8,
-                child: Icon(
-                  Icons.check_circle,
-                  color: AppColors.primary,
-                  size: 20.sp,
-                ),
+                child: Icon(Icons.check_circle, color: AppColors.primary, size: 20.sp),
               ),
           ],
         ),
