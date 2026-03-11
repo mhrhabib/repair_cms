@@ -201,10 +201,12 @@ class MessageCubit extends Cubit<MessageState> {
       // Check for duplicates (by id or content/timestamp)
       final isDuplicate = _conversations.any((c) {
         // Match by server-side ID if available
-        if (c.sId != null && message.sId != null && c.sId == message.sId)
+        if (c.sId != null && message.sId != null && c.sId == message.sId) {
           return true;
-        if (c.id != null && message.id != null && c.id == message.id)
+        }
+        if (c.id != null && message.id != null && c.id == message.id) {
           return true;
+        }
 
         // Fallback: match by sender, message content and timestamp
         // (with a small tolerance for local vs server timestamps)
@@ -659,28 +661,32 @@ class MessageCubit extends Cubit<MessageState> {
     try {
       String? readField(String key) {
         try {
-          if (comment.containsKey(key) && comment[key] != null)
+          if (comment.containsKey(key) && comment[key] != null) {
             return comment[key] as String?;
+          }
         } catch (_) {}
         try {
           final nested = comment['comment'];
-          if (nested is Map && nested.containsKey(key) && nested[key] != null)
+          if (nested is Map && nested.containsKey(key) && nested[key] != null) {
             return nested[key] as String?;
+          }
         } catch (_) {}
         return null;
       }
 
       dynamic readMentions() {
         try {
-          if (comment.containsKey('mentions') && comment['mentions'] != null)
+          if (comment.containsKey('mentions') && comment['mentions'] != null) {
             return comment['mentions'];
+          }
         } catch (_) {}
         try {
           final nested = comment['comment'];
           if (nested is Map &&
               nested.containsKey('mentions') &&
-              nested['mentions'] != null)
+              nested['mentions'] != null) {
             return nested['mentions'];
+          }
         } catch (_) {}
         return null;
       }

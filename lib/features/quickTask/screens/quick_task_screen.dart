@@ -5,7 +5,6 @@ import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
-import 'package:solar_icons/solar_icons.dart';
 
 class QuickTaskScreen extends StatefulWidget {
   const QuickTaskScreen({super.key});

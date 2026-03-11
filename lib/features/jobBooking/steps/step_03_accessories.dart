@@ -42,6 +42,19 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AccessoriesCubit>().getAccessories(userId: _userId);
+
+      // Restore state from Cubit
+      final bookingState = context.read<JobBookingCubit>().state;
+      if (bookingState is JobBookingData) {
+        final condition = bookingState.device.condition;
+        if (condition.isNotEmpty) {
+          setState(() {
+            _selectedAccessory = condition.first.value;
+            _searchController.text = condition.first.value;
+          });
+          widget.onCanProceedChanged(true);
+        }
+      }
     });
   }
 
@@ -81,7 +94,11 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: 24.h),
-                TitleWidget(title: 'Any Accessories included?', subTitle: '(Cable, Battery, Case...)', stepNumber: 3),
+                TitleWidget(
+                  title: 'Any Accessories included?',
+                  subTitle: '(Cable, Battery, Case...)',
+                  stepNumber: 3,
+                ),
                 SizedBox(height: 32.h),
               ],
             ),
@@ -109,10 +126,17 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                     ),
                     child: Column(
                       children: [
-                        Text('Failed to load accessories', style: AppTypography.fontSize14.copyWith(color: Colors.red)),
+                        Text(
+                          'Failed to load accessories',
+                          style: AppTypography.fontSize14.copyWith(
+                            color: Colors.red,
+                          ),
+                        ),
                         SizedBox(height: 8.h),
                         ElevatedButton(
-                          onPressed: () => context.read<AccessoriesCubit>().getAccessories(userId: _userId),
+                          onPressed: () => context
+                              .read<AccessoriesCubit>()
+                              .getAccessories(userId: _userId),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -120,7 +144,8 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                   );
                 }
 
-                if (state is AccessoriesLoaded || state is AccessoriesSearchResult) {
+                if (state is AccessoriesLoaded ||
+                    state is AccessoriesSearchResult) {
                   final accessories = state is AccessoriesLoaded
                       ? state.accessories
                       : (state as AccessoriesSearchResult).accessories;
@@ -132,27 +157,40 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                     hintText: 'Answere here',
                     noItemsText: 'No accessories found',
                     onSuggestionSelected: (accessory) {
-                      _selectAccessory(accessory.label ?? 'Unknown Accessory', accessory.sId ?? '');
+                      _selectAccessory(
+                        accessory.label ?? 'Unknown Accessory',
+                        accessory.sId ?? '',
+                      );
                     },
                     itemBuilder: (context, accessory) => ListTile(
                       title: Text(
                         accessory.label ?? 'Unknown Accessory',
-                        style: GoogleFonts.roboto(fontSize: 22.sp, color: AppColors.fontMainColor),
+                        style: GoogleFonts.roboto(
+                          fontSize: 22.sp,
+                          color: AppColors.fontMainColor,
+                        ),
                       ),
                     ),
                     suggestionsCallback: (pattern) {
                       if (pattern.isNotEmpty) {
-                        context.read<AccessoriesCubit>().searchAccessories(pattern);
+                        context.read<AccessoriesCubit>().searchAccessories(
+                          pattern,
+                        );
                       } else {
                         context.read<AccessoriesCubit>().clearSearch();
                       }
                       final s = context.read<AccessoriesCubit>().state;
-                      if (s is AccessoriesLoaded || s is AccessoriesSearchResult) {
+                      if (s is AccessoriesLoaded ||
+                          s is AccessoriesSearchResult) {
                         final items = s is AccessoriesLoaded
                             ? s.accessories
                             : (s as AccessoriesSearchResult).accessories;
                         return items
-                            .where((a) => (a.label ?? '').toLowerCase().contains(pattern.toLowerCase()))
+                            .where(
+                              (a) => (a.label ?? '').toLowerCase().contains(
+                                pattern.toLowerCase(),
+                              ),
+                            )
                             .toList();
                       }
                       return [];
@@ -162,8 +200,15 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                       return _buildNewOption(pattern);
                     },
                     customSuggestionBuilder: (context, pattern, filteredItems) {
-                      if (pattern.isNotEmpty && filteredItems.isEmpty && !_isCreatingAccessory) {
-                        return Column(children: [const Divider(height: 1), _buildNewOption(pattern)]);
+                      if (pattern.isNotEmpty &&
+                          filteredItems.isEmpty &&
+                          !_isCreatingAccessory) {
+                        return Column(
+                          children: [
+                            const Divider(height: 1),
+                            _buildNewOption(pattern),
+                          ],
+                        );
                       }
                       return const SizedBox();
                     },
@@ -177,7 +222,8 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                   hintText: 'Loading accessories...',
                   noItemsText: 'No accessories available',
                   onSuggestionSelected: (a) {},
-                  itemBuilder: (context, a) => ListTile(title: Text(a.label ?? 'Unknown')),
+                  itemBuilder: (context, a) =>
+                      ListTile(title: Text(a.label ?? 'Unknown')),
                   suggestionsCallback: (p) => [],
                 );
               },
@@ -198,12 +244,18 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                 ),
                 child: Row(
                   children: [
-                    SizedBox(width: 20.w, height: 20.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                    SizedBox(
+                      width: 20.w,
+                      height: 20.h,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                     SizedBox(width: 12.w),
                     Expanded(
                       child: Text(
                         'Creating new accessory...',
-                        style: AppTypography.fontSize14.copyWith(color: Colors.blue.shade800),
+                        style: AppTypography.fontSize14.copyWith(
+                          color: Colors.blue.shade800,
+                        ),
                       ),
                     ),
                   ],
@@ -299,21 +351,34 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
           children: [
             Text(
               pattern,
-              style: AppTypography.fontSize16.copyWith(color: Colors.black, fontWeight: FontWeight.w500),
+              style: AppTypography.fontSize16.copyWith(
+                color: Colors.black,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             SizedBox(width: 8.w),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-              decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4.r)),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
               child: Text(
                 'NEW',
-                style: AppTypography.fontSize12.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                style: AppTypography.fontSize12.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
         ),
         trailing: _isCreatingAccessory
-            ? SizedBox(width: 16.w, height: 16.h, child: CircularProgressIndicator(strokeWidth: 2))
+            ? SizedBox(
+                width: 16.w,
+                height: 16.h,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
             : null,
         onTap: () => _createNewAccessory(pattern),
       ),

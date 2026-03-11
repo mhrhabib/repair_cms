@@ -1,9 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
-import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:solar_icons/solar_icons.dart';
 // Import the new screens
 import './screens/a4_receipt_printer_screen.dart';

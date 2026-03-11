@@ -2,12 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_typography.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
@@ -789,12 +785,13 @@ class _A4PrinterScreenState extends State<A4PrinterScreen> {
               color: AppColors.fontSecondaryColor,
             ),
             onSelected: (value) {
-              if (value == 'use')
+              if (value == 'use') {
                 _fillFormFromPrinter(printer);
-              else if (value == 'default')
+              } else if (value == 'default') {
                 _setAsDefaultPrinter(printer);
-              else if (value == 'delete')
+              } else if (value == 'delete') {
                 _deletePrinter(printer);
+              }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'use', child: Text('Use')),

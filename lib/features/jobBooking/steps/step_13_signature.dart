@@ -32,6 +32,17 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
       if (mounted) {
         FocusScope.of(context).unfocus();
       }
+
+      final state = context.read<JobBookingCubit>().state;
+      if (state is JobBookingData) {
+        if (state.job.signatureFilePath != null &&
+            state.job.signatureFilePath!.isNotEmpty) {
+          setState(() {
+            _hasSignature = true;
+          });
+          widget.onCanProceedChanged(true);
+        }
+      }
     });
   }
 
@@ -45,7 +56,8 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
   }
 
   void _onPanStart(DragStartDetails details) {
-    final RenderBox box = _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox box =
+        _signatureKey.currentContext!.findRenderObject() as RenderBox;
     final localPosition = box.globalToLocal(details.globalPosition);
     if (localPosition.dx >= 0 &&
         localPosition.dx <= box.size.width &&
@@ -61,7 +73,8 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
-    final RenderBox box = _signatureKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox box =
+        _signatureKey.currentContext!.findRenderObject() as RenderBox;
     final localPosition = box.globalToLocal(details.globalPosition);
     if (localPosition.dx >= 0 &&
         localPosition.dx <= box.size.width &&
@@ -84,9 +97,13 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
 
   Future<String> _captureSignatureAsBase64() async {
     try {
-      final RenderRepaintBoundary boundary = _signatureKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final RenderRepaintBoundary boundary =
+          _signatureKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
       final Uint8List pngBytes = byteData!.buffer.asUint8List();
       return 'data:image/png;base64,${base64Encode(pngBytes)}';
     } catch (e) {
@@ -211,7 +228,11 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
                                 CircleAvatar(
                                   radius: 14.r,
                                   backgroundColor: AppColors.primary,
-                                  child: Icon(Icons.refresh, color: Colors.white, size: 18.sp),
+                                  child: Icon(
+                                    Icons.refresh,
+                                    color: Colors.white,
+                                    size: 18.sp,
+                                  ),
                                 ),
                                 SizedBox(width: 8.w),
                                 Text(
@@ -267,7 +288,12 @@ class DashedBorderPainter extends CustomPainter {
     final path = Path()
       ..addRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2, size.width - strokeWidth, size.height - strokeWidth),
+          Rect.fromLTWH(
+            strokeWidth / 2,
+            strokeWidth / 2,
+            size.width - strokeWidth,
+            size.height - strokeWidth,
+          ),
           Radius.circular(borderRadius),
         ),
       );
@@ -276,7 +302,10 @@ class DashedBorderPainter extends CustomPainter {
     for (ui.PathMetric pathMetric in path.computeMetrics()) {
       double distance = 0.0;
       while (distance < pathMetric.length) {
-        dashPath.addPath(pathMetric.extractPath(distance, distance + dashWidth), Offset.zero);
+        dashPath.addPath(
+          pathMetric.extractPath(distance, distance + dashWidth),
+          Offset.zero,
+        );
         distance += dashWidth + dashSpace;
       }
     }
@@ -303,13 +332,17 @@ class SignaturePainter extends CustomPainter {
     for (final path in signaturePaths) {
       if (path.isNotEmpty) {
         final p = Path()..moveTo(path.first.dx, path.first.dy);
-        for (int i = 1; i < path.length; i++) p.lineTo(path[i].dx, path[i].dy);
+        for (int i = 1; i < path.length; i++) {
+          p.lineTo(path[i].dx, path[i].dy);
+        }
         canvas.drawPath(p, paint);
       }
     }
     if (currentPath.isNotEmpty) {
       final p = Path()..moveTo(currentPath.first.dx, currentPath.first.dy);
-      for (int i = 1; i < currentPath.length; i++) p.lineTo(currentPath[i].dx, currentPath[i].dy);
+      for (int i = 1; i < currentPath.length; i++) {
+        p.lineTo(currentPath[i].dx, currentPath[i].dy);
+      }
       canvas.drawPath(p, paint);
     }
   }

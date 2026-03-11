@@ -13,10 +13,15 @@ import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 
 /// Step 6 – Contact Selection (Existing Search or New Entry)
 class StepContactWidget extends StatefulWidget {
-  const StepContactWidget({super.key, required this.onCanProceedChanged, required this.onProfileSelected});
+  const StepContactWidget({
+    super.key,
+    required this.onCanProceedChanged,
+    required this.onProfileSelected,
+  });
 
   final void Function(bool canProceed) onCanProceedChanged;
-  final void Function(Customersorsuppliers? profile, bool isNew) onProfileSelected;
+  final void Function(Customersorsuppliers? profile, bool isNew)
+  onProfileSelected;
 
   @override
   State<StepContactWidget> createState() => StepContactWidgetState();
@@ -69,19 +74,47 @@ class StepContactWidgetState extends State<StepContactWidget> {
           user = UserData.fromJson(userData);
         }
 
+        final country = user.location?.country;
         final prefix = user.location?.locationPrefix;
-        debugPrint('StepContactWidget - SaaS Profile raw prefix: $prefix');
 
-        if (prefix != null && prefix.toString().trim().isNotEmpty) {
+        bool isSetFromCountry = false;
+
+        if (country != null && country.toString().trim().isNotEmpty) {
+          final cleanCountry = country.toString().trim().toLowerCase();
+          try {
+            final matchedCode = countryPicker.countryCodes.firstWhere(
+              (c) =>
+                  c.name.toLowerCase() == cleanCountry ||
+                  c.code.toLowerCase() == cleanCountry,
+            );
+            if (matchedCode.dialCode.isNotEmpty) {
+              setState(() => selectedPhoneCode = matchedCode.dialCode);
+              isSetFromCountry = true;
+              debugPrint(
+                'StepContactWidget - Pre-selected Phone Code from Country: $selectedPhoneCode',
+              );
+            }
+          } catch (e) {
+            // No match found
+          }
+        }
+
+        if (!isSetFromCountry &&
+            prefix != null &&
+            prefix.toString().trim().isNotEmpty) {
           String cleanPrefix = prefix.toString().trim();
           if (!cleanPrefix.startsWith('+')) {
             cleanPrefix = '+$cleanPrefix';
           }
           setState(() => selectedPhoneCode = cleanPrefix);
-          debugPrint('StepContactWidget - Pre-selected Phone Code: $selectedPhoneCode');
+          debugPrint(
+            'StepContactWidget - Pre-selected Phone Code from Prefix: $selectedPhoneCode',
+          );
         }
       } catch (e) {
-        debugPrint('StepContactWidget - Error loading SaaS profile for phone prefix: $e');
+        debugPrint(
+          'StepContactWidget - Error loading SaaS profile for phone prefix: $e',
+        );
       }
     }
 
@@ -92,18 +125,28 @@ class StepContactWidgetState extends State<StepContactWidget> {
   }
 
   void _setupFocusListeners() {
-    firstNameFocusNode.addListener(() => _scrollToFocus(firstNameFocusNode, 80.h));
-    lastNameFocusNode.addListener(() => _scrollToFocus(lastNameFocusNode, 140.h));
+    firstNameFocusNode.addListener(
+      () => _scrollToFocus(firstNameFocusNode, 80.h),
+    );
+    lastNameFocusNode.addListener(
+      () => _scrollToFocus(lastNameFocusNode, 140.h),
+    );
     emailFocusNode.addListener(() => _scrollToFocus(emailFocusNode, 200.h));
     phoneFocusNode.addListener(() => _scrollToFocus(phoneFocusNode, 260.h));
-    organizationFocusNode.addListener(() => _scrollToFocus(organizationFocusNode, 40.h));
+    organizationFocusNode.addListener(
+      () => _scrollToFocus(organizationFocusNode, 40.h),
+    );
   }
 
   void _scrollToFocus(FocusNode node, double offset) {
     if (node.hasFocus && mounted) {
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted && scrollController.hasClients) {
-          scrollController.animateTo(offset, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+          scrollController.animateTo(
+            offset,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
         }
       });
     }
@@ -145,7 +188,12 @@ class StepContactWidgetState extends State<StepContactWidget> {
     if (!mounted) return;
     context
         .read<ContactTypeCubit>()
-        .searchProfilesApi(userId: storage.read('userId') ?? '', query: query, type2: selectedContactType, limit: 5)
+        .searchProfilesApi(
+          userId: storage.read('userId') ?? '',
+          query: query,
+          type2: selectedContactType,
+          limit: 5,
+        )
         .then((_) {
           if (mounted) {
             setState(() {
@@ -158,7 +206,9 @@ class StepContactWidgetState extends State<StepContactWidget> {
   void _selectProfile(Customersorsuppliers profile) {
     if (mounted) {
       setState(() {
-        final displayName = profile.organization ?? '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim();
+        final displayName =
+            profile.organization ??
+            '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim();
         _isProgrammaticUpdate = true;
         searchController.text = displayName;
         _isProgrammaticUpdate = false;
@@ -179,7 +229,14 @@ class StepContactWidgetState extends State<StepContactWidget> {
   void _selectNewProfile() {
     // Clear any previous address data in cubit to ensure a fresh start for new profile
     final jobBookingCubit = context.read<JobBookingCubit>();
-    final emptyAddress = CustomerAddress(street: '', no: '', city: '', zip: '', state: '', country: '');
+    final emptyAddress = CustomerAddress(
+      street: '',
+      no: '',
+      city: '',
+      zip: '',
+      state: '',
+      country: '',
+    );
     jobBookingCubit.updateShippingAddress(emptyAddress);
     jobBookingCubit.updateBillingAddress(emptyAddress);
 
@@ -207,7 +264,11 @@ class StepContactWidgetState extends State<StepContactWidget> {
       // Scroll to form and focus first field
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {
-          scrollController.animateTo(80.h, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+          scrollController.animateTo(
+            80.h,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
           if (selectedContactType == 'business') {
             organizationFocusNode.requestFocus();
           } else {
@@ -264,7 +325,9 @@ class StepContactWidgetState extends State<StepContactWidget> {
     jobBookingCubit.updateContactType(
       type: selectedContactType == 'business' ? "Business" : "Personal",
       type2: selectedContactType,
-      organization: selectedContactType == 'business' ? organizationController.text : '',
+      organization: selectedContactType == 'business'
+          ? organizationController.text
+          : '',
       customerNo: '',
       position: selectedContactType == 'business' ? "Customer" : '',
     );
@@ -296,7 +359,17 @@ class StepContactWidgetState extends State<StepContactWidget> {
 
   bool get _isFormValid {
     if (showContactForm) {
-      final basicFieldsValid = firstNameController.text.isNotEmpty && lastNameController.text.isNotEmpty;
+      final emailRegex = RegExp(
+        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+      );
+      final isEmailValid = emailRegex.hasMatch(emailController.text.trim());
+
+      final basicFieldsValid =
+          firstNameController.text.isNotEmpty &&
+          lastNameController.text.isNotEmpty &&
+          phoneController.text.isNotEmpty &&
+          isEmailValid;
+
       if (selectedContactType == 'business') {
         return basicFieldsValid && organizationController.text.isNotEmpty;
       }
@@ -363,7 +436,7 @@ class StepContactWidgetState extends State<StepContactWidget> {
                       Future.delayed(const Duration(milliseconds: 100), () {
                         if (mounted) {
                           scrollController.animateTo(
-                            100.h,
+                            200.h,
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeOut,
                           );
@@ -389,7 +462,7 @@ class StepContactWidgetState extends State<StepContactWidget> {
                       Future.delayed(const Duration(milliseconds: 100), () {
                         if (mounted) {
                           scrollController.animateTo(
-                            180.h,
+                            200.h,
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeOut,
                           );
@@ -399,7 +472,10 @@ class StepContactWidgetState extends State<StepContactWidget> {
                   ),
                   SizedBox(height: 32.h),
                   if (selectedContactType.isNotEmpty) ...[
-                    Text(selectedContactType == 'business' ? 'Company' : 'Name', style: AppTypography.fontSize16),
+                    Text(
+                      selectedContactType == 'business' ? 'Company' : 'Name',
+                      style: AppTypography.fontSize16,
+                    ),
                     SizedBox(height: 8.h),
                     TextField(
                       controller: searchController,
@@ -416,9 +492,15 @@ class StepContactWidgetState extends State<StepContactWidget> {
                           color: const Color(0xFFB2B5BE),
                           fontWeight: FontWeight.w400,
                         ),
-                        border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.primary),
+                        ),
                         contentPadding: EdgeInsets.symmetric(vertical: 8.h),
                       ),
                     ),
@@ -444,7 +526,13 @@ class StepContactWidgetState extends State<StepContactWidget> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8.r),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: BlocBuilder<ContactTypeCubit, ContactTypeState>(
         builder: (context, state) {
@@ -458,10 +546,13 @@ class StepContactWidgetState extends State<StepContactWidget> {
             final results = state.businesses;
             final hasExactMatch = results.any(
               (p) =>
-                  (p.organization?.toLowerCase() == currentSearchQuery.toLowerCase()) ||
-                  ('${p.firstName} ${p.lastName}'.trim().toLowerCase() == currentSearchQuery.toLowerCase()),
+                  (p.organization?.toLowerCase() ==
+                      currentSearchQuery.toLowerCase()) ||
+                  ('${p.firstName} ${p.lastName}'.trim().toLowerCase() ==
+                      currentSearchQuery.toLowerCase()),
             );
-            final shouldShowNewOption = currentSearchQuery.isNotEmpty && !hasExactMatch;
+            final shouldShowNewOption =
+                currentSearchQuery.isNotEmpty && !hasExactMatch;
 
             return Column(
               children: [
@@ -470,7 +561,10 @@ class StepContactWidgetState extends State<StepContactWidget> {
                 if (results.isEmpty && !shouldShowNewOption)
                   const Padding(
                     padding: EdgeInsets.all(16),
-                    child: Text('No results found', style: TextStyle(color: Colors.grey)),
+                    child: Text(
+                      'No results found',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
               ],
             );
@@ -493,13 +587,22 @@ class StepContactWidgetState extends State<StepContactWidget> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(child: Text(currentSearchQuery, style: AppTypography.fontSize16)),
+            Expanded(
+              child: Text(currentSearchQuery, style: AppTypography.fontSize16),
+            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(4),
+              ),
               child: const Text(
                 'NEW',
-                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -509,7 +612,9 @@ class StepContactWidgetState extends State<StepContactWidget> {
   }
 
   Widget _buildProfileTile(Customersorsuppliers profile) {
-    final displayName = profile.organization ?? '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim();
+    final displayName = profile.organization!.isEmpty
+        ? '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim()
+        : profile.organization!;
     return GestureDetector(
       onTap: () => _selectProfile(profile),
       child: Container(
@@ -539,7 +644,11 @@ class StepContactWidgetState extends State<StepContactWidget> {
         if (selectedContactType == 'business') ...[
           Text('Company name*', style: AppTypography.fontSize16),
           SizedBox(height: 8.h),
-          _buildTextField(organizationFocusNode, organizationController, 'Company name'),
+          _buildTextField(
+            organizationFocusNode,
+            organizationController,
+            'Company name',
+          ),
           SizedBox(height: 24.h),
           Text('Contact Person', style: AppTypography.fontSize16),
           SizedBox(height: 16.h),
@@ -552,11 +661,16 @@ class StepContactWidgetState extends State<StepContactWidget> {
         SizedBox(height: 8.h),
         _buildTextField(lastNameFocusNode, lastNameController, 'Markinson'),
         SizedBox(height: 16.h),
-        Text('Email', style: AppTypography.fontSize14),
+        Text('Email*', style: AppTypography.fontSize14),
         SizedBox(height: 8.h),
-        _buildTextField(emailFocusNode, emailController, 'name@company.com', keyboardType: TextInputType.emailAddress),
+        _buildTextField(
+          emailFocusNode,
+          emailController,
+          'name@company.com',
+          keyboardType: TextInputType.emailAddress,
+        ),
         SizedBox(height: 16.h),
-        Text('Telephone (Mobile)', style: AppTypography.fontSize14),
+        Text('Telephone (Mobile)*', style: AppTypography.fontSize14),
         SizedBox(height: 8.h),
         Row(
           children: [
@@ -566,7 +680,9 @@ class StepContactWidgetState extends State<StepContactWidget> {
                 width: 90.w,
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade300),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -579,14 +695,23 @@ class StepContactWidgetState extends State<StepContactWidget> {
                         color: AppColors.fontMainColor,
                       ),
                     ),
-                    Icon(Icons.keyboard_arrow_down, size: 16.sp, color: Colors.grey),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16.sp,
+                      color: Colors.grey,
+                    ),
                   ],
                 ),
               ),
             ),
             SizedBox(width: 12.w),
             Expanded(
-              child: _buildTextField(phoneFocusNode, phoneController, '123456789', keyboardType: TextInputType.phone),
+              child: _buildTextField(
+                phoneFocusNode,
+                phoneController,
+                '123456789',
+                keyboardType: TextInputType.phone,
+              ),
             ),
           ],
         ),
@@ -617,18 +742,32 @@ class StepContactWidgetState extends State<StepContactWidget> {
       keyboardType: keyboardType,
       cursorColor: AppColors.blackColor,
       textInputAction: TextInputAction.next,
-      style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w400, color: AppColors.fontMainColor),
+      style: GoogleFonts.roboto(
+        fontSize: 18.sp,
+        fontWeight: FontWeight.w400,
+        color: AppColors.fontMainColor,
+      ),
       onChanged: (_) {
         setState(() {});
         widget.onCanProceedChanged(_isFormValid);
       },
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.roboto(fontSize: 18.sp, color: const Color(0xFFB2B5BE), fontWeight: FontWeight.w400),
+        hintStyle: GoogleFonts.roboto(
+          fontSize: 18.sp,
+          color: const Color(0xFFB2B5BE),
+          fontWeight: FontWeight.w400,
+        ),
 
-        border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+        border: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.primary),
+        ),
         contentPadding: EdgeInsets.symmetric(vertical: 8.h),
       ),
     );
@@ -648,8 +787,17 @@ class StepContactWidgetState extends State<StepContactWidget> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade300, width: isSelected ? 2 : 1),
-          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -657,10 +805,16 @@ class StepContactWidgetState extends State<StepContactWidget> {
               width: 40.w,
               height: 40.h,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.shade100,
+                color: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8.r),
               ),
-              child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade600, size: 24.sp),
+              child: Icon(
+                icon,
+                color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                size: 24.sp,
+              ),
             ),
             SizedBox(width: 12.w),
             Expanded(
@@ -672,7 +826,8 @@ class StepContactWidgetState extends State<StepContactWidget> {
                 ),
               ),
             ),
-            if (isSelected) Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
+            if (isSelected)
+              Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
           ],
         ),
       ),

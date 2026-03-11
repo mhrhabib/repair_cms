@@ -25,13 +25,17 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
     super.initState();
     // Default "none" is always valid
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).unfocus(); // Ensure keyboard is hidden on entry
-      widget.onCanProceedChanged(true);
+      if (mounted) {
+        FocusScope.of(context).unfocus();
+      }
       final bookingState = context.read<JobBookingCubit>().state;
       if (bookingState is JobBookingData) {
         setState(() {
           selectedOption = bookingState.device.deviceSecurity;
         });
+        _updateDeviceSecurityInCubit();
+      } else {
+        widget.onCanProceedChanged(true);
       }
     });
   }
@@ -48,7 +52,9 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
       default:
         securityType = 'none';
     }
-    context.read<JobBookingCubit>().updateDeviceInfo(deviceSecurity: securityType);
+    context.read<JobBookingCubit>().updateDeviceInfo(
+      deviceSecurity: securityType,
+    );
 
     // Update can-proceed
     bool canProceed = true;
@@ -63,11 +69,15 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
   bool _validateAndSave() {
     _updateDeviceSecurityInCubit();
     if (selectedOption == 'password' && _passwordController.text.isEmpty) {
-      SnackbarDemo(message: 'Please enter the password or select "No Security".').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Please enter the password or select "No Security".',
+      ).showCustomSnackbar(context);
       return false;
     }
     if (selectedOption == 'pattern' && connectedDots.isEmpty) {
-      SnackbarDemo(message: 'Please draw a pattern or select "No Security".').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Please draw a pattern or select "No Security".',
+      ).showCustomSnackbar(context);
       return false;
     }
     return true;
@@ -102,7 +112,11 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
             child: Column(
               children: [
                 SizedBox(height: 24.h),
-                TitleWidget(stepNumber: 5, title: 'Device Security', subTitle: 'Select the security type'),
+                TitleWidget(
+                  stepNumber: 5,
+                  title: 'Device Security',
+                  subTitle: 'Select the security type',
+                ),
                 SizedBox(height: 24.h),
               ],
             ),
@@ -172,14 +186,22 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(color: Colors.grey.shade300),
-                  boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade200,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Enter Device Password / PIN',
-                      style: AppTypography.fontSize14.copyWith(color: Colors.grey.shade800),
+                      style: AppTypography.fontSize14.copyWith(
+                        color: Colors.grey.shade800,
+                      ),
                     ),
                     SizedBox(height: 8.h),
                     TextField(
@@ -194,9 +216,15 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.r),
-                          borderSide: BorderSide(color: AppColors.primary, width: 2),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 12.h,
+                        ),
                       ),
                       style: AppTypography.fontSize16,
                     ),
@@ -211,7 +239,9 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
             child: BlocBuilder<JobBookingCubit, JobBookingState>(
               builder: (context, state) {
-                final deviceSecurity = state is JobBookingData ? state.device.deviceSecurity : 'none';
+                final deviceSecurity = state is JobBookingData
+                    ? state.device.deviceSecurity
+                    : 'none';
                 String securityText;
                 switch (deviceSecurity) {
                   case 'password':
@@ -233,7 +263,11 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade600, size: 16.sp),
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.blue.shade600,
+                        size: 16.sp,
+                      ),
                       SizedBox(width: 8.w),
                       Text(
                         'Security Status: $securityText',
@@ -270,8 +304,17 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade300, width: isSelected ? 2 : 1),
-          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 4, offset: const Offset(0, 2))],
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -279,10 +322,16 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
               width: 40.w,
               height: 40.h,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.shade100,
+                color: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8.r),
               ),
-              child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade600, size: 24.sp),
+              child: Icon(
+                icon,
+                color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                size: 24.sp,
+              ),
             ),
             SizedBox(width: 12.w),
             Expanded(
@@ -292,21 +341,28 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
                   Text(
                     title,
                     style: AppTypography.fontSize16.copyWith(
-                      color: isSelected ? AppColors.primary : Colors.grey.shade800,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.grey.shade800,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                     ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     subtitle,
                     style: AppTypography.fontSize12.copyWith(
-                      color: isSelected ? AppColors.primary.withValues(alpha: 0.8) : Colors.grey.shade600,
+                      color: isSelected
+                          ? AppColors.primary.withValues(alpha: 0.8)
+                          : Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
             ),
-            if (isSelected) Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
+            if (isSelected)
+              Icon(Icons.check_circle, color: AppColors.primary, size: 24.sp),
           ],
         ),
       ),
@@ -345,22 +401,33 @@ class _PatternBottomSheetState extends State<_PatternBottomSheet> {
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r), topRight: Radius.circular(20.r)),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.r),
+          topRight: Radius.circular(20.r),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Draw Security Pattern', style: AppTypography.fontSize16Bold.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            'Draw Security Pattern',
+            style: AppTypography.fontSize16Bold.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           SizedBox(height: 16.h),
           PatternInputWidget(
             initialPattern: connectedDots,
-            onPatternChanged: (pattern) => setState(() => connectedDots = pattern),
+            onPatternChanged: (pattern) =>
+                setState(() => connectedDots = pattern),
           ),
           SizedBox(height: 16.h),
           if (connectedDots.isNotEmpty)
             Text(
               'Pattern: ${connectedDots.map((d) => d + 1).join(' → ')}',
-              style: AppTypography.fontSize14.copyWith(color: Colors.green.shade700),
+              style: AppTypography.fontSize14.copyWith(
+                color: Colors.green.shade700,
+              ),
               textAlign: TextAlign.center,
             ),
           SizedBox(height: 24.h),
@@ -383,7 +450,9 @@ class _PatternBottomSheetState extends State<_PatternBottomSheet> {
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.check),
                   label: const Text('Confirm'),
-                  onPressed: connectedDots.isNotEmpty ? () => Navigator.of(context).pop(connectedDots) : null,
+                  onPressed: connectedDots.isNotEmpty
+                      ? () => Navigator.of(context).pop(connectedDots)
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,

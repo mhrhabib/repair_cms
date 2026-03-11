@@ -12,7 +12,8 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
   final ContactTypeRepository contactTypeRepository;
   Timer? _searchTimer;
 
-  ContactTypeCubit({required this.contactTypeRepository}) : super(ContactTypeInitial());
+  ContactTypeCubit({required this.contactTypeRepository})
+    : super(ContactTypeInitial());
 
   // Generalized method to search for both Business and Personal profiles
   Future<void> searchProfilesApi({
@@ -23,46 +24,79 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
   }) async {
     emit(ContactTypeLoading());
     try {
-      debugPrint('🔍 [ContactTypeCubit] Searching for $type2 profiles with query: "$query"');
+      debugPrint(
+        '🔍 [ContactTypeCubit] Searching for $type2 profiles with query: "$query"',
+      );
       final profiles = await contactTypeRepository.getProfileList(
         userId: storage.read('userId') ?? userId,
         keyword: query,
         type2: type2,
         limit: limit,
       );
-      debugPrint('✅ [ContactTypeCubit] Search completed, found ${profiles.length} profiles');
-      emit(ContactTypeSearchResult(businesses: profiles, searchQuery: query, allBusinesses: []));
+      debugPrint(
+        '✅ [ContactTypeCubit] Search completed, found ${profiles.length} profiles',
+      );
+      emit(
+        ContactTypeSearchResult(
+          businesses: profiles,
+          searchQuery: query,
+          allBusinesses: [],
+        ),
+      );
     } on ContactTypeException catch (e) {
-      debugPrint('❌ [ContactTypeCubit] ContactTypeException during search: ${e.message}');
+      debugPrint(
+        '❌ [ContactTypeCubit] ContactTypeException during search: ${e.message}',
+      );
       emit(ContactTypeError(message: e.message));
     } catch (e, stackTrace) {
-      debugPrint('💥 [ContactTypeCubit] Unexpected error during search: $e\n$stackTrace');
+      debugPrint(
+        '💥 [ContactTypeCubit] Unexpected error during search: $e\n$stackTrace',
+      );
       emit(ContactTypeError(message: 'Search failed: ${e.toString()}'));
     }
   }
 
   // Create new profile
-  Future<Customersorsuppliers?> createBusiness({required Map<String, dynamic> payload}) async {
+  Future<Customersorsuppliers?> createBusiness({
+    required Map<String, dynamic> payload,
+  }) async {
     emit(ContactTypeLoading());
     try {
       debugPrint('🚀 [ContactTypeCubit] Creating new profile');
-      final newBusiness = await contactTypeRepository.createBusiness(payload: payload);
+      final newBusiness = await contactTypeRepository.createBusiness(
+        payload: payload,
+      );
       debugPrint('✅ [ContactTypeCubit] Profile created successfully');
       try {
         storage.write('customerId', newBusiness.sId);
-        debugPrint('💾 [ContactTypeCubit] Stored created customerId: ${newBusiness.sId}');
+        debugPrint(
+          '💾 [ContactTypeCubit] Stored created customerId: ${newBusiness.sId}',
+        );
       } catch (e) {
-        debugPrint('⚠️ [ContactTypeCubit] Failed to write customerId to storage: $e');
+        debugPrint(
+          '⚠️ [ContactTypeCubit] Failed to write customerId to storage: $e',
+        );
       }
-      emit(ContactTypeSuccess(message: 'Profile created successfully', createdBusiness: newBusiness));
+      emit(
+        ContactTypeSuccess(
+          message: 'Profile created successfully',
+          createdBusiness: newBusiness,
+        ),
+      );
       return newBusiness;
     } on ContactTypeException catch (e) {
-      debugPrint('❌ [ContactTypeCubit] ContactTypeException during creation: ${e.message}');
+      debugPrint(
+        '❌ [ContactTypeCubit] ContactTypeException during creation: ${e.message}',
+      );
       emit(ContactTypeError(message: e.message));
       return null;
     } catch (e, stackTrace) {
-      debugPrint('💥 [ContactTypeCubit] Unexpected error during creation: $e\n$stackTrace');
-      emit(ContactTypeError(message: 'Failed to create profile: ${e.toString()}'));
+      debugPrint(
+        '💥 [ContactTypeCubit] Unexpected error during creation: $e\n$stackTrace',
+      );
+      emit(
+        ContactTypeError(message: 'Failed to create profile: ${e.toString()}'),
+      );
       return null;
     }
   }
@@ -75,23 +109,41 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
     emit(ContactTypeLoading());
     try {
       debugPrint('🚀 [ContactTypeCubit] Updating profile with ID: $profileId');
-      final updatedBusiness = await contactTypeRepository.updateBusiness(profileId: profileId, payload: payload);
+      final updatedBusiness = await contactTypeRepository.updateBusiness(
+        profileId: profileId,
+        payload: payload,
+      );
       debugPrint('✅ [ContactTypeCubit] Profile updated successfully');
       try {
         storage.write('customerId', updatedBusiness.sId);
-        debugPrint('💾 [ContactTypeCubit] Stored updated customerId: ${updatedBusiness.sId}');
+        debugPrint(
+          '💾 [ContactTypeCubit] Stored updated customerId: ${updatedBusiness.sId}',
+        );
       } catch (e) {
-        debugPrint('⚠️ [ContactTypeCubit] Failed to write customerId to storage: $e');
+        debugPrint(
+          '⚠️ [ContactTypeCubit] Failed to write customerId to storage: $e',
+        );
       }
-      emit(ContactTypeSuccess(message: 'Profile updated successfully', createdBusiness: updatedBusiness));
+      emit(
+        ContactTypeSuccess(
+          message: 'Profile updated successfully',
+          createdBusiness: updatedBusiness,
+        ),
+      );
       return updatedBusiness;
     } on ContactTypeException catch (e) {
-      debugPrint('❌ [ContactTypeCubit] ContactTypeException during update: ${e.message}');
+      debugPrint(
+        '❌ [ContactTypeCubit] ContactTypeException during update: ${e.message}',
+      );
       emit(ContactTypeError(message: e.message));
       return null;
     } catch (e, stackTrace) {
-      debugPrint('💥 [ContactTypeCubit] Unexpected error during update: $e\n$stackTrace');
-      emit(ContactTypeError(message: 'Failed to update profile: ${e.toString()}'));
+      debugPrint(
+        '💥 [ContactTypeCubit] Unexpected error during update: $e\n$stackTrace',
+      );
+      emit(
+        ContactTypeError(message: 'Failed to update profile: ${e.toString()}'),
+      );
       return null;
     }
   }
@@ -121,7 +173,10 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
         "position": position ?? "Customer",
         "userId": userId,
         "location": location,
-        "customerNumber": Random().nextInt(9000000).toString().padLeft(7, '0'), // Random 7-digit number,
+        "customerNumber": Random()
+            .nextInt(9000000)
+            .toString()
+            .padLeft(7, '0'), // Random 7-digit number,
       },
       "customerContactDetail": {},
       "customerBillingAddress": billingAddresses ?? [],
@@ -153,7 +208,9 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
   }
 
   // Helper method to create contact data for job booking
-  Map<String, dynamic> getContactDataForJobBooking(Customersorsuppliers contact) {
+  Map<String, dynamic> getContactDataForJobBooking(
+    Customersorsuppliers contact,
+  ) {
     final primaryBillingAddress = contact.billingAddresses?.firstWhere(
       (address) => address.primary == true,
       orElse: () => contact.billingAddresses?.first ?? BillingAddresses(),
@@ -164,15 +221,21 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
       orElse: () => contact.shippingAddresses?.first ?? ShippingAddresses(),
     );
 
-    final primaryPhone = contact.customerContactDetail?.first.customerTelephones?.firstWhere(
-      (phone) => phone.isPrimary == true,
-      orElse: () => contact.customerContactDetail?.first.customerTelephones?.first ?? CustomerTelephones(),
-    );
+    final primaryPhone = contact.customerContactDetail?.first.customerTelephones
+        ?.firstWhere(
+          (phone) => phone.isPrimary == true,
+          orElse: () =>
+              contact.customerContactDetail?.first.customerTelephones?.first ??
+              CustomerTelephones(),
+        );
 
-    final primaryEmail = contact.customerContactDetail?.first.customerEmails?.firstWhere(
-      (email) => email.isPrimary == true,
-      orElse: () => contact.customerContactDetail?.first.customerEmails?.first ?? CustomerEmails(),
-    );
+    final primaryEmail = contact.customerContactDetail?.first.customerEmails
+        ?.firstWhere(
+          (email) => email.isPrimary == true,
+          orElse: () =>
+              contact.customerContactDetail?.first.customerEmails?.first ??
+              CustomerEmails(),
+        );
 
     return {
       'customerId': contact.sId,
@@ -206,7 +269,8 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
       'lastName': contact.lastName,
       'position': contact.position,
       'vatNo': contact.customerBankDetails?.first.vatNo ?? '',
-      'reverseCharge': contact.customerBankDetails?.first.reverseCharge ?? false,
+      'reverseCharge':
+          contact.customerBankDetails?.first.reverseCharge ?? false,
     };
   }
 

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -718,12 +717,13 @@ thermal printer configuration.
               color: AppColors.fontSecondaryColor,
             ),
             onSelected: (value) {
-              if (value == 'use')
+              if (value == 'use') {
                 _fillFormFromPrinter(printer);
-              else if (value == 'default')
+              } else if (value == 'default') {
                 _setAsDefaultPrinter(printer);
-              else if (value == 'delete')
+              } else if (value == 'delete') {
                 _deletePrinter(printer);
+              }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'use', child: Text('Use')),

@@ -22,6 +22,10 @@ class StepLocationWidgetState extends State<StepLocationWidget> {
     _locationController.addListener(_updateCanProceed);
     // Initial check
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = context.read<JobBookingCubit>().state;
+      if (state is JobBookingData && state.job.physicalLocation != null) {
+        _locationController.text = state.job.physicalLocation!;
+      }
       widget.onCanProceedChanged(_locationController.text.trim().isNotEmpty);
     });
   }

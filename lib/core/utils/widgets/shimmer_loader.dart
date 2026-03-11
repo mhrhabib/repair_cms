@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:repair_cms/core/app_exports.dart';
 
 class ShimmerLoader extends StatefulWidget {
@@ -56,9 +55,9 @@ class _ShimmerLoaderState extends State<ShimmerLoader>
               end: Alignment.bottomRight,
               stops: [0.1, 0.5, 0.9],
               colors: [
-                Colors.grey.shade200,
-                Colors.grey.shade100,
-                Colors.grey.shade200,
+                const Color.fromARGB(255, 255, 255, 255),
+                const Color.fromARGB(255, 255, 255, 255),
+                const Color.fromARGB(255, 255, 255, 255),
               ],
               transform: _SlidingGradientTransform(offset: _animation.value),
             ),

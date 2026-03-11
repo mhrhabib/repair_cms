@@ -1,5 +1,6 @@
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
 
 /// Step 9 – Problem Description (Required) and Internal Note (Optional)
@@ -35,8 +36,8 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
     final state = context.read<JobBookingCubit>().state;
     if (state is JobBookingData) {
       if (state.defect.defect.isNotEmpty) {
-        // Find the description in defect list if needed - original screen had it commented out
-        // For now we assume description is tracked separately or from first defect
+        // We use the first defect item's value as the problem description
+        _problemDescriptionController.text = state.defect.defect.first.value;
       }
       if (state.defect.internalNote.isNotEmpty) {
         _internalNoteController.text = state.defect.internalNote.join('\n');
@@ -57,11 +58,15 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
         ? [_internalNoteController.text.trim()]
         : <String>[];
 
-    // Update internal notes in cubit
+    // Update internal notes and defect description in cubit
     context.read<JobBookingCubit>().updateDefectInfo(
       internalNote: internalNotes,
-      // Problem description itself might need to be added as a defect item
-      // depending on how backend expects it.
+      defect: [
+        DefectItem(
+          value: _problemDescriptionController.text.trim(),
+          id: 'problem_description', // Placeholder ID if backend doesn't require a real one here
+        ),
+      ],
     );
   }
 

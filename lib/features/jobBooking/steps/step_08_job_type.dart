@@ -36,6 +36,17 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
 
     // Initial check
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Restore state from Cubit
+      final bookingState = context.read<JobBookingCubit>().state;
+      if (bookingState is JobBookingData) {
+        final savedJobType = bookingState.defect.jobType;
+        if (savedJobType.isNotEmpty) {
+          setState(() {
+            selectedJobType = savedJobType;
+            _jobTypeController.text = savedJobType;
+          });
+        }
+      }
       widget.onCanProceedChanged(selectedJobType != null);
     });
   }
