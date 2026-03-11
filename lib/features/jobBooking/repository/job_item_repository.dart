@@ -26,6 +26,7 @@ class JobItemRepositoryImpl implements JobItemRepository {
 
       if (keyword != null && keyword.isNotEmpty) {
         queryParams['productName'] = keyword;
+        queryParams['keyword'] = keyword;
       }
 
       final String url = ApiEndpoints.itemsListUrl.replaceAll('<id>', userId);

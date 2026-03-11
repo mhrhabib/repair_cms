@@ -615,6 +615,7 @@ class StepContactWidgetState extends State<StepContactWidget> {
       controller: controller,
       focusNode: focusNode,
       keyboardType: keyboardType,
+      cursorColor: AppColors.blackColor,
       textInputAction: TextInputAction.next,
       style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w400, color: AppColors.fontMainColor),
       onChanged: (_) {

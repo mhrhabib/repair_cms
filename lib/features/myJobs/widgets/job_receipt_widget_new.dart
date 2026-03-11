@@ -5,6 +5,9 @@ import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/features/company/cubits/company_cubit.dart';
+import 'package:repair_cms/core/services/file_service.dart';
 
 /// Professional Job Receipt Widget matching the React PDF design
 class JobReceiptWidgetNew extends StatelessWidget {
@@ -45,23 +48,44 @@ class JobReceiptWidgetNew extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Image.network(
-                        receiptFooter.companyLogoURL!,
-                        // width: 100,//
-                        height: 60,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => _buildPlaceholderLogo(),
-                      ),
-                    )
-                  else
-                    Align(alignment: Alignment.centerRight, child: _buildPlaceholderLogo()),
+                  BlocBuilder<CompanyCubit, CompanyState>(
+                    builder: (context, companyState) {
+                      String? logoUrl =
+                          (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty)
+                          ? receiptFooter.companyLogoURL
+                          : null;
+
+                      if (logoUrl == null && companyState is CompanyLoaded) {
+                        final companyLogo = companyState.company.companyLogo;
+                        if (companyLogo != null && companyLogo.isNotEmpty) {
+                          logoUrl = FileService.getImageUrl(companyLogo[0].image);
+                        }
+                      }
+
+                      return Align(
+                        alignment: Alignment.centerRight,
+                        child: logoUrl != null && logoUrl.isNotEmpty
+                            ? Image.network(
+                                logoUrl,
+                                height: 60,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderLogo(),
+                              )
+                            : _buildPlaceholderLogo(),
+                      );
+                    },
+                  ),
                   SizedBox(height: 8.h),
 
                   // Header Section
-                  Align(alignment: Alignment.centerLeft, child: _buildHeader(receiptFooter, customer)),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: BlocBuilder<CompanyCubit, CompanyState>(
+                      builder: (context, companyState) {
+                        return _buildHeader(receiptFooter, customer, companyState);
+                      },
+                    ),
+                  ),
                   SizedBox(height: 8.h),
 
                   // Job Info and Barcode Section
@@ -102,7 +126,11 @@ class JobReceiptWidgetNew extends StatelessWidget {
                   const SizedBox(height: 40),
 
                   // Footer Section
-                  _buildFooter(receiptFooter),
+                  BlocBuilder<CompanyCubit, CompanyState>(
+                    builder: (context, companyState) {
+                      return _buildFooter(receiptFooter, companyState);
+                    },
+                  ),
                 ],
               ),
             ),
@@ -120,10 +148,30 @@ class JobReceiptWidgetNew extends StatelessWidget {
     return SingleChildScrollView(child: content);
   }
 
-  /// Header with company info and logo
-  Widget _buildHeader(ReceiptFooter? footer, CustomerDetails? customer) {
+  Widget _buildHeader(ReceiptFooter? footer, CustomerDetails? customer, CompanyState companyState) {
     final address = footer?.address;
-    final companyInfo = _formatCompanyInfo(address);
+    String companyInfo = _formatCompanyInfo(address);
+
+    if (companyInfo.isEmpty && companyState is CompanyLoaded) {
+      final company = companyState.company;
+      final parts = <String>[];
+      if (company.companyName.isNotEmpty) parts.add(company.companyName);
+
+      final companyAddress = company.companyAddress != null && company.companyAddress!.isNotEmpty
+          ? company.companyAddress![0]
+          : null;
+
+      if (companyAddress != null) {
+        if (companyAddress.street != null) {
+          parts.add('${companyAddress.street} ${companyAddress.num ?? ''}'.trim());
+        }
+        if (companyAddress.zip != null) {
+          parts.add('${companyAddress.zip} ${companyAddress.city ?? ''}'.trim());
+        }
+      }
+      companyInfo = parts.join(' • ');
+    }
+
     final billing = customer?.billingAddress;
     final zipCity = billing != null ? '${billing.zip ?? ''} ${billing.city ?? ''}'.trim() : '';
 
@@ -193,7 +241,7 @@ class JobReceiptWidgetNew extends StatelessWidget {
                 const Text('Date:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
               if (data?.jobNo != null)
                 const Text('Job No:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-              if (customer?.customerNo != null)
+              if (customer?.customerNo != null && customer!.customerNo!.isNotEmpty)
                 const Text('Customer No:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
               if (agent?.fullName != null)
                 const Text('Agent:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
@@ -211,8 +259,8 @@ class JobReceiptWidgetNew extends StatelessWidget {
                 ),
               if (data?.jobNo != null)
                 Text(data!.jobNo!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-              if (customer?.customerNo != null)
-                Text(customer!.customerNo!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+              if (customer?.customerNo != null && customer!.customerNo!.isNotEmpty)
+                Text(customer.customerNo!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
               if (agent?.fullName != null)
                 Text(agent!.fullName!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
             ],
@@ -558,34 +606,77 @@ class JobReceiptWidgetNew extends StatelessWidget {
   }
 
   /// Footer with company info, contact, bank details
-  Widget _buildFooter(ReceiptFooter? footer) {
+  Widget _buildFooter(ReceiptFooter? footer, CompanyState companyState) {
+    final company = companyState is CompanyLoaded ? companyState.company : null;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Company Address
         _buildFooterColumn([
-          if (footer?.address?.companyName != null) footer!.address!.companyName!,
-          if (footer?.address?.street != null) '${footer!.address!.street} ${footer.address!.num ?? ''}'.trim(),
-          if (footer?.address?.zip != null) '${footer!.address!.zip} ${footer.address!.city ?? ''}'.trim(),
-          if (footer?.address?.country != null) footer!.address!.country!,
+          if (footer?.address?.companyName != null)
+            footer!.address!.companyName!
+          else if (company != null && company.companyName.isNotEmpty)
+            company.companyName,
+
+          if (footer?.address?.street != null)
+            '${footer!.address!.street} ${footer.address!.num ?? ''}'.trim()
+          else if (company != null && company.companyAddress != null && company.companyAddress!.isNotEmpty)
+            '${company.companyAddress![0].street ?? ''} ${company.companyAddress![0].num ?? ''}'.trim(),
+
+          if (footer?.address?.zip != null)
+            '${footer!.address!.zip} ${footer.address!.city ?? ''}'.trim()
+          else if (company != null && company.companyAddress != null && company.companyAddress!.isNotEmpty)
+            '${company.companyAddress![0].zip ?? ''} ${company.companyAddress![0].city ?? ''}'.trim(),
+
+          if (footer?.address?.country != null)
+            footer!.address!.country!
+          else if (company != null && company.companyAddress != null && company.companyAddress!.isNotEmpty)
+            company.companyAddress![0].country,
         ]),
         SizedBox(width: 8.w),
 
         // Contact Information
         _buildFooterColumn([
-          if (footer?.contact?.ceo != null) 'CEO: ${footer!.contact!.ceo}',
-          if (footer?.contact?.telephone != null) 'Tel: ${footer!.contact!.telephone}',
-          if (footer?.contact?.email != null) 'Email: ${footer!.contact!.email}',
-          if (footer?.contact?.website != null) 'Web: ${footer!.contact!.website}',
+          if (footer?.contact?.ceo != null)
+            'CEO: ${footer!.contact!.ceo}'
+          else if (company != null && company.companyTaxDetail != null && company.companyTaxDetail!.isNotEmpty)
+            'CEO: ${company.companyTaxDetail![0].ceo}',
+
+          if (footer?.contact?.telephone != null)
+            'Tel: ${footer!.contact!.telephone}'
+          else if (company != null && company.companyContactDetail != null && company.companyContactDetail!.isNotEmpty)
+            'Tel: ${company.companyContactDetail![0].telephone}',
+
+          if (footer?.contact?.email != null)
+            'Email: ${footer!.contact!.email}'
+          else if (company != null && company.companyContactDetail != null && company.companyContactDetail!.isNotEmpty)
+            'Email: ${company.companyContactDetail![0].email}',
+
+          if (footer?.contact?.website != null)
+            'Web: ${footer!.contact!.website}'
+          else if (company != null && company.companyContactDetail != null && company.companyContactDetail!.isNotEmpty)
+            'Web: ${company.companyContactDetail![0].website}',
         ]),
         SizedBox(width: 8.w),
 
         // Bank Information
         _buildFooterColumn([
-          if (footer?.bank?.bankName != null) footer!.bank!.bankName!,
-          if (footer?.bank?.iban != null) 'IBAN: ${footer!.bank!.iban}',
-          if (footer?.bank?.bic != null) 'BIC: ${footer!.bank!.bic}',
+          if (footer?.bank?.bankName != null)
+            footer!.bank!.bankName!
+          else if (company != null && company.companyBankDetail != null && company.companyBankDetail!.isNotEmpty)
+            company.companyBankDetail![0].bankName,
+
+          if (footer?.bank?.iban != null)
+            'IBAN: ${footer!.bank!.iban}'
+          else if (company != null && company.companyBankDetail != null && company.companyBankDetail!.isNotEmpty)
+            'IBAN: ${company.companyBankDetail![0].iban}',
+
+          if (footer?.bank?.bic != null)
+            'BIC: ${footer!.bank!.bic}'
+          else if (company != null && company.companyBankDetail != null && company.companyBankDetail!.isNotEmpty)
+            'BIC: ${company.companyBankDetail![0].bic}',
         ]),
       ],
     );

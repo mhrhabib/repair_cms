@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/services/file_service.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -20,6 +22,8 @@ import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_
 import 'package:repair_cms/features/moreSettings/labelContent/service/label_content_settings_service.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:flutter/rendering.dart';
+import 'package:repair_cms/features/jobBooking/services/escpos_generator_service.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -41,6 +45,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
   my_jobs.SingleJobModel? _completeJobData;
   bool _isLoadingCompleteData = false;
   late LabelContentSettings _labelSettings;
+  final GlobalKey _receiptKey = GlobalKey();
 
   @override
   void initState() {
@@ -256,7 +261,74 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
   }
 
   Future<void> _printReceipt(PrinterConfigModel printer) async {
-    SnackbarDemo(message: 'Print functionality will be implemented here').showCustomSnackbar(context);
+    debugPrint('🚀 Starting print job with ${printer.printerBrand} ${printer.printerType}');
+
+    try {
+      if (printer.printerType == 'thermal') {
+        SnackbarDemo(message: 'Generating thermal receipt...').showCustomSnackbar(context);
+
+        final jobDataMap = _convertToSingleJobModel().toJson()['data'];
+        if (jobDataMap == null) throw Exception('Failed to prepare job data');
+
+        final bytes = EscPosGeneratorService.generateThermalReceipt(
+          jobData: jobDataMap,
+          paperWidth: printer.paperWidth ?? 80,
+        );
+
+        SnackbarDemo(message: 'Sending to thermal printer...').showCustomSnackbar(context);
+        final result = await PrinterServiceFactory.printRawEscPos(config: printer, escposBytes: bytes);
+
+        if (result.success) {
+          SnackbarDemo(message: 'Print successful!').showCustomSnackbar(context);
+        } else {
+          throw Exception(result.message);
+        }
+      } else if (printer.printerType == 'label') {
+        await _printLabel(printer);
+      } else {
+        // A4 printer
+        SnackbarDemo(message: 'Preparing A4 PDF...').showCustomSnackbar(context);
+
+        final imageBytes = await _captureReceiptAsImage();
+        if (imageBytes == null) throw Exception('Failed to capture receipt image');
+
+        final a4Service = PrinterServiceFactory.getA4NetworkPrinterService();
+        final pdfBytes = await a4Service.generatePdfFromImage(imageBytes: imageBytes);
+
+        SnackbarDemo(message: 'Sending to A4 printer...').showCustomSnackbar(context);
+        final result = await a4Service.printA4Receipt(
+          ipAddress: printer.ipAddress,
+          pdfBytes: pdfBytes,
+          port: printer.port ?? 9100,
+        );
+
+        if (result.success) {
+          SnackbarDemo(message: 'Print successful!').showCustomSnackbar(context);
+        } else {
+          throw Exception(result.message);
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Print error: $e');
+      SnackbarDemo(message: 'Print failed: $e').showCustomSnackbar(context);
+    }
+  }
+
+  Future<Uint8List?> _captureReceiptAsImage() async {
+    try {
+      final boundary = _receiptKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+
+      // Use high pixel ratio for A4 quality
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      debugPrint('❌ Error capturing receipt: $e');
+      return null;
+    }
   }
 
   Future<void> _discoverPrinters() async {
@@ -469,13 +541,11 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         receiptFooter: finalReceiptFooter != null
             ? my_jobs.ReceiptFooter(
                 companyLogo: finalReceiptFooter.companyLogo,
-                companyLogoURL:
-                    finalReceiptFooter.companyLogoURL.isNotEmpty &&
-                        !finalReceiptFooter.companyLogoURL.startsWith('http')
-                    ? 'https://api.repaircms.com/file-upload/download/new?imagePath=${finalReceiptFooter.companyLogoURL}'
-                    : finalReceiptFooter.companyLogoURL,
+                companyLogoURL: FileService.getImageUrl(finalReceiptFooter.companyLogoURL),
                 address: my_jobs.Address(
-                  companyName: finalReceiptFooter.address.companyName,
+                  companyName: finalReceiptFooter.address.companyName.isNotEmpty
+                      ? finalReceiptFooter.address.companyName
+                      : (storage.read('companyName') ?? ''),
                   street: finalReceiptFooter.address.street,
                   num: finalReceiptFooter.address.num,
                   zip: finalReceiptFooter.address.zip,
@@ -765,7 +835,10 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         children: [
           ConstrainedBox(
             constraints: BoxConstraints(maxHeight: 650.h),
-            child: JobReceiptWidgetNew(isPreview: true, jobData: jobModel),
+            child: RepaintBoundary(
+              key: _receiptKey,
+              child: JobReceiptWidgetNew(isPreview: true, jobData: jobModel),
+            ),
           ),
           if (_isLoadingCompleteData)
             Positioned.fill(

@@ -11,6 +11,9 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/features/company/cubits/company_cubit.dart';
+import 'package:repair_cms/core/services/file_service.dart';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'dart:io';
@@ -40,8 +43,7 @@ class ReceiptScreen extends StatelessWidget {
 
     if (configuredPrinters.isEmpty) {
       SnackbarDemo(
-        message:
-            'No A4 printers configured. Please configure an A4 printer in Settings > Printer Settings',
+        message: 'No A4 printers configured. Please configure an A4 printer in Settings > Printer Settings',
       ).showCustomSnackbar(context);
       return;
     }
@@ -64,13 +66,8 @@ class ReceiptScreen extends StatelessWidget {
   }
 
   /// Print receipt with selected printer
-  Future<void> _printReceipt(
-    BuildContext context,
-    PrinterConfigModel printer,
-  ) async {
-    debugPrint(
-      '🚀 Starting print job with ${printer.printerBrand} ${printer.printerType}',
-    );
+  Future<void> _printReceipt(BuildContext context, PrinterConfigModel printer) async {
+    debugPrint('🚀 Starting print job with ${printer.printerBrand} ${printer.printerType}');
 
     // Generate receipt text from job data
     final receiptText = _generateReceiptText();
@@ -97,33 +94,20 @@ class ReceiptScreen extends StatelessWidget {
       } else if (printer.protocol.toLowerCase() == 'usb') {
         // USB printers require special handling
         final usbService = PrinterServiceFactory.getUSBPrinterService();
-        final result = await usbService.printThermalReceipt(
-          ipAddress: printer.ipAddress,
-          text: receiptText,
-        );
+        final result = await usbService.printThermalReceipt(ipAddress: printer.ipAddress, text: receiptText);
         success = result.success;
         errorMessage = result.message;
       } else {
         // Network printers - use factory to get appropriate service
-        debugPrint(
-          '🖨️ Printing to ${printer.printerBrand} ${printer.printerType} printer',
-        );
-        final printerService = PrinterServiceFactory.getPrinterServiceForConfig(
-          printer,
-        );
+        debugPrint('🖨️ Printing to ${printer.printerBrand} ${printer.printerType} printer');
+        final printerService = PrinterServiceFactory.getPrinterServiceForConfig(printer);
 
         if (printer.printerType == 'thermal') {
-          final result = await printerService.printThermalReceipt(
-            ipAddress: printer.ipAddress,
-            text: receiptText,
-          );
+          final result = await printerService.printThermalReceipt(ipAddress: printer.ipAddress, text: receiptText);
           success = result.success;
           errorMessage = result.message;
         } else if (printer.printerType == 'label') {
-          final result = await PrinterServiceFactory.printLabelWithFallback(
-            config: printer,
-            text: receiptText,
-          );
+          final result = await PrinterServiceFactory.printLabelWithFallback(config: printer, text: receiptText);
           success = result.success;
           errorMessage = result.message;
         } else {
@@ -145,14 +129,10 @@ class ReceiptScreen extends StatelessWidget {
       // Show result
       if (success) {
         debugPrint('✅ Print job completed successfully');
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text('Receipt printed successfully!')),
-        );
+        scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Receipt printed successfully!')));
       } else {
         debugPrint('❌ Print job failed: $errorMessage');
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(errorMessage ?? 'Print failed')),
-        );
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text(errorMessage ?? 'Print failed')));
       }
     } catch (e) {
       debugPrint('❌ Print error: $e');
@@ -167,31 +147,22 @@ class ReceiptScreen extends StatelessWidget {
       }
 
       // Show error
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text('Print error: $e')),
-      );
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Print error: $e')));
     }
   }
 
   /// Print to A4 printer using system print dialog
-  Future<bool> _printA4Receipt(
-    BuildContext context, {
-    PrinterConfigModel? targetPrinter,
-  }) async {
+  Future<bool> _printA4Receipt(BuildContext context, {PrinterConfigModel? targetPrinter}) async {
     try {
       debugPrint('📄 Generating PDF for A4 receipt');
       // Try to capture the on-screen receipt widget as an image and embed that into the PDF
       Uint8List? capturedPng;
       try {
-        final boundary =
-            _printKey.currentContext?.findRenderObject()
-                as RenderRepaintBoundary?;
+        final boundary = _printKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
         if (boundary != null) {
           final pixelRatio = MediaQuery.of(context).devicePixelRatio;
           final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
-          final ByteData? byteData = await image.toByteData(
-            format: ui.ImageByteFormat.png,
-          );
+          final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
           capturedPng = byteData?.buffer.asUint8List();
           debugPrint(
             '📷 Captured on-screen receipt: ${capturedPng?.lengthInBytes ?? 0} bytes — image ${image.width}x${image.height} (pixelRatio $pixelRatio)',
@@ -220,29 +191,16 @@ class ReceiptScreen extends StatelessWidget {
 
         // If printer is configured for raw TCP (jetdirect/9100), try sending PDF bytes directly
         if (targetPrinter != null &&
-            [
-              'raw',
-              'tcp',
-              'jetdirect',
-              '9100',
-            ].contains(targetPrinter.protocol.toLowerCase())) {
+            ['raw', 'tcp', 'jetdirect', '9100'].contains(targetPrinter.protocol.toLowerCase())) {
           final bytes = await pdf.save();
           final port = targetPrinter.port ?? 9100;
           try {
-            debugPrint(
-              '🔌 Attempting raw TCP send to ${targetPrinter.ipAddress}:$port',
-            );
-            final socket = await Socket.connect(
-              targetPrinter.ipAddress,
-              port,
-              timeout: const Duration(seconds: 5),
-            );
+            debugPrint('🔌 Attempting raw TCP send to ${targetPrinter.ipAddress}:$port');
+            final socket = await Socket.connect(targetPrinter.ipAddress, port, timeout: const Duration(seconds: 5));
             socket.add(bytes);
             await socket.flush();
             socket.destroy();
-            debugPrint(
-              '✅ Sent PDF via raw TCP to ${targetPrinter.ipAddress}:$port',
-            );
+            debugPrint('✅ Sent PDF via raw TCP to ${targetPrinter.ipAddress}:$port');
             return true;
           } catch (e, s) {
             debugPrint('❌ Raw TCP send failed: $e');
@@ -273,9 +231,7 @@ class ReceiptScreen extends StatelessWidget {
       final customer = job.data?.customerDetails;
       final device = job.data?.deviceData;
       final services = job.data?.services ?? [];
-      final defect = job.data?.defect?.isNotEmpty == true
-          ? job.data!.defect![0]
-          : null;
+      final defect = job.data?.defect?.isNotEmpty == true ? job.data!.defect![0] : null;
       final receiptFooter = job.data?.receiptFooter;
 
       // Format currency values
@@ -286,13 +242,22 @@ class ReceiptScreen extends StatelessWidget {
 
       // Load company logo if available
       pw.ImageProvider? logoImage;
-      if (receiptFooter?.companyLogoURL != null &&
-          receiptFooter!.companyLogoURL!.isNotEmpty) {
+      final companyState = context.read<CompanyCubit>().state;
+      String? logoUrl = (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty)
+          ? receiptFooter.companyLogoURL
+          : null;
+
+      if (logoUrl == null && companyState is CompanyLoaded) {
+        final companyLogo = companyState.company.companyLogo;
+        if (companyLogo != null && companyLogo.isNotEmpty) {
+          logoUrl = FileService.getImageUrl(companyLogo[0].image);
+        }
+      }
+
+      if (logoUrl != null && logoUrl.isNotEmpty) {
         try {
-          debugPrint(
-            '📷 Loading company logo from: ${receiptFooter.companyLogoURL}',
-          );
-          logoImage = await networkImage(receiptFooter.companyLogoURL!);
+          debugPrint('📷 Loading company logo from: $logoUrl');
+          logoImage = await networkImage(logoUrl);
           debugPrint('✅ Company logo loaded successfully');
         } catch (e) {
           debugPrint('❌ Failed to load company logo: $e');
@@ -319,40 +284,43 @@ class ReceiptScreen extends StatelessWidget {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          if (receiptFooter?.address != null) ...[
+                          if (receiptFooter?.address != null ||
+                              (companyState is CompanyLoaded && companyState.company.companyName.isNotEmpty)) ...[
                             pw.Text(
-                              receiptFooter!.address!.companyName ??
-                                  'Company Name',
-                              style: pw.TextStyle(
-                                fontSize: 10,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
+                              receiptFooter?.address?.companyName ??
+                                  (companyState is CompanyLoaded ? companyState.company.companyName : 'Company Name'),
+                              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
                             ),
                             pw.SizedBox(height: 2),
-                            pw.Text(
-                              '${receiptFooter.address!.street ?? ''} ${receiptFooter.address!.num ?? ''}',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
-                            pw.Text(
-                              '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
-                            pw.Text(
-                              receiptFooter.address!.country ?? '',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
-                          ] else ...[
-                            pw.Text(
-                              'Company Name',
-                              style: pw.TextStyle(
-                                fontSize: 10,
-                                fontWeight: pw.FontWeight.bold,
+                            if (receiptFooter?.address != null) ...[
+                              pw.Text(
+                                '${receiptFooter!.address!.street ?? ''} ${receiptFooter.address!.num ?? ''}',
+                                style: const pw.TextStyle(fontSize: 8),
                               ),
-                            ),
-                            pw.Text(
-                              'Address not available',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
+                              pw.Text(
+                                '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                              pw.Text(receiptFooter.address!.country ?? '', style: const pw.TextStyle(fontSize: 8)),
+                            ] else if (companyState is CompanyLoaded &&
+                                companyState.company.companyAddress != null &&
+                                companyState.company.companyAddress!.isNotEmpty) ...[
+                              pw.Text(
+                                '${companyState.company.companyAddress![0].street ?? ''} ${companyState.company.companyAddress![0].num ?? ''}',
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                              pw.Text(
+                                '${companyState.company.companyAddress![0].zip ?? ''} ${companyState.company.companyAddress![0].city ?? ''}',
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                              pw.Text(
+                                companyState.company.companyAddress![0].country,
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                            ],
+                          ] else ...[
+                            pw.Text('Company Name', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                            pw.Text('Address not available', style: const pw.TextStyle(fontSize: 8)),
                           ],
                         ],
                       ),
@@ -362,9 +330,7 @@ class ReceiptScreen extends StatelessWidget {
                       width: 70,
                       height: 70,
                       decoration: pw.BoxDecoration(
-                        border: logoImage == null
-                            ? pw.Border.all(color: PdfColors.grey300)
-                            : null,
+                        border: logoImage == null ? pw.Border.all(color: PdfColors.grey300) : null,
                       ),
                       child: logoImage != null
                           ? pw.Image(logoImage, fit: pw.BoxFit.contain)
@@ -392,14 +358,8 @@ class ReceiptScreen extends StatelessWidget {
                       children: [
                         _buildPdfRow('Date:', _formatDate(job.data?.createdAt)),
                         _buildPdfRow('Job No:', job.data?.jobNo ?? 'N/A'),
-                        _buildPdfRow(
-                          'Customer No:',
-                          customer?.customerNo ?? 'N/A',
-                        ),
-                        _buildPdfRow(
-                          'Tracking No:',
-                          job.data?.jobTrackingNumber ?? 'N/A',
-                        ),
+                        _buildPdfRow('Customer No:', customer?.customerNo ?? 'N/A'),
+                        _buildPdfRow('Tracking No:', job.data?.jobTrackingNumber ?? 'N/A'),
                       ],
                     ),
                   ],
@@ -412,9 +372,7 @@ class ReceiptScreen extends StatelessWidget {
                   child: pw.Container(
                     height: 60,
                     width: 100,
-                    decoration: pw.BoxDecoration(
-                      border: pw.Border.all(color: PdfColors.grey300),
-                    ),
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
                     child: pw.Column(
                       mainAxisAlignment: pw.MainAxisAlignment.center,
                       children: [
@@ -423,19 +381,12 @@ class ReceiptScreen extends StatelessWidget {
                           child: pw.Row(
                             children: List.generate(20, (index) {
                               return pw.Expanded(
-                                child: pw.Container(
-                                  color: index % 2 == 0
-                                      ? PdfColors.black
-                                      : PdfColors.white,
-                                ),
+                                child: pw.Container(color: index % 2 == 0 ? PdfColors.black : PdfColors.white),
                               );
                             }),
                           ),
                         ),
-                        pw.Text(
-                          job.data?.jobNo ?? 'N/A',
-                          style: const pw.TextStyle(fontSize: 8),
-                        ),
+                        pw.Text(job.data?.jobNo ?? 'N/A', style: const pw.TextStyle(fontSize: 8)),
                       ],
                     ),
                   ),
@@ -443,13 +394,7 @@ class ReceiptScreen extends StatelessWidget {
                 pw.SizedBox(height: 12),
 
                 // Job Receipt Title
-                pw.Text(
-                  'Job Receipt',
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
+                pw.Text('Job Receipt', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                 pw.SizedBox(height: 12),
 
                 // Salutation
@@ -462,61 +407,37 @@ class ReceiptScreen extends StatelessWidget {
 
                 // Device Details
                 pw.Container(
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey300),
-                  ),
+                  decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
                   child: pw.Row(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Container(
                         padding: const pw.EdgeInsets.all(4),
                         width: 120,
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.grey300,
-                        ),
+                        decoration: const pw.BoxDecoration(color: PdfColors.grey300),
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
                             pw.Text(
                               'Device details:',
-                              style: pw.TextStyle(
-                                fontSize: 8,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
+                              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
                             ),
                             pw.SizedBox(height: 4),
                             pw.Text(
                               'Physical location:',
-                              style: pw.TextStyle(
-                                fontSize: 8,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
+                              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
                             ),
                             pw.SizedBox(height: 4),
-                            pw.Text(
-                              'Job type:',
-                              style: pw.TextStyle(
-                                fontSize: 8,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
-                            ),
+                            pw.Text('Job type:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                             pw.SizedBox(height: 4),
-                            pw.Text(
-                              'Description:',
-                              style: pw.TextStyle(
-                                fontSize: 8,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
-                            ),
+                            pw.Text('Description:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                           ],
                         ),
                       ),
                       pw.Expanded(
                         child: pw.Container(
                           padding: const pw.EdgeInsets.all(4),
-                          decoration: const pw.BoxDecoration(
-                            color: PdfColors.grey200,
-                          ),
+                          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                           child: pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
@@ -533,15 +454,12 @@ class ReceiptScreen extends StatelessWidget {
                               ),
                               pw.SizedBox(height: 4),
                               pw.Text(
-                                job.data?.jobTypes ??
-                                    job.data?.jobType ??
-                                    'N/A',
+                                job.data?.jobTypes ?? job.data?.jobType ?? 'N/A',
                                 style: const pw.TextStyle(fontSize: 8),
                               ),
                               pw.SizedBox(height: 4),
                               pw.Text(
-                                defect?.description ??
-                                    'No description provided',
+                                defect?.description ?? 'No description provided',
                                 style: const pw.TextStyle(fontSize: 8),
                               ),
                             ],
@@ -556,38 +474,27 @@ class ReceiptScreen extends StatelessWidget {
                 // Service Section
                 if (services.isNotEmpty)
                   pw.Container(
-                    decoration: pw.BoxDecoration(
-                      border: pw.Border.all(color: PdfColors.grey300),
-                    ),
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
                     child: pw.Column(
                       children: [
                         // Header
                         pw.Container(
                           decoration: const pw.BoxDecoration(
                             color: PdfColors.grey200,
-                            border: pw.Border(
-                              bottom: pw.BorderSide(color: PdfColors.grey300),
-                            ),
+                            border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300)),
                           ),
                           child: pw.Padding(
                             padding: const pw.EdgeInsets.all(12),
                             child: pw.Row(
                               children: [
                                 pw.Expanded(
-                                  child: pw.Text(
-                                    'Service',
-                                    style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                    ),
-                                  ),
+                                  child: pw.Text('Service', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                                 ),
                                 pw.SizedBox(
                                   width: 100,
                                   child: pw.Text(
                                     'Price',
-                                    style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                    ),
+                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                                     textAlign: pw.TextAlign.right,
                                   ),
                                 ),
@@ -601,19 +508,15 @@ class ReceiptScreen extends StatelessWidget {
                         // Financial Summary
                         pw.Container(
                           decoration: const pw.BoxDecoration(
-                            border: pw.Border(
-                              bottom: pw.BorderSide(color: PdfColors.grey300),
-                            ),
+                            border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300)),
                           ),
                           child: pw.Padding(
                             padding: const pw.EdgeInsets.all(12),
                             child: pw.Column(
                               children: [
                                 _buildPdfRow('Subtotal:', formattedSubTotal),
-                                if (job.data?.vat != null && job.data!.vat! > 0)
-                                  _buildPdfRow('VAT:', formattedVat),
-                                if (job.data?.discount != null &&
-                                    job.data!.discount! > 0)
+                                if (job.data?.vat != null && job.data!.vat! > 0) _buildPdfRow('VAT:', formattedVat),
+                                if (job.data?.discount != null && job.data!.discount! > 0)
                                   _buildPdfRow('Discount:', formattedDiscount),
                               ],
                             ),
@@ -621,28 +524,19 @@ class ReceiptScreen extends StatelessWidget {
                         ),
                         // Total
                         pw.Container(
-                          decoration: const pw.BoxDecoration(
-                            color: PdfColors.grey100,
-                          ),
+                          decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                           child: pw.Padding(
                             padding: const pw.EdgeInsets.all(12),
                             child: pw.Row(
                               children: [
                                 pw.Expanded(
-                                  child: pw.Text(
-                                    'Total',
-                                    style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                    ),
-                                  ),
+                                  child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                                 ),
                                 pw.SizedBox(
                                   width: 100,
                                   child: pw.Text(
                                     formattedTotal,
-                                    style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                    ),
+                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                                     textAlign: pw.TextAlign.right,
                                   ),
                                 ),
@@ -656,14 +550,9 @@ class ReceiptScreen extends StatelessWidget {
                 else
                   pw.Container(
                     padding: const pw.EdgeInsets.all(16),
-                    decoration: pw.BoxDecoration(
-                      border: pw.Border.all(color: PdfColors.grey300),
-                    ),
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
                     child: pw.Center(
-                      child: pw.Text(
-                        'No services added',
-                        style: const pw.TextStyle(color: PdfColors.grey),
-                      ),
+                      child: pw.Text('No services added', style: const pw.TextStyle(color: PdfColors.grey)),
                     ),
                   ),
                 pw.SizedBox(height: 32),
@@ -681,15 +570,8 @@ class ReceiptScreen extends StatelessWidget {
                   child: pw.Container(
                     width: 100,
                     height: 100,
-                    decoration: pw.BoxDecoration(
-                      border: pw.Border.all(color: PdfColors.grey300),
-                    ),
-                    child: pw.Center(
-                      child: pw.Text(
-                        'QR',
-                        style: const pw.TextStyle(fontSize: 24),
-                      ),
-                    ),
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
+                    child: pw.Center(child: pw.Text('QR', style: const pw.TextStyle(fontSize: 24))),
                   ),
                 ),
                 pw.Spacer(),
@@ -705,15 +587,11 @@ class ReceiptScreen extends StatelessWidget {
                         children: [
                           pw.Text(
                             'Company Information',
-                            style: pw.TextStyle(
-                              fontSize: 8,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
                           ),
                           if (receiptFooter?.address != null) ...[
                             pw.Text(
-                              receiptFooter!.address!.companyName ??
-                                  'Company Name',
+                              receiptFooter!.address!.companyName ?? 'Company Name',
                               style: const pw.TextStyle(fontSize: 8),
                             ),
                             pw.Text(
@@ -724,15 +602,9 @@ class ReceiptScreen extends StatelessWidget {
                               '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
                               style: const pw.TextStyle(fontSize: 8),
                             ),
-                            pw.Text(
-                              receiptFooter.address!.country ?? '',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
+                            pw.Text(receiptFooter.address!.country ?? '', style: const pw.TextStyle(fontSize: 8)),
                           ] else
-                            pw.Text(
-                              'Address not available',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
+                            pw.Text('Address not available', style: const pw.TextStyle(fontSize: 8)),
                         ],
                       ),
                     ),
@@ -744,10 +616,7 @@ class ReceiptScreen extends StatelessWidget {
                         children: [
                           pw.Text(
                             'Contact Information',
-                            style: pw.TextStyle(
-                              fontSize: 8,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
                           ),
                           if (receiptFooter?.contact != null) ...[
                             pw.Text(
@@ -767,10 +636,7 @@ class ReceiptScreen extends StatelessWidget {
                               style: const pw.TextStyle(fontSize: 8),
                             ),
                           ] else
-                            pw.Text(
-                              'Contact not available',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
+                            pw.Text('Contact not available', style: const pw.TextStyle(fontSize: 8)),
                         ],
                       ),
                     ),
@@ -780,13 +646,7 @@ class ReceiptScreen extends StatelessWidget {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            'Bank Information',
-                            style: pw.TextStyle(
-                              fontSize: 8,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
-                          ),
+                          pw.Text('Bank Information', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                           if (receiptFooter?.bank != null) ...[
                             pw.Text(
                               'Bank: ${receiptFooter!.bank!.bankName ?? 'N/A'}',
@@ -796,15 +656,9 @@ class ReceiptScreen extends StatelessWidget {
                               'IBAN: ${receiptFooter.bank!.iban ?? 'N/A'}',
                               style: const pw.TextStyle(fontSize: 8),
                             ),
-                            pw.Text(
-                              'BIC: ${receiptFooter.bank!.bic ?? 'N/A'}',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
+                            pw.Text('BIC: ${receiptFooter.bank!.bic ?? 'N/A'}', style: const pw.TextStyle(fontSize: 8)),
                           ] else
-                            pw.Text(
-                              'Bank details not available',
-                              style: const pw.TextStyle(fontSize: 8),
-                            ),
+                            pw.Text('Bank details not available', style: const pw.TextStyle(fontSize: 8)),
                         ],
                       ),
                     ),
@@ -819,30 +673,16 @@ class ReceiptScreen extends StatelessWidget {
       debugPrint('✅ PDF generated');
 
       // If printer is configured for raw TCP (jetdirect/9100), try sending PDF bytes directly
-      if (targetPrinter != null &&
-          [
-            'raw',
-            'tcp',
-            'jetdirect',
-            '9100',
-          ].contains(targetPrinter.protocol.toLowerCase())) {
+      if (targetPrinter != null && ['raw', 'tcp', 'jetdirect', '9100'].contains(targetPrinter.protocol.toLowerCase())) {
         final bytes = await pdf.save();
         final port = targetPrinter.port ?? 9100;
         try {
-          debugPrint(
-            '🔌 Attempting raw TCP send to ${targetPrinter.ipAddress}:$port',
-          );
-          final socket = await Socket.connect(
-            targetPrinter.ipAddress,
-            port,
-            timeout: const Duration(seconds: 5),
-          );
+          debugPrint('🔌 Attempting raw TCP send to ${targetPrinter.ipAddress}:$port');
+          final socket = await Socket.connect(targetPrinter.ipAddress, port, timeout: const Duration(seconds: 5));
           socket.add(bytes);
           await socket.flush();
           socket.destroy();
-          debugPrint(
-            '✅ Sent PDF via raw TCP to ${targetPrinter.ipAddress}:$port',
-          );
+          debugPrint('✅ Sent PDF via raw TCP to ${targetPrinter.ipAddress}:$port');
           return true;
         } catch (e, s) {
           debugPrint('❌ Raw TCP send failed: $e');
@@ -883,14 +723,8 @@ class ReceiptScreen extends StatelessWidget {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
-            label,
-            style: bold ? pw.TextStyle(fontWeight: pw.FontWeight.bold) : null,
-          ),
-          pw.Text(
-            value,
-            style: bold ? pw.TextStyle(fontWeight: pw.FontWeight.bold) : null,
-          ),
+          pw.Text(label, style: bold ? pw.TextStyle(fontWeight: pw.FontWeight.bold) : null),
+          pw.Text(value, style: bold ? pw.TextStyle(fontWeight: pw.FontWeight.bold) : null),
         ],
       ),
     );
@@ -962,15 +796,9 @@ class ReceiptScreen extends StatelessWidget {
         centerTitle: true,
         leading: Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-          child: CustomNavButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icons.arrow_back_ios_new,
-          ),
+          child: CustomNavButton(onPressed: () => Navigator.pop(context), icon: Icons.arrow_back_ios_new),
         ),
-        title: Text(
-          'Job Receipt',
-          style: AppTypography.sfProHeadLineTextStyle22,
-        ),
+        title: Text('Job Receipt', style: AppTypography.sfProHeadLineTextStyle22),
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 10.w),
@@ -992,11 +820,7 @@ class ReceiptScreen extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(20.r),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 15, offset: const Offset(0, 5)),
               ],
             ),
             child: RepaintBoundary(
@@ -1022,12 +846,8 @@ class JobReceiptWidget extends StatelessWidget {
     final customer = jobData.data?.customerDetails;
     final device = jobData.data?.deviceData;
     final services = jobData.data?.services ?? [];
-    final defect = jobData.data?.defect?.isNotEmpty == true
-        ? jobData.data!.defect![0]
-        : null;
-    final contact = jobData.data?.contact?.isNotEmpty == true
-        ? jobData.data!.contact![0]
-        : null;
+    final defect = jobData.data?.defect?.isNotEmpty == true ? jobData.data!.defect![0] : null;
+    final contact = jobData.data?.contact?.isNotEmpty == true ? jobData.data!.contact![0] : null;
     final receiptFooter = jobData.data?.receiptFooter;
 
     // Format currency values
@@ -1037,9 +857,7 @@ class JobReceiptWidget extends StatelessWidget {
     final formattedDiscount = _formatCurrency(jobData.data?.discount);
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: 600,
-      ), // Add minimum width constraint
+      constraints: const BoxConstraints(minWidth: 600), // Add minimum width constraint
       child: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
@@ -1051,70 +869,103 @@ class JobReceiptWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Company address from receipt footer
-                      if (receiptFooter?.address != null) ...[
-                        Text(
-                          receiptFooter!.address!.companyName ?? 'Company Name',
-                          style: const TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
-                        Text(
-                          '${receiptFooter.address!.street ?? ''} ${receiptFooter.address!.num ?? ''}',
-                          style: const TextStyle(fontSize: 8),
-                          textAlign: TextAlign.right,
-                        ),
-                        Text(
-                          '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
-                          style: const TextStyle(fontSize: 8),
-                          textAlign: TextAlign.right,
-                        ),
-                        Text(
-                          receiptFooter.address!.country ?? '',
-                          style: const TextStyle(fontSize: 8),
-                          textAlign: TextAlign.right,
-                        ),
-                      ] else ...[
-                        const Text(
-                          'Company Name',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
-                        const Text(
-                          'Address not available',
-                          style: TextStyle(fontSize: 8),
-                          textAlign: TextAlign.right,
-                        ),
-                      ],
-                    ],
+                  child: BlocBuilder<CompanyCubit, CompanyState>(
+                    builder: (context, companyState) {
+                      final company = companyState is CompanyLoaded ? companyState.company : null;
+                      final address = receiptFooter?.address;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Company address from receipt footer
+                          if (address != null || (company != null && company.companyName.isNotEmpty)) ...[
+                            Text(
+                              address?.companyName ?? company?.companyName ?? 'Company Name',
+                              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.right,
+                            ),
+                            if (address != null) ...[
+                              Text(
+                                '${address.street ?? ''} ${address.num ?? ''}',
+                                style: const TextStyle(fontSize: 8),
+                                textAlign: TextAlign.right,
+                              ),
+                              Text(
+                                '${address.zip ?? ''} ${address.city ?? ''}',
+                                style: const TextStyle(fontSize: 8),
+                                textAlign: TextAlign.right,
+                              ),
+                              Text(
+                                address.country ?? '',
+                                style: const TextStyle(fontSize: 8),
+                                textAlign: TextAlign.right,
+                              ),
+                            ] else if (company != null &&
+                                company.companyAddress != null &&
+                                company.companyAddress!.isNotEmpty) ...[
+                              Text(
+                                '${company.companyAddress![0].street ?? ''} ${company.companyAddress![0].num ?? ''}',
+                                style: const TextStyle(fontSize: 8),
+                                textAlign: TextAlign.right,
+                              ),
+                              Text(
+                                '${company.companyAddress![0].zip ?? ''} ${company.companyAddress![0].city ?? ''}',
+                                style: const TextStyle(fontSize: 8),
+                                textAlign: TextAlign.right,
+                              ),
+                              Text(
+                                company.companyAddress![0].country,
+                                style: const TextStyle(fontSize: 8),
+                                textAlign: TextAlign.right,
+                              ),
+                            ],
+                          ] else ...[
+                            const Text(
+                              'Company Name',
+                              style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.right,
+                            ),
+                            const Text(
+                              'Address not available',
+                              style: TextStyle(fontSize: 8),
+                              textAlign: TextAlign.right,
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
-                if (receiptFooter?.companyLogoURL != null)
-                  Image.network(
-                    receiptFooter!.companyLogoURL!,
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.contain,
-                  )
-                else
-                  const Text(
-                    'Sakani',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w300,
-                      color: Color(0xFF00A86B),
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
+                BlocBuilder<CompanyCubit, CompanyState>(
+                  builder: (context, companyState) {
+                    String? logoUrl =
+                        (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty)
+                        ? receiptFooter.companyLogoURL
+                        : null;
+
+                    if (logoUrl == null && companyState is CompanyLoaded) {
+                      final companyLogo = companyState.company.companyLogo;
+                      if (companyLogo != null && companyLogo.isNotEmpty) {
+                        logoUrl = FileService.getImageUrl(companyLogo[0].image);
+                      }
+                    }
+
+                    if (logoUrl != null && logoUrl.isNotEmpty) {
+                      return Image.network(logoUrl, width: 70, height: 70, fit: BoxFit.contain);
+                    }
+
+                    return const Text(
+                      'Sakani',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w300,
+                        color: Color(0xFF00A86B),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -1128,13 +979,7 @@ class JobReceiptWidget extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        'Date:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 8,
-                        ),
-                      ),
+                      Text('Date:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8)),
                       Text('Job No:', style: TextStyle(fontSize: 8)),
                       Text('Customer No:', style: TextStyle(fontSize: 8)),
                       Text('Tracking No:', style: TextStyle(fontSize: 8)),
@@ -1144,22 +989,10 @@ class JobReceiptWidget extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        _formatDate(jobData.data?.createdAt),
-                        style: TextStyle(fontSize: 8),
-                      ),
-                      Text(
-                        jobData.data?.jobNo ?? 'N/A',
-                        style: TextStyle(fontSize: 8),
-                      ),
-                      Text(
-                        customer?.customerNo ?? 'N/A',
-                        style: TextStyle(fontSize: 8),
-                      ),
-                      Text(
-                        jobData.data?.jobTrackingNumber ?? 'N/A',
-                        style: TextStyle(fontSize: 8),
-                      ),
+                      Text(_formatDate(jobData.data?.createdAt), style: TextStyle(fontSize: 8)),
+                      Text(jobData.data?.jobNo ?? 'N/A', style: TextStyle(fontSize: 8)),
+                      Text(customer?.customerNo ?? 'N/A', style: TextStyle(fontSize: 8)),
+                      Text(jobData.data?.jobTrackingNumber ?? 'N/A', style: TextStyle(fontSize: 8)),
                     ],
                   ),
                 ],
@@ -1172,9 +1005,7 @@ class JobReceiptWidget extends StatelessWidget {
               child: Container(
                 height: 60,
                 width: 100,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
+                decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!)),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1182,30 +1013,18 @@ class JobReceiptWidget extends StatelessWidget {
                       height: 40,
                       child: Row(
                         children: List.generate(20, (index) {
-                          return Expanded(
-                            child: Container(
-                              color: index % 2 == 0
-                                  ? Colors.black
-                                  : Colors.white,
-                            ),
-                          );
+                          return Expanded(child: Container(color: index % 2 == 0 ? Colors.black : Colors.white));
                         }),
                       ),
                     ),
-                    Text(
-                      jobData.data?.jobNo ?? 'N/A',
-                      style: const TextStyle(fontSize: 8),
-                    ),
+                    Text(jobData.data?.jobNo ?? 'N/A', style: const TextStyle(fontSize: 8)),
                   ],
                 ),
               ),
             ),
 
             // Job Receipt Title
-            const Text(
-              'Job Receipt',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-            ),
+            const Text('Job Receipt', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
 
             // Salutation
@@ -1226,9 +1045,7 @@ class JobReceiptWidget extends StatelessWidget {
 
             // Device Details - Side by side
             Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-              ),
+              decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!)),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1239,37 +1056,13 @@ class JobReceiptWidget extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Device details:',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        Text('Device details:', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
                         SizedBox(height: 4),
-                        Text(
-                          'Physical location:',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text('Physical location:', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w500)),
                         SizedBox(height: 4),
-                        Text(
-                          'Job type:',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text('Job type:', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w500)),
                         SizedBox(height: 4),
-                        Text(
-                          'Description:',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text('Description:', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ),
@@ -1287,22 +1080,11 @@ class JobReceiptWidget extends StatelessWidget {
                             style: TextStyle(fontSize: 8),
                           ),
                           SizedBox(height: 4),
-                          Text(
-                            jobData.data?.physicalLocation ?? 'Not specified',
-                            style: TextStyle(fontSize: 8),
-                          ),
+                          Text(jobData.data?.physicalLocation ?? 'Not specified', style: TextStyle(fontSize: 8)),
                           SizedBox(height: 4),
-                          Text(
-                            jobData.data?.jobTypes ??
-                                jobData.data?.jobType ??
-                                'N/A',
-                            style: TextStyle(fontSize: 8),
-                          ),
+                          Text(jobData.data?.jobTypes ?? jobData.data?.jobType ?? 'N/A', style: TextStyle(fontSize: 8)),
                           SizedBox(height: 4),
-                          Text(
-                            defect?.description ?? 'No description provided',
-                            style: TextStyle(fontSize: 8),
-                          ),
+                          Text(defect?.description ?? 'No description provided', style: TextStyle(fontSize: 8)),
                         ],
                       ),
                     ),
@@ -1315,28 +1097,21 @@ class JobReceiptWidget extends StatelessWidget {
             // Service Section
             if (services.isNotEmpty)
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
+                decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!)),
                 child: Column(
                   children: [
                     // Header
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey[300]!),
-                        ),
+                        border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
                       ),
                       child: const Padding(
                         padding: EdgeInsets.all(12.0),
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                'Service',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                              child: Text('Service', style: TextStyle(fontWeight: FontWeight.bold)),
                             ),
                             SizedBox(
                               width: 100,
@@ -1390,24 +1165,17 @@ class JobReceiptWidget extends StatelessWidget {
                     // Financial Summary
                     Container(
                       decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey[300]!),
-                        ),
+                        border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
                           children: [
                             _buildFinancialRow('Subtotal:', formattedSubTotal),
-                            if (jobData.data?.vat != null &&
-                                jobData.data!.vat! > 0)
+                            if (jobData.data?.vat != null && jobData.data!.vat! > 0)
                               _buildFinancialRow('VAT:', formattedVat),
-                            if (jobData.data?.discount != null &&
-                                jobData.data!.discount! > 0)
-                              _buildFinancialRow(
-                                'Discount:',
-                                formattedDiscount,
-                              ),
+                            if (jobData.data?.discount != null && jobData.data!.discount! > 0)
+                              _buildFinancialRow('Discount:', formattedDiscount),
                           ],
                         ),
                       ),
@@ -1421,18 +1189,13 @@ class JobReceiptWidget extends StatelessWidget {
                         child: Row(
                           children: [
                             const Expanded(
-                              child: Text(
-                                'Total',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                              child: Text('Total', style: TextStyle(fontWeight: FontWeight.bold)),
                             ),
                             SizedBox(
                               width: 100,
                               child: Text(
                                 formattedTotal,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                                 textAlign: TextAlign.right,
                               ),
                             ),
@@ -1446,14 +1209,9 @@ class JobReceiptWidget extends StatelessWidget {
             else
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
+                decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!)),
                 child: const Center(
-                  child: Text(
-                    'No services added',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+                  child: Text('No services added', style: TextStyle(color: Colors.grey)),
                 ),
               ),
             const SizedBox(height: 32),
@@ -1474,140 +1232,127 @@ class JobReceiptWidget extends StatelessWidget {
               child: Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: const Center(
-                  child: Text('QR', style: TextStyle(fontSize: 24)),
-                ),
+                decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!)),
+                child: const Center(child: Text('QR', style: TextStyle(fontSize: 24))),
               ),
             ),
             const SizedBox(height: 32),
 
             // Footer - Fixed with proper constraints
-            Row(
-              spacing: 8, // Horizontal spacing between columns
+            BlocBuilder<CompanyCubit, CompanyState>(
+              builder: (context, companyState) {
+                final company = companyState is CompanyLoaded ? companyState.company : null;
 
-              children: [
-                // Company Address
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Company Information',
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (receiptFooter?.address != null) ...[
-                        Text(
-                          receiptFooter!.address!.companyName ?? 'Company Name',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          '${receiptFooter.address!.street ?? ''} ${receiptFooter.address!.num ?? ''}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          receiptFooter.address!.country ?? '',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                      ] else
-                        const Text(
-                          'Address not available',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                    ],
-                  ),
-                ),
+                return Row(
+                  spacing: 8, // Horizontal spacing between columns
 
-                // Contact Information
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Contact Information',
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  children: [
+                    // Company Address
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Company Information', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                          if (receiptFooter?.address != null ||
+                              (company != null && company.companyName.isNotEmpty)) ...[
+                            Text(
+                              receiptFooter?.address?.companyName ?? company?.companyName ?? 'Company Name',
+                              style: const TextStyle(fontSize: 8),
+                            ),
+                            if (receiptFooter?.address != null) ...[
+                              Text(
+                                '${receiptFooter!.address!.street ?? ''} ${receiptFooter.address!.num ?? ''}',
+                                style: const TextStyle(fontSize: 8),
+                              ),
+                              Text(
+                                '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
+                                style: const TextStyle(fontSize: 8),
+                              ),
+                              Text(receiptFooter.address!.country ?? '', style: const TextStyle(fontSize: 8)),
+                            ] else if (company != null &&
+                                company.companyAddress != null &&
+                                company.companyAddress!.isNotEmpty) ...[
+                              Text(
+                                '${company.companyAddress![0].street ?? ''} ${company.companyAddress![0].num ?? ''}',
+                                style: const TextStyle(fontSize: 8),
+                              ),
+                              Text(
+                                '${company.companyAddress![0].zip ?? ''} ${company.companyAddress![0].city ?? ''}',
+                                style: const TextStyle(fontSize: 8),
+                              ),
+                              Text(company.companyAddress![0].country, style: const TextStyle(fontSize: 8)),
+                            ],
+                          ] else
+                            const Text('Address not available', style: TextStyle(fontSize: 8)),
+                        ],
                       ),
-                      if (receiptFooter?.contact != null) ...[
-                        Text(
-                          'CEO: ${receiptFooter!.contact!.ceo ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          'Tel: ${receiptFooter.contact!.telephone ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          'Email: ${receiptFooter.contact!.email ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          'Web: ${receiptFooter.contact!.website ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                      ] else if (contact != null) ...[
-                        Text(
-                          'Tel: ${contact.telephone ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          'Email: ${contact.email ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                      ] else
-                        const Text(
-                          'Contact not available',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                    ],
-                  ),
-                ),
+                    ),
 
-                // Bank Information
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Bank Information',
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    // Contact Information
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Contact Information', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                          if (receiptFooter?.contact != null ||
+                              (company != null &&
+                                  company.companyContactDetail != null &&
+                                  company.companyContactDetail!.isNotEmpty)) ...[
+                            Text(
+                              'CEO: ${receiptFooter?.contact?.ceo ?? (company?.companyTaxDetail?.isNotEmpty == true ? company!.companyTaxDetail![0].ceo : 'N/A')}',
+                              style: const TextStyle(fontSize: 8),
+                            ),
+                            Text(
+                              'Tel: ${receiptFooter?.contact?.telephone ?? (company?.companyContactDetail?.isNotEmpty == true ? company!.companyContactDetail![0].telephone : 'N/A')}',
+                              style: const TextStyle(fontSize: 8),
+                            ),
+                            Text(
+                              'Email: ${receiptFooter?.contact?.email ?? (company?.companyContactDetail?.isNotEmpty == true ? company!.companyContactDetail![0].email : 'N/A')}',
+                              style: const TextStyle(fontSize: 8),
+                            ),
+                            Text(
+                              'Web: ${receiptFooter?.contact?.website ?? (company?.companyContactDetail?.isNotEmpty == true ? company!.companyContactDetail![0].website : 'N/A')}',
+                              style: const TextStyle(fontSize: 8),
+                            ),
+                          ] else if (contact != null) ...[
+                            Text('Tel: ${contact.telephone ?? 'N/A'}', style: const TextStyle(fontSize: 8)),
+                            Text('Email: ${contact.email ?? 'N/A'}', style: const TextStyle(fontSize: 8)),
+                          ] else
+                            const Text('Contact not available', style: const TextStyle(fontSize: 8)),
+                        ],
                       ),
-                      if (receiptFooter?.bank != null) ...[
-                        Text(
-                          'Bank: ${receiptFooter!.bank!.bankName ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          'IBAN: ${receiptFooter.bank!.iban ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                        Text(
-                          'BIC: ${receiptFooter.bank!.bic ?? 'N/A'}',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                      ] else
-                        const Text(
-                          'Bank details not available',
-                          style: TextStyle(fontSize: 8),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+
+                    // Bank Information
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Bank Information', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                          if (receiptFooter?.bank != null ||
+                              (company != null &&
+                                  company.companyBankDetail != null &&
+                                  company.companyBankDetail!.isNotEmpty)) ...[
+                            Text(
+                              'Bank: ${receiptFooter?.bank?.bankName ?? (company?.companyBankDetail?.isNotEmpty == true ? company!.companyBankDetail![0].bankName : 'N/A')}',
+                              style: const TextStyle(fontSize: 8),
+                            ),
+                            Text(
+                              'IBAN: ${receiptFooter?.bank?.iban ?? (company?.companyBankDetail?.isNotEmpty == true ? company!.companyBankDetail![0].iban : 'N/A')}',
+                              style: const TextStyle(fontSize: 8),
+                            ),
+                            Text(
+                              'BIC: ${receiptFooter?.bank?.bic ?? (company?.companyBankDetail?.isNotEmpty == true ? company!.companyBankDetail![0].bic : 'N/A')}',
+                              style: const TextStyle(fontSize: 8),
+                            ),
+                          ] else
+                            const Text('Bank details not available', style: const TextStyle(fontSize: 8)),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -1652,10 +1397,7 @@ class JobReceiptWidget extends StatelessWidget {
   Widget _buildHtmlContent(String html) {
     // Simple HTML content parser - you might want to use a proper HTML renderer
     final cleanText = html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
-    return Text(
-      cleanText,
-      style: TextStyle(fontSize: 8, color: Colors.grey[700]),
-    );
+    return Text(cleanText, style: TextStyle(fontSize: 8, color: Colors.grey[700]));
   }
 }
 
@@ -1686,10 +1428,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
       backgroundColor: Colors.grey[200],
       appBar: CupertinoNavigationBar(
         backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
-        leading: CustomNavButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: CupertinoIcons.back,
-        ),
+        leading: CustomNavButton(onPressed: () => Navigator.of(context).pop(), icon: CupertinoIcons.back),
         middle: Text(
           'Print Settings',
           style: TextStyle(
@@ -1698,12 +1437,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
             color: CupertinoColors.label.resolveFrom(context),
           ),
         ),
-        trailing: CustomNavButton(
-          onPressed: () {},
-          icon: CupertinoIcons.ellipsis,
-          iconColor: figmaBlue,
-          size: 22.r,
-        ),
+        trailing: CustomNavButton(onPressed: () {}, icon: CupertinoIcons.ellipsis, iconColor: figmaBlue, size: 22.r),
       ),
       body: Column(
         children: [
@@ -1725,13 +1459,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Job Receipt',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        const Text('Job Receipt', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
                         Expanded(
                           child: Text(
@@ -1740,10 +1468,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
                             'Device: ${widget.jobData.data?.deviceData?.brand ?? 'N/A'} ${widget.jobData.data?.deviceData?.model ?? ''}\n'
                             'Total: ${_formatCurrency(widget.jobData.data?.total)}\n\n'
                             'This is a preview of the job receipt.',
-                            style: TextStyle(
-                              fontSize: 6,
-                              color: Colors.grey[700],
-                            ),
+                            style: TextStyle(fontSize: 6, color: Colors.grey[700]),
                             maxLines: 10,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1757,15 +1482,8 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
                     child: Container(
                       width: 24,
                       height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
+                      child: const Icon(Icons.check, color: Colors.white, size: 16),
                     ),
                   ),
                 ],
@@ -1778,11 +1496,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildSettingTile(
-                  title: 'Printer',
-                  value: 'Not selected',
-                  onTap: () {},
-                ),
+                _buildSettingTile(title: 'Printer', value: 'Not selected', onTap: () {}),
                 const SizedBox(height: 16),
                 _buildSettingTile(
                   title: 'Copies',
@@ -1791,21 +1505,10 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: copies > 1
-                            ? () => setState(() => copies--)
-                            : null,
+                        onPressed: copies > 1 ? () => setState(() => copies--) : null,
                       ),
-                      Text(
-                        '$copies',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () => setState(() => copies++),
-                      ),
+                      Text('$copies', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+                      IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => setState(() => copies++)),
                     ],
                   ),
                 ),
@@ -1814,43 +1517,23 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
                   title: 'Orientation',
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildOrientationButton(false),
-                      const SizedBox(width: 8),
-                      _buildOrientationButton(true),
-                    ],
+                    children: [_buildOrientationButton(false), const SizedBox(width: 8), _buildOrientationButton(true)],
                   ),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(
-                      child: _buildDropdownTile('Pages', selectedPages, () {}),
-                    ),
+                    Expanded(child: _buildDropdownTile('Pages', selectedPages, () {})),
                     const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDropdownTile('Color', selectedColor, () {}),
-                    ),
+                    Expanded(child: _buildDropdownTile('Color', selectedColor, () {})),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(
-                      child: _buildDropdownTile(
-                        'Paper size',
-                        selectedPaperSize,
-                        () {},
-                      ),
-                    ),
+                    Expanded(child: _buildDropdownTile('Paper size', selectedPaperSize, () {})),
                     const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDropdownTile(
-                        'Print type',
-                        selectedPrintType,
-                        () {},
-                      ),
-                    ),
+                    Expanded(child: _buildDropdownTile('Print type', selectedPrintType, () {})),
                   ],
                 ),
               ],
@@ -1865,23 +1548,15 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Print initiated')),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Print initiated')));
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey[400],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                 ),
                 child: const Text(
                   'Print',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white),
                 ),
               ),
             ),
@@ -1901,32 +1576,18 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
     }
   }
 
-  Widget _buildSettingTile({
-    required String title,
-    String? value,
-    Widget? trailing,
-    VoidCallback? onTap,
-  }) {
+  Widget _buildSettingTile({required String title, String? value, Widget? trailing, VoidCallback? onTap}) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
+        title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
         trailing:
             trailing ??
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  value ?? '',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
+                Text(value ?? '', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
                 const SizedBox(width: 8),
                 const Icon(Icons.chevron_right),
               ],
@@ -1941,34 +1602,21 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                 Icon(Icons.expand_more, color: Colors.grey[400]),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.green,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.green, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -1985,10 +1633,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
         height: 50,
         decoration: BoxDecoration(
           color: isSelected ? Colors.green : Colors.white,
-          border: Border.all(
-            color: isSelected ? Colors.green : Colors.grey[300]!,
-            width: 2,
-          ),
+          border: Border.all(color: isSelected ? Colors.green : Colors.grey[300]!, width: 2),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Center(
@@ -1996,10 +1641,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
             width: portrait ? 20 : 30,
             height: portrait ? 30 : 20,
             decoration: BoxDecoration(
-              border: Border.all(
-                color: isSelected ? Colors.white : Colors.grey[400]!,
-                width: 2,
-              ),
+              border: Border.all(color: isSelected ? Colors.white : Colors.grey[400]!, width: 2),
             ),
           ),
         ),
@@ -2014,11 +1656,7 @@ class _PrinterSelectionDialog extends StatelessWidget {
   final String? defaultPrinterType;
   final Future<void> Function(PrinterConfigModel) onPrint;
 
-  const _PrinterSelectionDialog({
-    required this.printers,
-    this.defaultPrinterType,
-    required this.onPrint,
-  });
+  const _PrinterSelectionDialog({required this.printers, this.defaultPrinterType, required this.onPrint});
 
   @override
   Widget build(BuildContext context) {
@@ -2032,13 +1670,10 @@ class _PrinterSelectionDialog extends StatelessWidget {
         style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
       ),
       actions: printers.map((printer) {
-        final isDefault =
-            printer.printerType == defaultPrinterType && printer.isDefault;
+        final isDefault = printer.printerType == defaultPrinterType && printer.isDefault;
         return CupertinoActionSheetAction(
           onPressed: () async {
-            debugPrint(
-              '🎯 User selected: ${printer.printerBrand} ${printer.printerType} printer',
-            );
+            debugPrint('🎯 User selected: ${printer.printerBrand} ${printer.printerType} printer');
             // Close dialog first
             Navigator.of(context).pop();
 
@@ -2048,11 +1683,7 @@ class _PrinterSelectionDialog extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                _getPrinterIcon(printer.printerType),
-                size: 24.r,
-                color: AppColors.fontMainColor,
-              ),
+              Icon(_getPrinterIcon(printer.printerType), size: 24.r, color: AppColors.fontMainColor),
               SizedBox(width: 12.w),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2062,19 +1693,12 @@ class _PrinterSelectionDialog extends StatelessWidget {
                     children: [
                       Text(
                         '${printer.printerBrand} ${printer.printerModel ?? ""}',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF007AFF),
-                        ),
+                        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF007AFF)),
                       ),
                       if (isDefault) ...[
                         SizedBox(width: 8.w),
                         Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6.w,
-                            vertical: 2.h,
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                           decoration: BoxDecoration(
                             color: Colors.green.shade100,
                             borderRadius: BorderRadius.circular(4.r),
@@ -2094,17 +1718,11 @@ class _PrinterSelectionDialog extends StatelessWidget {
                   SizedBox(height: 2.h),
                   Text(
                     printer.ipAddress,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
                   ),
                   Text(
                     _getPrinterTitle(printer.printerType),
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: Colors.grey.shade500,
-                    ),
+                    style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500),
                   ),
                 ],
               ),

@@ -10,11 +10,7 @@ import 'package:repair_cms/features/jobBooking/widgets/title_widget.dart';
 /// Step 10 – Add Items (Protection case, Insurance, etc.)
 /// This step ALSO triggers the initial Job Creation via JobCreateCubit.
 class StepAddItemsWidget extends StatefulWidget {
-  const StepAddItemsWidget({
-    super.key,
-    required this.onCanProceedChanged,
-    required this.onJobCreated,
-  });
+  const StepAddItemsWidget({super.key, required this.onCanProceedChanged, required this.onJobCreated});
 
   final void Function(bool canProceed) onCanProceedChanged;
   final void Function(String jobId) onJobCreated;
@@ -42,10 +38,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
     if (query.isNotEmpty) {
       final userId = storage.read('userId');
       if (userId != null) {
-        context.read<JobItemCubit>().searchItems(
-          userId: userId,
-          keyword: query,
-        );
+        context.read<JobItemCubit>().searchItems(userId: userId, keyword: query);
       }
     } else {
       context.read<JobItemCubit>().clearSearch();
@@ -104,9 +97,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
         if (state is JobCreateCreated) {
           final jobId = state.response.data?.sId;
           if (state.response.data != null) {
-            context.read<JobBookingCubit>().updateJobFromResponse(
-              state.response.data!,
-            );
+            context.read<JobBookingCubit>().updateJobFromResponse(state.response.data!);
             if (jobId != null) {
               context.read<JobBookingCubit>().setJobId(jobId);
               widget.onJobCreated(jobId);
@@ -114,10 +105,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
           }
           setState(() => _isCreatingJob = false);
         } else if (state is JobCreateError) {
-          showCustomToast(
-            'Failed to create job: ${state.message}',
-            isError: true,
-          );
+          showCustomToast('Failed to create job: ${state.message}', isError: true);
           setState(() => _isCreatingJob = false);
         }
       },
@@ -148,43 +136,18 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
                     controller: _itemController,
                     focusNode: _itemFocusNode,
                     onChanged: _onSearchChanged,
-                    style: GoogleFonts.roboto(
-                      fontSize: 32.sp,
-                      color: AppColors.fontMainColor,
-                    ),
+                    style: GoogleFonts.roboto(fontSize: 32.sp, color: AppColors.fontMainColor),
                     decoration: InputDecoration(
                       hintText: 'Answer here',
-                      hintStyle: GoogleFonts.roboto(
-                        fontSize: 32.sp,
-                        color: const Color(0xFFB2B5BE),
-                      ),
+                      hintStyle: GoogleFonts.roboto(fontSize: 32.sp, color: const Color(0xFFB2B5BE)),
                       // prefixIcon: Padding(
                       //   padding: EdgeInsets.only(right: 12.w),
                       //   child: Icon(Icons.qr_code_scanner, color: AppColors.primary, size: 40.sp),
                       // ),
-                      suffixIcon: Icon(
-                        Icons.keyboard_arrow_up_rounded,
-                        color: AppColors.fontMainColor,
-                        size: 32.sp,
-                      ),
-                      border: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: AppColors.primary,
-                          width: 2,
-                        ),
-                      ),
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: AppColors.primary,
-                          width: 2,
-                        ),
-                      ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: AppColors.primary,
-                          width: 2,
-                        ),
-                      ),
+                      suffixIcon: Icon(Icons.keyboard_arrow_up_rounded, color: AppColors.fontMainColor, size: 32.sp),
+                      border: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
                     ),
                   ),
                 ),
@@ -192,10 +155,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
               _buildSearchResults(),
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
               _buildSelectedItemsList(),
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: SizedBox(),
-              ),
+              const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
             ],
           ),
           if (_isCreatingJob) const Center(child: CircularProgressIndicator()),
@@ -208,13 +168,37 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
     return BlocBuilder<JobItemCubit, JobItemState>(
       builder: (context, state) {
         if (state is JobItemLoading) {
-          return const SliverToBoxAdapter(
-            child: Center(child: CircularProgressIndicator()),
+          return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
+        }
+        if (state is JobItemError) {
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+              child: Center(
+                child: Text(
+                  'Error: ${state.message}',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.roboto(fontSize: 16.sp, color: Colors.redAccent),
+                ),
+              ),
+            ),
           );
         }
-        if (state is JobItemLoaded &&
-            state.itemsResponse.items != null &&
-            state.itemsResponse.items!.isNotEmpty) {
+        if (state is JobItemNoResults) {
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+              child: Center(
+                child: Text(
+                  'No items found for "${state.searchQuery}"',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.roboto(fontSize: 16.sp, color: AppColors.lightFontColor),
+                ),
+              ),
+            ),
+          );
+        }
+        if (state is JobItemLoaded && state.itemsResponse.items != null && state.itemsResponse.items!.isNotEmpty) {
           final items = state.itemsResponse.items!;
           return SliverToBoxAdapter(
             child: Padding(
@@ -226,11 +210,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(color: Colors.grey.withOpacity(0.1)),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: ListView.separated(
@@ -247,29 +227,15 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
                     return InkWell(
                       onTap: () => _addItem(item),
                       child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 12.h,
-                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: isFirst
-                                ? AppColors.primary
-                                : Colors.grey.withOpacity(0.2),
-                          ),
-                          color: isFirst
-                              ? AppColors.primary.withOpacity(0.05)
-                              : Colors.transparent,
+                          border: Border.all(color: isFirst ? AppColors.primary : Colors.grey.withOpacity(0.2)),
+                          color: isFirst ? AppColors.primary.withOpacity(0.05) : Colors.transparent,
                         ),
                         child: Row(
                           children: [
-                            Expanded(
-                              child: _highlightText(
-                                item.productName ?? '',
-                                query,
-                              ),
-                            ),
+                            Expanded(child: _highlightText(item.productName ?? '', query)),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
@@ -283,10 +249,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
                                 ),
                                 Text(
                                   'incl. ${item.vatPercent ?? 20}% VAT',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 12.sp,
-                                    color: AppColors.lightFontColor,
-                                  ),
+                                  style: GoogleFonts.roboto(fontSize: 12.sp, color: AppColors.lightFontColor),
                                 ),
                               ],
                             ),
@@ -309,11 +272,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
     if (query.isEmpty || !text.toLowerCase().contains(query.toLowerCase())) {
       return Text(
         text,
-        style: GoogleFonts.roboto(
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w500,
-          color: AppColors.fontMainColor,
-        ),
+        style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
       );
     }
     final List<TextSpan> spans = [];
@@ -328,10 +287,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
       spans.add(
         TextSpan(
           text: text.substring(index, index + query.length),
-          style: TextStyle(
-            backgroundColor: const Color(0xFFFFF176),
-            color: Colors.black,
-          ),
+          style: TextStyle(backgroundColor: const Color(0xFFFFF176), color: Colors.black),
         ),
       );
       start = index + query.length;
@@ -342,11 +298,7 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
     }
     return RichText(
       text: TextSpan(
-        style: GoogleFonts.roboto(
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w500,
-          color: AppColors.fontMainColor,
-        ),
+        style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
         children: spans,
       ),
     );

@@ -100,8 +100,8 @@ class EscPosGeneratorService {
 
     // QR Code for tracking
     if (includeQrCode) {
-      final trackingNumber = jobData['jobTrackingNumber'];
-      final jobId = jobData['sId'];
+      final trackingNumber = jobData['jobTrackingNumber'] ?? jobData['job_tracking_number'];
+      final jobId = jobData['sId'] ?? jobData['_id'];
       final email = jobData['customerDetails']?['email'] ?? '';
 
       if (trackingNumber != null && jobId != null) {
@@ -134,7 +134,7 @@ class EscPosGeneratorService {
   /// Print company header (name, address, contact)
   static List<int> _printCompanyHeader(Map<String, dynamic> jobData) {
     final List<int> bytes = [];
-    final receiptFooter = jobData['receiptFooter'];
+    final receiptFooter = jobData['receiptFooter'] ?? jobData['receipt_footer'];
 
     if (receiptFooter != null) {
       final address = receiptFooter['address'];
@@ -209,7 +209,7 @@ class EscPosGeneratorService {
         bytes.addAll(_printText('Email: $email'));
       }
 
-      final telephonePrefix = customerDetails['telephonePrefix'] ?? '';
+      final telephonePrefix = customerDetails['telephonePrefix'] ?? customerDetails['telephone_prefix'] ?? '';
       final telephone = customerDetails['telephone'] ?? '';
       if (telephone.isNotEmpty) {
         bytes.addAll(_printText('Tel: $telephonePrefix$telephone'));
@@ -446,7 +446,7 @@ class EscPosGeneratorService {
     bytes.addAll(_printSeparator());
     bytes.addAll(_setCenterAlign());
 
-    final receiptFooter = jobData['receiptFooter'];
+    final receiptFooter = jobData['receiptFooter'] ?? jobData['receipt_footer'];
     if (receiptFooter != null) {
       final contact = receiptFooter['contact'];
       if (contact != null) {
