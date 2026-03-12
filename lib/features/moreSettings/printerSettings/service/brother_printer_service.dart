@@ -130,6 +130,7 @@ class BrotherPrinterService implements BasePrinterService {
         labelWidth,
         labelHeight,
         dotsPerMm,
+        modelString,
       );
 
       _talker.debug('[BrotherRawTCP] Sending ${bytes.length} bytes to printer');
@@ -315,6 +316,7 @@ class BrotherPrinterService implements BasePrinterService {
         labelWidth,
         labelHeight,
         dotsPerMm,
+        modelString,
       );
 
       final socket = await Socket.connect(
@@ -481,9 +483,15 @@ class BrotherPrinterService implements BasePrinterService {
     int labelWidth,
     int labelHeight,
     double dotsPerMm,
+    String modelString,
   ) {
     final List<int> bytes = [];
     const esc = 0x1B;
+
+    // TD-4 series (e.g. TD-4550DNWB) requires a 10-byte ESC i z format that
+    // includes an explicit media-type byte (n2) between the PI flag and the
+    // width byte. TD-2 series uses a 9-byte format without n2.
+    final isTD4 = modelString.toUpperCase().startsWith('TD-4');
 
     // 1. Invalidate command - 100 null bytes to clear previous job
     for (var i = 0; i < 100; i++) {
@@ -505,19 +513,29 @@ class BrotherPrinterService implements BasePrinterService {
     final mirrorOff = 0x00; // Bit 0: No mirror printing
     bytes.add(validFlag | autoCut | mirrorOff);
 
-    // Media width in mm (used for TD-4, ignored by TD-2)
-    bytes.add(labelWidth & 0xFF);
-
-    // Media length in mm (0 = continuous, or actual height)
-    bytes.add(labelHeight & 0xFF);
-
-    // Raster lines count (0 = auto)
-    bytes.addAll([0x00, 0x00, 0x00, 0x00]);
+    if (isTD4) {
+      // TD-4 series: full 10-byte ESC i z format
+      // n2 = Media type: 0x0A = die-cut label, 0x0B = continuous tape
+      bytes.add(0x0A); // Media type: die-cut label
+      bytes.add(labelWidth & 0xFF); // n3: Media width (mm)
+      bytes.add(labelHeight & 0xFF); // n4: Media length (mm)
+      // n5–n8: Number of raster lines (little-endian 32-bit)
+      final heightDots = (labelHeight * dotsPerMm).round();
+      bytes.add(heightDots & 0xFF);
+      bytes.add((heightDots >> 8) & 0xFF);
+      bytes.add((heightDots >> 16) & 0xFF);
+      bytes.add((heightDots >> 24) & 0xFF);
+    } else {
+      // TD-2 series: 9-byte ESC i z format (no media-type byte)
+      bytes.add(labelWidth & 0xFF); // Media width (mm)
+      bytes.add(labelHeight & 0xFF); // Media length (mm)
+      bytes.addAll([0x00, 0x00, 0x00, 0x00]); // Raster lines count (auto)
+    }
 
     // Starting page (always 0)
     bytes.add(0x00);
 
-    // Additional padding
+    // Additional padding / reserved
     bytes.add(0x00);
 
     // 5. Set page orientation (portrait)
@@ -599,6 +617,7 @@ class BrotherPrinterService implements BasePrinterService {
     int labelWidth,
     int labelHeight,
     double dotsPerMm,
+    String modelString,
   ) async {
     final List<int> bytes = [];
     const esc = 0x1B;
@@ -621,6 +640,11 @@ class BrotherPrinterService implements BasePrinterService {
     );
     _talker.info('[BrotherRawTCP] 📐 Line bytes: $lineBytes bytes per line');
 
+    // TD-4 series (e.g. TD-4550DNWB) requires a 10-byte ESC i z format that
+    // includes an explicit media-type byte (n2) between the PI flag and the
+    // width byte. TD-2 series uses a 9-byte format without n2.
+    final isTD4 = modelString.toUpperCase().startsWith('TD-4');
+
     // 1. Invalidate command - 100 null bytes
     for (var i = 0; i < 100; i++) {
       bytes.add(0x00);
@@ -637,21 +661,30 @@ class BrotherPrinterService implements BasePrinterService {
 
     final validFlag = 0x80; // Bit 7: Valid command
     final autoCut = 0x02; // Bit 1: Auto-cut
-    final highQuality = dotsPerMm > 10
-        ? 0x04
-        : 0x00; // Bit 2: High quality for TD-4
+    // High-quality bit is only meaningful for TD-4 (300 DPI)
+    final highQuality = isTD4 ? 0x04 : 0x00; // Bit 2: High quality for TD-4
     final mirrorOff = 0x00; // Bit 0: No mirror
 
     bytes.add(validFlag | autoCut | highQuality | mirrorOff);
 
-    // Media width in mm
-    bytes.add(labelWidth & 0xFF);
-
-    // Media length in mm
-    bytes.add(labelHeight & 0xFF);
-
-    // Raster line count (0 = auto-calculate)
-    bytes.addAll([0x00, 0x00, 0x00, 0x00]);
+    if (isTD4) {
+      // TD-4 series: full 10-byte ESC i z format
+      // n2 = Media type: 0x0A = die-cut label, 0x0B = continuous tape
+      bytes.add(0x0A); // Media type: die-cut label
+      bytes.add(labelWidth & 0xFF); // n3: Media width (mm)
+      bytes.add(labelHeight & 0xFF); // n4: Media length (mm)
+      // n5–n8: Explicit raster line count (little-endian 32-bit)
+      // 100×150 mm @ 11.811 dots/mm → 1181×1772 dots
+      bytes.add(heightDots & 0xFF);
+      bytes.add((heightDots >> 8) & 0xFF);
+      bytes.add((heightDots >> 16) & 0xFF);
+      bytes.add((heightDots >> 24) & 0xFF);
+    } else {
+      // TD-2 series: 9-byte ESC i z format (no media-type byte)
+      bytes.add(labelWidth & 0xFF); // Media width (mm)
+      bytes.add(labelHeight & 0xFF); // Media length (mm)
+      bytes.addAll([0x00, 0x00, 0x00, 0x00]); // Raster line count (auto)
+    }
 
     // Page number (0 = single page)
     bytes.add(0x00);

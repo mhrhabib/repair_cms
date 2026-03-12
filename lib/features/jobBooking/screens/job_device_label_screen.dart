@@ -588,7 +588,11 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         if (line.isNotEmpty) textLines.add(line);
       }
 
-      // Paint each line
+      // Paint each line.
+      // Use an accumulating lineY so that wrapped (multi-visual-row) lines
+      // don't cause the following line to overlap. Fixed i*lineSpacing was
+      // the cause of overlap on small Xprinter labels where long text wraps.
+      double lineY = currentY;
       for (int i = 0; i < textLines.length; i++) {
         final linePainter = TextPainter(
           text: TextSpan(
@@ -598,7 +602,10 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
           textDirection: TextDirection.ltr,
         );
         linePainter.layout(maxWidth: contentWidth);
-        linePainter.paint(canvas, Offset(padding, currentY + (i * lineSpacing)));
+        linePainter.paint(canvas, Offset(padding, lineY));
+        // Advance by the ACTUAL painted height (which includes all wrapped
+        // rows), plus a small inter-line gap.
+        lineY += linePainter.height + 4;
       }
 
       // End recording and create image
