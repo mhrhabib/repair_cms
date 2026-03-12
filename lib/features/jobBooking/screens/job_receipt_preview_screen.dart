@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/services/file_service.dart';
@@ -440,23 +441,53 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       termsFromCubit = jobBookingState.job.termsAndConditionsHTMLmarkup;
     }
 
-    final finalReceiptFooter = data?.receiptFooter ?? receiptFooterFromCubit;
-    final finalCustomerDetails = data?.customerDetails ?? customerDetailsFromCubit;
     final finalSalutation = data?.salutationHTMLmarkup ?? salutationFromCubit;
     final finalTerms = data?.termsAndConditionsHTMLmarkup ?? termsFromCubit;
 
-    final assignedItemsList = data?.assignedItems
-        ?.map(
-          (item) => {
-            'productName': item.productName ?? '',
-            'name': item.productName ?? '',
-            'price_incl_vat': item.salePriceIncVat ?? 0,
-          },
-        )
-        .toList();
+    // Helper to pick the first non-empty value
+    String pick(String? resp, String? cubit, [String fallback = '']) {
+      if (resp != null && resp.trim().isNotEmpty) return resp;
+      if (cubit != null && cubit.trim().isNotEmpty) return cubit;
+      return fallback;
+    }
 
-    final calculatedSubTotal =
-        data?.assignedItems?.fold<double>(0.0, (sum, item) => sum + (item.salePriceIncVat ?? 0)) ?? 0.0;
+    final respFooter = data?.receiptFooter;
+    final cubitFooter = receiptFooterFromCubit;
+
+    // Get current logged-in user for the "Agent" field
+    final userData = storage.read('user');
+    List<my_jobs.LoggedUser>? agentUser;
+    if (userData != null) {
+      final userMap = userData is String ? jsonDecode(userData) : userData;
+      agentUser = [
+        my_jobs.LoggedUser(fullName: userMap['fullName'] ?? userMap['name'] ?? 'N/A', email: userMap['email'] ?? ''),
+      ];
+    }
+
+    final List<Map<String, dynamic>> combinedItems = [];
+
+    if (data?.assignedItems != null) {
+      for (final item in data!.assignedItems!) {
+        combinedItems.add({
+          'productName': item.productName ?? 'Item',
+          'name': item.productName ?? 'Item',
+          'price_incl_vat': item.salePriceIncVat ?? 0,
+        });
+      }
+    }
+
+    double parsePrice(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      return double.tryParse(value.toString()) ?? 0.0;
+    }
+
+    final calculatedSubTotal = [
+      ...?data?.services?.map((s) => parsePrice(s.priceInclVat)),
+      ...combinedItems.map((item) => parsePrice(item['price_incl_vat'])),
+    ].fold(0.0, (sum, val) => sum + val);
+
+    final customerDetails = data?.customerDetails ?? customerDetailsFromCubit;
 
     return my_jobs.SingleJobModel(
       success: widget.jobResponse.success,
@@ -493,7 +524,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         createdAt: data?.createdAt,
         updatedAt: data?.updatedAt,
         services: data?.services,
-        assignedItems: assignedItemsList,
+        assignedItems: combinedItems,
         device: data?.device
             ?.map(
               (d) => my_jobs.Device(
@@ -538,53 +569,69 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         vat: 0.0,
         discount: 0.0,
         jobTrackingNumber: _completeJobData?.data?.jobTrackingNumber ?? data?.jobTrackingNumber ?? data?.jobNo,
-        receiptFooter: finalReceiptFooter != null
-            ? my_jobs.ReceiptFooter(
-                companyLogo: finalReceiptFooter.companyLogo,
-                companyLogoURL: FileService.getImageUrl(finalReceiptFooter.companyLogoURL),
-                address: my_jobs.Address(
-                  companyName: finalReceiptFooter.address.companyName.isNotEmpty
-                      ? finalReceiptFooter.address.companyName
-                      : (storage.read('companyName') ?? ''),
-                  street: finalReceiptFooter.address.street,
-                  num: finalReceiptFooter.address.num,
-                  zip: finalReceiptFooter.address.zip,
-                  city: finalReceiptFooter.address.city,
-                  country: finalReceiptFooter.address.country,
-                ),
-                contact: my_jobs.ContactInfo(
-                  ceo: finalReceiptFooter.contact.ceo,
-                  telephone: finalReceiptFooter.contact.telephone,
-                  email: finalReceiptFooter.contact.email,
-                  website: finalReceiptFooter.contact.website,
-                ),
-                bank: my_jobs.Bank(
-                  bankName: finalReceiptFooter.bank.bankName,
-                  iban: finalReceiptFooter.bank.iban,
-                  bic: finalReceiptFooter.bank.bic,
-                ),
-              )
-            : null,
-        customerDetails: finalCustomerDetails != null
+        receiptFooter: my_jobs.ReceiptFooter(
+          companyLogo: pick(respFooter?.companyLogo, cubitFooter?.companyLogo),
+          companyLogoURL: FileService.getImageUrl(pick(respFooter?.companyLogoURL, cubitFooter?.companyLogoURL)),
+          address: my_jobs.Address(
+            companyName: pick(
+              respFooter?.address.companyName,
+              cubitFooter?.address.companyName,
+              storage.read('companyName') ?? '',
+            ),
+            street: pick(respFooter?.address.street, cubitFooter?.address.street),
+            num: pick(respFooter?.address.num, cubitFooter?.address.num),
+            zip: pick(respFooter?.address.zip, cubitFooter?.address.zip),
+            city: pick(respFooter?.address.city, cubitFooter?.address.city),
+            country: pick(respFooter?.address.country, cubitFooter?.address.country),
+          ),
+          contact: my_jobs.ContactInfo(
+            ceo: pick(respFooter?.contact.ceo, cubitFooter?.contact.ceo),
+            telephone: pick(respFooter?.contact.telephone, cubitFooter?.contact.telephone),
+            email: pick(respFooter?.contact.email, cubitFooter?.contact.email),
+            website: pick(respFooter?.contact.website, cubitFooter?.contact.website),
+          ),
+          bank: my_jobs.Bank(
+            bankName: pick(respFooter?.bank.bankName, cubitFooter?.bank.bankName),
+            iban: pick(respFooter?.bank.iban, cubitFooter?.bank.iban),
+            bic: pick(respFooter?.bank.bic, cubitFooter?.bank.bic),
+          ),
+        ),
+        customerDetails: customerDetails != null
             ? my_jobs.CustomerDetails(
-                customerId: finalCustomerDetails.customerId,
-                type: finalCustomerDetails.type,
-                type2: finalCustomerDetails.type2,
-                organization: finalCustomerDetails.organization,
-                customerNo: finalCustomerDetails.customerNo,
-                email: finalCustomerDetails.email,
-                telephone: finalCustomerDetails.telephone,
-                telephonePrefix: finalCustomerDetails.telephonePrefix,
-                salutation: finalCustomerDetails.salutation,
-                firstName: finalCustomerDetails.firstName,
-                lastName: finalCustomerDetails.lastName,
-                position: finalCustomerDetails.position,
-                vatNo: finalCustomerDetails.vatNo,
-                reverseCharge: finalCustomerDetails.reverseCharge,
+                customerId: customerDetails.customerId,
+                type: customerDetails.type,
+                type2: customerDetails.type2,
+                organization: customerDetails.organization,
+                customerNo: customerDetails.customerNo,
+                email: customerDetails.email,
+                telephone: customerDetails.telephone,
+                telephonePrefix: customerDetails.telephonePrefix,
+                salutation: customerDetails.salutation,
+                firstName: customerDetails.firstName,
+                lastName: customerDetails.lastName,
+                position: customerDetails.position,
+                vatNo: customerDetails.vatNo,
+                reverseCharge: customerDetails.reverseCharge,
+                billingAddress: my_jobs.BillingAddress(
+                  street: '${customerDetails.billingAddress.street ?? ''} ${customerDetails.billingAddress.no ?? ''}'
+                      .trim(),
+                  zip: customerDetails.billingAddress.zip,
+                  city: customerDetails.billingAddress.city,
+                  state: customerDetails.billingAddress.state,
+                  country: customerDetails.billingAddress.country,
+                ),
+                shippingAddress: my_jobs.ShippingAddress(
+                  street: '${customerDetails.shippingAddress.street ?? ''} ${customerDetails.shippingAddress.no ?? ''}'
+                      .trim(),
+                  zip: customerDetails.shippingAddress.zip,
+                  city: customerDetails.shippingAddress.city,
+                  country: customerDetails.shippingAddress.country,
+                ),
               )
             : null,
         salutationHTMLmarkup: finalSalutation,
         termsAndConditionsHTMLmarkup: finalTerms,
+        loggedUserId: agentUser,
       ),
     );
   }

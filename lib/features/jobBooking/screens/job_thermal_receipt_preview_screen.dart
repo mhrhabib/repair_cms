@@ -1,10 +1,12 @@
+import 'dart:convert';
+import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/services/file_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/routes/route_names.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -217,6 +219,7 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
       'discount': data?.discount,
       'subTotal': data?.subTotal,
       'total': data?.total,
+      'services': data?.services,
       'assignedItems': data?.assignedItems,
       'device': data?.device
           ?.map(
@@ -300,24 +303,66 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
       termsFromCubit = jobBookingState.job.termsAndConditionsHTMLmarkup;
     }
 
-    // Use data from response where available, fallback to cubit data
-    final finalReceiptFooter = data?.receiptFooter ?? receiptFooterFromCubit;
     final finalCustomerDetails = data?.customerDetails ?? customerDetailsFromCubit;
     final finalSalutation = data?.salutationHTMLmarkup ?? salutationFromCubit;
     final finalTerms = data?.termsAndConditionsHTMLmarkup ?? termsFromCubit;
 
-    // Convert assignedItems to dynamic list that widget expects
-    final assignedItemsList = data?.assignedItems?.map((item) {
-      return {
-        'productName': item.productName ?? '',
-        'name': item.productName ?? '',
-        'price_incl_vat': item.salePriceIncVat ?? 0,
-      };
-    }).toList();
+    // Helper: Select first non-null/non-empty value
+    T? pick<T>(T? resp, T? cubit, [T? storageFallback]) {
+      if (resp != null) {
+        if (resp is String && resp.isNotEmpty) return resp;
+        if (resp is! String) return resp;
+      }
+      if (cubit != null) {
+        if (cubit is String && cubit.isNotEmpty) return cubit;
+        if (cubit is! String) return cubit;
+      }
+      return storageFallback;
+    }
 
-    // Calculate totals from assigned items
-    final calculatedSubTotal =
-        data?.assignedItems?.fold<double>(0.0, (sum, item) => sum + (item.salePriceIncVat ?? 0)) ?? 0.0;
+    final respFooter = data?.receiptFooter;
+    final cubitFooter = receiptFooterFromCubit;
+
+    // Get agent/user details from storage
+    List<my_jobs.LoggedUser>? agentUser;
+    final userData = storage.read('userData') ?? storage.read('user_data');
+    if (userData != null) {
+      final userMap = userData is String ? jsonDecode(userData) : userData;
+      agentUser = [
+        my_jobs.LoggedUser(fullName: userMap['fullName'] ?? userMap['name'] ?? 'N/A', email: userMap['email'] ?? ''),
+      ];
+    }
+
+    final List<Map<String, dynamic>> combinedItems = [];
+
+    if (data?.services != null) {
+      for (final service in data!.services!) {
+        combinedItems.add({
+          'productName': service.name ?? 'Service',
+          'name': service.name ?? 'Service',
+          'price_incl_vat': service.priceInclVat ?? 0,
+        });
+      }
+    }
+
+    if (data?.assignedItems != null) {
+      for (final item in data!.assignedItems!) {
+        combinedItems.add({
+          'productName': item.productName ?? 'Item',
+          'name': item.productName ?? 'Item',
+          'price_incl_vat': item.salePriceIncVat ?? 0,
+        });
+      }
+    }
+
+    final calculatedSubTotal = combinedItems.fold<double>(
+      0.0,
+      (sum, item) =>
+          sum +
+          (item['price_incl_vat'] is num
+              ? (item['price_incl_vat'] as num).toDouble()
+              : double.tryParse(item['price_incl_vat'].toString()) ?? 0.0),
+    );
 
     return my_jobs.SingleJobModel(
       success: widget.jobResponse.success,
@@ -337,7 +382,8 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
         subTotal: calculatedSubTotal,
         discount: 0.0,
         jobTrackingNumber: _completeJobData?.data?.jobTrackingNumber ?? data?.jobTrackingNumber ?? data?.jobNo,
-        assignedItems: assignedItemsList,
+        services: data?.services,
+        assignedItems: combinedItems,
         device: data?.device
             ?.map(
               (d) => my_jobs.Device(
@@ -357,39 +403,38 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
               ),
             )
             .toList(),
-        receiptFooter: finalReceiptFooter != null
-            ? my_jobs.ReceiptFooter(
-                companyLogo: finalReceiptFooter.companyLogo,
-                companyLogoURL:
-                    finalReceiptFooter.companyLogoURL.isNotEmpty &&
-                        !finalReceiptFooter.companyLogoURL.startsWith('http')
-                    ? '${ApiEndpoints.baseUrl}/file-upload/download/new?imagePath=${finalReceiptFooter.companyLogoURL}'
-                    : finalReceiptFooter.companyLogoURL,
-                address: my_jobs.Address(
-                  companyName: finalReceiptFooter.address.companyName,
-                  street: finalReceiptFooter.address.street,
-                  num: finalReceiptFooter.address.num,
-                  zip: finalReceiptFooter.address.zip,
-                  city: finalReceiptFooter.address.city,
-                  country: finalReceiptFooter.address.country,
-                ),
-                contact: my_jobs.ContactInfo(
-                  ceo: finalReceiptFooter.contact.ceo,
-                  telephone: finalReceiptFooter.contact.telephone,
-                  email: finalReceiptFooter.contact.email,
-                  website: finalReceiptFooter.contact.website,
-                ),
-                bank: my_jobs.Bank(
-                  bankName: finalReceiptFooter.bank.bankName,
-                  iban: finalReceiptFooter.bank.iban,
-                  bic: finalReceiptFooter.bank.bic,
-                ),
-              )
-            : null,
+        receiptFooter: my_jobs.ReceiptFooter(
+          companyLogo: pick(respFooter?.companyLogo, cubitFooter?.companyLogo),
+          companyLogoURL: FileService.getImageUrl(pick(respFooter?.companyLogoURL, cubitFooter?.companyLogoURL)),
+          address: my_jobs.Address(
+            companyName: pick(
+              respFooter?.address.companyName,
+              cubitFooter?.address.companyName,
+              storage.read('companyName') ?? '',
+            ),
+            street: pick(respFooter?.address.street, cubitFooter?.address.street),
+            num: pick(respFooter?.address.num, cubitFooter?.address.num),
+            zip: pick(respFooter?.address.zip, cubitFooter?.address.zip),
+            city: pick(respFooter?.address.city, cubitFooter?.address.city),
+            country: pick(respFooter?.address.country, cubitFooter?.address.country),
+          ),
+          contact: my_jobs.ContactInfo(
+            ceo: pick(respFooter?.contact.ceo, cubitFooter?.contact.ceo),
+            telephone: pick(respFooter?.contact.telephone, cubitFooter?.contact.telephone),
+            email: pick(respFooter?.contact.email, cubitFooter?.contact.email),
+            website: pick(respFooter?.contact.website, cubitFooter?.contact.website),
+          ),
+          bank: my_jobs.Bank(
+            bankName: pick(respFooter?.bank.bankName, cubitFooter?.bank.bankName),
+            iban: pick(respFooter?.bank.iban, cubitFooter?.bank.iban),
+            bic: pick(respFooter?.bank.bic, cubitFooter?.bank.bic),
+          ),
+        ),
         customerDetails: finalCustomerDetails != null
             ? my_jobs.CustomerDetails(
                 customerId: finalCustomerDetails.customerId,
                 type: finalCustomerDetails.type,
+                type2: finalCustomerDetails.type2,
                 organization: finalCustomerDetails.organization,
                 customerNo: finalCustomerDetails.customerNo,
                 email: finalCustomerDetails.email,
@@ -398,10 +443,29 @@ class _JobThermalReceiptPreviewScreenState extends State<JobThermalReceiptPrevie
                 salutation: finalCustomerDetails.salutation,
                 firstName: finalCustomerDetails.firstName,
                 lastName: finalCustomerDetails.lastName,
+                position: finalCustomerDetails.position,
+                billingAddress: my_jobs.BillingAddress(
+                  street:
+                      '${finalCustomerDetails.billingAddress.street ?? ''} ${finalCustomerDetails.billingAddress.no ?? ''}'
+                          .trim(),
+                  zip: finalCustomerDetails.billingAddress.zip,
+                  city: finalCustomerDetails.billingAddress.city,
+                  state: finalCustomerDetails.billingAddress.state,
+                  country: finalCustomerDetails.billingAddress.country,
+                ),
+                shippingAddress: my_jobs.ShippingAddress(
+                  street:
+                      '${finalCustomerDetails.shippingAddress.street ?? ''} ${finalCustomerDetails.shippingAddress.no ?? ''}'
+                          .trim(),
+                  zip: finalCustomerDetails.shippingAddress.zip,
+                  city: finalCustomerDetails.shippingAddress.city,
+                  country: finalCustomerDetails.shippingAddress.country,
+                ),
               )
             : null,
         salutationHTMLmarkup: finalSalutation,
         termsAndConditionsHTMLmarkup: finalTerms,
+        loggedUserId: agentUser,
       ),
     );
   }

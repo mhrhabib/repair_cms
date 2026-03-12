@@ -5,8 +5,7 @@ import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/features/myJobs/models/single_job_model.dart'
-    hide DateFormat;
+import 'package:repair_cms/features/myJobs/models/single_job_model.dart' hide DateFormat;
 
 /// Thermal receipt widget that matches the web React-PDF implementation
 /// Width: 300 (equivalent to 80mm thermal paper)
@@ -15,8 +14,7 @@ class ThermalReceiptWidget extends StatelessWidget {
   final bool logoEnabled;
   final bool qrCodeEnabled;
   final bool enableTelephoneNumber;
-  final double
-  fontScale; // Scale factor for all fonts (1.0 = normal, 0.8 = 20% smaller)
+  final double fontScale; // Scale factor for all fonts (1.0 = normal, 0.8 = 20% smaller)
 
   const ThermalReceiptWidget({
     super.key,
@@ -38,19 +36,29 @@ class ThermalReceiptWidget extends StatelessWidget {
   }
 
   String _formatCurrency(dynamic amount) {
-    if (amount == null) return '€0.00';
+    if (amount == null) return '£0.00';
     final value = amount is num ? amount.toDouble() : 0.0;
-    return '€${value.toStringAsFixed(2)}';
+    return '£${value.toStringAsFixed(2)}';
   }
 
   double _getTotalAmount() {
     final data = jobData.data;
-    if (data?.assignedItems == null || data!.assignedItems!.isEmpty) {
+    final List<dynamic> allItems = [];
+    if (data?.services != null) allItems.addAll(data!.services!);
+    if (data?.assignedItems != null) allItems.addAll(data!.assignedItems!);
+
+    if (allItems.isEmpty) {
       return data?.subTotal?.toDouble() ?? 0.0;
     }
-    return data.assignedItems!.fold(0.0, (sum, item) {
-      if (item is Map<String, dynamic>) {
-        final price = item['price_incl_vat'] ?? item['salePriceIncVat'] ?? 0;
+
+    return allItems.fold(0.0, (sum, item) {
+      if (item is Map) {
+        final price =
+            item['price_incl_vat'] ??
+            item['priceInclVat'] ??
+            item['salePriceIncVat'] ??
+            item['sale_price_inc_vat'] ??
+            0;
         return sum + (price is num ? price.toDouble() : 0.0);
       }
       return sum;
@@ -68,6 +76,10 @@ class ThermalReceiptWidget extends StatelessWidget {
     final customerDetails = data.customerDetails;
     final device = data.device?.isNotEmpty == true ? data.device![0] : null;
     final defect = data.defect?.isNotEmpty == true ? data.defect![0] : null;
+    final List<dynamic> totalItems = [];
+    if (data.services != null) totalItems.addAll(data.services!);
+    if (data.assignedItems != null) totalItems.addAll(data.assignedItems!);
+
     final totalAmount = _getTotalAmount();
     final discount = data.discount?.toDouble() ?? 0.0;
     final finalAmount = totalAmount - discount;
@@ -84,10 +96,7 @@ class ThermalReceiptWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // === LOGO ===
-          if (logoEnabled && _hasLogo(receiptFooter)) ...[
-            _buildLogo(receiptFooter!),
-            const SizedBox(height: 15),
-          ],
+          if (logoEnabled && _hasLogo(receiptFooter)) ...[_buildLogo(receiptFooter!), const SizedBox(height: 15)],
 
           // === COMPANY HEADER ===
           _buildCompanyHeader(receiptFooter),
@@ -102,27 +111,21 @@ class ThermalReceiptWidget extends StatelessWidget {
           const SizedBox(height: 5),
 
           // === BARCODE ===
-          if (data.jobNo != null && data.jobNo!.isNotEmpty) ...[
-            _buildBarcode(data.jobNo!),
-            const SizedBox(height: 6),
-          ],
+          if (data.jobNo != null && data.jobNo!.isNotEmpty) ...[_buildBarcode(data.jobNo!), const SizedBox(height: 6)],
 
           // === JOB RECEIPT TITLE ===
           _buildText('Job Receipt', bold: true, fontSize: 16),
           const SizedBox(height: 6),
 
           // === SALUTATION HTML ===
-          if (data.salutationHTMLmarkup != null &&
-              data.salutationHTMLmarkup!.isNotEmpty) ...[
+          if (data.salutationHTMLmarkup != null && data.salutationHTMLmarkup!.isNotEmpty) ...[
             _buildHtmlContent(data.salutationHTMLmarkup!),
             const SizedBox(height: 6),
           ],
 
           // === JOB TYPE / REFERENCE ===
           _buildSectionHeader('Job Type / Reference:'),
-          _buildSectionContent(
-            '${data.jobTypes ?? ''}${defect?.reference != null ? ', ${defect!.reference}' : ''}',
-          ),
+          _buildSectionContent('${data.jobTypes ?? ''}${defect?.reference != null ? ', ${defect!.reference}' : ''}'),
           const SizedBox(height: 6),
 
           // === DEVICE DETAILS ===
@@ -140,18 +143,17 @@ class ThermalReceiptWidget extends StatelessWidget {
           ],
 
           // === PHYSICAL LOCATION ===
-          if (data.physicalLocation != null &&
-              data.physicalLocation!.isNotEmpty) ...[
+          if (data.physicalLocation != null && data.physicalLocation!.isNotEmpty) ...[
             _buildSectionHeader('Physical Location:'),
             _buildSectionContent(data.physicalLocation!),
             const SizedBox(height: 6),
           ],
 
           // === SERVICES / LINE ITEMS ===
-          if (data.assignedItems != null && data.assignedItems!.isNotEmpty) ...[
+          if (totalItems.isNotEmpty) ...[
             _buildServicesHeader(),
             const SizedBox(height: 5),
-            _buildServicesList(data.assignedItems!),
+            _buildServicesList(totalItems),
             const SizedBox(height: 21),
             _buildTotals(totalAmount, discount, finalAmount),
           ],
@@ -159,15 +161,13 @@ class ThermalReceiptWidget extends StatelessWidget {
           const SizedBox(height: 21),
 
           // === TERMS AND CONDITIONS HTML ===
-          if (data.termsAndConditionsHTMLmarkup != null &&
-              data.termsAndConditionsHTMLmarkup!.isNotEmpty) ...[
+          if (data.termsAndConditionsHTMLmarkup != null && data.termsAndConditionsHTMLmarkup!.isNotEmpty) ...[
             _buildHtmlContent(data.termsAndConditionsHTMLmarkup!),
             const SizedBox(height: 8),
           ],
 
           // === SIGNATURE ===
-          if (data.signatureFilePath != null &&
-              data.signatureFilePath!.isNotEmpty) ...[
+          if (data.signatureFilePath != null && data.signatureFilePath!.isNotEmpty) ...[
             _buildSignature(data.signatureFilePath!),
             const SizedBox(height: 4),
             _buildSignatureLine(customerDetails),
@@ -176,9 +176,7 @@ class ThermalReceiptWidget extends StatelessWidget {
           const SizedBox(height: 15),
 
           // === QR CODE FOR TRACKING ===
-          if (qrCodeEnabled &&
-              data.jobTrackingNumber != null &&
-              data.jobTrackingNumber!.isNotEmpty) ...[
+          if (qrCodeEnabled && data.jobTrackingNumber != null && data.jobTrackingNumber!.isNotEmpty) ...[
             _buildTrackingQrCode(trackingQrUrl),
           ],
 
@@ -200,8 +198,7 @@ class ThermalReceiptWidget extends StatelessWidget {
 
   bool _hasLogo(ReceiptFooter? footer) {
     if (footer == null) return false;
-    return (footer.companyLogoURL != null &&
-            footer.companyLogoURL!.isNotEmpty) ||
+    return (footer.companyLogoURL != null && footer.companyLogoURL!.isNotEmpty) ||
         (footer.companyLogo != null && footer.companyLogo!.isNotEmpty);
   }
 
@@ -210,9 +207,7 @@ class ThermalReceiptWidget extends StatelessWidget {
     if (logoUrl.isEmpty) return const SizedBox.shrink();
 
     return Image.network(
-      logoUrl.startsWith('http')
-          ? logoUrl
-          : 'https://api.repaircms.com/file-upload/download/new?imagePath=$logoUrl',
+      logoUrl.startsWith('http') ? logoUrl : 'https://api.repaircms.com/file-upload/download/new?imagePath=$logoUrl',
       height: 80,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
@@ -225,10 +220,8 @@ class ThermalReceiptWidget extends StatelessWidget {
     final address = footer.address;
     return Column(
       children: [
-        if (address?.companyName != null && address!.companyName!.isNotEmpty)
-          _buildText(address.companyName!),
-        if (address?.street != null)
-          _buildText('${address!.street ?? ''} ${address.num ?? ''}'.trim()),
+        if (address?.companyName != null && address!.companyName!.isNotEmpty) _buildText(address.companyName!),
+        if (address?.street != null) _buildText('${address!.street ?? ''} ${address.num ?? ''}'.trim()),
         if (address?.zip != null || address?.city != null)
           _buildText('${address?.zip ?? ''} ${address?.city ?? ''}'.trim()),
         // These fields should come from company tax details
@@ -252,45 +245,32 @@ class ThermalReceiptWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Organization or Name
-          if (customer.organization != null &&
-              customer.organization!.isNotEmpty)
+          if (customer.organization != null && customer.organization!.isNotEmpty)
             _buildText(customer.organization!, align: TextAlign.left)
-          else if ((customer.firstName?.isNotEmpty ?? false) ||
-              (customer.lastName?.isNotEmpty ?? false))
-            _buildText(
-              '${customer.firstName ?? ''} ${customer.lastName ?? ''}'.trim(),
-              align: TextAlign.left,
-            ),
+          else if ((customer.firstName?.isNotEmpty ?? false) || (customer.lastName?.isNotEmpty ?? false))
+            _buildText('${customer.firstName ?? ''} ${customer.lastName ?? ''}'.trim(), align: TextAlign.left),
           // Telephone
-          if (enableTelephoneNumber &&
-              customer.telephone != null &&
-              customer.telephone!.isNotEmpty)
-            _buildText(
-              '${customer.telephonePrefix ?? ''} ${customer.telephone}'.trim(),
-              align: TextAlign.left,
-            ),
+          if (enableTelephoneNumber && customer.telephone != null && customer.telephone!.isNotEmpty)
+            _buildText('${customer.telephonePrefix ?? ''} ${customer.telephone}'.trim(), align: TextAlign.left),
           // Billing Address - Street
-          if (hasStreet)
-            _buildText(billingAddress!.street!, align: TextAlign.left),
+          if (hasStreet) _buildText(billingAddress!.street!, align: TextAlign.left),
           // Billing Address - State
-          if (hasState)
-            _buildText(billingAddress!.state!, align: TextAlign.left),
+          if (hasState) _buildText(billingAddress!.state!, align: TextAlign.left),
           // Billing Address - Zip and City
           if (hasZip || hasCity)
-            _buildText(
-              '${billingAddress?.zip ?? ''} ${billingAddress?.city ?? ''}'
-                  .trim(),
-              align: TextAlign.left,
-            ),
+            _buildText('${billingAddress?.zip ?? ''} ${billingAddress?.city ?? ''}'.trim(), align: TextAlign.left),
           // Billing Address - Country (translated if needed)
-          if (hasCountry)
-            _buildText(billingAddress!.country!, align: TextAlign.left),
+          if (hasCountry) _buildText(billingAddress!.country!, align: TextAlign.left),
         ],
       ),
     );
   }
 
   Widget _buildJobInfoRow(Data data, CustomerDetails? customer) {
+    final agentName = (data.loggedUserId != null && data.loggedUserId!.isNotEmpty)
+        ? data.loggedUserId![0].fullName
+        : null;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,6 +280,7 @@ class ThermalReceiptWidget extends StatelessWidget {
           children: [
             _buildText('Job No:', align: TextAlign.left),
             _buildText('Date:', align: TextAlign.left),
+            if (agentName != null) _buildText('Agent:', align: TextAlign.left),
             _buildText('Customer No:', align: TextAlign.left),
           ],
         ),
@@ -308,6 +289,7 @@ class ThermalReceiptWidget extends StatelessWidget {
           children: [
             _buildText(data.jobNo ?? data.sId ?? '', align: TextAlign.right),
             _buildText(_formatDate(data.createdAt), align: TextAlign.right),
+            if (agentName != null) _buildText(agentName, align: TextAlign.right),
             _buildText(customer?.customerNo ?? '', align: TextAlign.right),
           ],
         ),
@@ -332,10 +314,7 @@ class ThermalReceiptWidget extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-      ),
+      child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -362,19 +341,12 @@ class ThermalReceiptWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (device.model != null)
-            _buildText(device.model!, align: TextAlign.left),
+          if (device.model != null) _buildText(device.model!, align: TextAlign.left),
           if (device.serialNo != null && device.serialNo!.isNotEmpty)
             _buildText('Serial No: ${device.serialNo}', align: TextAlign.left),
           if (device.condition != null && device.condition!.isNotEmpty) ...[
             _buildText('Conditions:', align: TextAlign.left, fontSize: 14),
-            ...device.condition!.map(
-              (c) => _buildText(
-                '${c.value ?? ''},',
-                align: TextAlign.left,
-                fontSize: 14,
-              ),
-            ),
+            ...device.condition!.map((c) => _buildText('${c.value ?? ''},', align: TextAlign.left, fontSize: 14)),
           ],
         ],
       ),
@@ -394,9 +366,7 @@ class ThermalReceiptWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (defect.defect != null)
-            ...defect.defect!.map(
-              (d) => _buildText('${d.value ?? ''}, ', align: TextAlign.left),
-            ),
+            ...defect.defect!.map((d) => _buildText('${d.value ?? ''}, ', align: TextAlign.left)),
           if (defect.description != null && defect.description!.isNotEmpty)
             _buildText(defect.description!, align: TextAlign.left),
         ],
@@ -412,10 +382,7 @@ class ThermalReceiptWidget extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildText('Service', bold: true),
-          _buildText('Price', bold: true),
-        ],
+        children: [_buildText('Service', bold: true), _buildText('Price', bold: true)],
       ),
     );
   }
@@ -426,10 +393,14 @@ class ThermalReceiptWidget extends StatelessWidget {
         String productName = '';
         double price = 0.0;
 
-        if (item is Map<String, dynamic>) {
+        if (item is Map) {
           productName = item['productName'] ?? item['name'] ?? '';
           final priceValue =
-              item['price_incl_vat'] ?? item['salePriceIncVat'] ?? 0;
+              item['price_incl_vat'] ??
+              item['priceInclVat'] ??
+              item['salePriceIncVat'] ??
+              item['sale_price_inc_vat'] ??
+              0;
           price = priceValue is num ? priceValue.toDouble() : 0.0;
         }
 
@@ -439,10 +410,7 @@ class ThermalReceiptWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                flex: 3,
-                child: _buildText(productName, align: TextAlign.left),
-              ),
+              Expanded(flex: 3, child: _buildText(productName, align: TextAlign.left)),
               _buildText(_formatCurrency(price)),
             ],
           ),
@@ -456,32 +424,19 @@ class ThermalReceiptWidget extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildText('Subtotal', bold: true),
-            _buildText(_formatCurrency(totalAmount), bold: true),
-          ],
+          children: [_buildText('Subtotal', bold: true), _buildText(_formatCurrency(totalAmount), bold: true)],
         ),
         if (discount > 0) ...[
           const SizedBox(height: 2),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildText('Discount', bold: true),
-              _buildText('- ${_formatCurrency(discount)}', bold: true),
-            ],
+            children: [_buildText('Discount', bold: true), _buildText('- ${_formatCurrency(discount)}', bold: true)],
           ),
         ],
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 2),
-          height: 1,
-          color: const Color(0xFF707070),
-        ),
+        Container(margin: const EdgeInsets.symmetric(vertical: 2), height: 1, color: const Color(0xFF707070)),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildText('Total', bold: true),
-            _buildText(_formatCurrency(finalAmount), bold: true),
-          ],
+          children: [_buildText('Total', bold: true), _buildText(_formatCurrency(finalAmount), bold: true)],
         ),
       ],
     );
@@ -505,8 +460,7 @@ class ThermalReceiptWidget extends StatelessWidget {
             height: 60,
             width: 100,
             fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) =>
-                const SizedBox.shrink(),
+            errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
           ),
         );
       } catch (e) {
@@ -538,8 +492,7 @@ class ThermalReceiptWidget extends StatelessWidget {
         ),
         padding: const EdgeInsets.only(top: 4),
         child: _buildText(
-          'Date / Signature ${customer?.firstName ?? ''} ${customer?.lastName ?? ''}'
-              .trim(),
+          'Date / Signature ${customer?.firstName ?? ''} ${customer?.lastName ?? ''}'.trim(),
           fontSize: 11,
         ),
       ),
@@ -554,23 +507,14 @@ class ThermalReceiptWidget extends StatelessWidget {
           children: [
             Text(
               'Repair Tracking',
-              style: TextStyle(
-                color: Colors.blue[600],
-                fontSize: 10,
-                decoration: TextDecoration.none,
-              ),
+              style: TextStyle(color: Colors.blue[600], fontSize: 10, decoration: TextDecoration.none),
             ),
             const SizedBox(width: 4),
             Icon(Icons.open_in_new, size: 8, color: Colors.blue[600]),
           ],
         ),
         const SizedBox(height: 2),
-        QrImageView(
-          data: url,
-          version: QrVersions.auto,
-          size: 150,
-          errorCorrectionLevel: QrErrorCorrectLevel.H,
-        ),
+        QrImageView(data: url, version: QrVersions.auto, size: 150, errorCorrectionLevel: QrErrorCorrectLevel.H),
       ],
     );
   }
@@ -580,12 +524,9 @@ class ThermalReceiptWidget extends StatelessWidget {
 
     return Column(
       children: [
-        if (contact.telephone != null && contact.telephone!.isNotEmpty)
-          _buildText('Tel.: ${contact.telephone}'),
-        if (contact.email != null && contact.email!.isNotEmpty)
-          _buildText(contact.email!),
-        if (contact.website != null && contact.website!.isNotEmpty)
-          _buildText(contact.website!),
+        if (contact.telephone != null && contact.telephone!.isNotEmpty) _buildText('Tel.: ${contact.telephone}'),
+        if (contact.email != null && contact.email!.isNotEmpty) _buildText(contact.email!),
+        if (contact.website != null && contact.website!.isNotEmpty) _buildText(contact.website!),
       ],
     );
   }
@@ -595,7 +536,7 @@ class ThermalReceiptWidget extends StatelessWidget {
     bool bold = false,
     double fontSize = 12.0,
     Color? color,
-    TextAlign align = TextAlign.center,
+    TextAlign align = TextAlign.left,
   }) {
     return Text(
       text,

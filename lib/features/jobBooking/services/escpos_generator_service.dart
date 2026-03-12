@@ -73,10 +73,15 @@ class EscPosGeneratorService {
     }
 
     // Services/Line Items
-    final assignedItems = jobData['assignedItems'] as List?;
-    if (assignedItems != null && assignedItems.isNotEmpty) {
-      bytes.addAll(_printServicesSection(assignedItems));
-      bytes.addAll(_printTotals(jobData));
+    final List<dynamic> totalItems = [];
+    final svs = jobData['services'] as List?;
+    final items = jobData['assignedItems'] as List?;
+    if (svs != null) totalItems.addAll(svs);
+    if (items != null) totalItems.addAll(items);
+
+    if (totalItems.isNotEmpty) {
+      bytes.addAll(_printServicesSection(totalItems));
+      bytes.addAll(_printTotals(jobData, totalItems));
     }
 
     bytes.addAll(_feedLines(1));
@@ -377,9 +382,14 @@ class EscPosGeneratorService {
     bytes.addAll(_setLeftAlign());
 
     for (final item in assignedItems) {
-      if (item is Map<String, dynamic>) {
+      if (item is Map) {
         final name = item['productName'] ?? item['name'] ?? '';
-        final price = item['price_incl_vat'] ?? item['salePriceIncVat'] ?? 0;
+        final price =
+            item['price_incl_vat'] ??
+            item['priceInclVat'] ??
+            item['salePriceIncVat'] ??
+            item['sale_price_inc_vat'] ??
+            0;
 
         if (name.isNotEmpty) {
           bytes.addAll(_setLeftAlign());
@@ -397,18 +407,20 @@ class EscPosGeneratorService {
   }
 
   /// Print totals (subtotal, discount, total)
-  static List<int> _printTotals(Map<String, dynamic> jobData) {
+  static List<int> _printTotals(Map<String, dynamic> jobData, List allItems) {
     final List<int> bytes = [];
 
-    final assignedItems = jobData['assignedItems'] as List?;
     double subtotal = 0.0;
 
-    if (assignedItems != null) {
-      for (final item in assignedItems) {
-        if (item is Map<String, dynamic>) {
-          final price = item['price_incl_vat'] ?? item['salePriceIncVat'] ?? 0;
-          subtotal += (price is num ? price.toDouble() : 0.0);
-        }
+    for (final item in allItems) {
+      if (item is Map) {
+        final price =
+            item['price_incl_vat'] ??
+            item['priceInclVat'] ??
+            item['salePriceIncVat'] ??
+            item['sale_price_inc_vat'] ??
+            0;
+        subtotal += (price is num ? price.toDouble() : 0.0);
       }
     }
 
@@ -568,9 +580,9 @@ class EscPosGeneratorService {
   }
 
   static String _formatCurrency(dynamic amount) {
-    if (amount == null) return '€0.00';
+    if (amount == null) return '£0.00';
     final value = amount is num ? amount.toDouble() : 0.0;
-    return '€${value.toStringAsFixed(2)}';
+    return '£${value.toStringAsFixed(2)}';
   }
 
   /// Strip HTML tags from text (for salutation and terms)
