@@ -13,15 +13,14 @@ class PrinterSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
+      backgroundColor: AppColors.kBg,
+      appBar: CupertinoNavigationBar(
+        backgroundColor: AppColors.kBg,
         leading: CustomNavButton(
           onPressed: () => Navigator.pop(context),
           icon: CupertinoIcons.back,
         ),
-        title: const Text(
+        middle: const Text(
           'Printer Settings',
           style: TextStyle(
             color: Colors.black87,
@@ -29,7 +28,6 @@ class PrinterSettingsScreen extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
@@ -47,7 +45,7 @@ class PrinterSettingsScreen extends StatelessWidget {
                   debugPrint('🔄 [PrinterSettings] Navigating to A4 Printer');
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const A4PrinterScreen(),
+                      builder: (context) => const A4ReceiptPrinterScreen(),
                     ),
                   );
                 } catch (e) {

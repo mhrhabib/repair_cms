@@ -132,7 +132,7 @@ class StepBrandWidgetState extends State<StepBrandWidget> {
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: BlocBuilder<BrandCubit, BrandState>(
               builder: (context, state) {
-                if (state is BrandLoading) {
+                if (state is BrandLoading && _selectedBrand.isEmpty) {
                   return SizedBox(
                     height: 60.h,
                     child: Center(child: ShimmerLoader()),
@@ -182,6 +182,7 @@ class StepBrandWidgetState extends State<StepBrandWidget> {
                     noItemsText: 'No brands found',
                     displayAllSuggestionWhenTap: true,
                     isMultiSelectDropdown: false,
+                    suggestionsBoxColor: AppColors.whiteColor,
                     onSuggestionSelected: (brand) async {
                       if (brand.id == null &&
                           brand.name?.startsWith('Add "') == true) {

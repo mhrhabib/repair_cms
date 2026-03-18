@@ -174,7 +174,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: BlocBuilder<ModelsCubit, ModelsState>(
               builder: (context, state) {
-                if (state is ModelsLoading) {
+                if (state is ModelsLoading && _selectedModel.isEmpty) {
                   return SizedBox(
                     height: 60.h,
                     child: Center(child: ShimmerLoader()),
@@ -222,6 +222,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
                     noItemsText: 'No models found',
                     displayAllSuggestionWhenTap: true,
                     isMultiSelectDropdown: false,
+                    suggestionsBoxColor: AppColors.whiteColor,
                     onSuggestionSelected: (model) async {
                       if (model.sId == null &&
                           model.name?.startsWith('Add "') == true) {

@@ -5,7 +5,12 @@ class LoginResponseModel {
   final String? error;
   final LoginData? data;
 
-  LoginResponseModel({required this.success, required this.message, this.error, this.data});
+  LoginResponseModel({
+    required this.success,
+    required this.message,
+    this.error,
+    this.data,
+  });
 
   factory LoginResponseModel.fromJson(Map<String, dynamic> json) {
     return LoginResponseModel(
@@ -24,7 +29,10 @@ class LoginData {
   LoginData({required this.accessToken, required this.user});
 
   factory LoginData.fromJson(Map<String, dynamic> json) {
-    return LoginData(accessToken: json['accessToken'] ?? '', user: User.fromJson(json['user']));
+    return LoginData(
+      accessToken: json['accessToken'] ?? '',
+      user: User.fromJson(json['user']),
+    );
   }
 }
 
@@ -37,6 +45,7 @@ class User {
   final String userType;
   final bool isSubUser;
   final String role;
+  final String? ownerId;
   final Location? location;
   final Subscription? subscription;
   final Map<String, dynamic> currency;
@@ -53,6 +62,7 @@ class User {
     required this.userType,
     required this.isSubUser,
     required this.role,
+    this.ownerId,
     this.location,
     this.subscription,
     required this.currency,
@@ -71,8 +81,13 @@ class User {
       userType: json['userType'] ?? '',
       isSubUser: json['isSubUser'] ?? false,
       role: json['role'] ?? '',
-      location: json['location'] != null ? Location.fromJson(json['location']) : null,
-      subscription: json['subscription'] != null ? Subscription.fromJson(json['subscription']) : null,
+      ownerId: json['ownerId'],
+      location: json['location'] != null
+          ? Location.fromJson(json['location'])
+          : null,
+      subscription: json['subscription'] != null
+          ? Subscription.fromJson(json['subscription'])
+          : null,
       currency: json['currency'] ?? {},
       timeZone: json['timeZone'] ?? {},
       repaircmsAccess: json['repaircms_access'] ?? false,
@@ -90,6 +105,7 @@ class User {
       'userType': userType,
       'isSubUser': isSubUser,
       'role': role,
+      'ownerId': ownerId,
       'location': location?.toJson(),
       'subscription': subscription?.toJson(),
       'currency': currency,

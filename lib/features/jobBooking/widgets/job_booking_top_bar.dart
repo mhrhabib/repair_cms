@@ -1,4 +1,5 @@
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
 
 /// A consistent top bar for all inner job booking screens.
 ///
@@ -117,31 +118,10 @@ class _JobBookingTopBarState extends State<JobBookingTopBar>
         // ── Close button on the right ─────────────────────────────────────
         if (widget.showCancelButton)
           Padding(
-            padding: EdgeInsets.only(right: 24.w),
-            child: GestureDetector(
-              onTap: () => _onCancel(context),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: Color(0xFFF7F7F8),
-                  borderRadius: BorderRadius.circular(30.r),
-                  border: Border.all(color: Colors.white, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0x1C000000),
-                      blurRadius: 20,
-                      offset: const Offset(0, 0),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  'Close',
-                  style: AppTypography.fontSize16.copyWith(
-                    color: const Color(0xFF4B4B69),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+            padding: EdgeInsets.only(right: 16.w),
+            child: CustomTextButton(
+              onPressed: () => _onCancel(context),
+              text: 'Close',
             ),
           ),
 

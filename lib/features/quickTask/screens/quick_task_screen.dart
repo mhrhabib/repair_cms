@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
+import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
 
@@ -57,8 +59,9 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.kBg,
       appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
+        backgroundColor: Colors.transparent,
         middle: Text(
           'To-Do\'s',
           style: AppTypography.fontSize20.copyWith(
@@ -71,11 +74,11 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
           icon: CupertinoIcons.back,
         ),
 
-        trailing: CustomNavButton(
-          icon: Icons.add,
-          iconColor: Colors.white,
+        trailing: CustomTextButton(
+          text: 'Add',
+          textColor: AppColors.fontSecondaryColor,
           onPressed: _showAddTodoDialog,
-          backgroundColor: Colors.blue.shade200,
+          // backgroundColor: Colors.blue.shade200,
         ),
       ),
       body: BlocBuilder<QuickTaskCubit, QuickTaskState>(
@@ -154,7 +157,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
                   padding: EdgeInsets.all(4.w),
                   decoration: BoxDecoration(
                     color: AppColors.lightFontColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16.r),
+                    borderRadius: BorderRadius.circular(28.r),
                     border: Border.all(
                       color: AppColors.borderColor.withValues(alpha: 0.3),
                     ),
@@ -220,7 +223,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
           padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
           decoration: BoxDecoration(
             color: isActive ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(28.r),
             boxShadow: isActive
                 ? [
                     BoxShadow(
@@ -348,17 +351,22 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
+      decoration: ShapeDecoration(
+        color: AppColors.kCardBg,
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius(
+            cornerRadius: 28.r,
+            cornerSmoothing: 1.0,
+          ),
+          side: BorderSide(color: AppColors.borderColor),
+        ),
+        shadows: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -384,14 +392,19 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
               duration: const Duration(milliseconds: 300),
               width: 24.w,
               height: 24.h,
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: isCompleted ? AppColors.primary : AppColors.whiteColor,
-                borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(
-                  color: isCompleted
-                      ? AppColors.primary
-                      : AppColors.borderColor,
-                  width: 2,
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius(
+                    cornerRadius: 8.r,
+                    cornerSmoothing: 1.0,
+                  ),
+                  side: BorderSide(
+                    color: isCompleted
+                        ? AppColors.primary
+                        : AppColors.borderColor,
+                    width: 2,
+                  ),
                 ),
               ),
               child: isCompleted
@@ -461,9 +474,14 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
 
           // Delete button with better styling
           Container(
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: AppColors.warningColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8.r),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: 8.r,
+                  cornerSmoothing: 1.0,
+                ),
+              ),
             ),
             child: IconButton(
               onPressed: () => _showDeleteDialog(task),
@@ -547,8 +565,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
+                        CustomTextButton(
                           onPressed: () {
                             if (!mounted) return;
                             try {
@@ -562,14 +579,12 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
                               );
                             }
                           },
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: CupertinoColors.systemGrey,
-                              fontSize: 17.sp,
-                            ),
-                          ),
+                          text: 'Cancel',
+                          textColor: CupertinoColors.systemGrey,
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w500,
                         ),
+
                         Text(
                           'Add Task',
                           style: TextStyle(
@@ -578,8 +593,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
                             color: AppColors.fontMainColor,
                           ),
                         ),
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
+                        CustomTextButton(
                           onPressed: () {
                             if (!mounted) return;
                             if (textController.text.trim().isNotEmpty) {
@@ -596,14 +610,10 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
                               }
                             }
                           },
-                          child: Text(
-                            'Add',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 17.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          text: 'Add',
+                          textColor: CupertinoColors.systemGrey,
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w600,
                         ),
                       ],
                     ),

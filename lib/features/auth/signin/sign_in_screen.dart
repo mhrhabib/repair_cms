@@ -61,6 +61,7 @@ class _SignInScreenState extends State<SignInScreen> {
       final hasCredentials =
           await BiometricStorageService.hasBiometricCredentials();
 
+      if (!mounted) return;
       setState(() {
         _showBiometricOption = isBiometricEnabled && hasCredentials;
         _hasCheckedBiometric = true;
@@ -73,18 +74,22 @@ class _SignInScreenState extends State<SignInScreen> {
       }
     } catch (e) {
       debugPrint('Error checking biometric status: $e');
-      setState(() {
-        _hasCheckedBiometric = true;
-      });
+      if (mounted) {
+        setState(() {
+          _hasCheckedBiometric = true;
+        });
+      }
     }
   }
 
   Future<void> _loadBiometricType() async {
     try {
       final type = await BiometricStorageService.getBiometricType();
-      setState(() {
-        _biometricType = type;
-      });
+      if (mounted) {
+        setState(() {
+          _biometricType = type;
+        });
+      }
       debugPrint('Loaded biometric type: $_biometricType');
     } catch (e) {
       debugPrint('Error loading biometric type: $e');
@@ -485,22 +490,21 @@ class _SignInScreenState extends State<SignInScreen> {
 
         if (credentials['email'] != null && credentials['password'] != null) {
           _emailController.text = credentials['email']!;
+          if (!mounted) return;
           setState(() {
             _isEmailValid = true;
           });
 
           // Trigger login using stored credentials so the cubit saves token
           // before navigation. Listener handles LoginSuccess -> navigate home.
-          if (mounted) {
-            setState(() {
-              _biometricLoginInProgress = true;
-            });
+          setState(() {
+            _biometricLoginInProgress = true;
+          });
 
-            context.read<SignInCubit>().login(
-              credentials['email']!,
-              credentials['password']!,
-            );
-          }
+          context.read<SignInCubit>().login(
+            credentials['email']!,
+            credentials['password']!,
+          );
         } else {
           SnackbarDemo(
             message: 'Credentials not found',

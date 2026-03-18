@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/service/service_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/service_response_model.dart';
@@ -199,22 +200,12 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
 
                     // Close button
                     Padding(
-                      padding: EdgeInsets.only(left: 16.w),
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          width: 40.w,
-                          height: 40.h,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4B4B69),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1),
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 20.sp,
-                          ),
+                      padding: EdgeInsets.only(right: 16.w),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: CustomTextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          text: 'Close',
                         ),
                       ),
                     ),

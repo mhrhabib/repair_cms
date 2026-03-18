@@ -228,7 +228,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           _isUploadingAvatar = false; // Reset upload state
         });
 
-        showCustomToast('Avatar uploaded successfully', isError: false);
+        // showCustomToast('Avatar uploaded successfully', isError: false);
       }
     } catch (error) {
       debugPrint('❌ [PersonalDetailsScreen] Error uploading avatar: $error');
@@ -441,10 +441,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             });
 
             // Show success message
-            showCustomToast(
-              'Profile picture updated successfully',
-              isError: false,
-            );
           } catch (e) {
             debugPrint(
               '❌ [PersonalDetailsScreen] Error updating UI after upload: $e',
@@ -601,9 +597,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         return Scaffold(
           backgroundColor: AppColors.scaffoldBackgroundColor,
           resizeToAvoidBottomInset: true,
-          appBar: AppBar(
+          appBar: CupertinoNavigationBar(
             backgroundColor: AppColors.scaffoldBackgroundColor,
-            elevation: 0,
             leading: CustomNavButton(
               onPressed: () {
                 if (!mounted) return;
@@ -618,7 +613,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               },
               icon: CupertinoIcons.back,
             ),
-            title: const Text(
+            middle: const Text(
               'Personal Details',
               style: TextStyle(
                 color: Colors.black87,
@@ -626,7 +621,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            centerTitle: true,
           ),
           body: _buildBody(context, state),
           bottomNavigationBar: _buildBottomButton(context, state),

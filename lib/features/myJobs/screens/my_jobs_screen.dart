@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_card_widget.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
@@ -134,25 +135,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     alignment: Alignment.centerRight,
                     child: Padding(
                       padding: const EdgeInsets.only(right: 16.0, top: 8.0),
-                      child: GestureDetector(
-                        onTap: () => _showFilterBottomSheet(context),
-                        child: Container(
-                          width: 48.w,
-                          height: 48.h,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF7F7F8),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.whiteColor,
-                              width: 1,
-                            ),
-                          ),
-                          child: Icon(
-                            SolarIconsOutline.sortVertical,
-                            color: const Color(0xFF3B82F6),
-                            size: 24.sp,
-                          ),
-                        ),
+                      child: CustomNavButton(
+                        icon: SolarIconsOutline.sortVertical,
+                        onPressed: () => _showFilterBottomSheet(context),
                       ),
                     ),
                   )
@@ -1369,6 +1354,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
+          backgroundColor: Colors.white,
           shape: SmoothRectangleBorder(
             borderRadius: SmoothBorderRadius(
               cornerRadius: 16.r,

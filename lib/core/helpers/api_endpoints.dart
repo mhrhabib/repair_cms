@@ -1,5 +1,5 @@
 class ApiEndpoints {
-  // static const String baseUrl = 'https://staging-api.repaircms.com';
+  // static const String baseUrl = 'https://api.repaircms.com';
   static const String baseUrl = 'https://api-p.repaircms.com';
   static const String findUserByEmail = '$baseUrl/auth/find-by-email/';
   static const String findByOwner = '$baseUrl/user/find-by-owner/';
@@ -61,7 +61,8 @@ class ApiEndpoints {
   //notifications
   static const String getAllNotifications = '$baseUrl/notification/user/<id>';
   static const String deleteNotification = '$baseUrl/notification/<id>';
-  static const String markNotificationAsRead = '$baseUrl/notification/<id>/read';
+  static const String markNotificationAsRead =
+      '$baseUrl/notification/<id>/read';
 
   //messages
 

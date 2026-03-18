@@ -372,7 +372,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                       foregroundColor: Colors.grey.shade700,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(28.r),
                       ),
                       side: BorderSide(color: Colors.grey.shade400),
                     ),
@@ -389,6 +389,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                 Expanded(
                   flex: 2,
                   child: CustomButton(
+                    height: 48.h,
                     text: _isLoading ? 'Changing...' : 'Change Password',
                     onPressed: _canSave && !_isLoading ? _changePassword : null,
                     isLoading: _isLoading,

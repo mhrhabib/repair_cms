@@ -98,7 +98,7 @@ class JobCardWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'JOB ID ${job.jobNo} | ${_getCustomerName()}',
+                    '${job.jobNo} | ${_getCustomerName()}',
                     style: GoogleFonts.roboto(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
@@ -177,12 +177,13 @@ class JobCardWidget extends StatelessWidget {
     );
   }
 
+  // bring company name from customer details if no comany name not availabe
+  // then show customername
   String _getCustomerName() {
     final firstName = job.customerDetails.firstName;
     final lastName = job.customerDetails.lastName;
-    return '$firstName $lastName'.trim().isNotEmpty
-        ? '$firstName $lastName'.trim()
-        : 'Unknown Customer';
+    final companyName = job.receiptFooter.address.companyName;
+    return companyName.isNotEmpty ? companyName : '$firstName $lastName'.trim();
   }
 
   String _getEmployeeName() {

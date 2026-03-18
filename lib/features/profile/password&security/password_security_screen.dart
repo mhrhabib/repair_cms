@@ -167,11 +167,10 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
       },
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: AppColors.scaffoldBackgroundColor,
+          backgroundColor: AppColors.kBg,
           resizeToAvoidBottomInset: true,
-          appBar: AppBar(
-            backgroundColor: AppColors.scaffoldBackgroundColor,
-            elevation: 0,
+          appBar: CupertinoNavigationBar(
+            backgroundColor: AppColors.kBg,
             leading: CustomNavButton(
               onPressed: () {
                 if (!mounted) return;
@@ -186,7 +185,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
               },
               icon: CupertinoIcons.back,
             ),
-            title: const Text(
+            middle: const Text(
               'Password & Security',
               style: TextStyle(
                 color: Colors.black87,
@@ -194,7 +193,6 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            centerTitle: true,
           ),
           body: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 12.w),

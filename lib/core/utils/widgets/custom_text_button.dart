@@ -1,32 +1,34 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 
-class CustomNavButton extends StatefulWidget {
+class CustomTextButton extends StatefulWidget {
   final VoidCallback onPressed;
-  final IconData icon;
-  final double? size;
+  final String text;
+  final Color? textColor;
+  final double? fontSize;
+  final FontWeight? fontWeight;
+  final Color? backgroundColor;
   final double? width;
   final double? height;
-  final Color? iconColor;
-  final Color? backgroundColor;
 
-  const CustomNavButton({
+  const CustomTextButton({
     super.key,
     required this.onPressed,
-    required this.icon,
-    this.size,
+    required this.text,
+    this.textColor,
+    this.fontSize,
+    this.fontWeight,
+    this.backgroundColor,
     this.width,
     this.height,
-    this.iconColor,
-    this.backgroundColor,
   });
 
   @override
-  State<CustomNavButton> createState() => _CustomNavButtonState();
+  State<CustomTextButton> createState() => _CustomTextButtonState();
 }
 
-class _CustomNavButtonState extends State<CustomNavButton>
+class _CustomTextButtonState extends State<CustomTextButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacityAnimation;
@@ -39,7 +41,6 @@ class _CustomNavButtonState extends State<CustomNavButton>
       duration: const Duration(milliseconds: 300),
     );
 
-    // Dissolve effect: ease-in opacity fade
     _opacityAnimation = Tween<double>(
       begin: 1.0,
       end: 0.4,
@@ -68,11 +69,10 @@ class _CustomNavButtonState extends State<CustomNavButton>
           return Opacity(opacity: _opacityAnimation.value, child: child);
         },
         child: Padding(
-          padding: const EdgeInsets.all(2.0),
+          padding: EdgeInsets.all(4.r), // room for shadow on all sides
           child: Container(
-            width: widget.width ?? 42.w,
-            height: widget.height ?? 42.h,
-            alignment: Alignment.center,
+            width: widget.width ?? 82.w, // Figma: width 82
+            height: widget.height ?? 42.h, // Figma: height 42
             decoration: BoxDecoration(
               color: widget.backgroundColor ?? const Color(0xFFF7F7F8),
               borderRadius: BorderRadius.circular(
@@ -97,10 +97,18 @@ class _CustomNavButtonState extends State<CustomNavButton>
               ],
             ),
             child: Center(
-              child: Icon(
-                widget.icon,
-                color: widget.iconColor ?? AppColors.lightFontColor,
-                size: widget.size ?? 24.sp,
+              child: Text(
+                widget.text,
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: widget.fontWeight ?? FontWeight.w500,
+                  fontSize: widget.fontSize ?? 16.sp,
+                  height: 1.0,
+                  letterSpacing: 0,
+                  color: widget.textColor ?? const Color(0xFF71788F), // #71788F
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),

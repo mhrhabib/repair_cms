@@ -20,7 +20,12 @@ class JobDeviceLabelScreen extends StatefulWidget {
   final String printOption;
   final String? jobNo;
 
-  const JobDeviceLabelScreen({super.key, required this.jobResponse, required this.printOption, this.jobNo});
+  const JobDeviceLabelScreen({
+    super.key,
+    required this.jobResponse,
+    required this.printOption,
+    this.jobNo,
+  });
 
   @override
   State<JobDeviceLabelScreen> createState() => _JobDeviceLabelScreenState();
@@ -52,7 +57,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
     try {
       SnackbarDemo(message: 'Preparing label...').showCustomSnackbar(context);
 
-      debugPrint('🖨️ Printing with ${printer.printerBrand} ${printer.printerType}');
+      debugPrint(
+        '🖨️ Printing with ${printer.printerBrand} ${printer.printerType}',
+      );
 
       // Build label data
       final labelData = {
@@ -70,7 +77,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       debugPrint('📱 Device: ${labelData['deviceName']}');
       debugPrint('🔢 IMEI: ${labelData['imei']}');
 
-      SnackbarDemo(message: 'Sending to printer...').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Sending to printer...',
+      ).showCustomSnackbar(context);
 
       // Try capturing label widget as image for high-fidelity label (barcode + QR)
       if (canPrintImage) {
@@ -82,29 +91,40 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         }
 
         // Try image printing with fallback handling for TD series printers
-        final imageResult = await PrinterServiceFactory.printLabelImageWithFallback(
-          config: printer,
-          imageBytes: imageBytes,
-        );
+        final imageResult =
+            await PrinterServiceFactory.printLabelImageWithFallback(
+              config: printer,
+              imageBytes: imageBytes,
+            );
 
         if (imageResult.success) {
-          SnackbarDemo(message: imageResult.message).showCustomSnackbar(context);
+          SnackbarDemo(
+            message: imageResult.message,
+          ).showCustomSnackbar(context);
           return;
         }
 
         // If image printing not supported (TD series), fall back to text
-        debugPrint('⚠️ Image print not supported: ${imageResult.message}, trying text fallback');
+        debugPrint(
+          '⚠️ Image print not supported: ${imageResult.message}, trying text fallback',
+        );
 
         // Fallback: attempt structured/device label via SDK/raw fallback
         final labelText = _buildLabelText();
-        final textResult = await PrinterServiceFactory.printLabelWithFallback(config: printer, text: labelText);
+        final textResult = await PrinterServiceFactory.printLabelWithFallback(
+          config: printer,
+          text: labelText,
+        );
         if (textResult.success) {
           SnackbarDemo(message: textResult.message).showCustomSnackbar(context);
         } else {
           throw Exception(textResult.message);
         }
       } else {
-        final result = await PrinterServiceFactory.printDeviceLabelWithFallback(config: printer, labelData: labelData);
+        final result = await PrinterServiceFactory.printDeviceLabelWithFallback(
+          config: printer,
+          labelData: labelData,
+        );
 
         if (result.success) {
           SnackbarDemo(message: result.message).showCustomSnackbar(context);
@@ -207,7 +227,10 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
     final selectedPrinter = await showCupertinoModalPopup<PrinterConfigModel>(
       context: context,
-      builder: (context) => _PrinterSelectionDialog(printers: labelPrinters, onPrint: _printLabel),
+      builder: (context) => _PrinterSelectionDialog(
+        printers: labelPrinters,
+        onPrint: _printLabel,
+      ),
     );
 
     // If a printer was selected from the dialog, trigger printing
@@ -220,11 +243,20 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       backgroundColor: AppColors.kBg,
       appBar: CupertinoNavigationBar(
         backgroundColor: AppColors.kBg,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1)),
-        leading: CustomNavButton(onPressed: () => Navigator.of(context).pop(), icon: CupertinoIcons.back),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        leading: CustomNavButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: CupertinoIcons.back,
+        ),
         middle: Text(
           'Device Label',
-          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
+          style: TextStyle(
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade800,
+          ),
         ),
         trailing: CustomNavButton(
           onPressed: _handlePrintTap,
@@ -244,7 +276,13 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(8.r),
               border: Border.all(color: Colors.grey.shade300, width: 2),
-              boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, 2))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.shade300,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Container(
               // Let content size itself naturally
@@ -260,7 +298,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Barcode section
-                      if (_labelSettings.showBarcode || _labelSettings.showJobNo)
+                      if (_labelSettings.showBarcode ||
+                          _labelSettings.showJobNo)
                         Expanded(
                           flex: 6,
                           child: Column(
@@ -273,24 +312,37 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                                     barcode: Barcode.code128(),
                                     data: _getBarcodeData(),
                                     drawText: false,
-                                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black,
+                                    ),
                                   ),
                                 ),
-                              if (_labelSettings.showBarcode && _labelSettings.showJobNo) SizedBox(height: 8.h),
+                              if (_labelSettings.showBarcode &&
+                                  _labelSettings.showJobNo)
+                                SizedBox(height: 8.h),
                               if (_labelSettings.showJobNo)
                                 Text(
                                   _getJobNumber(),
-                                  style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                                  style: TextStyle(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black,
+                                  ),
                                   textAlign: TextAlign.left,
                                 ),
                             ],
                           ),
                         ),
-                      if ((_labelSettings.showBarcode || _labelSettings.showJobNo) &&
-                          (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR))
+                      if ((_labelSettings.showBarcode ||
+                              _labelSettings.showJobNo) &&
+                          (_labelSettings.showJobQR ||
+                              _labelSettings.showTrackingPortalQR))
                         SizedBox(width: 16.w),
                       // QR Code section
-                      if (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR)
+                      if (_labelSettings.showJobQR ||
+                          _labelSettings.showTrackingPortalQR)
                         Expanded(
                           flex: 4,
                           child: Column(
@@ -332,8 +384,10 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                           Text(
                             [
                               if (_labelSettings.showJobNo) _getJobNumber(),
-                              if (_labelSettings.showCustomerName) _getCustomerName(),
-                              if (_labelSettings.showModelBrand) '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
+                              if (_labelSettings.showCustomerName)
+                                _getCustomerName(),
+                              if (_labelSettings.showModelBrand)
+                                '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
                             ].where((e) => e.isNotEmpty).join(' | '),
                             style: TextStyle(
                               fontSize: 18.sp,
@@ -346,13 +400,16 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                         if ((_labelSettings.showJobNo ||
                                 _labelSettings.showCustomerName ||
                                 _labelSettings.showModelBrand) &&
-                            (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation))
+                            (_labelSettings.showSymptom ||
+                                _labelSettings.showPhysicalLocation))
                           SizedBox(height: 4.h),
-                        if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation)
+                        if (_labelSettings.showSymptom ||
+                            _labelSettings.showPhysicalLocation)
                           Text(
                             [
                               if (_labelSettings.showSymptom) _getDefect(),
-                              if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+                              if (_labelSettings.showPhysicalLocation)
+                                'BOX: ${_getPhysicalLocation()}',
                             ].where((e) => e.isNotEmpty).join(' | '),
                             style: TextStyle(
                               fontSize: 18.sp,
@@ -459,50 +516,97 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final widthPx = (labelWidthMm * dotsPerMm).round();
       final heightPx = (labelHeightMm * dotsPerMm).round();
 
-      debugPrint('📐 Printer: ${printer.printerModel ?? "unknown"} (${printer.printerBrand}), DPI: $dpi');
-      debugPrint('📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${widthPx}x${heightPx}px (NATIVE 1x)');
+      debugPrint(
+        '📐 Printer: ${printer.printerModel ?? "unknown"} (${printer.printerBrand}), DPI: $dpi',
+      );
+      debugPrint(
+        '📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${widthPx}x${heightPx}px (NATIVE 1x)',
+      );
 
       // Create a picture recorder and canvas at exact printer resolution
       final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()));
+      final canvas = Canvas(
+        recorder,
+        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+      );
 
       // White background
       final bgPaint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()), bgPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+        bgPaint,
+      );
+
+      // TD-4 detection: layout adjustments apply ONLY to TD-4 series.
+      // TD-2D and Xprinter use the original values — their output is already correct.
+      final isTD4 = (printer.printerModel?.toUpperCase() ?? '').startsWith('TD-4');
 
       // Offset compensates for Brother's unprintable hardware margins.
       // For Xprinter and other brands the TSPL SIZE/GAP commands already
       // handle the printable area, so zero offset is correct.
+      //
+      // TD-4 IMPORTANT: The Brother TD-4 SDK manages its own media margins
+      // internally (unlike TD-2). Applying a manual 50-dot canvas translate
+      // for TD-4 shifts content towards the right so the barcode starts too
+      // close to (or beyond) the left physical edge after the SDK repositions
+      // the image. Use zero offset for TD-4 and rely on percentage padding.
       final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
-      final double offsetX = isBrother ? 50.0 : 0.0;
-      final double offsetY = isBrother ? 50.0 : 0.0;
+      final double offsetX = (isBrother && !isTD4) ? 50.0 : 0.0;
+      final double offsetY = (isBrother && !isTD4) ? 50.0 : 0.0;
       if (offsetX > 0 || offsetY > 0) canvas.translate(offsetX, offsetY);
 
-      // Adjust content area to fit within shifted bounds
-      final drawableWidth = widthPx - offsetX;
-      final drawableHeight = heightPx - offsetY;
+      // Subtract BOTH the left AND right offsets so the drawable region is
+      // symmetric — previously only the left/top offset was subtracted, which
+      // allowed content to run all the way to the opposite edge of the canvas.
+      final drawableWidth = widthPx.toDouble() - 2 * offsetX;
+      final drawableHeight = heightPx.toDouble() - 2 * offsetY;
 
-      // Calculate layout dimensions (percentage-based, using drawable area)
-      // Use percentage of drawable dimensions so layout scales with resolution
-      final padding = drawableWidth * 0.02; // 2% padding
+      // Calculate layout dimensions (percentage-based, using drawable area).
+      // TD-4: use 5% edge padding to create a safe inset from all four sides
+      //   since the Brother SDK may position the image flush to the media edge.
+      // TD-2D / Xprinter: original 2% padding.
+      final padding = isTD4
+          ? drawableWidth * 0.05 // TD-4: 5% safe inset from each edge
+          : drawableWidth * 0.02; // TD-2D / Xprinter: original
       final contentWidth = drawableWidth - (padding * 2);
-      final barcodeWidth = contentWidth * 0.65; // 65% of content width for barcode
-      final barcodeHeight = drawableHeight * 0.24; // 24% of height for barcode
-      final qrSize = contentWidth * 0.22; // 22% for QR code (reduced from 28%)
+      final barcodeWidth =
+          contentWidth * 0.65; // 65% of content width for barcode
+      // TD-4: cap barcode height so it never pushes text off the bottom of the
+      //   canvas, regardless of label height (portrait vs. landscape).
+      // TD-2D/Xprinter: original ratio.
+      final barcodeHeight = isTD4
+          ? (drawableHeight * 0.22).clamp(120.0, 320.0) // capped for TD-4
+          : drawableHeight * 0.24; // original
+      final qrSize = isTD4
+          ? contentWidth * 0.28 // TD-4: ~28% of content width — easily scannable
+          : contentWidth * 0.22; // original
 
       // Draw barcode using barcode package
       final barcodeData = _getBarcodeData();
 
       // Draw barcode as rectangles (only if barcode setting is enabled)
       if (_labelSettings.showBarcode) {
-        _drawBarcode(canvas, barcodeData, padding, padding, barcodeWidth, barcodeHeight);
+        _drawBarcode(
+          canvas,
+          barcodeData,
+          padding,
+          padding,
+          barcodeWidth,
+          barcodeHeight,
+        );
       }
 
       // Font size proportional to the canvas height so text fits regardless
       // of device pixel ratio. 26.sp would be device-scaled (e.g. 78px on a 3×
       // device) and overflow a 208-dot Xprinter label. We clamp between 11–26.
-      final double baseFontSize = (drawableHeight * 0.075).clamp(18.0, 26.0);
-      final double lineSpacing = baseFontSize + 3.0;
+      // For TD-4 (300 DPI, 150 mm tall) the old 26-px ceiling produced 2.2 mm
+      // text — nearly invisible on a physical label. TD-4 gets its own formula.
+      final double baseFontSize = isTD4
+          ? (drawableHeight * 0.055).clamp(65.0, 95.0) // TD-4: larger range for all label sizes
+          : (drawableHeight * 0.075).clamp(18.0, 26.0); // TD-2D / Xprinter: original
+      final double lineSpacing = isTD4
+          ? baseFontSize * 1.35  // proportional gap for large canvas
+          : baseFontSize + 3.0;  // original fixed gap for small labels
 
       // Draw job number under barcode (only if showJobNo is enabled)
       double currentY = padding;
@@ -512,19 +616,30 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
           final textPainter = TextPainter(
             text: TextSpan(
               text: _getJobNumber(),
-              style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: baseFontSize,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             textDirection: TextDirection.ltr,
           );
           textPainter.layout(maxWidth: barcodeWidth);
-          textPainter.paint(canvas, Offset(padding + (barcodeWidth - textPainter.width) / 2, currentY));
+          textPainter.paint(
+            canvas,
+            Offset(padding + (barcodeWidth - textPainter.width) / 2, currentY),
+          );
           currentY += lineSpacing;
         }
       } else if (_labelSettings.showJobNo) {
         final textPainter = TextPainter(
           text: TextSpan(
             text: _getJobNumber(),
-            style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: baseFontSize,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           textDirection: TextDirection.ltr,
         );
@@ -541,8 +656,14 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
               : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
           version: QrVersions.auto,
           errorCorrectionLevel: QrErrorCorrectLevel.M,
-          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
-          dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
+          eyeStyle: const QrEyeStyle(
+            eyeShape: QrEyeShape.square,
+            color: Colors.black,
+          ),
+          dataModuleStyle: const QrDataModuleStyle(
+            dataModuleShape: QrDataModuleShape.square,
+            color: Colors.black,
+          ),
         );
 
         final qrX = drawableWidth - padding - qrSize;
@@ -583,7 +704,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation) {
         final line = [
           if (_labelSettings.showSymptom) _getDefect(),
-          if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+          if (_labelSettings.showPhysicalLocation)
+            'BOX: ${_getPhysicalLocation()}',
         ].where((e) => e.isNotEmpty).join(' | ');
         if (line.isNotEmpty) textLines.add(line);
       }
@@ -597,7 +719,11 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         final linePainter = TextPainter(
           text: TextSpan(
             text: textLines[i],
-            style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: baseFontSize,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           textDirection: TextDirection.ltr,
         );
@@ -633,10 +759,22 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   }
 
   /// Draw Code128 barcode manually using the barcode package
-  void _drawBarcode(Canvas canvas, String data, double x, double y, double width, double height) {
+  void _drawBarcode(
+    Canvas canvas,
+    String data,
+    double x,
+    double y,
+    double width,
+    double height,
+  ) {
     // Use barcode_widget's Barcode class (same as BarcodeWidget uses)
     final barcodeGen = Barcode.code128();
-    final elements = barcodeGen.make(data, width: width, height: height, drawText: false);
+    final elements = barcodeGen.make(
+      data,
+      width: width,
+      height: height,
+      drawText: false,
+    );
 
     final blackPaint = Paint()..color = Colors.black;
 
@@ -644,7 +782,15 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // BarcodeElement has left, top, width, height properties
       // BarcodeBar extends BarcodeElement and has a 'black' property
       if (element is BarcodeBar && element.black) {
-        canvas.drawRect(Rect.fromLTWH(x + element.left, y + element.top, element.width, element.height), blackPaint);
+        canvas.drawRect(
+          Rect.fromLTWH(
+            x + element.left,
+            y + element.top,
+            element.width,
+            element.height,
+          ),
+          blackPaint,
+        );
       }
     }
   }
@@ -655,7 +801,10 @@ class _PrinterSelectionDialog extends StatelessWidget {
   final List<PrinterConfigModel> printers;
   final Future<void> Function(PrinterConfigModel) onPrint;
 
-  const _PrinterSelectionDialog({required this.printers, required this.onPrint});
+  const _PrinterSelectionDialog({
+    required this.printers,
+    required this.onPrint,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -680,7 +829,11 @@ class _PrinterSelectionDialog extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(CupertinoIcons.printer, size: 24.r, color: AppColors.fontMainColor),
+              Icon(
+                CupertinoIcons.printer,
+                size: 24.r,
+                color: AppColors.fontMainColor,
+              ),
               SizedBox(width: 12.w),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -688,17 +841,27 @@ class _PrinterSelectionDialog extends StatelessWidget {
                 children: [
                   Text(
                     '${printer.printerBrand} ${printer.printerModel ?? ""}',
-                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF007AFF)),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF007AFF),
+                    ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     printer.ipAddress,
-                    style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                   if (printer.labelSize != null)
                     Text(
                       'Size: ${printer.labelSize!.width}mm × ${printer.labelSize!.height}mm',
-                      style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -19,10 +20,16 @@ class FcmTokenRepositoryImpl implements FcmTokenRepository {
       debugPrint('🚀 [FcmTokenRepository] Registering FCM token');
       debugPrint('   📍 URL: ${ApiEndpoints.fcmToken}');
 
+      var payload = {
+        'token': token,
+        'platform': Platform.isAndroid ? 'android' : 'ios',
+      };
+
       dio.Response response = await BaseClient.post(
         url: ApiEndpoints.fcmToken,
-        payload: {'token': token},
+        payload: payload,
       );
+      debugPrint(payload.toString());
 
       debugPrint('✅ [FcmTokenRepository] Register response received:');
       debugPrint('   📊 Status Code: ${response.statusCode}');

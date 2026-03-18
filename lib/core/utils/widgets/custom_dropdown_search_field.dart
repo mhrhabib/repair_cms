@@ -13,6 +13,7 @@ class CustomDropdownSearch<T> extends StatelessWidget {
   final bool displayAllSuggestionWhenTap;
   final bool isMultiSelectDropdown;
   final double? maxHeight;
+  final Color? suggestionsBoxColor;
 
   const CustomDropdownSearch({
     super.key,
@@ -26,6 +27,7 @@ class CustomDropdownSearch<T> extends StatelessWidget {
     this.displayAllSuggestionWhenTap = true,
     this.isMultiSelectDropdown = false,
     this.maxHeight,
+    this.suggestionsBoxColor,
   });
 
   @override
@@ -37,17 +39,36 @@ class CustomDropdownSearch<T> extends StatelessWidget {
       suggestionsCallback: suggestionsCallback,
       textFieldConfiguration: TextFieldConfiguration(
         controller: controller,
-        style: GoogleFonts.roboto(fontSize: 32.sp, color: AppColors.fontMainColor),
+        style: GoogleFonts.roboto(
+          fontSize: 32.sp,
+          color: AppColors.fontMainColor,
+        ),
         decoration: InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-          border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 16.h,
+          ),
+          border: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
           focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.blue), // You can customize this
+            borderSide: BorderSide(
+              color: Colors.blue,
+            ), // You can customize this
           ),
           hintText: hintText,
-          hintStyle: GoogleFonts.roboto(fontSize: 32.sp, color: Color(0xFFB2B5BE)),
-          suffixIcon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.fontMainColor, size: 32),
+          hintStyle: GoogleFonts.roboto(
+            fontSize: 32.sp,
+            color: Color(0xFFB2B5BE),
+          ),
+          suffixIcon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.fontMainColor,
+            size: 32,
+          ),
         ),
       ),
       onSuggestionSelected: onSuggestionSelected,
@@ -56,8 +77,9 @@ class CustomDropdownSearch<T> extends StatelessWidget {
         child: Text(noItemsText, style: TextStyle(fontSize: 14)),
       ),
       suggestionsBoxDecoration: SuggestionsBoxDecoration(
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(28.r),
         elevation: 4,
+        color: suggestionsBoxColor ?? AppColors.whiteColor,
         shadowColor: Colors.black.withValues(alpha: 0.1),
         constraints: BoxConstraints(maxHeight: maxHeight ?? 200.h),
       ),

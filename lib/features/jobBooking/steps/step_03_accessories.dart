@@ -1,6 +1,6 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/utils/widgets/enhanced_dropdown_search_field.dart';
+import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
 import 'package:repair_cms/core/utils/widgets/shimmer_loader.dart';
 import 'package:repair_cms/features/jobBooking/cubits/accessories/accessories_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
@@ -89,7 +89,7 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -107,7 +107,7 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
 
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: BlocBuilder<AccessoriesCubit, AccessoriesState>(
               builder: (context, state) {
                 if (state is AccessoriesLoading) {
@@ -149,78 +149,137 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                   final accessories = state is AccessoriesLoaded
                       ? state.accessories
                       : (state as AccessoriesSearchResult).accessories;
+                  final allAccessories = state is AccessoriesLoaded
+                      ? state.accessories
+                      : (state as AccessoriesSearchResult).allAccessories;
 
-                  return EnhancedDropdownSearch<Data>(
+                  return CustomDropdownSearch<Data>(
                     controller: _searchController,
-                    focusNode: _searchFocusNode,
                     items: accessories,
-                    hintText: 'Answere here',
+                    hintText: 'Answer here',
                     noItemsText: 'No accessories found',
-                    onSuggestionSelected: (accessory) {
-                      _selectAccessory(
-                        accessory.label ?? 'Unknown Accessory',
-                        accessory.sId ?? '',
+                    displayAllSuggestionWhenTap: true,
+                    isMultiSelectDropdown: false,
+                    suggestionsBoxColor: AppColors.whiteColor,
+                    onSuggestionSelected: (accessory) async {
+                      if (accessory.sId == null &&
+                          accessory.label?.startsWith('Add "') == true) {
+                        final accessoryName =
+                            accessory.label?.split('"')[1] ?? '';
+                        if (accessoryName.isNotEmpty) {
+                          await _createNewAccessory(accessoryName);
+                        }
+                      } else {
+                        _selectAccessory(
+                          accessory.label ?? 'Unknown Accessory',
+                          accessory.sId ?? '',
+                        );
+                      }
+                    },
+                    itemBuilder: (context, accessory) {
+                      final isNewOption =
+                          accessory.sId == null &&
+                          accessory.label?.startsWith('Add "') == true;
+
+                      if (isNewOption) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE3F2FD),
+                            border: Border.all(
+                              color: AppColors.primary,
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: ListTile(
+                            title: Row(
+                              children: [
+                                Text(
+                                  accessory.label?.split('"')[1] ?? '',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 22.sp,
+                                    color: AppColors.fontMainColor,
+                                  ),
+                                ),
+                                SizedBox(width: 8.w),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                    vertical: 2.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(4.r),
+                                  ),
+                                  child: Text(
+                                    'NEW',
+                                    style: AppTypography.fontSize12.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: _selectedAccessory == accessory.label
+                              ? const Color(0xFFFFF59D)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                            accessory.label ?? 'Unknown Accessory',
+                            style: GoogleFonts.roboto(
+                              fontSize: 22.sp,
+                              color: AppColors.fontMainColor,
+                            ),
+                          ),
+                        ),
                       );
                     },
-                    itemBuilder: (context, accessory) => ListTile(
-                      title: Text(
-                        accessory.label ?? 'Unknown Accessory',
-                        style: GoogleFonts.roboto(
-                          fontSize: 22.sp,
-                          color: AppColors.fontMainColor,
-                        ),
-                      ),
-                    ),
                     suggestionsCallback: (pattern) {
-                      if (pattern.isNotEmpty) {
-                        context.read<AccessoriesCubit>().searchAccessories(
-                          pattern,
-                        );
-                      } else {
-                        context.read<AccessoriesCubit>().clearSearch();
-                      }
-                      final s = context.read<AccessoriesCubit>().state;
-                      if (s is AccessoriesLoaded ||
-                          s is AccessoriesSearchResult) {
-                        final items = s is AccessoriesLoaded
-                            ? s.accessories
-                            : (s as AccessoriesSearchResult).accessories;
-                        return items
-                            .where(
-                              (a) => (a.label ?? '').toLowerCase().contains(
-                                pattern.toLowerCase(),
-                              ),
-                            )
-                            .toList();
-                      }
-                      return [];
-                    },
-                    noItemsFoundBuilder: (context, pattern) {
-                      if (pattern.isEmpty) return const SizedBox();
-                      return _buildNewOption(pattern);
-                    },
-                    customSuggestionBuilder: (context, pattern, filteredItems) {
-                      if (pattern.isNotEmpty &&
-                          filteredItems.isEmpty &&
-                          !_isCreatingAccessory) {
-                        return Column(
-                          children: [
-                            const Divider(height: 1),
-                            _buildNewOption(pattern),
-                          ],
+                      if (pattern.isEmpty) return allAccessories;
+
+                      final filtered = allAccessories
+                          .where(
+                            (a) => (a.label ?? '').toLowerCase().contains(
+                              pattern.toLowerCase(),
+                            ),
+                          )
+                          .toList();
+
+                      final exactMatch = filtered.any(
+                        (a) => a.label?.toLowerCase() == pattern.toLowerCase(),
+                      );
+
+                      if (!exactMatch && pattern.isNotEmpty) {
+                        filtered.insert(
+                          0,
+                          Data(
+                            sId: null,
+                            label: 'Add "$pattern" as new accessory',
+                          ),
                         );
                       }
-                      return const SizedBox();
+
+                      return filtered;
                     },
                   );
                 }
 
-                return EnhancedDropdownSearch<Data>(
+                return CustomDropdownSearch<Data>(
                   controller: _searchController,
-                  focusNode: _searchFocusNode,
                   items: [],
                   hintText: 'Loading accessories...',
                   noItemsText: 'No accessories available',
+                  displayAllSuggestionWhenTap: false,
+                  isMultiSelectDropdown: false,
                   onSuggestionSelected: (a) {},
                   itemBuilder: (context, a) =>
                       ListTile(title: Text(a.label ?? 'Unknown')),
@@ -336,52 +395,6 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
         // ),
         const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
       ],
-    );
-  }
-
-  Widget _buildNewOption(String pattern) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD),
-        border: Border.all(color: AppColors.primary, width: 1.5),
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: ListTile(
-        title: Row(
-          children: [
-            Text(
-              pattern,
-              style: AppTypography.fontSize16.copyWith(
-                color: Colors.black,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(width: 8.w),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(4.r),
-              ),
-              child: Text(
-                'NEW',
-                style: AppTypography.fontSize12.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        trailing: _isCreatingAccessory
-            ? SizedBox(
-                width: 16.w,
-                height: 16.h,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : null,
-        onTap: () => _createNewAccessory(pattern),
-      ),
     );
   }
 

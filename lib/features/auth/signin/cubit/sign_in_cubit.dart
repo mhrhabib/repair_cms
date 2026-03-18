@@ -54,7 +54,14 @@ class SignInCubit extends Cubit<SignInStates> {
           await storage.write('user', response.data!.user.toJson());
           await storage.write('isLoggedIn', true);
           await storage.write('userType', response.data!.user.userType);
-          await storage.write('userId', response.data!.user.id);
+          if (response.data!.user.userType == 'Owner') {
+            await storage.write('userId', response.data!.user.id);
+          } else {
+            await storage.write('userId', response.data!.user.ownerId);
+          }
+          debugPrint('🔐 User ID in: ${response.data!.user.id}');
+          debugPrint('🔐 User Owner ID in: ${response.data!.user.ownerId}');
+          debugPrint('🔐 User storage userId in: ${storage.read('userId')}');
           await storage.write('email', response.data!.user.email);
           await storage.write(
             'companyId',
@@ -67,7 +74,9 @@ class SignInCubit extends Cubit<SignInStates> {
           );
           saveUserTypeandId(
             response.data!.user.userType,
-            response.data!.user.id,
+            response.data!.user.userType == 'Owner'
+                ? response.data!.user.id
+                : response.data!.user.ownerId!,
           );
           // Trigger FCM token sync after successful login
           FirebaseNotificationService().syncToken();

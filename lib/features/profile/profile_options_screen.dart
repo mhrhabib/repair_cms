@@ -12,9 +12,9 @@ class ProfileOptionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
+      appBar: CupertinoNavigationBar(
         backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
+
         leading: CustomNavButton(
           onPressed: () {
             try {
@@ -26,7 +26,7 @@ class ProfileOptionsScreen extends StatelessWidget {
           },
           icon: CupertinoIcons.back,
         ),
-        title: const Text(
+        middle: const Text(
           'My Profile',
           style: TextStyle(
             color: Colors.black87,
@@ -34,7 +34,6 @@ class ProfileOptionsScreen extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        centerTitle: true,
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0.w),

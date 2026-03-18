@@ -1,8 +1,10 @@
 import 'package:repair_cms/core/app_exports.dart';
-import 'package:repair_cms/core/utils/widgets/enhanced_dropdown_search_field.dart';
+import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
 import 'package:repair_cms/features/jobBooking/cubits/accessories/accessories_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/accessories_model.dart';
 import 'package:repair_cms/features/jobBooking/screens/four/job_booking_imei_screen.dart';
+import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
+import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
 import 'package:repair_cms/features/jobBooking/widgets/job_booking_top_bar.dart';
 
@@ -53,8 +55,9 @@ class _JobBookingAccessoriesScreenState
       _searchController.text = accessoryName;
     });
 
-    // You can store the accessory ID if needed for your job booking
-    // context.read<JobBookingCubit>().updateAccessoryInfo(accessory: accessoryName, accessoryId: accessoryId);
+    context.read<JobBookingCubit>().updateDeviceInfo(
+      condition: [ConditionItem(value: accessoryName, id: accessoryId)],
+    );
   }
 
   Future<void> _createNewAccessory(String accessoryName) async {
@@ -180,193 +183,141 @@ class _JobBookingAccessoriesScreenState
                       final accessories = state is AccessoriesLoaded
                           ? state.accessories
                           : (state as AccessoriesSearchResult).accessories;
+                      final allAccessories = state is AccessoriesLoaded
+                          ? state.accessories
+                          : (state as AccessoriesSearchResult).allAccessories;
 
-                      return EnhancedDropdownSearch<Data>(
+                      return CustomDropdownSearch<Data>(
                         controller: _searchController,
-                        focusNode: _searchFocusNode,
                         items: accessories,
                         hintText: 'Search and select accessory...',
                         noItemsText: 'No accessories found',
-                        onSuggestionSelected: (accessory) {
-                          _selectAccessory(
-                            accessory.label ?? 'Unknown Accessory',
-                            accessory.sId ?? '',
-                          );
-                        },
-                        itemBuilder: (context, accessory) => ListTile(
-                          title: Text(
-                            accessory.label ?? 'Unknown Accessory',
-                            style: AppTypography.fontSize14.copyWith(
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                        suggestionsCallback: (pattern) {
-                          if (pattern.isEmpty) {
-                            return accessories;
-                          }
-
-                          // Use cubit search functionality
-                          if (pattern.isNotEmpty) {
-                            context.read<AccessoriesCubit>().searchAccessories(
-                              pattern,
-                            );
+                        displayAllSuggestionWhenTap: true,
+                        isMultiSelectDropdown: false,
+                        suggestionsBoxColor: AppColors.whiteColor,
+                        onSuggestionSelected: (accessory) async {
+                          if (accessory.sId == null &&
+                              accessory.label?.startsWith('Add "') == true) {
+                            final accessoryName =
+                                accessory.label?.split('"')[1] ?? '';
+                            if (accessoryName.isNotEmpty) {
+                              await _createNewAccessory(accessoryName);
+                            }
                           } else {
-                            context.read<AccessoriesCubit>().clearSearch();
+                            _selectAccessory(
+                              accessory.label ?? 'Unknown Accessory',
+                              accessory.sId ?? '',
+                            );
                           }
-
-                          final currentState = context
-                              .read<AccessoriesCubit>()
-                              .state;
-                          if (currentState is AccessoriesLoaded ||
-                              currentState is AccessoriesSearchResult) {
-                            final availableAccessories =
-                                currentState is AccessoriesLoaded
-                                ? currentState.accessories
-                                : (currentState as AccessoriesSearchResult)
-                                      .accessories;
-
-                            return availableAccessories
-                                .where(
-                                  (accessory) => (accessory.label ?? '')
-                                      .toLowerCase()
-                                      .contains(pattern.toLowerCase()),
-                                )
-                                .toList();
-                          }
-                          return [];
                         },
-                        noItemsFoundBuilder: (context, pattern) {
-                          if (pattern.isEmpty) return const SizedBox();
+                        itemBuilder: (context, accessory) {
+                          final isNewOption =
+                              accessory.sId == null &&
+                              accessory.label?.startsWith('Add "') == true;
 
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE3F2FD),
-                              border: Border.all(
-                                color: AppColors.primary,
-                                width: 1.5,
+                          if (isNewOption) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE3F2FD),
+                                border: Border.all(
+                                  color: AppColors.primary,
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(8.r),
                               ),
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: ListTile(
-                              title: Row(
-                                children: [
-                                  Text(
-                                    pattern,
-                                    style: AppTypography.fontSize16.copyWith(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8.w,
-                                      vertical: 2.h,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(4.r),
-                                    ),
-                                    child: Text(
-                                      'NEW',
-                                      style: AppTypography.fontSize12.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              onTap: () {
-                                _createNewAccessory(pattern);
-                              },
-                            ),
-                          );
-                        },
-                        customSuggestionBuilder:
-                            (context, pattern, filteredItems) {
-                              if (pattern.isNotEmpty &&
-                                  filteredItems.isEmpty &&
-                                  !_isCreatingAccessory) {
-                                return Column(
+                              child: ListTile(
+                                title: Row(
                                   children: [
-                                    const Divider(height: 1),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE3F2FD),
-                                        border: Border.all(
-                                          color: AppColors.primary,
-                                          width: 1.5,
-                                        ),
-                                        borderRadius: BorderRadius.circular(
-                                          8.r,
-                                        ),
+                                    Text(
+                                      accessory.label?.split('"')[1] ?? '',
+                                      style: AppTypography.fontSize16.copyWith(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                      child: ListTile(
-                                        title: Row(
-                                          children: [
-                                            Text(
-                                              pattern,
-                                              style: AppTypography.fontSize16
-                                                  .copyWith(
-                                                    color: Colors.black,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                            ),
-                                            SizedBox(width: 8.w),
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 8.w,
-                                                vertical: 2.h,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary,
-                                                borderRadius:
-                                                    BorderRadius.circular(4.r),
-                                              ),
-                                              child: Text(
-                                                'NEW',
-                                                style: AppTypography.fontSize12
-                                                    .copyWith(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
-                                            ),
-                                          ],
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.w,
+                                        vertical: 2.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary,
+                                        borderRadius:
+                                            BorderRadius.circular(4.r),
+                                      ),
+                                      child: Text(
+                                        'NEW',
+                                        style:
+                                            AppTypography.fontSize12.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        trailing: _isCreatingAccessory
-                                            ? SizedBox(
-                                                width: 16.w,
-                                                height: 16.h,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : null,
-                                        onTap: () {
-                                          _createNewAccessory(pattern);
-                                        },
                                       ),
                                     ),
                                   ],
-                                );
-                              }
-                              return const SizedBox();
-                            },
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: _selectedAccessory == accessory.label
+                                  ? const Color(0xFFFFF59D)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                accessory.label ?? 'Unknown Accessory',
+                                style: AppTypography.fontSize16.copyWith(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        suggestionsCallback: (pattern) {
+                          if (pattern.isEmpty) return allAccessories;
+
+                          final filtered = allAccessories
+                              .where(
+                                (a) => (a.label ?? '').toLowerCase().contains(
+                                      pattern.toLowerCase(),
+                                    ),
+                              )
+                              .toList();
+
+                          final exactMatch = filtered.any(
+                            (a) =>
+                                a.label?.toLowerCase() == pattern.toLowerCase(),
+                          );
+
+                          if (!exactMatch && pattern.isNotEmpty) {
+                            filtered.insert(
+                              0,
+                              Data(
+                                sId: null,
+                                label: 'Add "$pattern" as new accessory',
+                              ),
+                            );
+                          }
+
+                          return filtered;
+                        },
                       );
                     }
 
                     // Initial state
-                    return EnhancedDropdownSearch<Data>(
+                    return CustomDropdownSearch<Data>(
                       controller: _searchController,
-                      focusNode: _searchFocusNode,
                       items: [],
                       hintText: 'Loading accessories...',
                       noItemsText: 'No accessories available',
+                      displayAllSuggestionWhenTap: false,
+                      isMultiSelectDropdown: false,
                       onSuggestionSelected: (accessory) {},
                       itemBuilder: (context, accessory) =>
                           ListTile(title: Text(accessory.label ?? 'Unknown')),
@@ -415,65 +366,82 @@ class _JobBookingAccessoriesScreenState
               ),
 
             // Show selected accessory info
-            if (_selectedAccessory.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 24.w,
-                    vertical: 16.h,
-                  ),
-                  child: Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: AppColors.primary),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          color: AppColors.primary,
-                          size: 20.sp,
+            BlocBuilder<JobBookingCubit, JobBookingState>(
+              builder: (context, bookingState) {
+                final selectedAccessories =
+                    bookingState is JobBookingData
+                        ? bookingState.device.condition
+                        : <ConditionItem>[];
+                final accessoryName =
+                    selectedAccessories.isNotEmpty
+                        ? selectedAccessories.first.value
+                        : '';
+
+                if (accessoryName.isNotEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 16.h,
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: AppColors.primary),
                         ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Selected Accessory',
-                                style: AppTypography.fontSize12.copyWith(
-                                  color: Colors.grey.shade600,
-                                ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: AppColors.primary,
+                              size: 20.sp,
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Selected Accessory',
+                                    style: AppTypography.fontSize12.copyWith(
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  Text(
+                                    accessoryName,
+                                    style: AppTypography.fontSize16Bold
+                                        .copyWith(color: AppColors.primary),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                _selectedAccessory,
-                                style: AppTypography.fontSize16Bold.copyWith(
-                                  color: AppColors.primary,
-                                ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedAccessory = '';
+                                  _searchController.clear();
+                                });
+                                context.read<JobBookingCubit>().updateDeviceInfo(
+                                  condition: [],
+                                );
+                              },
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.grey,
+                                size: 20.sp,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedAccessory = '';
-                              _searchController.clear();
-                            });
-                          },
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.grey,
-                            size: 20.sp,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ),
+                  );
+                }
+                return const SliverToBoxAdapter(child: SizedBox.shrink());
+              },
+            ),
 
             // Show accessories count when loaded
             BlocBuilder<AccessoriesCubit, AccessoriesState>(
@@ -503,22 +471,28 @@ class _JobBookingAccessoriesScreenState
         ),
       ),
 
-      // Fixed bottom navigation bar with keyboard handling
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 8.h,
-          left: 24.w,
-          right: 24.w,
-        ),
-        child: BottomButtonsGroup(
-          onPressed: _selectedAccessory.isNotEmpty && !_isCreatingAccessory
-              ? () {
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          JobBookingImeiScreen(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
+      bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
+        builder: (context, bookingState) {
+          final hasSelectedAccessory =
+              bookingState is JobBookingData &&
+              bookingState.device.condition.isNotEmpty;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 8.h,
+              left: 24.w,
+              right: 24.w,
+            ),
+            child: BottomButtonsGroup(
+              onPressed: hasSelectedAccessory && !_isCreatingAccessory
+                  ? () {
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  JobBookingImeiScreen(),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
                             const begin = Offset(1.0, 0.0);
                             const end = Offset.zero;
                             const curve = Curves.easeInOut;
@@ -532,17 +506,13 @@ class _JobBookingAccessoriesScreenState
                               child: child,
                             );
                           },
-                    ),
-                  );
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   SnackBar(
-                  //     content: Text('Selected accessory: $_selectedAccessory'),
-                  //     backgroundColor: AppColors.primary,
-                  //   ),
-                  // );
-                }
-              : null,
-        ),
+                        ),
+                      );
+                    }
+                  : null,
+            ),
+          );
+        },
       ),
     );
   }
