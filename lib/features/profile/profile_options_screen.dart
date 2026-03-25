@@ -11,9 +11,9 @@ class ProfileOptionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
+      backgroundColor: AppColors.kBg,
       appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
+        backgroundColor: AppColors.kBg.withValues(alpha: 0.1),
 
         leading: CustomNavButton(
           onPressed: () {
@@ -26,13 +26,9 @@ class ProfileOptionsScreen extends StatelessWidget {
           },
           icon: CupertinoIcons.back,
         ),
-        middle: const Text(
+        middle: Text(
           'My Profile',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTypography.sfProHeadLineTextStyle22,
         ),
       ),
       body: Padding(

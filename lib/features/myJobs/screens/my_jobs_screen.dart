@@ -44,6 +44,31 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   void initState() {
     super.initState();
 
+    // Sync local status with initial status if provided
+    if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
+      // Map backend slug to UI string if needed
+      if (widget.initialStatus == 'accepted_quotes') {
+        _status = 'Quote Accepted';
+      } else if (widget.initialStatus == 'rejected_quotes') {
+        _status = 'Quote Rejected';
+      } else if (widget.initialStatus == 'booked') {
+        _status = 'Booked In';
+      } else if (widget.initialStatus == 'in_progress') {
+        _status = 'In Progress';
+      } else if (widget.initialStatus == 'parts_not_available') {
+        _status = 'Parts not available';
+      } else if (widget.initialStatus == 'ready_to_return') {
+        _status = 'Ready To Return';
+      } else if (widget.initialStatus == 'completed') {
+        _status = 'Completed';
+      } else {
+        // Generic title case as fallback
+        _status =
+            widget.initialStatus![0].toUpperCase() +
+            widget.initialStatus!.substring(1).replaceAll('_', ' ');
+      }
+    }
+
     // Load initial jobs when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadJobs();
@@ -107,13 +132,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     }
 
     try {
-      debugPrint('📋 [MyJobsScreen] Loading jobs');
-      if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
-        context.read<JobCubit>().filterJobsByStatus(widget.initialStatus!);
-      } else {
-        // Explicitly reset the status filter so stale dashboard filters don't carry over
-        context.read<JobCubit>().getJobs(statusList: []);
-      }
+      debugPrint('📋 [MyJobsScreen] Loading jobs with current filters');
+      // Instead of resetting, we use the existing filter update logic
+      // which respects both widget.initialStatus and any user-selected filters
+      _updateActiveFilters();
     } catch (e, stackTrace) {
       debugPrint('❌ [MyJobsScreen] Error loading jobs: $e');
       debugPrint('📋 Stack trace: $stackTrace');
@@ -473,6 +495,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
           break;
         case 'Ready To Return':
           backendStatus = 'ready_to_return';
+          break;
+        case 'Completed':
+          backendStatus = 'completed';
           break;
         default:
           backendStatus = _status;
@@ -1006,8 +1031,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         return 'In Progress';
       case 'accepted_quotes':
         return 'Quote Accepted';
+      case 'completed':
+        return 'Completed';
       default:
-        return status;
+        return status[0].toUpperCase() +
+            status.substring(1).replaceAll('_', ' ');
     }
   }
 
@@ -1020,6 +1048,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       case 'in_progress':
         return const Color(0xFFFF9800);
       case 'accepted_quotes':
+        return const Color(0xFF10B981);
+      case 'completed':
         return const Color(0xFF10B981);
       default:
         return const Color(0xFF3B82F6);
@@ -1299,6 +1329,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         'Quote Rejected',
         'Parts not available',
         'Ready To Return',
+        'Completed',
       ],
       _status,
       (value) {

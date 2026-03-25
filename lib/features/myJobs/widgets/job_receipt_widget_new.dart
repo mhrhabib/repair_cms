@@ -16,7 +16,11 @@ class JobReceiptWidgetNew extends StatelessWidget {
   static const String baseUrl = 'https://api.repaircms.com';
   static const String trackingDomain = 'https://tracking.repaircms.com';
 
-  const JobReceiptWidgetNew({super.key, required this.jobData, this.isPreview = false});
+  const JobReceiptWidgetNew({
+    super.key,
+    required this.jobData,
+    this.isPreview = false,
+  });
 
   // ─── Price parser (handles String, int, double, null safely) ──────────────
   double _parsePrice(dynamic value) {
@@ -32,7 +36,12 @@ class JobReceiptWidgetNew extends StatelessWidget {
     // Services are typed objects with priceInclVat
     for (final item in jobData.data?.services ?? []) {
       if (item is Map) {
-        total += _parsePrice(item['price_incl_vat'] ?? item['priceInclVat'] ?? item['salePriceIncVat'] ?? 0);
+        total += _parsePrice(
+          item['price_incl_vat'] ??
+              item['priceInclVat'] ??
+              item['salePriceIncVat'] ??
+              0,
+        );
       } else {
         try {
           total += _parsePrice((item as dynamic).priceInclVat);
@@ -44,11 +53,17 @@ class JobReceiptWidgetNew extends StatelessWidget {
     for (final item in jobData.data?.assignedItems ?? []) {
       if (item is Map) {
         total += _parsePrice(
-          item['price_incl_vat'] ?? item['priceInclVat'] ?? item['salePriceIncVat'] ?? item['sale_price_inc_vat'] ?? 0,
+          item['price_incl_vat'] ??
+              item['priceInclVat'] ??
+              item['salePriceIncVat'] ??
+              item['sale_price_inc_vat'] ??
+              0,
         );
       } else {
         try {
-          total += _parsePrice((item as dynamic).salePriceIncVat ?? (item as dynamic).priceInclVat);
+          total += _parsePrice(
+            (item as dynamic).salePriceIncVat ?? (item as dynamic).priceInclVat,
+          );
         } catch (_) {}
       }
     }
@@ -92,14 +107,17 @@ class JobReceiptWidgetNew extends StatelessWidget {
                   BlocBuilder<CompanyCubit, CompanyState>(
                     builder: (context, companyState) {
                       String? logoUrl =
-                          (receiptFooter?.companyLogoURL != null && receiptFooter!.companyLogoURL!.isNotEmpty)
+                          (receiptFooter?.companyLogoURL != null &&
+                              receiptFooter!.companyLogoURL!.isNotEmpty)
                           ? receiptFooter.companyLogoURL
                           : null;
 
                       if (logoUrl == null && companyState is CompanyLoaded) {
                         final companyLogo = companyState.company.companyLogo;
                         if (companyLogo != null && companyLogo.isNotEmpty) {
-                          logoUrl = FileService.getImageUrl(companyLogo[0].image);
+                          logoUrl = FileService.getImageUrl(
+                            companyLogo[0].image,
+                          );
                         }
                       }
 
@@ -110,7 +128,8 @@ class JobReceiptWidgetNew extends StatelessWidget {
                                 logoUrl,
                                 height: 60,
                                 fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderLogo(),
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildPlaceholderLogo(),
                               )
                             : _buildPlaceholderLogo(),
                       );
@@ -123,7 +142,11 @@ class JobReceiptWidgetNew extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: BlocBuilder<CompanyCubit, CompanyState>(
                       builder: (context, companyState) {
-                        return _buildHeader(receiptFooter, customer, companyState);
+                        return _buildHeader(
+                          receiptFooter,
+                          customer,
+                          companyState,
+                        );
                       },
                     ),
                   ),
@@ -138,11 +161,15 @@ class JobReceiptWidgetNew extends StatelessWidget {
                   SizedBox(height: 4.h),
 
                   // Title
-                  const Text('Job Receipt', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Job Receipt',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   SizedBox(height: 2.h),
 
                   // Salutation
-                  if (data?.salutationHTMLmarkup != null && data!.salutationHTMLmarkup!.isNotEmpty)
+                  if (data?.salutationHTMLmarkup != null &&
+                      data!.salutationHTMLmarkup!.isNotEmpty)
                     _buildHtmlContent(data.salutationHTMLmarkup!)
                   else
                     _buildDefaultSalutation(),
@@ -157,7 +184,8 @@ class JobReceiptWidgetNew extends StatelessWidget {
                   SizedBox(height: 10.h),
 
                   // Terms
-                  if (data?.termsAndConditionsHTMLmarkup != null && data!.termsAndConditionsHTMLmarkup!.isNotEmpty)
+                  if (data?.termsAndConditionsHTMLmarkup != null &&
+                      data!.termsAndConditionsHTMLmarkup!.isNotEmpty)
                     _buildHtmlContent(data.termsAndConditionsHTMLmarkup!)
                   else
                     _buildDefaultTerms(),
@@ -185,7 +213,11 @@ class JobReceiptWidgetNew extends StatelessWidget {
     return SingleChildScrollView(child: content);
   }
 
-  Widget _buildHeader(ReceiptFooter? footer, CustomerDetails? customer, CompanyState companyState) {
+  Widget _buildHeader(
+    ReceiptFooter? footer,
+    CustomerDetails? customer,
+    CompanyState companyState,
+  ) {
     final address = footer?.address;
     String companyInfo = _formatCompanyInfo(address);
 
@@ -193,22 +225,29 @@ class JobReceiptWidgetNew extends StatelessWidget {
       final company = companyState.company;
       final parts = <String>[];
       if (company.companyName.isNotEmpty) parts.add(company.companyName);
-      final companyAddress = company.companyAddress != null && company.companyAddress!.isNotEmpty
+      final companyAddress =
+          company.companyAddress != null && company.companyAddress!.isNotEmpty
           ? company.companyAddress![0]
           : null;
       if (companyAddress != null) {
         if (companyAddress.street != null) {
-          parts.add('${companyAddress.street} ${companyAddress.num ?? ''}'.trim());
+          parts.add(
+            '${companyAddress.street} ${companyAddress.num ?? ''}'.trim(),
+          );
         }
         if (companyAddress.zip != null) {
-          parts.add('${companyAddress.zip} ${companyAddress.city ?? ''}'.trim());
+          parts.add(
+            '${companyAddress.zip} ${companyAddress.city ?? ''}'.trim(),
+          );
         }
       }
       companyInfo = parts.join(' • ');
     }
 
     final billing = customer?.billingAddress;
-    final zipCity = billing != null ? '${billing.zip ?? ''} ${billing.city ?? ''}'.trim() : '';
+    final zipCity = billing != null
+        ? '${billing.zip ?? ''} ${billing.city ?? ''}'.trim()
+        : '';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,17 +256,48 @@ class JobReceiptWidgetNew extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(companyInfo, style: const TextStyle(fontSize: 8, color: Color(0xFF444444))),
-            if (customer?.organization != null && customer!.organization!.isNotEmpty)
-              Text(customer.organization!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400))
+            Text(
+              companyInfo,
+              style: const TextStyle(fontSize: 8, color: Color(0xFF444444)),
+            ),
+            if (customer?.organization != null &&
+                customer!.organization!.isNotEmpty)
+              Text(
+                customer.organization!,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w400,
+                ),
+              )
             else if (customer != null)
-              Text(_formatCustomerName(customer), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+              Text(
+                _formatCustomerName(customer),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
             if (billing != null) ...[
               if (billing.street != null)
-                Text(billing.street!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-              if (billing.state != null) Text(billing.state!, style: const TextStyle(fontSize: 10)),
-              if (zipCity.isNotEmpty) Text(zipCity, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-              if (billing.country != null) Text(billing.country!, style: const TextStyle(fontSize: 10)),
+                Text(
+                  billing.street!,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              if (billing.state != null)
+                Text(billing.state!, style: const TextStyle(fontSize: 10)),
+              if (zipCity.isNotEmpty)
+                Text(
+                  zipCity,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              if (billing.country != null)
+                Text(billing.country!, style: const TextStyle(fontSize: 10)),
             ],
           ],
         ),
@@ -248,7 +318,9 @@ class JobReceiptWidgetNew extends StatelessWidget {
 
   Widget _buildJobInfoSection() {
     final data = jobData.data;
-    final agent = data?.loggedUserId?.isNotEmpty == true ? data!.loggedUserId![0] : null;
+    final agent = data?.loggedUserId?.isNotEmpty == true
+        ? data!.loggedUserId![0]
+        : null;
     final customer = data?.customerDetails;
 
     return Align(
@@ -261,13 +333,26 @@ class JobReceiptWidgetNew extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (data?.createdAt != null || data?.updatedAt != null)
-                const Text('Date:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+                const Text(
+                  'Date:',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
+                ),
               if (data?.jobNo != null)
-                const Text('Job No:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-              if (customer?.customerNo != null && customer!.customerNo!.isNotEmpty)
-                const Text('Customer No:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+                const Text(
+                  'Job No:',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
+                ),
+              if (customer?.customerNo != null &&
+                  customer!.customerNo!.isNotEmpty)
+                const Text(
+                  'Customer No:',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
+                ),
               if (agent?.fullName != null)
-                const Text('Agent:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+                const Text(
+                  'Agent:',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
+                ),
             ],
           ),
           SizedBox(width: 8.w),
@@ -277,14 +362,36 @@ class JobReceiptWidgetNew extends StatelessWidget {
               if (data?.createdAt != null || data?.updatedAt != null)
                 Text(
                   _formatDate(data!.updatedAt ?? data.createdAt!),
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               if (data?.jobNo != null)
-                Text(data!.jobNo!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-              if (customer?.customerNo != null && customer!.customerNo!.isNotEmpty)
-                Text(customer.customerNo!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+                Text(
+                  data!.jobNo!,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              if (customer?.customerNo != null &&
+                  customer!.customerNo!.isNotEmpty)
+                Text(
+                  customer.customerNo!,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               if (agent?.fullName != null)
-                Text(agent!.fullName!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
+                Text(
+                  agent!.fullName!,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
             ],
           ),
         ],
@@ -317,114 +424,116 @@ class JobReceiptWidgetNew extends StatelessWidget {
     );
   }
 
-  Widget _buildDeviceDetails(DeviceData? deviceData, Device? device, Defect? defect) {
+  Widget _buildDeviceDetails(
+    DeviceData? deviceData,
+    Device? device,
+    Defect? defect,
+  ) {
     final data = jobData.data;
-    return Container(
-      decoration: BoxDecoration(border: Border.all(color: const Color(0xFFCBCBCB))),
-      child: IntrinsicHeight(
+
+    // Helper to build a table row
+    Widget buildRow(String label, String value, {bool showTopBorder = true}) {
+      return IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              width: 100,
-              padding: const EdgeInsets.all(5),
-              color: const Color(0xFFCBCBCB),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_hasDeviceDetails(deviceData, device))
-                    const Text('Device details:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-                  if (device?.accessories?.isNotEmpty == true) ...[
-                    const SizedBox(height: 5),
-                    const Text('Accessories:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-                  ],
-                  if (data?.physicalLocation != null) ...[
-                    const SizedBox(height: 5),
-                    const Text('Physical location:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-                  ],
-                  if (data?.jobTypes != null || defect?.reference != null) ...[
-                    const SizedBox(height: 5),
-                    const Text('Job type / Reference:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-                  ],
-                  if (defect?.description != null || defect?.defect?.isNotEmpty == true) ...[
-                    const SizedBox(height: 5),
-                    const Text('Description:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400)),
-                  ],
-                ],
+              width: 140.w,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              color: const Color(0xFFC4C4C4), // Gray background for label
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
               ),
             ),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(5),
-                color: const Color(0xFFF0F0F0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_hasDeviceDetails(deviceData, device)) _buildDeviceDetailsText(deviceData, device),
-                    if (device?.accessories?.isNotEmpty == true) ...[
-                      const SizedBox(height: 5),
-                      Text(
-                        device!.accessories!.map((a) => a is Map ? (a['value'] ?? '') : a.toString()).join(', '),
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                    ],
-                    if (data?.physicalLocation != null) ...[
-                      const SizedBox(height: 5),
-                      Text(data!.physicalLocation!, style: const TextStyle(fontSize: 10)),
-                    ],
-                    if (data?.jobTypes != null || defect?.reference != null) ...[
-                      const SizedBox(height: 5),
-                      Text(
-                        '${data?.jobTypes ?? ''}${defect?.reference != null ? ', ${defect!.reference}' : ''}',
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                    ],
-                    if (defect?.description != null || defect?.defect?.isNotEmpty == true) ...[
-                      const SizedBox(height: 5),
-                      Text(_buildDefectDescription(defect!), style: const TextStyle(fontSize: 10)),
-                    ],
-                  ],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 2,
+                ),
+                color: const Color(
+                  0xFFF1F1F1,
+                ), // Light gray background for value
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                  ),
                 ),
               ),
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    final deviceDetails = [
+      _getDeviceName(deviceData, device),
+      if (_getDeviceIMEI(deviceData, device).isNotEmpty)
+        'IMEI: ${_getDeviceIMEI(deviceData, device)}',
+      _getDeviceCondition(deviceData, device),
+    ].where((e) => e.isNotEmpty).join(', ');
+
+    return Column(
+      children: [
+        buildRow('Device details:', deviceDetails, showTopBorder: false),
+        buildRow('Physical location:', data?.physicalLocation ?? 'N/A'),
+        buildRow(
+          'Job type, reference:',
+          [
+            data?.jobTypes ?? '',
+            defect?.reference ?? '',
+          ].where((e) => e.isNotEmpty).join(', '),
+        ),
+        buildRow('Description:', _buildDefectDescription(defect)),
+      ],
     );
   }
 
-  bool _hasDeviceDetails(DeviceData? deviceData, Device? device) {
-    return (deviceData != null &&
-            (deviceData.brand != null || deviceData.model != null || deviceData.serialNo != null)) ||
-        (device != null && (device.brand != null || device.model != null || device.serialNo != null));
+  String _getDeviceName(DeviceData? deviceData, Device? device) {
+    final brand = deviceData?.brand ?? device?.brand ?? '';
+    final model = deviceData?.model ?? device?.model ?? '';
+    return '$brand $model'.trim();
   }
 
-  Widget _buildDeviceDetailsText(DeviceData? deviceData, Device? device) {
-    final parts = <String>[];
-    final brand = deviceData?.brand ?? device?.brand;
-    final model = deviceData?.model ?? device?.model;
-    final serialNo = deviceData?.serialNo ?? device?.serialNo;
-    if (brand != null) parts.add(brand);
-    if (model != null) parts.add(model);
-    if (serialNo != null) parts.add('SN: $serialNo');
+  String _getDeviceIMEI(DeviceData? deviceData, Device? device) {
+    return deviceData?.imei ?? device?.imei ?? '';
+  }
+
+  String _getDeviceCondition(DeviceData? deviceData, Device? device) {
     final condition = deviceData?.condition ?? device?.condition;
-    if (condition?.isNotEmpty == true) {
-      parts.add(condition!.map((c) => c.value ?? '').join(', '));
+    if (condition != null && condition.isNotEmpty) {
+      return condition.map((c) => c.value ?? '').join(', ');
     }
-    return Text(parts.join(', '), style: const TextStyle(fontSize: 10));
+    return '';
   }
 
-  String _buildDefectDescription(Defect defect) {
+  String _buildDefectDescription(Defect? defect) {
+    if (defect == null) return '';
     final parts = <String>[];
     if (defect.defect?.isNotEmpty == true) {
       parts.add(defect.defect!.map((d) => d.value).join(', '));
     }
-    if (defect.description != null) parts.add(defect.description!);
+    if (defect.description != null && defect.description!.isNotEmpty) {
+      parts.add(defect.description!);
+    }
     return parts.join(', ');
   }
 
   // ✅ FIXED: Takes services and assignedItems separately, calculates subtotal correctly
-  Widget _buildItemsSection(List<dynamic> services, List<dynamic> assignedItems) {
+  Widget _buildItemsSection(
+    List<dynamic> services,
+    List<dynamic> assignedItems,
+  ) {
     // ✅ Always recalculate — never trust stale model values
     final double subTotal = _calculateSubTotal();
     final double discount = _parsePrice(jobData.data?.discount);
@@ -439,13 +548,18 @@ class JobReceiptWidgetNew extends StatelessWidget {
         lineItems.add(
           _LineItem(
             name: item['name'] ?? item['productName'] ?? 'Service',
-            price: _parsePrice(item['price_incl_vat'] ?? item['priceInclVat'] ?? 0),
+            price: _parsePrice(
+              item['price_incl_vat'] ?? item['priceInclVat'] ?? 0,
+            ),
           ),
         );
       } else {
         try {
           lineItems.add(
-            _LineItem(name: (item as dynamic).name ?? 'Service', price: _parsePrice((item as dynamic).priceInclVat)),
+            _LineItem(
+              name: (item as dynamic).name ?? 'Service',
+              price: _parsePrice((item as dynamic).priceInclVat),
+            ),
           );
         } catch (_) {}
       }
@@ -469,8 +583,14 @@ class JobReceiptWidgetNew extends StatelessWidget {
         try {
           lineItems.add(
             _LineItem(
-              name: (item as dynamic).productName ?? (item as dynamic).name ?? 'Item',
-              price: _parsePrice((item as dynamic).salePriceIncVat ?? (item as dynamic).priceInclVat),
+              name:
+                  (item as dynamic).productName ??
+                  (item as dynamic).name ??
+                  'Item',
+              price: _parsePrice(
+                (item as dynamic).salePriceIncVat ??
+                    (item as dynamic).priceInclVat,
+              ),
             ),
           );
         } catch (_) {}
@@ -491,8 +611,14 @@ class JobReceiptWidgetNew extends StatelessWidget {
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Service', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              Text('Price', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(
+                'Service',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                'Price',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ),
@@ -505,8 +631,22 @@ class JobReceiptWidgetNew extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(item.name, style: const TextStyle(fontSize: 9))),
-                Text(_formatCurrency(item.price), style: const TextStyle(fontSize: 10)),
+                Expanded(
+                  child: Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  _formatCurrency(item.price),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
@@ -519,12 +659,20 @@ class JobReceiptWidgetNew extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: LayoutBuilder(
             builder: (context, constraints) => SizedBox(
-              width: constraints.maxWidth > 400 ? constraints.maxWidth * 0.4 : 200,
+              width: constraints.maxWidth > 400
+                  ? constraints.maxWidth * 0.4
+                  : 200,
               child: Column(
                 children: [
-                  _buildTotalRow('Subtotal', subTotal),
-                  if (vat > 0) ...[const SizedBox(height: 4), _buildTotalRow('VAT', vat)],
-                  if (discount > 0) ...[const SizedBox(height: 4), _buildTotalRow('Discount', -discount)],
+                  _buildTotalRow('Subtotal', subTotal, bold: true),
+                  if (vat > 0) ...[
+                    const SizedBox(height: 4),
+                    _buildTotalRow('VAT', vat),
+                  ],
+                  if (discount > 0) ...[
+                    const SizedBox(height: 4),
+                    _buildTotalRow('Discount', -discount),
+                  ],
                   const SizedBox(height: 3),
                   Container(height: 1, color: const Color(0xFF707070)),
                   const SizedBox(height: 3),
@@ -545,11 +693,17 @@ class JobReceiptWidgetNew extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: bold ? 12 : 10, fontWeight: bold ? FontWeight.bold : FontWeight.normal),
+          style: TextStyle(
+            fontSize: bold ? 12 : 10,
+            fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
         Text(
           _formatCurrency(amount),
-          style: TextStyle(fontSize: bold ? 12 : 10, fontWeight: bold ? FontWeight.bold : FontWeight.normal),
+          style: TextStyle(
+            fontSize: bold ? 12 : 10,
+            fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ],
     );
@@ -577,17 +731,28 @@ class JobReceiptWidgetNew extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text('Repair Tracking', style: TextStyle(fontSize: 8, color: Color(0xFF2589F6))),
+                const Text(
+                  'Repair Tracking',
+                  style: TextStyle(fontSize: 8, color: Color(0xFF2589F6)),
+                ),
                 SizedBox(height: 8.h),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: QrImageView(padding: EdgeInsets.zero, data: trackingUrl, version: QrVersions.auto, size: 75.w),
+                  child: QrImageView(
+                    padding: EdgeInsets.zero,
+                    data: trackingUrl,
+                    version: QrVersions.auto,
+                    size: 75.w,
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   data!.jobTrackingNumber!,
                   textAlign: TextAlign.left,
-                  style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 6,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -603,7 +768,10 @@ class JobReceiptWidgetNew extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text('I agree to the terms and conditions:', style: TextStyle(fontSize: 10)),
+                    const Text(
+                      'I agree to the terms and conditions:',
+                      style: TextStyle(fontSize: 10),
+                    ),
                     _buildSignatureImage(data!.signatureFilePath!),
                   ],
                 ),
@@ -614,7 +782,10 @@ class JobReceiptWidgetNew extends StatelessWidget {
                     border: Border(top: BorderSide(color: Color(0xFF808080))),
                   ),
                   padding: const EdgeInsets.only(top: 5),
-                  child: const Text('Date, Signature Client', style: TextStyle(fontSize: 10)),
+                  child: const Text(
+                    'Date, Signature Client',
+                    style: TextStyle(fontSize: 10),
+                  ),
                 ),
               ],
             ),
@@ -666,11 +837,13 @@ class JobReceiptWidgetNew extends StatelessWidget {
           if (footer?.address?.street != null)
             '${footer!.address!.street} ${footer.address!.num ?? ''}'.trim()
           else if (company?.companyAddress?.isNotEmpty == true)
-            '${company!.companyAddress![0].street ?? ''} ${company.companyAddress![0].num ?? ''}'.trim(),
+            '${company!.companyAddress![0].street ?? ''} ${company.companyAddress![0].num ?? ''}'
+                .trim(),
           if (footer?.address?.zip != null)
             '${footer!.address!.zip} ${footer.address!.city ?? ''}'.trim()
           else if (company?.companyAddress?.isNotEmpty == true)
-            '${company!.companyAddress![0].zip ?? ''} ${company.companyAddress![0].city ?? ''}'.trim(),
+            '${company!.companyAddress![0].zip ?? ''} ${company.companyAddress![0].city ?? ''}'
+                .trim(),
           if (footer?.address?.country != null)
             footer!.address!.country!
           else if (company?.companyAddress?.isNotEmpty == true)
@@ -679,13 +852,13 @@ class JobReceiptWidgetNew extends StatelessWidget {
         SizedBox(width: 8.w),
         _buildFooterColumn([
           if (footer?.contact?.ceo != null)
-            'CEO: ${footer!.contact!.ceo}'
+            'Owner: ${footer!.contact!.ceo}'
           else if (company?.companyTaxDetail?.isNotEmpty == true)
-            'CEO: ${company!.companyTaxDetail![0].ceo}',
+            'Owner: ${company!.companyTaxDetail![0].ceo}',
           if (footer?.contact?.telephone != null)
-            'Tel: ${footer!.contact!.telephone}'
+            'Telephone: ${footer!.contact!.telephone}'
           else if (company?.companyContactDetail?.isNotEmpty == true)
-            'Tel: ${company!.companyContactDetail![0].telephone}',
+            'Telephone: ${company!.companyContactDetail![0].telephone}',
           if (footer?.contact?.email != null)
             'Email: ${footer!.contact!.email}'
           else if (company?.companyContactDetail?.isNotEmpty == true)
@@ -724,7 +897,10 @@ class JobReceiptWidgetNew extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 2),
               child: Text(
                 item,
-                style: const TextStyle(fontSize: 6, fontWeight: FontWeight.w400),
+                style: const TextStyle(
+                  fontSize: 6,
+                  fontWeight: FontWeight.w400,
+                ),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -743,7 +919,11 @@ class JobReceiptWidgetNew extends StatelessWidget {
     return Html(
       data: cleanedContent,
       style: {
-        "body": Style(fontSize: FontSize(8), margin: Margins.zero, padding: HtmlPaddings.zero),
+        "body": Style(
+          fontSize: FontSize(8),
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+        ),
         "p": Style(fontSize: FontSize(8), margin: Margins.zero),
         "h1": Style(fontSize: FontSize(24), fontWeight: FontWeight.bold),
         "h2": Style(fontSize: FontSize(20), fontWeight: FontWeight.bold),
@@ -756,7 +936,10 @@ class JobReceiptWidgetNew extends StatelessWidget {
         "em": Style(fontStyle: FontStyle.italic),
         "i": Style(fontStyle: FontStyle.italic),
         "u": Style(textDecoration: TextDecoration.underline),
-        "a": Style(color: Colors.blue, textDecoration: TextDecoration.underline),
+        "a": Style(
+          color: Colors.blue,
+          textDecoration: TextDecoration.underline,
+        ),
         "li": Style(fontSize: FontSize(8)),
         "ul": Style(margin: Margins.zero, padding: HtmlPaddings.zero),
         "ol": Style(margin: Margins.zero, padding: HtmlPaddings.zero),
@@ -768,9 +951,16 @@ class JobReceiptWidgetNew extends StatelessWidget {
     if (address == null) return '';
     final parts = <String>[];
     if (address.companyName != null) parts.add(address.companyName!);
-    if (address.street != null) parts.add('${address.street} ${address.num ?? ''}'.trim());
-    if (address.zip != null) parts.add('${address.zip} ${address.city ?? ''}'.trim());
-    return parts.join(' • ');
+    if (address.street != null) {
+      parts.add('${address.street} ${address.num ?? ''}'.trim());
+    }
+    if (address.zip != null) {
+      parts.add('${address.zip} ${address.city ?? ''}'.trim());
+    }
+    if (address.country != null) {
+      parts.add(address.country ?? '');
+    }
+    return parts.join(' - ');
   }
 
   String _formatCustomerName(CustomerDetails customer) {
@@ -778,7 +968,7 @@ class JobReceiptWidgetNew extends StatelessWidget {
     if (customer.salutation != null) parts.add(customer.salutation!);
     if (customer.firstName != null) parts.add(customer.firstName!);
     if (customer.lastName != null) parts.add(customer.lastName!);
-    return parts.join(' ');
+    return parts.join('');
   }
 
   String _formatDate(String dateString) {
@@ -793,7 +983,9 @@ class JobReceiptWidgetNew extends StatelessWidget {
   String _formatCurrency(dynamic amount) {
     if (amount == null) return '£0.00';
     try {
-      final numericAmount = amount is num ? amount.toDouble() : double.tryParse(amount.toString()) ?? 0.0;
+      final numericAmount = amount is num
+          ? amount.toDouble()
+          : double.tryParse(amount.toString()) ?? 0.0;
       return '£${numericAmount.toStringAsFixed(2)}';
     } catch (e) {
       return '£0.00';

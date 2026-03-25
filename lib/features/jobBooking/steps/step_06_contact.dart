@@ -238,7 +238,6 @@ class StepContactWidgetState extends State<StepContactWidget> {
 
   void _selectProfile(Customersorsuppliers profile) {
     final contactTypeCubit = context.read<ContactTypeCubit>();
-    final primaryPhone = contactTypeCubit.getPrimaryPhoneNumber(profile);
     final primaryEmail = contactTypeCubit.getPrimaryEmail(profile);
 
     if (mounted) {
@@ -258,10 +257,12 @@ class StepContactWidgetState extends State<StepContactWidget> {
         lastNameController.text = profile.lastName ?? '';
         organizationController.text = profile.organization ?? '';
         emailController.text = primaryEmail ?? '';
-        if (primaryPhone != null) {
-          phoneController.text = primaryPhone.replaceAll(RegExp(r'[^\d+]'), '');
-          selectedPhoneCode =
-              _extractPhonePrefix(primaryPhone) ?? selectedPhoneCode;
+        final phoneDetails = contactTypeCubit.getPrimaryPhoneDetails(profile);
+        if (phoneDetails != null) {
+          final prefix = phoneDetails['prefix'] ?? '';
+          final number = phoneDetails['number'] ?? '';
+          phoneController.text = number.replaceAll(RegExp(r'[^\d]'), '');
+          if (prefix.isNotEmpty) selectedPhoneCode = prefix;
         }
 
         // Snapshot originals for change-detection
@@ -369,12 +370,22 @@ class StepContactWidgetState extends State<StepContactWidget> {
       position: profile.position ?? '',
     );
 
+    final phoneDetails = contactTypeCubit.getPrimaryPhoneDetails(profile);
+    final phoneNumber =
+        phoneDetails?['number']?.replaceAll(RegExp(r'[^\d]'), '') ?? '';
+    final phonePrefix =
+        phoneDetails?['prefix'] ??
+        primaryPhone?.replaceAll(RegExp(r'[^\d+]'), '') ??
+        '';
+
     jobBookingCubit.updateCustomerInfo(
       salutation: profile.supplierName ?? '',
       firstName: profile.firstName ?? '',
       lastName: profile.lastName ?? '',
-      telephone: primaryPhone?.replaceAll(RegExp(r'[^\d+]'), '') ?? '',
-      telephonePrefix: _extractPhonePrefix(primaryPhone),
+      telephone: phoneNumber,
+      telephonePrefix: phonePrefix.isNotEmpty
+          ? phonePrefix
+          : _extractPhonePrefix(primaryPhone),
       email: primaryEmail ?? '',
       customerId: profile.sId ?? '',
     );
@@ -460,23 +471,6 @@ class StepContactWidgetState extends State<StepContactWidget> {
 
     final contactTypeCubit = context.read<ContactTypeCubit>();
 
-    // Carry the existing addresses over unchanged; Step 7 will update them
-    final addressData =
-        selectedProfile!.shippingAddresses
-            ?.map(
-              (a) => {
-                'street': a.street ?? '',
-                'no': a.iV?.toString() ?? '',
-                'city': a.city ?? '',
-                'zip': a.zip ?? '',
-                'state': a.city ?? '',
-                'country': a.country ?? '',
-                'primary': a.primary ?? false,
-              },
-            )
-            .toList() ??
-        [];
-
     final payload = contactTypeCubit.createBusinessPayload(
       type: selectedContactType == 'business' ? 'Business' : 'Personal',
       type2: selectedContactType,
@@ -486,8 +480,8 @@ class StepContactWidgetState extends State<StepContactWidget> {
       position: selectedProfile?.position ?? '',
       userId: storage.read('userId') ?? '',
       location: storage.read('locationId') ?? '6568646e9c9d411a9ce57145',
-      shippingAddresses: addressData,
-      billingAddresses: addressData,
+      // We deliberately omit shippingAddresses and billingAddresses here
+      // because Step 7 handles address updates via separate PATCH APIs.
       emails: [
         {'email': emailController.text, 'type': 'Private', 'isPrimary': true},
       ],

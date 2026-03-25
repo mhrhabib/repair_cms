@@ -37,7 +37,10 @@ class SnackbarDemo extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(title: const Text('Custom Snackbar Demo')),
         body: Center(
-          child: ElevatedButton(onPressed: () => showCustomSnackbar(context), child: const Text('Show Snackbar')),
+          child: ElevatedButton(
+            onPressed: () => showCustomSnackbar(context),
+            child: const Text('Show Snackbar'),
+          ),
         ),
       ),
     );
@@ -49,13 +52,19 @@ class CustomSnackbar extends StatefulWidget {
   final VoidCallback onDismiss;
   final Widget? icon;
 
-  const CustomSnackbar({super.key, required this.onDismiss, required this.title, this.icon});
+  const CustomSnackbar({
+    super.key,
+    required this.onDismiss,
+    required this.title,
+    this.icon,
+  });
 
   @override
   State<CustomSnackbar> createState() => _CustomSnackbarState();
 }
 
-class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProviderStateMixin {
+class _CustomSnackbarState extends State<CustomSnackbar>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
   double _dragOffset = 0.0;
@@ -64,7 +73,10 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, -1),
@@ -119,11 +131,32 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                   borderRadius: BorderRadius.circular(30),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 4))],
+                      color: const Color(0xFFF7F7F8),
+                      borderRadius: BorderRadius.circular(
+                        46.r,
+                      ), // Figma: border-radius 46px
+                      border: Border.all(
+                        color: AppColors.whiteColor, // Figma: border #FFFFFF
+                        width: 1, // Figma: border-width 1px
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            28,
+                            116,
+                            115,
+                            115,
+                          ), // Figma: #0000001C
+                          blurRadius: 2, // Figma: blur 20px
+                          offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -131,8 +164,17 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                         Container(
                           width: 36,
                           height: 36,
-                          decoration: BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                          child: widget.icon ?? Icon(SolarIconsOutline.infoCircle, color: Colors.white, size: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child:
+                              widget.icon ??
+                              Icon(
+                                SolarIconsOutline.infoCircle,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -142,7 +184,11 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                             children: [
                               Text(
                                 widget.title,
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -156,7 +202,11 @@ class _CustomSnackbarState extends State<CustomSnackbar> with SingleTickerProvid
                           onTap: _dismissSnackbar,
                           child: Padding(
                             padding: const EdgeInsets.all(6.0),
-                            child: Icon(Icons.close, size: 20, color: Colors.black54),
+                            child: Icon(
+                              Icons.close,
+                              size: 20,
+                              color: Colors.black54,
+                            ),
                           ),
                         ),
                       ],

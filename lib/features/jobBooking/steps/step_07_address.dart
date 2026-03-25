@@ -291,48 +291,34 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   void _updateProfileWithAddress() {
     final contactTypeCubit = context.read<ContactTypeCubit>();
-    final contact =
-        (context.read<JobBookingCubit>().state as JobBookingData).contact;
     final addressData = {
+      // For shipping, they might need an ID if patching existing. If missing, it might add new.
+      // Often the API determines insert vs update based on the presence of _id or matching customerId.
+      "_id": widget.selectedProfile!.shippingAddresses?.firstOrNull?.sId ?? "",
       "street": _addressController.text,
-      // "no": _houseNumberController.text,
       "city": _cityController.text,
       "zip": _postalCodeController.text,
       "state": _provinceController.text,
       "country": _countryController.text,
       "primary": true,
+      "customerId": widget.selectedProfile!.sId,
     };
 
-    final payload = contactTypeCubit.createBusinessPayload(
-      type: contact.type,
-      type2: contact.type2,
-      firstName: contact.firstName,
-      lastName: contact.lastName,
-      organization: contact.organization,
-      position: contact.position,
-      userId: storage.read('userId') ?? '',
-      location: storage.read('locationId') ?? '6568646e9c9d411a9ce57145',
-      shippingAddresses: [addressData],
-      billingAddresses: [addressData],
-      emails: contact.email.isNotEmpty
-          ? [
-              {"email": contact.email, "type": "Private", "isPrimary": true},
-            ]
-          : null,
-      telephones: contact.telephone.isNotEmpty
-          ? [
-              {
-                "number": contact.telephone,
-                "phone_prefix": contact.telephonePrefix,
-                "type": "Private",
-                "isPrimary": true,
-              },
-            ]
-          : null,
-    );
-    contactTypeCubit.updateBusiness(
+    final billingData = {
+      "_id": widget.selectedProfile!.billingAddresses?.firstOrNull?.sId ?? "",
+      "street": _addressController.text,
+      "city": _cityController.text,
+      "zip": _postalCodeController.text,
+      "state": _provinceController.text,
+      "country": _countryController.text,
+      "primary": true,
+      "customerId": widget.selectedProfile!.sId,
+    };
+
+    contactTypeCubit.updateBusinessAddresses(
       profileId: widget.selectedProfile!.sId!,
-      payload: payload,
+      shippingPayload: [addressData],
+      billingPayload: [billingData],
     );
   }
 

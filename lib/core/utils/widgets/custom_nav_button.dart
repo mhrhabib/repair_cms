@@ -75,9 +75,7 @@ class _CustomNavButtonState extends State<CustomNavButton>
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: widget.backgroundColor ?? const Color(0xFFF7F7F8),
-              borderRadius: BorderRadius.circular(
-                46.r,
-              ), // Figma: border-radius 46px
+              shape: BoxShape.circle,
               border: Border.all(
                 color: AppColors.whiteColor, // Figma: border #FFFFFF
                 width: 1, // Figma: border-width 1px

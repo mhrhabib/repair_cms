@@ -578,6 +578,7 @@ class DeviceData {
   String? type;
   List<Condition>? condition;
   String? serialNo;
+  String? imei;
 
   DeviceData({
     this.brand,
@@ -586,6 +587,7 @@ class DeviceData {
     this.type,
     this.condition,
     this.serialNo,
+    this.imei,
   });
 
   DeviceData.fromJson(Map<String, dynamic> json) {
@@ -606,6 +608,7 @@ class DeviceData {
       });
     }
     serialNo = json['serial_no'];
+    imei = json['imei'];
   }
 
   Map<String, dynamic> toJson() {
@@ -618,6 +621,7 @@ class DeviceData {
       data['condition'] = condition!.map((v) => v.toJson()).toList();
     }
     data['serial_no'] = serialNo;
+    data['imei'] = imei;
     return data;
   }
 }
@@ -896,6 +900,7 @@ class Device {
   List<dynamic>? accessories;
   List<dynamic>? securityLock;
   String? serialNo;
+  String? imei;
   String? createdAt;
   String? updatedAt;
   int? iV;
@@ -909,6 +914,7 @@ class Device {
     this.accessories,
     this.securityLock,
     this.serialNo,
+    this.imei,
     this.createdAt,
     this.updatedAt,
     this.iV,
@@ -934,6 +940,7 @@ class Device {
     accessories = json['accessories'];
     securityLock = json['securityLock'];
     serialNo = json['serial_no'];
+    imei = json['imei'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
     iV = json['__v'];
@@ -951,6 +958,7 @@ class Device {
     data['accessories'] = accessories;
     data['securityLock'] = securityLock;
     data['serial_no'] = serialNo;
+    data['imei'] = imei;
     data['createdAt'] = createdAt;
     data['updatedAt'] = updatedAt;
     data['__v'] = iV;

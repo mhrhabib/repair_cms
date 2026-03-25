@@ -336,6 +336,7 @@ label printer's receipt mode.
                       onEdit: () => setState(() => _editingPrinter = printer),
                       onDelete: () => _deletePrinter(printer),
                       onSetDefault: () => _setAsDefaultPrinter(printer),
+                      isDefault: printer.isDefault,
                     ),
                   ),
                 ],

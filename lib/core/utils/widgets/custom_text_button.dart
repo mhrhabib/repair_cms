@@ -76,7 +76,7 @@ class _CustomTextButtonState extends State<CustomTextButton>
             decoration: BoxDecoration(
               color: widget.backgroundColor ?? const Color(0xFFF7F7F8),
               borderRadius: BorderRadius.circular(
-                46.r,
+                28.r,
               ), // Figma: border-radius 46px
               border: Border.all(
                 color: AppColors.whiteColor, // Figma: border #FFFFFF

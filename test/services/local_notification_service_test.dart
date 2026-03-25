@@ -46,7 +46,7 @@ void main() {
         senderName: 'Test User',
         messageText: 'Hello, this is a test message',
         conversationId: 'conv123',
-        jobId: 'job456',
+        jobNo: 'job456',
       );
 
       // In a real scenario with platform channels, you'd verify the notification was shown
@@ -157,7 +157,7 @@ void main() {
         senderName: 'Test User',
         messageText: 'Message with job',
         conversationId: 'conv123',
-        jobId: 'job456',
+        jobNo: 'job456',
       );
 
       // Payload should be formatted correctly internally

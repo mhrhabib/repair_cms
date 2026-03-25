@@ -595,10 +595,11 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         }
 
         return Scaffold(
-          backgroundColor: AppColors.scaffoldBackgroundColor,
+          backgroundColor: AppColors.kBg,
           resizeToAvoidBottomInset: true,
           appBar: CupertinoNavigationBar(
-            backgroundColor: AppColors.scaffoldBackgroundColor,
+            backgroundColor: AppColors.kBg.withValues(alpha: 0.1),
+            border: null,
             leading: CustomNavButton(
               onPressed: () {
                 if (!mounted) return;
@@ -649,7 +650,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       final user = state.user;
 
       return SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 20),
+        padding: EdgeInsets.only(
+          bottom: 20,
+          top: 12.h,
+          left: 12.w,
+          right: 12.w,
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,

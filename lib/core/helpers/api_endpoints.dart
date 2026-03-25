@@ -50,6 +50,10 @@ class ApiEndpoints {
       '$baseUrl/customer-or-supplier/user/<id>';
   static const String createBusiness = '$baseUrl/customer-or-supplier';
   static const String updateBusiness = '$baseUrl/customer-or-supplier/<id>';
+  static const String updateShippingAddress = 
+      '$baseUrl/customer-shipping-address/customer/<id>';
+  static const String updateBillingAddress = 
+      '$baseUrl/customer-billing-address/customer/<id>';
   //job types
   static const String jobTypeListUrl = '$baseUrl/job-type/user/<id>';
   static const String createJobType = '$baseUrl/job-type';

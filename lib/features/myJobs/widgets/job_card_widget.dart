@@ -2,6 +2,7 @@ import 'package:figma_squircle/figma_squircle.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:repair_cms/core/utils/label_formatter.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 
@@ -231,7 +232,7 @@ class JobCardWidget extends StatelessWidget {
       case 'draft':
         return 'Draft';
       default:
-        return status;
+        return LabelFormatter.formatJobStatus(status);
     }
   }
 

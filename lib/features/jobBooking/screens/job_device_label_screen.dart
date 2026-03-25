@@ -14,16 +14,20 @@ import 'package:repair_cms/features/moreSettings/labelContent/service/label_cont
 import 'package:repair_cms/core/helpers/show_toast.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
+import 'package:repair_cms/features/home/home_screen.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class JobDeviceLabelScreen extends StatefulWidget {
   final CreateJobResponse jobResponse;
   final String printOption;
+  final bool fromBooking;
   final String? jobNo;
 
   const JobDeviceLabelScreen({
     super.key,
     required this.jobResponse,
     required this.printOption,
+    this.fromBooking = false,
     this.jobNo,
   });
 
@@ -247,7 +251,18 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
           bottom: BorderSide(color: Colors.grey.shade200, width: 1),
         ),
         leading: CustomNavButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (widget.fromBooking) {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => const HomeScreen(initialIndex: 1),
+                ),
+                (route) => false,
+              );
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
           icon: CupertinoIcons.back,
         ),
         middle: Text(
@@ -260,9 +275,9 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         ),
         trailing: CustomNavButton(
           onPressed: _handlePrintTap,
-          icon: Icons.print,
+          icon: SolarIconsOutline.printer,
           size: 24.sp,
-          iconColor: AppColors.primary,
+          iconColor: AppColors.fontSecondaryColor,
         ),
       ),
       body: Column(
@@ -539,20 +554,26 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       // TD-4 detection: layout adjustments apply ONLY to TD-4 series.
       // TD-2D and Xprinter use the original values — their output is already correct.
-      final isTD4 = (printer.printerModel?.toUpperCase() ?? '').startsWith('TD-4');
+      final isTD4 = (printer.printerModel?.toUpperCase() ?? '').startsWith(
+        'TD-4',
+      );
 
       // Offset compensates for Brother's unprintable hardware margins.
       // For Xprinter and other brands the TSPL SIZE/GAP commands already
       // handle the printable area, so zero offset is correct.
       //
-      // TD-4 IMPORTANT: The Brother TD-4 SDK manages its own media margins
-      // internally (unlike TD-2). Applying a manual 50-dot canvas translate
-      // for TD-4 shifts content towards the right so the barcode starts too
-      // close to (or beyond) the left physical edge after the SDK repositions
-      // the image. Use zero offset for TD-4 and rely on percentage padding.
+      // TD-4: The Brother TD-4 SDK applies its own internal media offset.
+      // We compensate by translating the canvas right/down so content
+      // doesn't get clipped at the left/top physical edge by the SDK margin.
+      // A value of ~4% of canvas width gives ~47 dots on a 1181-dot canvas
+      // which matches the typical 4mm hardware margin on TD-4 media.
       final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
-      final double offsetX = (isBrother && !isTD4) ? 50.0 : 0.0;
-      final double offsetY = (isBrother && !isTD4) ? 50.0 : 0.0;
+      final double offsetX = isBrother
+          ? (isTD4 ? widthPx * 0.04 : 50.0)
+          : 0.0;
+      final double offsetY = isBrother
+          ? (isTD4 ? heightPx * 0.04 : 50.0)
+          : 0.0;
       if (offsetX > 0 || offsetY > 0) canvas.translate(offsetX, offsetY);
 
       // Subtract BOTH the left AND right offsets so the drawable region is
@@ -562,24 +583,27 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final drawableHeight = heightPx.toDouble() - 2 * offsetY;
 
       // Calculate layout dimensions (percentage-based, using drawable area).
-      // TD-4: use 5% edge padding to create a safe inset from all four sides
-      //   since the Brother SDK may position the image flush to the media edge.
+      // TD-4: use 5% edge padding to create a safe inset from all four sides.
+      //   Note: the 4% canvas translate above already compensates for the
+      //   hardware left/top margin, so 5% padding is a visual safety inset.
       // TD-2D / Xprinter: original 2% padding.
       final padding = isTD4
-          ? drawableWidth * 0.05 // TD-4: 5% safe inset from each edge
-          : drawableWidth * 0.02; // TD-2D / Xprinter: original
+          ? drawableWidth * 0.05   // TD-4: 5% safe inset
+          : drawableWidth * 0.02;  // TD-2D / Xprinter: original
       final contentWidth = drawableWidth - (padding * 2);
-      final barcodeWidth =
-          contentWidth * 0.65; // 65% of content width for barcode
-      // TD-4: cap barcode height so it never pushes text off the bottom of the
-      //   canvas, regardless of label height (portrait vs. landscape).
-      // TD-2D/Xprinter: original ratio.
+      // TD-4: narrower barcode (55%) so content fits horizontally with the
+      //   offset applied; TD-2D/Xprinter keep the original 65%.
+      final barcodeWidth = isTD4
+          ? contentWidth * 0.55
+          : contentWidth * 0.65;
+      // TD-4: cap barcode height at a tighter range to avoid overflow.
       final barcodeHeight = isTD4
-          ? (drawableHeight * 0.22).clamp(120.0, 320.0) // capped for TD-4
-          : drawableHeight * 0.24; // original
+          ? (drawableHeight * 0.18).clamp(80.0, 220.0)
+          : drawableHeight * 0.24;
+      // TD-4: smaller QR so barcode + QR fit on the reduced drawable area.
       final qrSize = isTD4
-          ? contentWidth * 0.28 // TD-4: ~28% of content width — easily scannable
-          : contentWidth * 0.22; // original
+          ? contentWidth * 0.22
+          : contentWidth * 0.22; // same ratio, kept for clarity
 
       // Draw barcode using barcode package
       final barcodeData = _getBarcodeData();
@@ -599,14 +623,20 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // Font size proportional to the canvas height so text fits regardless
       // of device pixel ratio. 26.sp would be device-scaled (e.g. 78px on a 3×
       // device) and overflow a 208-dot Xprinter label. We clamp between 11–26.
-      // For TD-4 (300 DPI, 150 mm tall) the old 26-px ceiling produced 2.2 mm
-      // text — nearly invisible on a physical label. TD-4 gets its own formula.
+      // For TD-4 (300 DPI, ~150 mm tall) we use a smaller range so text is
+      // legible without overflowing the reduced drawable area after the offset.
       final double baseFontSize = isTD4
-          ? (drawableHeight * 0.055).clamp(65.0, 95.0) // TD-4: larger range for all label sizes
-          : (drawableHeight * 0.075).clamp(18.0, 26.0); // TD-2D / Xprinter: original
+          ? (drawableHeight * 0.04).clamp(
+              40.0,
+              65.0,
+            ) // TD-4: reduced range to fit content
+          : (drawableHeight * 0.075).clamp(
+              18.0,
+              26.0,
+            ); // TD-2D / Xprinter: original
       final double lineSpacing = isTD4
-          ? baseFontSize * 1.35  // proportional gap for large canvas
-          : baseFontSize + 3.0;  // original fixed gap for small labels
+          ? baseFontSize * 1.35 // proportional gap for large canvas
+          : baseFontSize + 3.0; // original fixed gap for small labels
 
       // Draw job number under barcode (only if showJobNo is enabled)
       double currentY = padding;

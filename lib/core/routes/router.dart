@@ -62,7 +62,13 @@ class AppRouter {
       ),
       GoRoute(
         path: RouteNames.home,
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>?;
+          return HomeScreen(
+            initialIndex: extras?['index'] ?? 0,
+            initialStatus: extras?['status'],
+          );
+        },
       ),
       GoRoute(
         path: RouteNames.dashboard,

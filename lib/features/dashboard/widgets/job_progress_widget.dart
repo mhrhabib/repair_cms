@@ -1,7 +1,7 @@
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
-import 'package:repair_cms/features/myJobs/screens/my_jobs_screen.dart';
+import 'package:repair_cms/features/home/home_screen.dart';
 import 'dart:math' as math;
 
 class JobProgressWidget extends StatelessWidget {
@@ -201,7 +201,7 @@ class JobProgressWidget extends StatelessWidget {
           context,
           'Quotation Rejected ($quotationRejectedJobs)',
           const Color(0xFFFF5F5F),
-          'rejected',
+          'rejected_quotes',
         ),
       ],
     );
@@ -216,10 +216,12 @@ class JobProgressWidget extends StatelessWidget {
     return InkWell(
       onTap: () {
         // Navigate directly to MyJobsScreen with the respective status filter
-        Navigator.of(context).push(
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (context) => MyJobsScreen(initialStatus: statusFilter),
+            builder: (context) =>
+                HomeScreen(initialIndex: 1, initialStatus: statusFilter),
           ),
+          (route) => false,
         );
       },
       borderRadius: BorderRadius.circular(4.r),

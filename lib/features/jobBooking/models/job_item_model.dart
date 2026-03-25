@@ -6,11 +6,13 @@ class JobItemsModel {
   JobItemsModel({this.items, this.totalItems, this.pages});
 
   JobItemsModel.fromJson(Map<String, dynamic> json) {
-    if (json['items'] != null) {
+    if (json['items'] != null && json['items'] is List) {
       items = <Item>[];
-      json['items'].forEach((v) {
-        items!.add(Item.fromJson(v));
-      });
+      for (var v in json['items']) {
+        if (v is Map<String, dynamic>) {
+          items!.add(Item.fromJson(v));
+        }
+      }
     }
     totalItems = json['totalItems'];
     pages = json['pages'];
@@ -112,18 +114,22 @@ class Item {
     salePriceExlVat = _parseDouble(json['salePriceExlVat']);
     salePriceIncVat = _parseDouble(json['salePriceIncVat']);
 
-    if (json['barcode'] != null) {
+    if (json['barcode'] != null && json['barcode'] is List) {
       barcode = <Barcode>[];
-      json['barcode'].forEach((v) {
-        barcode!.add(Barcode.fromJson(v));
-      });
+      for (var v in json['barcode']) {
+        if (v is Map<String, dynamic>) {
+          barcode!.add(Barcode.fromJson(v));
+        }
+      }
     }
 
-    if (json['supplierList'] != null) {
+    if (json['supplierList'] != null && json['supplierList'] is List) {
       supplierList = <SupplierList>[];
-      json['supplierList'].forEach((v) {
-        supplierList!.add(SupplierList.fromJson(v));
-      });
+      for (var v in json['supplierList']) {
+        if (v is Map<String, dynamic>) {
+          supplierList!.add(SupplierList.fromJson(v));
+        }
+      }
     }
     serialNoManagement = json['serialNoManagement'];
     pricingCalculator = json['pricingCalculator'];
@@ -133,11 +139,13 @@ class Item {
     updatedAt = json['updatedAt'];
     iV = json['__v'];
 
-    if (json['stockSetting'] != null) {
+    if (json['stockSetting'] != null && json['stockSetting'] is List) {
       stockSetting = <StockSetting>[];
-      json['stockSetting'].forEach((v) {
-        stockSetting!.add(StockSetting.fromJson(v));
-      });
+      for (var v in json['stockSetting']) {
+        if (v is Map<String, dynamic>) {
+          stockSetting!.add(StockSetting.fromJson(v));
+        }
+      }
     }
   }
 

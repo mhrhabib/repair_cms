@@ -1,21 +1,27 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:repair_cms/core/services/file_service.dart';
-import 'package:repair_cms/core/helpers/storage.dart';
-import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart';
+import 'package:solar_icons/solar_icons.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
-import 'package:repair_cms/core/routes/route_names.dart';
+import 'package:repair_cms/core/services/file_service.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/home/home_screen.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
-import 'package:repair_cms/features/jobBooking/models/create_job_request.dart' as job_booking;
-import 'package:repair_cms/features/myJobs/models/single_job_model.dart' as my_jobs;
+import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
+    as job_booking;
+import 'package:repair_cms/features/myJobs/models/single_job_model.dart'
+    as my_jobs;
 import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
@@ -23,21 +29,23 @@ import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_
 import 'package:repair_cms/features/moreSettings/labelContent/service/label_content_settings_service.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/show_toast.dart';
-import 'package:flutter/rendering.dart';
 import 'package:repair_cms/features/jobBooking/services/escpos_generator_service.dart';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-
-import 'package:solar_icons/solar_icons.dart';
 
 class JobReceiptPreviewScreen extends StatefulWidget {
   final job_booking.CreateJobResponse jobResponse;
   final String printOption; // 'A4 Receipt', 'Thermal Receipt', 'Device Label'
+  final bool fromBooking;
 
-  const JobReceiptPreviewScreen({super.key, required this.jobResponse, required this.printOption});
+  const JobReceiptPreviewScreen({
+    super.key,
+    required this.jobResponse,
+    required this.printOption,
+    this.fromBooking = false,
+  });
 
   @override
-  State<JobReceiptPreviewScreen> createState() => _JobReceiptPreviewScreenState();
+  State<JobReceiptPreviewScreen> createState() =>
+      _JobReceiptPreviewScreenState();
 }
 
 class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
@@ -74,9 +82,11 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     return 'Device';
   }
 
-  String _getDeviceIMEI() => widget.jobResponse.data?.device?.firstOrNull?.imei ?? '';
+  String _getDeviceIMEI() =>
+      widget.jobResponse.data?.device?.firstOrNull?.imei ?? '';
 
-  String _getDeviceSerialNumber() => widget.jobResponse.data?.device?.firstOrNull?.serialNo ?? '';
+  String _getDeviceSerialNumber() =>
+      widget.jobResponse.data?.device?.firstOrNull?.serialNo ?? '';
 
   String _getCustomerName() {
     final contact = widget.jobResponse.data?.contact?.firstOrNull;
@@ -94,11 +104,13 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     return 'N/A';
   }
 
-  String _getPhysicalLocation() => widget.jobResponse.data?.physicalLocation ?? 'N/A';
+  String _getPhysicalLocation() =>
+      widget.jobResponse.data?.physicalLocation ?? 'N/A';
 
   String _getQRCodeData() => widget.jobResponse.data?.sId ?? '';
 
-  String _getBarcodeData() => _getJobNumber().replaceAll(RegExp(r'[^0-9]'), '').padLeft(13, '0');
+  String _getBarcodeData() =>
+      _getJobNumber().replaceAll(RegExp(r'[^0-9]'), '').padLeft(13, '0');
 
   // ──────────────────────────────────────────────────────────────────────────
   // Print Options Bottom Sheet
@@ -139,7 +151,10 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
     final selectedPrinter = await showCupertinoModalPopup<PrinterConfigModel>(
       context: context,
-      builder: (_) => _PrinterPickerSheet(title: 'Select Label Printer', printers: labelPrinters),
+      builder: (_) => _PrinterPickerSheet(
+        title: 'Select Label Printer',
+        printers: labelPrinters,
+      ),
     );
     if (selectedPrinter != null) await _printLabel(selectedPrinter);
   }
@@ -158,7 +173,9 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         'jobId': widget.jobResponse.data?.sId ?? 'N/A',
       };
 
-      SnackbarDemo(message: 'Sending to printer...').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Sending to printer...',
+      ).showCustomSnackbar(context);
 
       final canPrintImage = printer.printerType == 'label';
       if (canPrintImage) {
@@ -167,25 +184,34 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
           throw Exception('Failed to capture label image');
         }
 
-        final imageResult = await PrinterServiceFactory.printLabelImageWithFallback(
-          config: printer,
-          imageBytes: imageBytes,
-        );
+        final imageResult =
+            await PrinterServiceFactory.printLabelImageWithFallback(
+              config: printer,
+              imageBytes: imageBytes,
+            );
 
         if (imageResult.success) {
-          SnackbarDemo(message: imageResult.message).showCustomSnackbar(context);
+          SnackbarDemo(
+            message: imageResult.message,
+          ).showCustomSnackbar(context);
           return;
         }
 
         final labelText = _buildLabelText();
-        final textResult = await PrinterServiceFactory.printLabelWithFallback(config: printer, text: labelText);
+        final textResult = await PrinterServiceFactory.printLabelWithFallback(
+          config: printer,
+          text: labelText,
+        );
         if (textResult.success) {
           SnackbarDemo(message: textResult.message).showCustomSnackbar(context);
         } else {
           throw Exception(textResult.message);
         }
       } else {
-        final result = await PrinterServiceFactory.printDeviceLabelWithFallback(config: printer, labelData: labelData);
+        final result = await PrinterServiceFactory.printDeviceLabelWithFallback(
+          config: printer,
+          labelData: labelData,
+        );
         if (result.success) {
           SnackbarDemo(message: result.message).showCustomSnackbar(context);
         } else {
@@ -234,10 +260,18 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         context: context,
         builder: (_) => AlertDialog(
           title: Text('No $printerTypeLabel Printers Configured'),
-          content: Text('No $printerTypeLabel printers configured. Search for printers on your network?'),
+          content: Text(
+            'No $printerTypeLabel printers configured. Search for printers on your network?',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-            TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Search')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Search'),
+            ),
           ],
         ),
       );
@@ -253,7 +287,10 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
     final selectedPrinter = await showDialog<PrinterConfigModel>(
       context: context,
-      builder: (_) => _PrinterSelectionDialog(printers: configuredPrinters, defaultPrinterType: defaultPrinterType),
+      builder: (_) => _PrinterSelectionDialog(
+        printers: configuredPrinters,
+        defaultPrinterType: defaultPrinterType,
+      ),
     );
 
     if (selectedPrinter != null && mounted) {
@@ -262,11 +299,15 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
   }
 
   Future<void> _printReceipt(PrinterConfigModel printer) async {
-    debugPrint('🚀 Starting print job with ${printer.printerBrand} ${printer.printerType}');
+    debugPrint(
+      '🚀 Starting print job with ${printer.printerBrand} ${printer.printerType}',
+    );
 
     try {
       if (printer.printerType == 'thermal') {
-        SnackbarDemo(message: 'Generating thermal receipt...').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Generating thermal receipt...',
+        ).showCustomSnackbar(context);
 
         final jobDataMap = _convertToSingleJobModel().toJson()['data'];
         if (jobDataMap == null) throw Exception('Failed to prepare job data');
@@ -276,11 +317,18 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
           paperWidth: printer.paperWidth ?? 80,
         );
 
-        SnackbarDemo(message: 'Sending to thermal printer...').showCustomSnackbar(context);
-        final result = await PrinterServiceFactory.printRawEscPos(config: printer, escposBytes: bytes);
+        SnackbarDemo(
+          message: 'Sending to thermal printer...',
+        ).showCustomSnackbar(context);
+        final result = await PrinterServiceFactory.printRawEscPos(
+          config: printer,
+          escposBytes: bytes,
+        );
 
         if (result.success) {
-          SnackbarDemo(message: 'Print successful!').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Print successful!',
+          ).showCustomSnackbar(context);
         } else {
           throw Exception(result.message);
         }
@@ -288,15 +336,23 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         await _printLabel(printer);
       } else {
         // A4 printer
-        SnackbarDemo(message: 'Preparing A4 PDF...').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Preparing A4 PDF...',
+        ).showCustomSnackbar(context);
 
         final imageBytes = await _captureReceiptAsImage();
-        if (imageBytes == null) throw Exception('Failed to capture receipt image');
+        if (imageBytes == null) {
+          throw Exception('Failed to capture receipt image');
+        }
 
         final a4Service = PrinterServiceFactory.getA4NetworkPrinterService();
-        final pdfBytes = await a4Service.generatePdfFromImage(imageBytes: imageBytes);
+        final pdfBytes = await a4Service.generatePdfFromImage(
+          imageBytes: imageBytes,
+        );
 
-        SnackbarDemo(message: 'Sending to A4 printer...').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Sending to A4 printer...',
+        ).showCustomSnackbar(context);
         final result = await a4Service.printA4Receipt(
           ipAddress: printer.ipAddress,
           pdfBytes: pdfBytes,
@@ -304,7 +360,9 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         );
 
         if (result.success) {
-          SnackbarDemo(message: 'Print successful!').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Print successful!',
+          ).showCustomSnackbar(context);
         } else {
           throw Exception(result.message);
         }
@@ -317,7 +375,9 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
   Future<Uint8List?> _captureReceiptAsImage() async {
     try {
-      final boundary = _receiptKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _receiptKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return null;
 
       // Use high pixel ratio for A4 quality
@@ -342,7 +402,11 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
             padding: EdgeInsets.all(24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Searching for printers...')],
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Searching for printers...'),
+              ],
             ),
           ),
         ),
@@ -353,14 +417,17 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       if (mounted) Navigator.of(context).pop();
       if (discoveredPrinters.isEmpty) {
         if (mounted) {
-          SnackbarDemo(message: 'No printers found on the network.').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'No printers found on the network.',
+          ).showCustomSnackbar(context);
         }
         return;
       }
       if (mounted) {
         final selectedPrinter = await showDialog<Map<String, String>>(
           context: context,
-          builder: (_) => _DiscoveredPrintersDialog(printers: discoveredPrinters),
+          builder: (_) =>
+              _DiscoveredPrintersDialog(printers: discoveredPrinters),
         );
         if (selectedPrinter != null && mounted) {
           _configurePrinter(selectedPrinter);
@@ -369,7 +436,9 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
       if (mounted) {
-        SnackbarDemo(message: 'Failed to discover printers: ${e.toString()}').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Failed to discover printers: ${e.toString()}',
+        ).showCustomSnackbar(context);
       }
     }
   }
@@ -389,9 +458,17 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         if (ip == wifiIP) continue;
         for (final port in printerPorts) {
           try {
-            final socket = await Socket.connect(ip, port, timeout: const Duration(milliseconds: 100));
+            final socket = await Socket.connect(
+              ip,
+              port,
+              timeout: const Duration(milliseconds: 100),
+            );
             socket.destroy();
-            discoveredPrinters.add({'ip': ip, 'port': port.toString(), 'name': 'Printer at $ip'});
+            discoveredPrinters.add({
+              'ip': ip,
+              'port': port.toString(),
+              'name': 'Printer at $ip',
+            });
             break;
           } catch (_) {
             continue;
@@ -411,12 +488,16 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       try {
         await _settingsService.savePrinterConfig(config);
         if (mounted) {
-          SnackbarDemo(message: 'Printer configured successfully!').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Printer configured successfully!',
+          ).showCustomSnackbar(context);
           _handleReceiptPrint();
         }
       } catch (_) {
         if (mounted) {
-          SnackbarDemo(message: 'Failed to save printer configuration').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Failed to save printer configuration',
+          ).showCustomSnackbar(context);
         }
       }
     }
@@ -460,7 +541,10 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     if (userData != null) {
       final userMap = userData is String ? jsonDecode(userData) : userData;
       agentUser = [
-        my_jobs.LoggedUser(fullName: userMap['fullName'] ?? userMap['name'] ?? 'N/A', email: userMap['email'] ?? ''),
+        my_jobs.LoggedUser(
+          fullName: userMap['fullName'] ?? userMap['name'] ?? 'N/A',
+          email: userMap['email'] ?? '',
+        ),
       ];
     }
 
@@ -501,10 +585,23 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         defectId: data?.defectId,
         physicalLocation: data?.physicalLocation,
         emailConfirmation: data?.emailConfirmation,
-        files: data?.files?.map((f) => my_jobs.File(id: f.id, file: f.file, fileName: null, size: null)).toList(),
-        signatureFilePath: (data?.signatureFilePath != null && data!.signatureFilePath!.isNotEmpty)
+        files: data?.files
+            ?.map(
+              (f) => my_jobs.File(
+                id: f.id,
+                file: f.file,
+                fileName: null,
+                size: null,
+              ),
+            )
+            .toList(),
+        signatureFilePath:
+            (data?.signatureFilePath != null &&
+                data!.signatureFilePath!.isNotEmpty)
             ? data.signatureFilePath
-            : (jobBookingState is JobBookingData ? jobBookingState.job.signatureFilePath : null),
+            : (jobBookingState is JobBookingData
+                  ? jobBookingState.job.signatureFilePath
+                  : null),
         printOption: data?.printOption,
         printDeviceLabel: data?.printDeviceLabel,
         jobStatus: data?.jobStatus
@@ -520,6 +617,16 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
               ),
             )
             .toList(),
+        deviceData: data?.device?.isNotEmpty == true
+            ? my_jobs.DeviceData(
+                brand: data!.device![0].brand,
+                model: data.device![0].model,
+                imei: data.device![0].imei,
+                condition: data.device![0].condition
+                    ?.map((c) => my_jobs.Condition(value: c.value, id: c.id))
+                    .toList(),
+              )
+            : null,
         userId: data?.userId,
         createdAt: data?.createdAt,
         updatedAt: data?.updatedAt,
@@ -531,7 +638,10 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                 sId: d.sId,
                 brand: d.brand,
                 model: d.model,
-                condition: d.condition?.map((c) => my_jobs.Condition(value: c.value, id: c.id)).toList(),
+                imei: d.imei,
+                condition: d.condition
+                    ?.map((c) => my_jobs.Condition(value: c.value, id: c.id))
+                    .toList(),
                 createdAt: d.createdAt,
                 updatedAt: d.updatedAt,
               ),
@@ -556,7 +666,12 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
             ?.map(
               (d) => my_jobs.Defect(
                 sId: d.sId,
-                defect: d.defect?.map((item) => my_jobs.DefectItem(value: item.value, id: item.id)).toList(),
+                defect: d.defect
+                    ?.map(
+                      (item) =>
+                          my_jobs.DefectItem(value: item.value, id: item.id),
+                    )
+                    .toList(),
                 description: d.description,
                 createdAt: d.createdAt,
                 updatedAt: d.updatedAt,
@@ -568,30 +683,50 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         subTotal: calculatedSubTotal,
         vat: 0.0,
         discount: 0.0,
-        jobTrackingNumber: _completeJobData?.data?.jobTrackingNumber ?? data?.jobTrackingNumber ?? data?.jobNo,
+        jobTrackingNumber:
+            _completeJobData?.data?.jobTrackingNumber ??
+            data?.jobTrackingNumber ??
+            data?.jobNo,
         receiptFooter: my_jobs.ReceiptFooter(
           companyLogo: pick(respFooter?.companyLogo, cubitFooter?.companyLogo),
-          companyLogoURL: FileService.getImageUrl(pick(respFooter?.companyLogoURL, cubitFooter?.companyLogoURL)),
+          companyLogoURL: FileService.getImageUrl(
+            pick(respFooter?.companyLogoURL, cubitFooter?.companyLogoURL),
+          ),
           address: my_jobs.Address(
             companyName: pick(
               respFooter?.address.companyName,
               cubitFooter?.address.companyName,
               storage.read('companyName') ?? '',
             ),
-            street: pick(respFooter?.address.street, cubitFooter?.address.street),
+            street: pick(
+              respFooter?.address.street,
+              cubitFooter?.address.street,
+            ),
             num: pick(respFooter?.address.num, cubitFooter?.address.num),
             zip: pick(respFooter?.address.zip, cubitFooter?.address.zip),
             city: pick(respFooter?.address.city, cubitFooter?.address.city),
-            country: pick(respFooter?.address.country, cubitFooter?.address.country),
+            country: pick(
+              respFooter?.address.country,
+              cubitFooter?.address.country,
+            ),
           ),
           contact: my_jobs.ContactInfo(
             ceo: pick(respFooter?.contact.ceo, cubitFooter?.contact.ceo),
-            telephone: pick(respFooter?.contact.telephone, cubitFooter?.contact.telephone),
+            telephone: pick(
+              respFooter?.contact.telephone,
+              cubitFooter?.contact.telephone,
+            ),
             email: pick(respFooter?.contact.email, cubitFooter?.contact.email),
-            website: pick(respFooter?.contact.website, cubitFooter?.contact.website),
+            website: pick(
+              respFooter?.contact.website,
+              cubitFooter?.contact.website,
+            ),
           ),
           bank: my_jobs.Bank(
-            bankName: pick(respFooter?.bank.bankName, cubitFooter?.bank.bankName),
+            bankName: pick(
+              respFooter?.bank.bankName,
+              cubitFooter?.bank.bankName,
+            ),
             iban: pick(respFooter?.bank.iban, cubitFooter?.bank.iban),
             bic: pick(respFooter?.bank.bic, cubitFooter?.bank.bic),
           ),
@@ -613,16 +748,18 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                 vatNo: customerDetails.vatNo,
                 reverseCharge: customerDetails.reverseCharge,
                 billingAddress: my_jobs.BillingAddress(
-                  street: '${customerDetails.billingAddress.street ?? ''} ${customerDetails.billingAddress.no ?? ''}'
-                      .trim(),
+                  street:
+                      '${customerDetails.billingAddress.street ?? ''} ${customerDetails.billingAddress.no ?? ''}'
+                          .trim(),
                   zip: customerDetails.billingAddress.zip,
                   city: customerDetails.billingAddress.city,
                   state: customerDetails.billingAddress.state,
                   country: customerDetails.billingAddress.country,
                 ),
                 shippingAddress: my_jobs.ShippingAddress(
-                  street: '${customerDetails.shippingAddress.street ?? ''} ${customerDetails.shippingAddress.no ?? ''}'
-                      .trim(),
+                  street:
+                      '${customerDetails.shippingAddress.street ?? ''} ${customerDetails.shippingAddress.no ?? ''}'
+                          .trim(),
                   zip: customerDetails.shippingAddress.zip,
                   city: customerDetails.shippingAddress.city,
                   country: customerDetails.shippingAddress.country,
@@ -656,10 +793,16 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       final heightPx = (labelHeightMm * dotsPerMm).round();
 
       final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()));
+      final canvas = Canvas(
+        recorder,
+        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+      );
 
       final bgPaint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()), bgPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+        bgPaint,
+      );
 
       final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
       final double offsetX = isBrother ? 50.0 : 0.0;
@@ -676,7 +819,14 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
       final barcodeData = _getBarcodeData();
       if (_labelSettings.showBarcode) {
-        _drawBarcode(canvas, barcodeData, padding, padding, barcodeWidth, barcodeHeight);
+        _drawBarcode(
+          canvas,
+          barcodeData,
+          padding,
+          padding,
+          barcodeWidth,
+          barcodeHeight,
+        );
       }
 
       final double baseFontSize = (drawableHeight * 0.075).clamp(18.0, 26.0);
@@ -689,19 +839,30 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
           final tp = TextPainter(
             text: TextSpan(
               text: _getJobNumber(),
-              style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: baseFontSize,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             textDirection: TextDirection.ltr,
           );
           tp.layout(maxWidth: barcodeWidth);
-          tp.paint(canvas, Offset(padding + (barcodeWidth - tp.width) / 2, currentY));
+          tp.paint(
+            canvas,
+            Offset(padding + (barcodeWidth - tp.width) / 2, currentY),
+          );
           currentY += lineSpacing;
         }
       } else if (_labelSettings.showJobNo) {
         final tp = TextPainter(
           text: TextSpan(
             text: _getJobNumber(),
-            style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: baseFontSize,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           textDirection: TextDirection.ltr,
         );
@@ -717,8 +878,14 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
               : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
           version: QrVersions.auto,
           errorCorrectionLevel: QrErrorCorrectLevel.M,
-          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
-          dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
+          eyeStyle: const QrEyeStyle(
+            eyeShape: QrEyeShape.square,
+            color: Colors.black,
+          ),
+          dataModuleStyle: const QrDataModuleStyle(
+            dataModuleShape: QrDataModuleShape.square,
+            color: Colors.black,
+          ),
         );
         final qrX = drawableWidth - padding - qrSize;
         canvas.save();
@@ -745,7 +912,8 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation) {
         final line = [
           if (_labelSettings.showSymptom) _getDefect(),
-          if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+          if (_labelSettings.showPhysicalLocation)
+            'BOX: ${_getPhysicalLocation()}',
         ].where((e) => e.isNotEmpty).join(' | ');
         if (line.isNotEmpty) textLines.add(line);
       }
@@ -754,7 +922,11 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         final lp = TextPainter(
           text: TextSpan(
             text: textLines[i],
-            style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: baseFontSize,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           textDirection: TextDirection.ltr,
         );
@@ -774,13 +946,33 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     }
   }
 
-  void _drawBarcode(Canvas canvas, String data, double x, double y, double width, double height) {
+  void _drawBarcode(
+    Canvas canvas,
+    String data,
+    double x,
+    double y,
+    double width,
+    double height,
+  ) {
     final barcodeGen = Barcode.code128();
-    final elements = barcodeGen.make(data, width: width, height: height, drawText: false);
+    final elements = barcodeGen.make(
+      data,
+      width: width,
+      height: height,
+      drawText: false,
+    );
     final blackPaint = Paint()..color = Colors.black;
     for (final element in elements) {
       if (element is BarcodeBar && element.black) {
-        canvas.drawRect(Rect.fromLTWH(x + element.left, y + element.top, element.width, element.height), blackPaint);
+        canvas.drawRect(
+          Rect.fromLTWH(
+            x + element.left,
+            y + element.top,
+            element.width,
+            element.height,
+          ),
+          blackPaint,
+        );
       }
     }
   }
@@ -789,6 +981,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('fromBooking: ${widget.fromBooking}');
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         if (state is JobDetailSuccess) {
@@ -801,34 +994,37 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF0F0F5),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          shadowColor: Colors.black12,
-          surfaceTintColor: Colors.white,
+        backgroundColor: AppColors.kBg,
+        appBar: CupertinoNavigationBar(
+          backgroundColor: AppColors.kBg,
           leading: CustomNavButton(
-            onPressed: () => Navigator.of(context).popUntil(ModalRoute.withName(RouteNames.home)),
+            onPressed: () {
+              if (widget.fromBooking) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const HomeScreen(initialIndex: 1),
+                  ),
+                  (route) => false,
+                );
+              } else {
+                Navigator.of(context).pop();
+              }
+            },
             icon: CupertinoIcons.back,
           ),
-          title: Text(
+          middle: Text(
             'Receipt Preview',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.black87),
-          ),
-          centerTitle: true,
-          actions: [
-            // Print button — opens bottom sheet chooser
-            GestureDetector(
-              onTap: _showPrintOptionsSheet,
-              child: Container(
-                margin: EdgeInsets.only(right: 12.w),
-                width: 38.w,
-                height: 38.h,
-                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: Icon(CupertinoIcons.printer_fill, color: AppColors.primary, size: 20.sp),
-              ),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
-          ],
+          ),
+
+          trailing: CustomNavButton(
+            onPressed: _showPrintOptionsSheet,
+            icon: SolarIconsOutline.printer,
+          ),
         ),
         body: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
@@ -875,7 +1071,13 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14.r),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 18, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -899,7 +1101,10 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                       SizedBox(height: 12.h),
                       Text(
                         'Loading tracking number...',
-                        style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
@@ -917,7 +1122,13 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(color: Colors.grey.shade300, width: 2),
-        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade300,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -939,22 +1150,34 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                         if (_labelSettings.showBarcode)
                           SizedBox(
                             height: 60.h,
-                            child: BarcodeWidget(barcode: Barcode.code128(), data: _getBarcodeData(), drawText: false),
+                            child: BarcodeWidget(
+                              barcode: Barcode.code128(),
+                              data: _getBarcodeData(),
+                              drawText: false,
+                            ),
                           ),
-                        if (_labelSettings.showBarcode && _labelSettings.showJobNo) SizedBox(height: 8.h),
+                        if (_labelSettings.showBarcode &&
+                            _labelSettings.showJobNo)
+                          SizedBox(height: 8.h),
                         if (_labelSettings.showJobNo)
                           Text(
                             _getJobNumber(),
-                            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.black,
+                            ),
                             textAlign: TextAlign.left,
                           ),
                       ],
                     ),
                   ),
                 if ((_labelSettings.showBarcode || _labelSettings.showJobNo) &&
-                    (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR))
+                    (_labelSettings.showJobQR ||
+                        _labelSettings.showTrackingPortalQR))
                   SizedBox(width: 16.w),
-                if (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR)
+                if (_labelSettings.showJobQR ||
+                    _labelSettings.showTrackingPortalQR)
                   Expanded(
                     flex: 4,
                     child: Column(
@@ -990,23 +1213,39 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                   if (_labelSettings.showModelBrand)
                     [
                       if (_getJobNumber() != _getDeviceName()) _getDeviceName(),
-                      if (_getDeviceIMEI().isNotEmpty) 'IMEI: ${_getDeviceIMEI()}',
-                      if (_getDeviceSerialNumber().isNotEmpty) 'S/N: ${_getDeviceSerialNumber()}',
+                      if (_getDeviceIMEI().isNotEmpty)
+                        'IMEI: ${_getDeviceIMEI()}',
+                      if (_getDeviceSerialNumber().isNotEmpty)
+                        'S/N: ${_getDeviceSerialNumber()}',
                     ].join(' '),
                 ].where((e) => e.trim().isNotEmpty).join(' | '),
-                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                  height: 1.3,
+                ),
                 textAlign: TextAlign.left,
               ),
 
-              if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation) ...[
-                if (_labelSettings.showJobNo || _labelSettings.showCustomerName || _labelSettings.showModelBrand)
+              if (_labelSettings.showSymptom ||
+                  _labelSettings.showPhysicalLocation) ...[
+                if (_labelSettings.showJobNo ||
+                    _labelSettings.showCustomerName ||
+                    _labelSettings.showModelBrand)
                   SizedBox(height: 4.h),
                 Text(
                   [
                     if (_labelSettings.showSymptom) _getDefect(),
-                    if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+                    if (_labelSettings.showPhysicalLocation)
+                      'BOX: ${_getPhysicalLocation()}',
                   ].where((e) => e.isNotEmpty).join(' | '),
-                  style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    height: 1.3,
+                  ),
                   textAlign: TextAlign.left,
                 ),
               ],
@@ -1026,7 +1265,10 @@ class _PrintOptionsSheet extends StatelessWidget {
   final VoidCallback onPrintLabel;
   final VoidCallback onPrintReceipt;
 
-  const _PrintOptionsSheet({required this.onPrintLabel, required this.onPrintReceipt});
+  const _PrintOptionsSheet({
+    required this.onPrintLabel,
+    required this.onPrintReceipt,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1043,19 +1285,31 @@ class _PrintOptionsSheet extends StatelessWidget {
           Container(
             width: 40.w,
             height: 4.h,
-            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2.r)),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2.r),
+            ),
           ),
           SizedBox(height: 20.h),
           Text(
             'Print options',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
           ),
           SizedBox(height: 24.h),
           Row(
             children: [
               Expanded(
                 child: _PrintOptionTile(
-                  widget: Image.asset('assets/icon/label.png', width: 44, height: 44, color: Colors.black),
+                  widget: Image.asset(
+                    'assets/icon/label.png',
+                    width: 44,
+                    height: 44,
+                    color: Colors.black,
+                  ),
                   label: 'Device label',
                   onTap: onPrintLabel,
                 ),
@@ -1082,7 +1336,11 @@ class _PrintOptionTile extends StatelessWidget {
   final Widget widget;
   final VoidCallback onTap;
 
-  const _PrintOptionTile({required this.label, required this.widget, required this.onTap});
+  const _PrintOptionTile({
+    required this.label,
+    required this.widget,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1101,7 +1359,11 @@ class _PrintOptionTile extends StatelessWidget {
             SizedBox(height: 12.h),
             Text(
               label,
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1120,7 +1382,11 @@ class _SectionHeader extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _SectionHeader({required this.icon, required this.label, required this.color});
+  const _SectionHeader({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1139,7 +1405,11 @@ class _SectionHeader extends StatelessWidget {
         // SizedBox(width: 10.w),
         Text(
           label,
-          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.black87),
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
         ),
       ],
     );
@@ -1171,7 +1441,10 @@ class _PrinterPickerSheet extends StatelessWidget {
             children: [
               const Icon(CupertinoIcons.printer, size: 20),
               SizedBox(width: 8.w),
-              Text('${printer.printerBrand} ${printer.printerModel ?? ''}'.trim(), style: TextStyle(fontSize: 16.sp)),
+              Text(
+                '${printer.printerBrand} ${printer.printerModel ?? ''}'.trim(),
+                style: TextStyle(fontSize: 16.sp),
+              ),
             ],
           ),
         );
@@ -1193,7 +1466,10 @@ class _PrinterSelectionDialog extends StatelessWidget {
   final List<PrinterConfigModel> printers;
   final String? defaultPrinterType;
 
-  const _PrinterSelectionDialog({required this.printers, this.defaultPrinterType});
+  const _PrinterSelectionDialog({
+    required this.printers,
+    this.defaultPrinterType,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1209,21 +1485,41 @@ class _PrinterSelectionDialog extends StatelessWidget {
             final printer = printers[index];
             final isDefault = printer.printerType == defaultPrinterType;
             return ListTile(
-              leading: Icon(_getPrinterIcon(printer.printerType), color: Colors.blue, size: 32),
-              title: Text(_getPrinterTitle(printer.printerType), style: const TextStyle(fontWeight: FontWeight.w600)),
+              leading: Icon(
+                _getPrinterIcon(printer.printerType),
+                color: Colors.blue,
+                size: 32,
+              ),
+              title: Text(
+                _getPrinterTitle(printer.printerType),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(printer.printerModel ?? 'Unknown Model'),
-                  Text(printer.ipAddress, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  Text(
+                    printer.ipAddress,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
                   if (isDefault)
                     Container(
                       margin: const EdgeInsets.only(top: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                       child: const Text(
                         'DEFAULT',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                 ],
@@ -1234,7 +1530,12 @@ class _PrinterSelectionDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))],
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ],
     );
   }
 
@@ -1291,7 +1592,12 @@ class _DiscoveredPrintersDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))],
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ],
     );
   }
 }
@@ -1302,10 +1608,12 @@ class _PrinterConfigurationDialog extends StatefulWidget {
   const _PrinterConfigurationDialog({required this.printerInfo});
 
   @override
-  State<_PrinterConfigurationDialog> createState() => _PrinterConfigurationDialogState();
+  State<_PrinterConfigurationDialog> createState() =>
+      _PrinterConfigurationDialogState();
 }
 
-class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog> {
+class _PrinterConfigurationDialogState
+    extends State<_PrinterConfigurationDialog> {
   String _printerType = 'thermal';
   String _printerBrand = 'Brother';
   String? _printerModel;
@@ -1314,7 +1622,13 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
   bool _isDefault = true;
   List<LabelSize> _availableLabelSizes = [];
 
-  final List<String> _printerBrands = ['Brother', 'Epson', 'Zebra', 'Dymo', 'Other'];
+  final List<String> _printerBrands = [
+    'Brother',
+    'Epson',
+    'Zebra',
+    'Dymo',
+    'Other',
+  ];
   final List<int> _paperWidths = [58, 80];
 
   @override
@@ -1348,13 +1662,19 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('IP Address: ${widget.printerInfo['ip']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'IP Address: ${widget.printerInfo['ip']}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _printerType,
               decoration: const InputDecoration(labelText: 'Printer Type'),
               items: const [
-                DropdownMenuItem(value: 'thermal', child: Text('Thermal Receipt')),
+                DropdownMenuItem(
+                  value: 'thermal',
+                  child: Text('Thermal Receipt'),
+                ),
                 DropdownMenuItem(value: 'label', child: Text('Label Printer')),
                 DropdownMenuItem(value: 'a4', child: Text('A4 Printer')),
               ],
@@ -1366,7 +1686,9 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
             DropdownButtonFormField<String>(
               initialValue: _printerBrand,
               decoration: const InputDecoration(labelText: 'Printer Brand'),
-              items: _printerBrands.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+              items: _printerBrands
+                  .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                  .toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
@@ -1378,15 +1700,23 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
             ),
             const SizedBox(height: 12),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Printer Model (Optional)', hintText: 'e.g., QL-820NWB'),
-              onChanged: (value) => _printerModel = value.isEmpty ? null : value,
+              decoration: const InputDecoration(
+                labelText: 'Printer Model (Optional)',
+                hintText: 'e.g., QL-820NWB',
+              ),
+              onChanged: (value) =>
+                  _printerModel = value.isEmpty ? null : value,
             ),
             const SizedBox(height: 12),
             if (_printerType == 'thermal') ...[
               DropdownButtonFormField<int>(
                 initialValue: _paperWidth,
                 decoration: const InputDecoration(labelText: 'Paper Width'),
-                items: _paperWidths.map((w) => DropdownMenuItem(value: w, child: Text('${w}mm'))).toList(),
+                items: _paperWidths
+                    .map(
+                      (w) => DropdownMenuItem(value: w, child: Text('${w}mm')),
+                    )
+                    .toList(),
                 onChanged: (value) {
                   if (value != null) setState(() => _paperWidth = value);
                 },
@@ -1398,7 +1728,12 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
                 initialValue: _labelSize,
                 decoration: const InputDecoration(labelText: 'Label Size'),
                 items: _availableLabelSizes
-                    .map((size) => DropdownMenuItem(value: size, child: Text(size.toString())))
+                    .map(
+                      (size) => DropdownMenuItem(
+                        value: size,
+                        child: Text(size.toString()),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) {
                   if (value != null) setState(() => _labelSize = value);
@@ -1416,7 +1751,10 @@ class _PrinterConfigurationDialogState extends State<_PrinterConfigurationDialog
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: () {
             final config = PrinterConfigModel(

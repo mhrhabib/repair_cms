@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:convert';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -89,10 +90,10 @@ class _JobBookingDeviceModelScreenState
     if (jobReceiptState is JobReceiptLoaded) {
       debugPrint('📄 [DeviceModel] Job receipt loaded, updating receipt data');
       final storage = GetStorage();
-      storage.write('jobReceiptData', {
+      storage.write('jobReceiptData', jsonEncode({
         'salutation': jobReceiptState.receipt.salutation,
         'termsAndConditions': jobReceiptState.receipt.termsAndConditions,
-      });
+      }));
       context.read<JobBookingCubit>().updateReceiptData();
     }
   }

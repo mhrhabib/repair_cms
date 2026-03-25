@@ -1,4 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/constants/app_colors.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/set_up_di.dart';
 import 'package:share_plus/share_plus.dart';
@@ -13,30 +16,50 @@ class LogsViewerScreen extends StatelessWidget {
     final talker = SetUpDI.getIt<Talker>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Debug Logs'),
-        actions: [
-          IconButton(icon: const Icon(Icons.share), tooltip: 'Share Logs', onPressed: () => _shareLogs(talker)),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Clear Logs',
-            onPressed: () {
-              talker.cleanHistory();
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logs cleared')));
-            },
-          ),
-        ],
+      backgroundColor: AppColors.kBg,
+      appBar: CupertinoNavigationBar(
+        backgroundColor: AppColors.kBg,
+        leading: CustomNavButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: CupertinoIcons.back,
+        ),
+        middle: const Text('Debug Logs'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomNavButton(
+              onPressed: () => _shareLogs(talker),
+              icon: CupertinoIcons.share,
+            ),
+            CustomNavButton(
+              onPressed: () {
+                talker.cleanHistory();
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Logs cleared')));
+              },
+              icon: CupertinoIcons.delete,
+            ),
+          ],
+        ),
       ),
       body: TalkerScreen(
         talker: talker,
-        theme: const TalkerScreenTheme(backgroundColor: Colors.white, textColor: Colors.black),
+        theme: TalkerScreenTheme(
+          backgroundColor: AppColors.kBg,
+          textColor: Colors.black,
+        ),
       ),
     );
   }
 
   /// Share logs as text file - client can send this to you
   void _shareLogs(Talker talker) {
-    final logs = talker.history.map((e) => '[${e.displayTime}] ${e.message}').join('\n');
+    final logs = talker.history
+        .map((e) => '[${e.displayTime}] ${e.message}')
+        .join('\n');
 
     if (logs.isEmpty) {
       return;

@@ -272,16 +272,16 @@ class MessageCubit extends Cubit<MessageState> {
       final senderName = message.sender?.name ?? 'Someone';
       final messageText = message.message?.message ?? 'New message';
       final conversationId = message.conversationId ?? '';
-      final jobId = message.message?.jobId;
 
       debugPrint('🔔 [MessageCubit] Showing notification from: $senderName');
 
-      // Show notification
+      // Show notification (socket messages don't carry FCM-style fields)
       notificationService.showMessageNotification(
         senderName: senderName,
         messageText: messageText,
         conversationId: conversationId,
-        jobId: jobId,
+        type: 'message',
+        action: 'open_conversation',
       );
     } catch (e) {
       debugPrint('❌ [MessageCubit] Error showing notification: $e');

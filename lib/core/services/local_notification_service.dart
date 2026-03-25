@@ -1,8 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-/// Callback type for handling notification navigation
-typedef NotificationNavigationCallback = void Function(String conversationId, String? jobId);
+/// Callback type for handling notification navigation.
+/// [conversationId] - the conversation to open (if applicable)
+/// [jobNo] - the job number for job-related notifications
+/// [type] - notification type (e.g. 'job-notification', 'message')
+/// [action] - action hint (e.g. 'open_conversation')
+/// [notifMessage] - raw `message` key from FCM data (e.g. 'job_jobNo_is_assigned_to_you')
+typedef NotificationNavigationCallback = void Function(
+  String conversationId,
+  String? jobNo,
+  String? type,
+  String? action,
+  String? notifMessage,
+);
 
 /// Service for managing local notifications throughout the app.
 /// Handles initialization, permission requests, and showing notifications.
@@ -79,12 +90,15 @@ class LocalNotificationService {
     }
   }
 
-  /// Show a notification for a new message
+  /// Show a notification for a new message or job event.
   Future<void> showMessageNotification({
     required String senderName,
     required String messageText,
     required String conversationId,
-    String? jobId,
+    String? jobNo,
+    String? type,
+    String? action,
+    String? notifMessage,
   }) async {
     if (!_isInitialized) {
       debugPrint('⚠️ [LocalNotificationService] Not initialized, skipping notification');
@@ -128,7 +142,11 @@ class LocalNotificationService {
         senderName,
         displayMessage,
         notificationDetails,
-        payload: 'conversation:$conversationId${jobId != null ? '|job:$jobId' : ''}',
+        payload: 'conversation:$conversationId'
+            '${jobNo != null ? '|job:$jobNo' : ''}'
+            '${type != null ? '|type:$type' : ''}'
+            '${action != null ? '|action:$action' : ''}'
+            '${notifMessage != null ? '|msg:$notifMessage' : ''}',
       );
 
       debugPrint('🔔 [LocalNotificationService] Notification shown: $senderName - $displayMessage');
@@ -172,25 +190,33 @@ class LocalNotificationService {
   /// Handle notification payload and navigate accordingly
   void _handleNotificationPayload(String payload) {
     try {
-      // Parse the payload
       final parts = payload.split('|');
       String? conversationId;
-      String? jobId;
+      String? jobNo;
+      String? type;
+      String? action;
+      String? notifMessage;
 
       for (final part in parts) {
         if (part.startsWith('conversation:')) {
           conversationId = part.replaceFirst('conversation:', '');
         } else if (part.startsWith('job:')) {
-          jobId = part.replaceFirst('job:', '');
+          jobNo = part.replaceFirst('job:', '');
+        } else if (part.startsWith('type:')) {
+          type = part.replaceFirst('type:', '');
+        } else if (part.startsWith('action:')) {
+          action = part.replaceFirst('action:', '');
+        } else if (part.startsWith('msg:')) {
+          notifMessage = part.replaceFirst('msg:', '');
         }
       }
 
       if (conversationId != null) {
-        debugPrint('🚀 [LocalNotificationService] Navigate to conversation: $conversationId (job: $jobId)');
-
-        // Use the callback to navigate if it's set
+        debugPrint(
+          '🚀 [LocalNotificationService] Navigate → conversation:$conversationId job:$jobNo type:$type action:$action msg:$notifMessage',
+        );
         if (_onNavigateToConversation != null) {
-          _onNavigateToConversation!(conversationId, jobId);
+          _onNavigateToConversation!(conversationId, jobNo, type, action, notifMessage);
         } else {
           debugPrint(
             '⚠️ [LocalNotificationService] Navigation callback not set. Call setNavigationCallback() from your app.',

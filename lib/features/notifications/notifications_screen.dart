@@ -6,6 +6,7 @@ import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart
 import 'package:repair_cms/features/notifications/models/notificaiton_model.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:repair_cms/features/notifications/widgets/notification_list_item.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -46,7 +47,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: AppColors.kBg,
       appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
+        backgroundColor: AppColors.kBg.withValues(alpha: 0.1),
         border: null,
         leading: CustomNavButton(
           onPressed: () {
@@ -62,17 +63,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         middle: Text(
           'Notifications',
-          style: TextStyle(
-            color: AppColors.fontMainColor,
-            fontSize: 17.sp,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTypography.sfProHeadLineTextStyle22,
         ),
         trailing: _notifications.isEmpty
             ? null
             : CustomNavButton(
                 onPressed: _showNotificationSettings,
-                icon: SolarIconsBold.settings,
+                icon: SolarIconsOutline.settings,
                 size: 24.sp,
               ),
       ),
@@ -222,77 +219,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: _notifications.length,
             itemBuilder: (context, index) {
-              return _buildNotificationItem(_notifications[index]);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNotificationItem(Notifications notification) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: notification.isRead! ? AppColors.whiteColor : AppColors.kBg,
-        // borderRadius: BorderRadius.circular(12),
-        //boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-            child: _getNotificationIconWidget(notification),
-          ),
-
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notification.message ?? '',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                    height: 1.3,
-                  ),
-                ),
-                if ((notification.quotationNo ?? '').isNotEmpty ||
-                    (notification.conversationId ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    notification.quotationNo ??
-                        notification.conversationId ??
-                        '',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Text(
-                  _formatDate(notification.createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_horiz, color: Colors.grey[400], size: 20),
-            onSelected: (value) {
-              if (!mounted) return;
-              try {
-                if (value == 'delete') {
-                  _showNotificationOptions(notification);
-                } else if (value == 'mark_read') {
+              final notification = _notifications[index];
+              return NotificationListItem(
+                notification: notification,
+                onMarkAsRead: () {
                   debugPrint(
                     '✅ [NotificationsScreen] Marking notification as read',
                   );
@@ -306,24 +236,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       userId: userId.toString(),
                     );
                   }
-                }
-              } catch (e) {
-                debugPrint('❌ [NotificationsScreen] Error in popup menu: $e');
-              }
+                },
+                onDelete: () => _showNotificationOptions(notification),
+                formatDate: _formatDate,
+                getIcon: _getNotificationIconWidget,
+              );
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem<String>(
-                value: 'mark_read',
-                child: Text('Mark as Read'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Text('Delete'),
-              ),
-            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -440,7 +361,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     );
                                 if (mounted) {
                                   showCustomToast('Notification deleted');
-                                 
                                 }
                               }
                             } catch (e) {
@@ -448,7 +368,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 '❌ [NotificationsScreen] Error deleting notification: $e',
                               );
                               if (mounted) {
-                                showCustomToast('Failed to delete notification', isError: true);
+                                showCustomToast(
+                                  'Failed to delete notification',
+                                  isError: true,
+                                );
                               }
                             }
                           },
@@ -537,8 +460,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               n.isRead = true;
                             }
                           });
-                          showCustomToast('All notifications marked as read');
-                           
+                          showCustomToast(
+                            'All notifications marked as read',
+                            isError: false,
+                          );
                         }
                       } catch (e) {
                         debugPrint(

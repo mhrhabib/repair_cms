@@ -153,6 +153,7 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
           builder: (context) => JobThermalReceiptPreviewScreen(
             jobResponse: response,
             printOption: printerType,
+            fromBooking: true,
           ),
         ),
       );
@@ -163,6 +164,7 @@ class _JobBookingWizardScreenState extends State<JobBookingWizardScreen> {
           builder: (context) => JobReceiptPreviewScreen(
             jobResponse: response,
             printOption: printerType,
+            fromBooking: true,
           ),
         ),
       );

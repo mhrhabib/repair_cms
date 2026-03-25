@@ -39,7 +39,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
 
     if (receiptDataJson != null) {
       try {
-        final receiptData = jsonDecode(receiptDataJson);
+        final dynamic receiptData = receiptDataJson is String ? jsonDecode(receiptDataJson) : receiptDataJson;
         salutationHTMLmarkup = receiptData['salutation'] ?? salutationHTMLmarkup;
         termsAndConditionsHTMLmarkup = receiptData['termsAndConditions'] ?? termsAndConditionsHTMLmarkup;
         debugPrint('✅ [JobBookingCubit] Loaded receipt data from storage');
@@ -722,7 +722,7 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     final receiptDataJson = storage.read('jobReceiptData');
     if (receiptDataJson != null && state is JobBookingData) {
       try {
-        final receiptData = jsonDecode(receiptDataJson);
+        final dynamic receiptData = receiptDataJson is String ? jsonDecode(receiptDataJson) : receiptDataJson;
         final salutationHTMLmarkup = receiptData['salutation'] ?? '';
         final termsAndConditionsHTMLmarkup = receiptData['termsAndConditions'] ?? '';
 

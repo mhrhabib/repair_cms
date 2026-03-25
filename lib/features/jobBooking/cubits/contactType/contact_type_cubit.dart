@@ -148,6 +148,57 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
     }
   }
 
+  // Update existing profile's shipping and billing addresses separately
+  Future<bool> updateBusinessAddresses({
+    required String profileId,
+    required List<Map<String, dynamic>> shippingPayload,
+    required List<Map<String, dynamic>> billingPayload,
+  }) async {
+    emit(ContactTypeLoading());
+    try {
+      debugPrint('🚀 [ContactTypeCubit] Updating addresses for profile: $profileId');
+      
+      // We run both patches concurrently
+      final futures = <Future<bool>>[];
+      
+      if (shippingPayload.isNotEmpty) {
+        futures.add(
+          contactTypeRepository.updateShippingAddress(
+            profileId: profileId,
+            payload: shippingPayload,
+          )
+        );
+      }
+      
+      if (billingPayload.isNotEmpty) {
+        futures.add(
+          contactTypeRepository.updateBillingAddress(
+            profileId: profileId,
+            payload: billingPayload,
+          )
+        );
+      }
+      
+      final results = await Future.wait(futures);
+      final success = results.every((r) => r);
+      
+      if (success) {
+        debugPrint('✅ [ContactTypeCubit] Both addresses updated successfully');
+        emit(ContactTypeSuccess(message: 'Addresses updated successfully'));
+        return true;
+      }
+      return false;
+    } on ContactTypeException catch (e) {
+      debugPrint('❌ [ContactTypeCubit] Error during address update: ${e.message}');
+      emit(ContactTypeError(message: e.message));
+      return false;
+    } catch (e, stackTrace) {
+      debugPrint('💥 [ContactTypeCubit] Unexpected error during address update: $e\n$stackTrace');
+      emit(ContactTypeError(message: 'Failed to update addresses: ${e.toString()}'));
+      return false;
+    }
+  }
+
   // Helper method to create payload for business creation/update
   Map<String, dynamic> createBusinessPayload({
     required String type,
@@ -163,7 +214,7 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
     List<Map<String, dynamic>>? billingAddresses,
     List<Map<String, dynamic>>? shippingAddresses,
   }) {
-    return {
+    final payload = <String, dynamic>{
       "customerDetail": {
         "type": type,
         "type2": type2,
@@ -179,11 +230,18 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
             .padLeft(7, '0'), // Random 7-digit number,
       },
       "customerContactDetail": {},
-      "customerBillingAddress": billingAddresses ?? [],
-      "customerShippingAddress": shippingAddresses ?? [],
       "customerTelephone": telephones ?? [],
       "customerEmail": emails ?? [],
     };
+
+    if (billingAddresses != null) {
+      payload["customerBillingAddress"] = billingAddresses;
+    }
+    if (shippingAddresses != null) {
+      payload["customerShippingAddress"] = shippingAddresses;
+    }
+
+    return payload;
   }
 
   // Helper method to create address payload for update
@@ -275,7 +333,19 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
   }
 
   // Helper methods to extract primary contact info
+
+  /// Returns the raw phone number (without prefix) for the primary telephone.
   String? getPrimaryPhoneNumber(Customersorsuppliers business) {
+    final details = getPrimaryPhoneDetails(business);
+    if (details == null) return null;
+    final prefix = details['prefix'] ?? '';
+    final number = details['number'] ?? '';
+    // Return just the number portion; avoid double-prefix concatenation
+    return '$prefix$number';
+  }
+
+  /// Returns a map with 'prefix' and 'number' extracted separately.
+  Map<String, String>? getPrimaryPhoneDetails(Customersorsuppliers business) {
     if (business.customerContactDetail?.isNotEmpty ?? false) {
       final contactDetail = business.customerContactDetail!.first;
       if (contactDetail.customerTelephones?.isNotEmpty ?? false) {
@@ -283,7 +353,9 @@ class ContactTypeCubit extends Cubit<ContactTypeState> {
           (phone) => phone.isPrimary == true,
           orElse: () => contactDetail.customerTelephones!.first,
         );
-        return '${primaryPhone.phonePrefix ?? ''}${primaryPhone.number ?? ''}';
+        final prefix = primaryPhone.phonePrefix ?? '';
+        final number = primaryPhone.number ?? '';
+        return {'prefix': prefix, 'number': number};
       }
     }
     return null;

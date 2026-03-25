@@ -185,17 +185,13 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
               },
               icon: CupertinoIcons.back,
             ),
-            middle: const Text(
+            middle: Text(
               'Password & Security',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTypography.sfProHeadLineTextStyle22,
             ),
           ),
           body: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
             child: Container(
               height: 500.h,
               decoration: BoxDecoration(
@@ -275,26 +271,25 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                     const SizedBox(height: 16),
 
                     // Trusted Email Toggle
-                    _buildToggleField(
-                      label: 'Trusted E-Mail',
-                      value: _isTrustedEmailEnabled,
-                      onChanged: (value) {
-                        if (!mounted) return;
-                        try {
-                          debugPrint(
-                            '🔄 [PasswordSecurityScreen] Toggling trusted email: $value',
-                          );
-                          setState(() {
-                            _isTrustedEmailEnabled = value;
-                          });
-                        } catch (e) {
-                          debugPrint(
-                            '❌ [PasswordSecurityScreen] Error toggling trusted email: $e',
-                          );
-                        }
-                      },
-                    ),
-
+                    // _buildToggleField(
+                    //   label: 'Trusted E-Mail',
+                    //   value: _isTrustedEmailEnabled,
+                    //   onChanged: (value) {
+                    //     if (!mounted) return;
+                    //     try {
+                    //       debugPrint(
+                    //         '🔄 [PasswordSecurityScreen] Toggling trusted email: $value',
+                    //       );
+                    //       setState(() {
+                    //         _isTrustedEmailEnabled = value;
+                    //       });
+                    //     } catch (e) {
+                    //       debugPrint(
+                    //         '❌ [PasswordSecurityScreen] Error toggling trusted email: $e',
+                    //       );
+                    //     }
+                    //   },
+                    // ),
                     SizedBox(height: 30.h),
                   ],
                 ),
@@ -303,26 +298,26 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
           ),
 
           // Bottom Save Button (same pattern as Personal Details)
-          bottomNavigationBar: _hasChanges
-              ? SafeArea(
-                  child: Container(
-                    color: Colors.transparent,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).viewInsets.bottom + 2,
-                        left: 12.w,
-                        right: 12.w,
-                        top: 2,
-                      ),
-                      child: CustomButton(
-                        text: 'Save',
-                        onPressed: _canSave ? _saveChanges : null,
-                        isLoading: state is ProfileLoading,
-                      ),
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink(),
+          // bottomNavigationBar: _hasChanges
+          //     ? SafeArea(
+          //         child: Container(
+          //           color: Colors.transparent,
+          //           child: Padding(
+          //             padding: EdgeInsets.only(
+          //               bottom: MediaQuery.of(context).viewInsets.bottom + 2,
+          //               left: 12.w,
+          //               right: 12.w,
+          //               top: 2,
+          //             ),
+          //             child: CustomButton(
+          //               text: 'Save',
+          //               onPressed: _canSave ? _saveChanges : null,
+          //               isLoading: state is ProfileLoading,
+          //             ),
+          //           ),
+          //         ),
+          //       )
+          //     : const SizedBox.shrink(),
         );
       },
     );

@@ -7,6 +7,7 @@ import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
 import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/models/quick_task.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 class QuickTaskScreen extends StatefulWidget {
   const QuickTaskScreen({super.key});
@@ -60,141 +61,167 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: Colors.transparent,
-        middle: Text(
-          'To-Do\'s',
-          style: AppTypography.fontSize20.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.fontMainColor,
-          ),
-        ),
-        leading: CustomNavButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: CupertinoIcons.back,
-        ),
+      body: Stack(
+        children: [
+          BlocBuilder<QuickTaskCubit, QuickTaskState>(
+            builder: (context, state) {
+              if (state is QuickTaskLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-        trailing: CustomTextButton(
-          text: 'Add',
-          textColor: AppColors.fontSecondaryColor,
-          onPressed: _showAddTodoDialog,
-          // backgroundColor: Colors.blue.shade200,
-        ),
-      ),
-      body: BlocBuilder<QuickTaskCubit, QuickTaskState>(
-        builder: (context, state) {
-          if (state is QuickTaskLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state is QuickTaskError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64.sp,
-                    color: AppColors.warningColor,
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Something went wrong',
-                    style: AppTypography.fontSize16.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Error: ${state.message}',
-                    style: AppTypography.fontSize14.copyWith(
-                      color: AppColors.lightFontColor,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton(
-                    onPressed: () => context.read<QuickTaskCubit>().getTodos(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24.w,
-                        vertical: 12.h,
-                      ),
-                    ),
-                    child: Text(
-                      'Try Again',
-                      style: AppTypography.fontSize14.copyWith(
-                        color: AppColors.whiteColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (state is QuickTaskLoaded) {
-            final todos = state.todos;
-            final incompleteTodos = todos
-                .where((task) => !task.complete!)
-                .toList();
-            final completedTodos = todos
-                .where((task) => task.complete!)
-                .toList();
-
-            return Column(
-              children: [
-                // Custom Tab Bar
-                Container(
-                  margin: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 16.h,
-                  ),
-                  padding: EdgeInsets.all(4.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.lightFontColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(28.r),
-                    border: Border.all(
-                      color: AppColors.borderColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
+              if (state is QuickTaskError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildCustomTab(
-                        index: 0,
-                        label: 'Incomplete',
-                        count: incompleteTodos.length,
-                        isActive: _currentTabIndex == 0,
+                      Icon(
+                        Icons.error_outline,
+                        size: 64.sp,
+                        color: AppColors.warningColor,
                       ),
-                      _buildCustomTab(
-                        index: 1,
-                        label: 'Completed',
-                        count: completedTodos.length,
-                        isActive: _currentTabIndex == 1,
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Something went wrong',
+                        style: AppTypography.fontSize16.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Error: ${state.message}',
+                        style: AppTypography.fontSize14.copyWith(
+                          color: AppColors.lightFontColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 24.h),
+                      ElevatedButton(
+                        onPressed: () =>
+                            context.read<QuickTaskCubit>().getTodos(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24.w,
+                            vertical: 12.h,
+                          ),
+                        ),
+                        child: Text(
+                          'Try Again',
+                          style: AppTypography.fontSize14.copyWith(
+                            color: AppColors.whiteColor,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
+                );
+              }
 
-                // Tab Content
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _currentTabIndex == 0
-                        ? _buildTodoList(incompleteTodos, false)
-                        : _buildTodoList(completedTodos, true),
+              if (state is QuickTaskLoaded) {
+                final todos = state.todos;
+                final incompleteTodos = todos
+                    .where((task) => !task.complete!)
+                    .toList();
+                final completedTodos = todos
+                    .where((task) => task.complete!)
+                    .toList();
+
+                return Column(
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).padding.top + 60.h),
+                    // Custom Tab Bar
+                    Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 16.h,
+                      ),
+                      padding: EdgeInsets.all(4.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightFontColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(28.r),
+                        border: Border.all(
+                          color: AppColors.borderColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildCustomTab(
+                            index: 0,
+                            label: 'Incomplete',
+                            count: incompleteTodos.length,
+                            isActive: _currentTabIndex == 0,
+                          ),
+                          _buildCustomTab(
+                            index: 1,
+                            label: 'Completed',
+                            count: completedTodos.length,
+                            isActive: _currentTabIndex == 1,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Tab Content
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: _currentTabIndex == 0
+                            ? _buildTodoList(incompleteTodos, false)
+                            : _buildTodoList(completedTodos, true),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: CupertinoIcons.back,
                   ),
-                ),
-              ],
-            );
-          }
-
-          return const Center(child: CircularProgressIndicator());
-        },
+                  Text(
+                    'To-Do\'s',
+                    style: AppTypography.fontSize20.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.fontMainColor,
+                    ),
+                  ),
+                  CustomTextButton(
+                    onPressed: _showAddTodoDialog,
+                    text: 'Add',
+                    textColor: AppColors.fontSecondaryColor,
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -308,26 +335,6 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 24.h),
-              if (!isCompleted)
-                ElevatedButton(
-                  onPressed: _showAddTodoDialog,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24.w,
-                      vertical: 12.h,
-                    ),
-                  ),
-                  child: Text(
-                    'Add Your First Task',
-                    style: AppTypography.fontSize14.copyWith(
-                      color: AppColors.whiteColor,
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
@@ -486,7 +493,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
             child: IconButton(
               onPressed: () => _showDeleteDialog(task),
               icon: Icon(
-                Icons.delete_outline,
+                SolarIconsOutline.trashBin2,
                 color: AppColors.warningColor,
                 size: 18.sp,
               ),
@@ -697,115 +704,63 @@ class _QuickTaskScreenState extends State<QuickTaskScreen>
   }
 
   void _showDeleteDialog(Task task) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 60.w,
-                height: 60.h,
-                decoration: BoxDecoration(
-                  color: AppColors.warningColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.delete_outline,
-                  size: 30.sp,
-                  color: AppColors.warningColor,
-                ),
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                'Delete Task?',
-                style: AppTypography.fontSize20.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.fontMainColor,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                'Are you sure you want to delete "${task.title}"? This action cannot be undone.',
-                style: AppTypography.fontSize14.copyWith(
-                  color: AppColors.lightFontColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 24.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () {
-                        if (!mounted) return;
-                        try {
-                          debugPrint('🔄 [QuickTaskScreen] Canceling delete');
-                          Navigator.pop(context);
-                        } catch (e) {
-                          debugPrint(
-                            '❌ [QuickTaskScreen] Error closing delete dialog: $e',
-                          );
-                        }
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: AppTypography.fontSize14.copyWith(
-                          color: AppColors.lightFontColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (!mounted) return;
-                        try {
-                          debugPrint(
-                            '🗑️ [QuickTaskScreen] Deleting todo: ${task.sId}',
-                          );
-                          context.read<QuickTaskCubit>().deleteTodo(task.sId!);
-                          Navigator.pop(context);
-                        } catch (e) {
-                          debugPrint(
-                            '❌ [QuickTaskScreen] Error deleting todo: $e',
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.warningColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                      ),
-                      child: Text(
-                        'Delete',
-                        style: AppTypography.fontSize14.copyWith(
-                          color: AppColors.whiteColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      barrierDismissible: true, // Allows tapping outside to close
+      builder: (context) => CupertinoAlertDialog(
+        title: Text(
+          'Delete Task?',
+          style: AppTypography.fontSize16.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.fontMainColor,
           ),
         ),
+        content: Text(
+          'Are you sure you want to delete "${task.title}"?\nThis action cannot be undone.',
+          style: AppTypography.fontSize14.copyWith(
+            fontSize: 13.sp,
+            color: AppColors.lightFontColor,
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () {
+              if (!mounted) return;
+              try {
+                debugPrint('🔄 [QuickTaskScreen] Canceling delete');
+                Navigator.pop(context);
+              } catch (e) {
+                debugPrint('❌ [QuickTaskScreen] Error closing dialog: $e');
+              }
+            },
+            child: Text(
+              'Cancel',
+              style: AppTypography.fontSize16.copyWith(
+                color: AppColors.kBlue,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              if (!mounted) return;
+              try {
+                debugPrint('🗑️ [QuickTaskScreen] Deleting todo: ${task.sId}');
+                context.read<QuickTaskCubit>().deleteTodo(task.sId!);
+                Navigator.pop(context);
+              } catch (e) {
+                debugPrint('❌ [QuickTaskScreen] Error deleting todo: $e');
+              }
+            },
+            child: Text(
+              'Delete',
+              style: AppTypography.fontSize16.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

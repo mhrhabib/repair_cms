@@ -157,6 +157,7 @@ class _JobBookingSelectPrinterScreenState
                 JobThermalReceiptPreviewScreen(
                   jobResponse: jobCreateState.response,
                   printOption: _selectedPrinterType,
+                  fromBooking: true,
                 ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
@@ -187,6 +188,7 @@ class _JobBookingSelectPrinterScreenState
                 JobReceiptPreviewScreen(
                   jobResponse: jobCreateState.response,
                   printOption: _selectedPrinterType,
+                  fromBooking: true,
                 ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {

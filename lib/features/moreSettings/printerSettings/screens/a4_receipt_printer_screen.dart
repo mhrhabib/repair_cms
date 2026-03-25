@@ -210,7 +210,7 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
         ),
         trailing: !isFormView
             ? Padding(
-                padding: EdgeInsets.only(right: 4.w),
+                padding: EdgeInsets.only(right: 2.w),
                 child: CustomTextButton(
                   onPressed: () => setState(() => _isAdding = true),
                   text: 'Add',
@@ -252,6 +252,7 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
                   ),
                   ..._savedPrinters.map(
                     (printer) => PrinterListItem(
+                      isDefault: printer.isDefault,
                       printer: printer,
                       onEdit: () => setState(() => _editingPrinter = printer),
                       onDelete: () => _deletePrinter(printer),

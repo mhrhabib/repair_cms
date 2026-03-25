@@ -41,13 +41,12 @@ void main() {
     when(() => mockSocketService.sendInternalComment(any())).thenReturn(null);
     when(() => mockSocketService.markAsRead(any())).thenReturn(null);
 
-    // Setup mock notification service
+    // Setup mock notification service (new signature uses jobNo/type/action/notifMessage)
     when(
       () => mockNotificationService.showMessageNotification(
         senderName: any(named: 'senderName'),
         messageText: any(named: 'messageText'),
         conversationId: any(named: 'conversationId'),
-        jobId: any(named: 'jobId'),
       ),
     ).thenAnswer((_) async => Future.value());
 

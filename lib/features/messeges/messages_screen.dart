@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -35,19 +36,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Messages',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
+      backgroundColor: AppColors.kBg,
+      appBar: CupertinoNavigationBar(
+        backgroundColor: AppColors.kBg.withValues(alpha: 0.1),
+        middle: Text('Messages', style: AppTypography.sfProHeadLineTextStyle22),
+        border: null,
       ),
       body: BlocConsumer<MessageCubit, MessageState>(
         listener: (context, state) {

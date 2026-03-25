@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:convert';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
@@ -107,10 +108,10 @@ class StepModelWidgetState extends State<StepModelWidget> {
     final jobReceiptState = context.read<JobReceiptCubit>().state;
     if (jobReceiptState is JobReceiptLoaded) {
       final storage = GetStorage();
-      storage.write('jobReceiptData', {
+      storage.write('jobReceiptData', jsonEncode({
         'salutation': jobReceiptState.receipt.salutation,
         'termsAndConditions': jobReceiptState.receipt.termsAndConditions,
-      });
+      }));
       context.read<JobBookingCubit>().updateReceiptData();
     }
   }

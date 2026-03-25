@@ -6,7 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
+import 'package:repair_cms/core/utils/label_formatter.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
+import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 
@@ -55,8 +57,6 @@ class _StatusScreenState extends State<StatusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Color figmaBlue = const Color(0xFF007AFF);
-
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         // Handle side effects like showing snackbars
@@ -89,17 +89,13 @@ class _StatusScreenState extends State<StatusScreen> {
                 ),
                 middle: Text(
                   'Status',
-                  style: TextStyle(
-                    fontSize: 17.sp,
-                    fontWeight: FontWeight.w600,
-                    color: CupertinoColors.label.resolveFrom(context),
-                  ),
+                  style: AppTypography.sfProHeadLineTextStyle22,
                 ),
-                trailing: CustomNavButton(
+                trailing: CustomTextButton(
+                  text: 'Add',
                   onPressed: _showAddStatusBottomSheet,
-                  icon: CupertinoIcons.add_circled_solid,
-                  size: 28.sp,
-                  iconColor: figmaBlue,
+                  textColor: AppColors.fontSecondaryColor,
+                  fontSize: 16.sp,
                 ),
               ),
               body: _buildStatusScreen(context, _cachedJobData!),
@@ -111,7 +107,8 @@ class _StatusScreenState extends State<StatusScreen> {
               state is JobActionLoading ||
               state is JobInitial) {
             return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              backgroundColor: AppColors.kBg,
+              body: Center(child: CupertinoActivityIndicator()),
             );
           }
 
@@ -122,10 +119,7 @@ class _StatusScreenState extends State<StatusScreen> {
             );
           }
 
-          // No data available
-          return const Scaffold(
-            body: Center(child: Text('No job data available')),
-          );
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -462,17 +456,11 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                     ),
                     child: Row(
                       children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            color: Colors.black87,
-                            size: 24.sp,
-                          ),
-                          onPressed: isLoading
-                              ? null
-                              : () => Navigator.pop(context),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
+                        CustomNavButton(
+                          icon: Icons.close,
+                          iconColor: AppColors.fontSecondaryColor,
+                          size: 24.sp,
+                          onPressed: () => Navigator.pop(context),
                         ),
                         SizedBox(width: 12.w),
                         Text(
@@ -480,7 +468,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                           style: GoogleFonts.roboto(
                             fontSize: 18.sp,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            color: AppColors.fontMainColor,
                           ),
                         ),
                       ],
@@ -504,7 +492,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                 style: GoogleFonts.roboto(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                                  color: AppColors.fontMainColor,
                                 ),
                               ),
                               SizedBox(height: 8.h),
@@ -513,7 +501,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                   border: Border.all(
                                     color: Colors.grey.shade300,
                                   ),
-                                  borderRadius: BorderRadius.circular(8.r),
+                                  borderRadius: BorderRadius.circular(28.r),
                                 ),
                                 child: DropdownButtonFormField<String>(
                                   initialValue: selectedStatus,
@@ -524,10 +512,20 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                     ),
                                     border: InputBorder.none,
                                   ),
-                                  hint: Text('Select status...'),
-                                  icon: Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Colors.blue,
+                                  hint: Text(
+                                    'Select status...',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.fontMainColor,
+                                    ),
+                                  ),
+                                  icon: Padding(
+                                    padding: const EdgeInsets.only(right: 12.0),
+                                    child: Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.blue,
+                                    ),
                                   ),
                                   items: availableStatuses.map((status) {
                                     return DropdownMenuItem<String>(
@@ -575,7 +573,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                 style: GoogleFonts.roboto(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                                  color: AppColors.fontMainColor,
                                 ),
                               ),
                               SizedBox(height: 8.h),
@@ -584,7 +582,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                   border: Border.all(
                                     color: Colors.grey.shade300,
                                   ),
-                                  borderRadius: BorderRadius.circular(8.r),
+                                  borderRadius: BorderRadius.circular(28.r),
                                 ),
                                 child: DropdownButtonFormField<String>(
                                   initialValue: selectedNotification,
@@ -595,9 +593,12 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                     ),
                                     border: InputBorder.none,
                                   ),
-                                  icon: Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Colors.blue,
+                                  icon: Padding(
+                                    padding: const EdgeInsets.only(right: 12.0),
+                                    child: Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.blue,
+                                    ),
                                   ),
                                   items: ['Yes', 'No'].map((value) {
                                     return DropdownMenuItem<String>(
@@ -607,7 +608,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                         style: GoogleFonts.roboto(
                                           fontSize: 16.sp,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
+                                          color: AppColors.fontMainColor,
                                         ),
                                       ),
                                     );
@@ -628,7 +629,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                 style: GoogleFonts.roboto(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                                  color: AppColors.fontMainColor,
                                 ),
                               ),
                               SizedBox(height: 8.h),
@@ -641,19 +642,19 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                                     color: Colors.grey.shade400,
                                   ),
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8.r),
+                                    borderRadius: BorderRadius.circular(28.r),
                                     borderSide: BorderSide(
                                       color: Colors.grey.shade300,
                                     ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8.r),
+                                    borderRadius: BorderRadius.circular(28.r),
                                     borderSide: BorderSide(
                                       color: Colors.grey.shade300,
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8.r),
+                                    borderRadius: BorderRadius.circular(28.r),
                                     borderSide: BorderSide(color: Colors.blue),
                                   ),
                                   contentPadding: EdgeInsets.all(12.r),
@@ -683,7 +684,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
                               : Colors.blue,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
+                            borderRadius: BorderRadius.circular(28.r),
                           ),
                         ),
                         child: isLoading
@@ -738,14 +739,7 @@ String _formatTimestamp(int timestamp) {
 }
 
 String _formatStatusTitle(String title) {
-  return title
-      .split('_')
-      .map((word) {
-        if (word.isEmpty) return word;
-        return word[0].toUpperCase() + word.substring(1).toLowerCase();
-      })
-      .join(' ')
-      .replaceAll('_', ' ');
+  return LabelFormatter.formatLabel(title);
 }
 
 Color _getStatusColorForStatus(String status) {

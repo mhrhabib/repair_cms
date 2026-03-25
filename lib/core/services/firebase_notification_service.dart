@@ -159,20 +159,23 @@ class FirebaseNotificationService {
     );
     debugPrint('Data: ${message.data}');
 
-    // If there's a notification object, show a local notification
     if (message.notification != null) {
       final localNotify = SetUpDI.getIt<LocalNotificationService>();
 
-      // Extract data for navigation if present
-      final conversationId = message.data['conversationId']?.toString();
-      final jobId = message.data['jobId']?.toString();
+      final conversationId = message.data['conversationId']?.toString() ?? '';
+      final jobNo        = message.data['jobNo']?.toString();
+      final type         = message.data['type']?.toString();
+      final action       = message.data['action']?.toString();
+      final notifMessage = message.data['message']?.toString();
 
-      // You might want to customize how specific types of notifications are shown
       localNotify.showMessageNotification(
         senderName: message.notification?.title ?? 'New Notification',
         messageText: message.notification?.body ?? '',
-        conversationId: conversationId ?? '',
-        jobId: jobId,
+        conversationId: conversationId,
+        jobNo: jobNo,
+        type: type,
+        action: action,
+        notifMessage: notifMessage,
       );
     }
   }
@@ -183,21 +186,25 @@ class FirebaseNotificationService {
       '🚀 [FirebaseNotificationService] App opened via notification: ${message.messageId}',
     );
 
-    final conversationId = message.data['conversationId']?.toString();
-    final jobId = message.data['jobId']?.toString();
+    final conversationId = message.data['conversationId']?.toString() ?? '';
+    final jobNo          = message.data['jobNo']?.toString();
+    final type           = message.data['type']?.toString();
+    final action         = message.data['action']?.toString();
+    final notifMessage   = message.data['message']?.toString();
 
-    if (conversationId != null) {
-      debugPrint(
-        '🚀 [FirebaseNotificationService] Navigating to: $conversationId, Job: $jobId',
-      );
-      // Trigger navigation via LocalNotificationService's logic
-      SetUpDI.getIt<LocalNotificationService>().showMessageNotification(
-        senderName: 'Opening...',
-        messageText: 'Navigating to conversation',
-        conversationId: conversationId,
-        jobId: jobId,
-      );
-    }
+    debugPrint(
+      '🚀 [FirebaseNotificationService] Deep link → conversation:$conversationId job:$jobNo type:$type action:$action',
+    );
+
+    SetUpDI.getIt<LocalNotificationService>().showMessageNotification(
+      senderName: 'Opening...',
+      messageText: 'Navigating...',
+      conversationId: conversationId,
+      jobNo: jobNo,
+      type: type,
+      action: action,
+      notifMessage: notifMessage,
+    );
   }
 
   /// Get the current FCM token

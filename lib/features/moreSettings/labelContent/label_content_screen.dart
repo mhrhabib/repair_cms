@@ -1,18 +1,59 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:repair_cms/features/moreSettings/labelContent/service/label_content_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
-import 'package:repair_cms/core/helpers/show_toast.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 
+// ---------------------------------------------------------------------------
+// Optional Job data model — pass a real Job object when printing from a job
+// detail screen; leave null to show preview with dummy data in settings.
+// ---------------------------------------------------------------------------
+class LabelJobData {
+  final String jobNumber;
+  final String customerName;
+  final String modelBrand;
+  final String date;
+  final String jobType;
+  final String symptom;
+  final String physicalLocation;
+
+  const LabelJobData({
+    required this.jobNumber,
+    required this.customerName,
+    required this.modelBrand,
+    required this.date,
+    required this.jobType,
+    required this.symptom,
+    required this.physicalLocation,
+  });
+
+  /// Dummy data shown in the settings preview.
+  factory LabelJobData.preview() => const LabelJobData(
+    jobNumber: 'JOB-12345',
+    customerName: 'John Doe',
+    modelBrand: 'Apple iPhone 13 Pro',
+    date: '05 Jan 2026',
+    jobType: 'Screen Repair',
+    symptom: 'Cracked screen, battery issue',
+    physicalLocation: 'BOX A-12',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 class LabelContentScreen extends StatefulWidget {
-  const LabelContentScreen({super.key});
+  /// Provide real job data when navigating here for a test-print from a job.
+  /// Leave null when opening from the Settings menu (preview only).
+  final LabelJobData? jobData;
+
+  const LabelContentScreen({super.key, this.jobData});
 
   @override
   State<LabelContentScreen> createState() => _LabelContentScreenState();
@@ -21,9 +62,13 @@ class LabelContentScreen extends StatefulWidget {
 class _LabelContentScreenState extends State<LabelContentScreen> {
   final _settingsService = LabelContentSettingsService();
   final _printerSettingsService = PrinterSettingsService();
+
+  // A GlobalKey for the RepaintBoundary that wraps the label.
+  // We keep it as a field so the same key is used for both the
+  // on-screen preview AND the off-screen capture widget.
   final GlobalKey _labelPreviewKey = GlobalKey();
 
-  // State variables for each toggle switch
+  // ── Toggle state ──────────────────────────────────────────────────────────
   bool trackingPortalQR = false;
   bool jobQR = true;
   bool barcode = true;
@@ -35,13 +80,18 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
   bool symptom = true;
   bool physicalLocation = true;
 
+  // ── Resolved job data (real or preview dummy) ─────────────────────────────
+  late final LabelJobData _jobData;
+
   @override
   void initState() {
     super.initState();
+    _jobData = widget.jobData ?? LabelJobData.preview();
     _loadSettings();
   }
 
-  /// Load saved settings from storage
+  // ── Settings persistence ──────────────────────────────────────────────────
+
   void _loadSettings() {
     debugPrint('🏷️ [LabelContentScreen] Loading saved settings');
     final settings = _settingsService.getSettings();
@@ -59,7 +109,6 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
     });
   }
 
-  /// Save current settings to storage
   Future<void> _saveSettings() async {
     debugPrint('🏷️ [LabelContentScreen] Saving settings');
     final settings = LabelContentSettings(
@@ -88,11 +137,11 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
     }
   }
 
-  /// Test print with current label configuration
+  // ── Test print ────────────────────────────────────────────────────────────
+
   Future<void> _testPrintLabel() async {
     debugPrint('🖨️ [LabelContentScreen] Starting test print');
 
-    // Get configured label printers
     final allPrinters = _printerSettingsService.getAllPrinters();
     final labelPrinters = allPrinters['label'] ?? [];
 
@@ -102,7 +151,6 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
       return;
     }
 
-    // Use the first available (or default) label printer
     final printer = labelPrinters.firstWhere(
       (p) => p.isDefault,
       orElse: () => labelPrinters.first,
@@ -113,8 +161,8 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
     );
 
     try {
-      // Capture the preview widget as an image
-      final imageBytes = await _captureLabelPreview();
+      // ── Step 1: render the label off-screen so barcode/QR are fully drawn ──
+      final imageBytes = await _renderLabelToImage();
 
       if (imageBytes == null) {
         showCustomToast('Failed to generate label image', isError: true);
@@ -122,10 +170,10 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
       }
 
       debugPrint(
-        '📸 [LabelContentScreen] Label image captured: ${imageBytes.length} bytes',
+        '📸 [LabelContentScreen] Label image: ${imageBytes.length} bytes',
       );
 
-      // Print using the printer service
+      // ── Step 2: send to printer ────────────────────────────────────────────
       final result = await PrinterServiceFactory.printLabelImageWithFallback(
         config: printer,
         imageBytes: imageBytes,
@@ -144,71 +192,127 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
     }
   }
 
-  /// Capture the label preview widget as an image
-  Future<Uint8List?> _captureLabelPreview() async {
-    try {
-      debugPrint('📸 [LabelContentScreen] Capturing label preview');
+  // ── Off-screen label render ───────────────────────────────────────────────
+  //
+  // Why off-screen?
+  // BarcodeWidget and QrImageView are vector/canvas-based widgets. When we call
+  // boundary.toImage() on the on-screen preview, they may not have completed
+  // their first paint (especially if the widget just rebuilt). Rendering the
+  // label into its own off-screen pipeline guarantees a full, clean paint
+  // before we rasterise.
+  //
+  // How it works:
+  //   1. Build the label widget inside an OffstageWidget so it never appears on
+  //      screen but goes through the full Flutter render pipeline.
+  //   2. Insert it into the widget tree temporarily via an Overlay entry.
+  //   3. Wait for the next frame (post-frame callback) so the widget is fully
+  //      laid out and painted.
+  //   4. Capture via RepaintBoundary → toImage().
+  //   5. Remove the overlay entry.
 
-      final RenderRepaintBoundary? boundary =
-          _labelPreviewKey.currentContext?.findRenderObject()
+  Future<Uint8List?> _renderLabelToImage() async {
+    debugPrint('📸 [LabelContentScreen] Rendering label off-screen');
+
+    final offscreenKey = GlobalKey();
+    Uint8List? result;
+    OverlayEntry? entry;
+
+    try {
+      final completer = Future<void>(() async {
+        // Wait until the overlay entry is inserted and laid out.
+        await Future.delayed(Duration.zero);
+      });
+
+      entry = OverlayEntry(
+        builder: (_) => Offstage(
+          // Offstage hides the widget visually but still renders it.
+          child: Material(
+            color: Colors.transparent,
+            child: RepaintBoundary(
+              key: offscreenKey,
+              child: _buildLabelWidget(
+                jobData: _jobData,
+                showBarcode: barcode,
+                showJobNo: jobNo,
+                showJobQR: jobQR,
+                showTrackingQR: trackingPortalQR,
+                showCustomerName: customerName,
+                showModelBrand: modelBrand,
+                showDate: date,
+                showJobType: jobType,
+                showSymptom: symptom,
+                showPhysicalLocation: physicalLocation,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Insert into the overlay so Flutter lays it out.
+      Overlay.of(context).insert(entry);
+
+      // Wait two frames: one for layout, one for paint.
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final boundary =
+          offscreenKey.currentContext?.findRenderObject()
               as RenderRepaintBoundary?;
 
       if (boundary == null) {
-        debugPrint('❌ [LabelContentScreen] Could not find render boundary');
+        debugPrint('❌ [LabelContentScreen] Off-screen boundary not found');
         return null;
       }
 
-      // Capture at 2x scale for better quality
-      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
+      // 3.0 pixel ratio gives sharp output for thermal/label printers.
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData = await image.toByteData(
         format: ui.ImageByteFormat.png,
       );
 
       if (byteData == null) {
-        debugPrint('❌ [LabelContentScreen] Failed to convert image to bytes');
+        debugPrint('❌ [LabelContentScreen] Failed to encode image');
         return null;
       }
 
-      final Uint8List imageBytes = byteData.buffer.asUint8List();
-      debugPrint('✅ [LabelContentScreen] Captured ${imageBytes.length} bytes');
-
-      return imageBytes;
+      result = byteData.buffer.asUint8List();
+      debugPrint(
+        '✅ [LabelContentScreen] Off-screen render: ${result.length} bytes',
+      );
     } catch (e) {
-      debugPrint('❌ [LabelContentScreen] Error capturing preview: $e');
-      return null;
+      debugPrint('❌ [LabelContentScreen] Off-screen render error: $e');
+    } finally {
+      entry?.remove();
     }
+
+    return result;
   }
+
+  // ── UI ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+      backgroundColor: AppColors.kBg,
+      appBar: CupertinoNavigationBar(
+        backgroundColor: AppColors.kBg,
         leading: CustomNavButton(
           onPressed: () => Navigator.pop(context),
           icon: CupertinoIcons.back,
         ),
-        title: const Text(
+        middle: Text(
           'Label Content',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTypography.sfProHeadLineTextStyle22,
         ),
-        centerTitle: true,
       ),
       body: Column(
         children: [
-          // Label Preview Section
+          // ── Label preview card ─────────────────────────────────────────
           Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(28.r),
               border: Border.all(color: Colors.grey.shade300, width: 2),
               boxShadow: [
                 BoxShadow(
@@ -221,30 +325,45 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Label Preview',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
                     color: Colors.black54,
                   ),
                 ),
                 const SizedBox(height: 12),
+                // The on-screen preview uses the same builder as the
+                // off-screen render so WYSIWYG is guaranteed.
                 RepaintBoundary(
                   key: _labelPreviewKey,
-                  child: _buildLabelPreview(),
+                  child: _buildLabelWidget(
+                    jobData: _jobData,
+                    showBarcode: barcode,
+                    showJobNo: jobNo,
+                    showJobQR: jobQR,
+                    showTrackingQR: trackingPortalQR,
+                    showCustomerName: customerName,
+                    showModelBrand: modelBrand,
+                    showDate: date,
+                    showJobType: jobType,
+                    showSymptom: symptom,
+                    showPhysicalLocation: physicalLocation,
+                  ),
                 ),
               ],
             ),
           ),
 
+          // ── Toggle list card ───────────────────────────────────────────
           Expanded(
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(28.r),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -256,12 +375,12 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Label Details',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -273,10 +392,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                           trackingPortalQR,
                           (value) => setState(() {
                             trackingPortalQR = value;
-                            if (value) {
-                              jobQR =
-                                  false; // Turn off Job QR when Tracking is enabled
-                            }
+                            if (value) jobQR = false;
                           }),
                         ),
                         _buildToggleItem(
@@ -284,10 +400,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                           jobQR,
                           (value) => setState(() {
                             jobQR = value;
-                            if (value) {
-                              trackingPortalQR =
-                                  false; // Turn off Tracking QR when Job is enabled
-                            }
+                            if (value) trackingPortalQR = false;
                           }),
                         ),
                         _buildToggleItem(
@@ -301,7 +414,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                           (value) => setState(() => jobNo = value),
                         ),
                         _buildToggleItem(
-                          'Customer Name /Company Name',
+                          'Customer Name / Company Name',
                           customerName,
                           (value) => setState(() => customerName = value),
                         ),
@@ -338,11 +451,12 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
               ),
             ),
           ),
+
+          // ── Action buttons ─────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Save Settings Button
                 Expanded(
                   child: SizedBox(
                     height: 52,
@@ -367,15 +481,14 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Test Print Button
                 Expanded(
                   child: SizedBox(
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Save settings before test print
-                        _saveSettings();
-                        _showTestPrintDialog();
+                      // ✅ Save first (awaited), then print
+                      onPressed: () async {
+                        await _saveSettings();
+                        await _testPrintLabel();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4A90E2),
@@ -402,6 +515,168 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
       ),
     );
   }
+
+  // ── Reusable label widget ─────────────────────────────────────────────────
+  //
+  // This is a STATIC-style builder (no widget state dependency) so it can be
+  // called identically for:
+  //   • The on-screen preview (inside build())
+  //   • The off-screen render overlay (inside _renderLabelToImage())
+  //
+  // Both calls pass the exact same toggle flags and job data, guaranteeing that
+  // what the user sees in the preview is exactly what gets printed.
+
+  static Widget _buildLabelWidget({
+    required LabelJobData jobData,
+    required bool showBarcode,
+    required bool showJobNo,
+    required bool showJobQR,
+    required bool showTrackingQR,
+    required bool showCustomerName,
+    required bool showModelBrand,
+    required bool showDate,
+    required bool showJobType,
+    required bool showSymptom,
+    required bool showPhysicalLocation,
+  }) {
+    final bool hasQR = showJobQR || showTrackingQR;
+    final bool hasBarcodeArea = showBarcode || showJobNo;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Row 1: Barcode + QR ──────────────────────────────────────
+          if (hasBarcodeArea || hasQR)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Barcode / Job number column
+                if (hasBarcodeArea)
+                  Expanded(
+                    flex: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (showBarcode)
+                          SizedBox(
+                            height: 56,
+                            child: BarcodeWidget(
+                              barcode: Barcode.code128(),
+                              // Use the real job number as barcode data
+                              data: jobData.jobNumber,
+                              drawText: false,
+                              color: Colors.black,
+                            ),
+                          ),
+                        if (showBarcode && showJobNo) const SizedBox(height: 4),
+                        if (showJobNo)
+                          Text(
+                            jobData.jobNumber,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                if (hasBarcodeArea && hasQR) const SizedBox(width: 12),
+
+                // QR code column
+                if (hasQR)
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      children: [
+                        QrImageView(
+                          // Job QR encodes the job number;
+                          // Tracking QR encodes a URL with the job number.
+                          data: showJobQR
+                              ? jobData.jobNumber
+                              : 'https://tracking.portal/${jobData.jobNumber}',
+                          version: QrVersions.auto,
+                          size: 72,
+                          backgroundColor: Colors.white,
+                          // eyeStyle and dataModuleStyle are optional but
+                          // ensure crisp black modules even at high dpi.
+                          eyeStyle: const QrEyeStyle(
+                            eyeShape: QrEyeShape.square,
+                            color: Colors.black,
+                          ),
+                          dataModuleStyle: const QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          showJobQR ? 'Job QR' : 'Tracking QR',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+
+          if ((hasBarcodeArea || hasQR) &&
+              (showCustomerName ||
+                  showModelBrand ||
+                  showDate ||
+                  showJobType ||
+                  showSymptom ||
+                  showPhysicalLocation))
+            const SizedBox(height: 10),
+
+          // ── Row 2: Text fields ───────────────────────────────────────
+          if (showCustomerName ||
+              showModelBrand ||
+              showDate ||
+              showJobType ||
+              showSymptom ||
+              showPhysicalLocation)
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              children: [
+                if (showCustomerName) _labelText(jobData.customerName),
+                if (showModelBrand) _labelText(jobData.modelBrand),
+                if (showDate) _labelText(jobData.date),
+                if (showJobType) _labelText(jobData.jobType),
+                if (showSymptom) _labelText(jobData.symptom),
+                if (showPhysicalLocation) _labelText(jobData.physicalLocation),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Small helper so text styling is consistent everywhere.
+  static Widget _labelText(String text) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: Colors.black,
+    ),
+  );
+
+  // ── Toggle row ────────────────────────────────────────────────────────────
 
   Widget _buildToggleItem(
     String title,
@@ -440,191 +715,6 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
               inactiveTrackColor: Colors.grey[300],
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTestPrintDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: const Text(
-            'Test Print',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          content: const Text(
-            'Are you sure you want to start a test print with the current label configuration?',
-            style: TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey[600], fontSize: 16),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Handle print logic here
-                _testPrintLabel();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A90E2),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Print', style: TextStyle(fontSize: 16)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildLabelPreview() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300, width: 1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Barcode and QR Code Row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Barcode Section
-              if (barcode || jobNo)
-                Expanded(
-                  flex: 6,
-                  child: Column(
-                    children: [
-                      if (barcode)
-                        SizedBox(
-                          height: 50,
-                          child: BarcodeWidget(
-                            barcode: Barcode.code128(),
-                            data: '0000123456789',
-                            drawText: false,
-                          ),
-                        ),
-                      if (barcode && jobNo) const SizedBox(height: 4),
-                      if (jobNo)
-                        const Text(
-                          'JOB-12345',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              if ((barcode || jobNo) && (jobQR || trackingPortalQR))
-                const SizedBox(width: 12),
-              // QR Code Section
-              if (jobQR || trackingPortalQR)
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    children: [
-                      QrImageView(
-                        data: jobQR
-                            ? 'JOB-12345'
-                            : 'https://tracking.portal/12345',
-                        version: QrVersions.auto,
-                        size: 70,
-                        backgroundColor: Colors.white,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        jobQR ? 'Job QR' : 'Tracking QR',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Text Information
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              if (customerName)
-                Text(
-                  'John Doe',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              if (modelBrand)
-                Text(
-                  'Apple iPhone 13 Pro',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              if (date)
-                Text(
-                  '05 Jan 2026',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              if (jobType)
-                Text(
-                  'Screen Repair',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              if (symptom)
-                Text(
-                  'Cracked screen, battery issue',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              if (physicalLocation)
-                Text(
-                  'BOX A-12',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-            ],
           ),
         ],
       ),

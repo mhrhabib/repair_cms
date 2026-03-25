@@ -11,21 +11,17 @@ import 'package:repair_cms/features/scanner/job_scanner_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int initialIndex;
+  final String? initialStatus;
+  const HomeScreen({super.key, this.initialIndex = 0, this.initialStatus});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const MyJobsScreen(),
-    const MessagesScreen(),
-    const MoreSettingsScreen(),
-  ];
+  late int _currentIndex;
+  late List<Widget> _screens;
 
   bool _isExpanded = false;
   late AnimationController _animationController;
@@ -36,6 +32,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex;
+    _screens = [
+      const DashboardScreen(),
+      MyJobsScreen(initialStatus: widget.initialStatus),
+      const MessagesScreen(),
+      const MoreSettingsScreen(),
+    ];
 
     try {
       _animationController = AnimationController(
@@ -169,34 +172,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildBottomNavItem(int index, IconData icon, String label) {
-    final bool isSelected = _currentIndex == index;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return _BottomNavItem(
+      index: index,
+      icon: icon,
+      label: label,
+      isSelected: _currentIndex == index,
       onTap: () => _onItemTapped(index),
-      child: SizedBox(
-        width: 60.w,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.lightFontColor,
-              size: 24.sp,
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              label,
-              style: AppTypography.fontSize10.copyWith(
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.lightFontColor,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -242,6 +223,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       setState(() {
         _currentIndex = index;
+        // When tapping the Jobs tab manually, ensure no initial status persists
+        if (index == 1) {
+          _screens[1] = const MyJobsScreen();
+        }
       });
 
       debugPrint('📍 [HomeScreen] Navigated to tab: $index');
@@ -450,6 +435,126 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Icon(icon, color: Colors.white, size: 32.sp),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavItem extends StatefulWidget {
+  final int index;
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _BottomNavItem({
+    required this.index,
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_BottomNavItem> createState() => _BottomNavItemState();
+}
+
+class _BottomNavItemState extends State<_BottomNavItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _opacityAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.4,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() async {
+    await _controller.forward();
+    await _controller.reverse();
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _handleTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedBuilder(
+        animation: _opacityAnimation,
+        builder: (context, child) {
+          return Opacity(opacity: _opacityAnimation.value, child: child);
+        },
+        child: SizedBox(
+          width: 68.w,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 42.w,
+                height: 42.h,
+                decoration: BoxDecoration(
+                  color: widget.isSelected
+                      ? const Color(0xFFF7F7F8)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(46.r),
+                  border: Border.all(
+                    color: widget.isSelected
+                        ? AppColors.whiteColor
+                        : Colors.transparent,
+                    width: 1,
+                  ),
+                  boxShadow: widget.isSelected
+                      ? [
+                          const BoxShadow(
+                            color: Color.fromARGB(28, 116, 115, 115),
+                            blurRadius: 2,
+                            offset: Offset(0, 0),
+                            spreadRadius: 2,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Icon(
+                    widget.icon,
+                    color: widget.isSelected
+                        ? AppColors.primary
+                        : AppColors.lightFontColor,
+                    size: 24.sp,
+                  ),
+                ),
+              ),
+              SizedBox(height: 1.h),
+              Text(
+                widget.label,
+                style: AppTypography.fontSize10.copyWith(
+                  color: widget.isSelected
+                      ? AppColors.primary
+                      : AppColors.lightFontColor,
+                  fontWeight: widget.isSelected
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

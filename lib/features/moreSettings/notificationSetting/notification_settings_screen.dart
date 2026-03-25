@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
@@ -31,17 +32,16 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+      backgroundColor: AppColors.kBg,
+      appBar: CupertinoNavigationBar(
+        backgroundColor: AppColors.kBg,
         leading: CustomNavButton(
           onPressed: () {
             Navigator.pop(context);
           },
           icon: CupertinoIcons.back,
         ),
-        title: const Text(
+        middle: const Text(
           'Notification Settings',
           style: TextStyle(
             color: Colors.black87,
@@ -49,7 +49,6 @@ class _NotificationSettingsScreenState
             fontWeight: FontWeight.w600,
           ),
         ),
-        centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Padding(

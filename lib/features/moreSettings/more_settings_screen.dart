@@ -5,6 +5,7 @@ import 'package:repair_cms/features/moreSettings/labelContent/label_content_scre
 import 'package:repair_cms/features/moreSettings/notificationSetting/notification_settings_screen.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/printer_settings_screen.dart';
 import 'package:repair_cms/set_up_di.dart';
+import 'package:repair_cms/main.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class MoreSettingsScreen extends StatelessWidget {
@@ -16,6 +17,7 @@ class MoreSettingsScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppColors.kBg,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -75,11 +77,9 @@ class MoreSettingsScreen extends StatelessWidget {
       // Perform logout operations
       _clearUserData()
           .then((_) {
-            debugPrint('✅ [Logout] Logout successful, navigating to sign in');
-            // Navigate to login screen and remove all routes
-            GoRouter.of(context).go(
-              RouteNames.signIn, // Replace with your actual login route
-            );
+            debugPrint('✅ [Logout] Logout successful, restarting app');
+            // Restart the app to clear all memory (cubits/blocs)
+            RestartWidget.restartApp(context);
           })
           .catchError((error) {
             debugPrint('❌ [Logout] Error during logout: $error');
@@ -104,15 +104,8 @@ class MoreSettingsScreen extends StatelessWidget {
       debugPrint('🔌 [Logout] Disconnecting socket');
       SetUpDI.getIt<SocketService>().disconnect();
 
-      // Clear authentication token
-      await storage.remove('token');
-
-      // Clear any other user-related data
-      await storage.remove('user');
-      await storage.remove('userId');
-      await storage.remove('userType');
-      // Clear any other cached data if needed
-      // await StorageService.clearAll();
+      // Clear all local storage data
+      await clearLocalStorage();
 
       // Optional: Call logout API if needed
       // await ApiService.logout();

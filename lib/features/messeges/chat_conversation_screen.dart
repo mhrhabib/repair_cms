@@ -487,48 +487,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.kBg,
-          appBar: AppBar(
+          appBar: CupertinoNavigationBar(
             backgroundColor: AppColors.kBg,
-            elevation: 0,
+
             leading: CustomNavButton(
               onPressed: () => Navigator.of(context).pop(),
               icon: CupertinoIcons.back,
             ),
-            centerTitle: true,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  participantName,
-                  style: AppTypography.sfProHeadLineTextStyle22.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.fontMainColor,
-                    fontSize: 20.sp,
-                  ),
-                ),
-                Text(
-                  'Online',
-                  style: AppTypography.sfProHeadLineTextStyle22.copyWith(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12.sp,
-                    color: AppColors.fontMainColor,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              SizedBox(
-                height: 30.h,
-                width: 30.w,
-                child: CustomNavButton(
-                  onPressed: () {},
-                  icon: SolarIconsOutline.mentionCircle,
-                  iconColor: AppColors.kBg,
-                  backgroundColor: AppColors.kBlue,
-                ),
+            middle: Text(
+              participantName,
+              style: AppTypography.sfProHeadLineTextStyle22.copyWith(
+                fontWeight: FontWeight.w500,
+                color: AppColors.fontMainColor,
+                fontSize: 20.sp,
               ),
-              const SizedBox(width: 8),
-            ],
+            ),
           ),
           body: state is MessageLoading
               ? Center(
@@ -826,14 +799,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 decoration: BoxDecoration(
                   color: isMe
                       ? Colors.white.withValues(alpha: 0.5)
-                      : Colors.orange[50],
+                      : AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   'Internal Comment',
                   style: TextStyle(
                     fontSize: 10,
-                    color: isMe ? const Color(0xFF4A90E2) : Colors.orange[700],
+                    color: isMe ? const Color(0xFF4A90E2) : AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -905,9 +878,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isMe ? const Color(0xFFFFF3CD) : const Color(0xFFFFF8E1),
+              color: isMe
+                  ? AppColors.primary.withValues(alpha: 0.08)
+                  : AppColors.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.orange[200]!, width: 1),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                width: 1,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -927,19 +905,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.orange[100],
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.comment, size: 12, color: Colors.orange[700]),
+                      Icon(Icons.comment, size: 12, color: AppColors.primary),
                       const SizedBox(width: 4),
                       Text(
                         'Internal Comment',
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.orange[700],
+                          color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1358,10 +1336,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           // Unified pill-shaped input bar
           Expanded(
             child: Container(
-              height: 48.h,
+              constraints: BoxConstraints(minHeight: 48.h, maxHeight: 150.h),
               decoration: BoxDecoration(
                 color: _isInternalMode ? const Color(0xFF5B6B7D) : Colors.white,
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(24.r),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -1371,43 +1349,48 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ],
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const SizedBox(width: 20),
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      focusNode: _messageFocusNode,
-                      style: TextStyle(
-                        color: _isInternalMode
-                            ? Colors.white
-                            : AppColors.fontMainColor,
-                        fontSize: 15.sp,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: _isInternalMode
-                            ? 'Internal message...'
-                            : 'Write a message...',
-                        hintStyle: TextStyle(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4.h),
+                      child: TextField(
+                        controller: _messageController,
+                        focusNode: _messageFocusNode,
+                        keyboardType: TextInputType.multiline,
+                        minLines: 1,
+                        maxLines: 5,
+                        style: TextStyle(
                           color: _isInternalMode
-                              ? Colors.white70
-                              : AppColors.fontSecondaryColor.withValues(
-                                  alpha: 0.4,
-                                ),
+                              ? Colors.white
+                              : AppColors.fontMainColor,
                           fontSize: 15.sp,
                         ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12,
+                        decoration: InputDecoration(
+                          hintText: _isInternalMode
+                              ? 'Internal message...'
+                              : 'Write a message...',
+                          hintStyle: TextStyle(
+                            color: _isInternalMode
+                                ? Colors.white70
+                                : AppColors.fontSecondaryColor.withValues(
+                                    alpha: 0.4,
+                                  ),
+                            fontSize: 15.sp,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 10.h),
                         ),
                       ),
-                      maxLines:
-                          1, // Keep it single line as per image or allow expansion? Image shows single line
                     ),
                   ),
                   IconButton(
                     icon: Icon(
-                      _isInternalMode ? Icons.lock : Icons.lock_open_outlined,
+                      _isInternalMode
+                          ? SolarIconsBold.lock
+                          : SolarIconsBold.lockUnlocked,
                       color: _isInternalMode
                           ? Colors.yellow[700]
                           : AppColors.fontSecondaryColor.withValues(alpha: 0.6),
@@ -1431,7 +1414,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       Icons.send_rounded,
                       color: _isInternalMode
                           ? Colors.white
-                          : AppColors.fontSecondaryColor.withValues(alpha: 0.3),
+                          : AppColors.fontSecondaryColor,
                       size: 22.sp,
                     ),
                     onPressed: () => _sendMessage(currentMessages),

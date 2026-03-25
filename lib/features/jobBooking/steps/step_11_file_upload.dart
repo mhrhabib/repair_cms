@@ -213,7 +213,8 @@ class StepFileUploadWidgetState extends State<StepFileUploadWidget> {
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
+                                color: Colors.grey.shade700,
+                                border: Border.all(color: Colors.grey.shade600),
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
                               child: ClipRRect(

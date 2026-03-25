@@ -10,6 +10,7 @@ import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 // --- FIGMA STYLES ---
 final Color figmaYellow = const Color(0xFFF0D48C);
@@ -470,22 +471,11 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                     ),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.close,
-                          color: Colors.black87,
-                          size: 20.r,
-                        ),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.grey.shade300,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          padding: EdgeInsets.all(8.r),
-                        ),
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.pop(context),
+                      child: CustomNavButton(
+                        icon: SolarIconsOutline.penNewRound,
+                        iconColor: Colors.black87,
+                        size: 20.r,
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ),
                   ],
