@@ -281,24 +281,18 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        centerTitle: true,
-        leading: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-          child: CustomNavButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icons.arrow_back_ios_new,
-          ),
-        ),
-        title: Text('Print', style: AppTypography.sfProHeadLineTextStyle22),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: 72.h,
+                left: 16.w,
+                right: 16.w,
+                bottom: 16.h,
+              ),
+              child: Column(
+                children: [
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -372,8 +366,42 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                 ),
               ),
             ],
+              ),
+            ),
           ),
-        ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.removeRoute(context, ModalRoute.of(context)!),
+                    icon: Icons.arrow_back_ios_new,
+                  ),
+                  Text(
+                    'Print',
+                    style: AppTypography.sfProHeadLineTextStyle22,
+                  ),
+                  const SizedBox(width: 44), // Spacer to balance leading
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -12,28 +12,16 @@ class ProfileOptionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg.withValues(alpha: 0.1),
-
-        leading: CustomNavButton(
-          onPressed: () {
-            try {
-              debugPrint('🔄 [ProfileOptionsScreen] Navigating back');
-              Navigator.pop(context);
-            } catch (e) {
-              debugPrint('❌ [ProfileOptionsScreen] Error navigating back: $e');
-            }
-          },
-          icon: CupertinoIcons.back,
-        ),
-        middle: Text(
-          'My Profile',
-          style: AppTypography.sfProHeadLineTextStyle22,
-        ),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0.w),
-        child: Column(
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 72.h,
+              left: 16.w,
+              right: 16.w,
+              bottom: 16.h,
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             // Personal Details
@@ -123,8 +111,42 @@ class ProfileOptionsScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
+            ],
+          ),
+          ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: CupertinoIcons.back,
+                  ),
+                  Text(
+                    'My Profile',
+                    style: AppTypography.sfProHeadLineTextStyle22,
+                  ),
+                  const SizedBox(width: 48), // Spacer for centering title
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -597,33 +597,55 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         return Scaffold(
           backgroundColor: AppColors.kBg,
           resizeToAvoidBottomInset: true,
-          appBar: CupertinoNavigationBar(
-            backgroundColor: AppColors.kBg.withValues(alpha: 0.1),
-            border: null,
-            leading: CustomNavButton(
-              onPressed: () {
-                if (!mounted) return;
-                try {
-                  debugPrint('🔄 [PersonalDetailsScreen] Navigating back');
-                  Navigator.pop(context);
-                } catch (e) {
-                  debugPrint(
-                    '❌ [PersonalDetailsScreen] Error navigating back: $e',
-                  );
-                }
-              },
-              icon: CupertinoIcons.back,
-            ),
-            middle: const Text(
-              'Personal Details',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+          body: Stack(
+            children: [
+              _buildBody(context, state),
+
+              // Custom Header
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top,
+                    left: 16.w,
+                    right: 16.w,
+                    bottom: 8.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.kBg.withValues(alpha: 0.1),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CustomNavButton(
+                        onPressed: () {
+                          if (!mounted) return;
+                          try {
+                            debugPrint(
+                              '🔄 [PersonalDetailsScreen] Navigating back',
+                            );
+                            Navigator.pop(context);
+                          } catch (e) {
+                            debugPrint(
+                              '❌ [PersonalDetailsScreen] Error navigating back: $e',
+                            );
+                          }
+                        },
+                        icon: CupertinoIcons.back,
+                      ),
+                      Text(
+                        'Personal Details',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                      const SizedBox(width: 48), // Spacer for centering title
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-          body: _buildBody(context, state),
           bottomNavigationBar: _buildBottomButton(context, state),
         );
       },
@@ -652,7 +674,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       return SingleChildScrollView(
         padding: EdgeInsets.only(
           bottom: 20,
-          top: 12.h,
+          top: MediaQuery.of(context).padding.top + 72.h,
           left: 12.w,
           right: 12.w,
         ),

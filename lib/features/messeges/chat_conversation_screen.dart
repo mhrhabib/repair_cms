@@ -487,58 +487,119 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.kBg,
-          appBar: CupertinoNavigationBar(
-            backgroundColor: AppColors.kBg,
+          body: Stack(
+            children: [
+              state is MessageLoading
+                  ? Center(
+                      child: CupertinoActivityIndicator(
+                        color: Colors.blue,
+                        radius: 16.r,
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).padding.top + 60.h,
+                        ),
+                        Expanded(
+                          child: messages.isEmpty
+                              ? _buildEmptyState()
+                              : ListView.builder(
+                                  controller: _scrollController,
+                                  padding: const EdgeInsets.all(16),
+                                  reverse: true,
+                                  itemCount: messages.length,
+                                  itemBuilder: (context, index) {
+                                    // With reverse: true, index 0 is the last item (latest message)
+                                    // So we need to access messages in reverse order
+                                    final reversedIndex =
+                                        messages.length - 1 - index;
+                                    final message = messages[reversedIndex];
+                                    final isMe =
+                                        message.sender?.email ==
+                                        _loggedUserEmail;
 
-            leading: CustomNavButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: CupertinoIcons.back,
-            ),
-            middle: Text(
-              participantName,
-              style: AppTypography.sfProHeadLineTextStyle22.copyWith(
-                fontWeight: FontWeight.w500,
-                color: AppColors.fontMainColor,
-                fontSize: 20.sp,
-              ),
-            ),
-          ),
-          body: state is MessageLoading
-              ? Center(
-                  child: CupertinoActivityIndicator(
-                    color: Colors.blue,
-                    radius: 16.r,
-                  ),
-                )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: messages.isEmpty
-                          ? _buildEmptyState()
-                          : ListView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(16),
-                              reverse: true,
-                              itemCount: messages.length,
-                              itemBuilder: (context, index) {
-                                // With reverse: true, index 0 is the last item (latest message)
-                                // So we need to access messages in reverse order
-                                final reversedIndex =
-                                    messages.length - 1 - index;
-                                final message = messages[reversedIndex];
-                                final isMe =
-                                    message.sender?.email == _loggedUserEmail;
-
-                                return _buildMessageBubble(message, isMe);
-                              },
-                            ),
+                                    return _buildMessageBubble(message, isMe);
+                                  },
+                                ),
+                        ),
+                        // Mention suggestions overlay
+                        if (_showMentionSuggestions && _isInternalMode)
+                          _buildMentionSuggestions(),
+                        _buildMessageInput(messages),
+                      ],
                     ),
-                    // Mention suggestions overlay
-                    if (_showMentionSuggestions && _isInternalMode)
-                      _buildMentionSuggestions(),
-                    _buildMessageInput(messages),
-                  ],
+
+              // Custom Header
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top,
+                    left: 16.w,
+                    right: 16.w,
+                    bottom: 8.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.kBg.withValues(alpha: 0.1),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CustomNavButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: CupertinoIcons.back,
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 2.w,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F7F8),
+                          shape: BoxShape.rectangle,
+                          borderRadius: BorderRadius.circular(28.r),
+                          border: Border.all(
+                            color:
+                                AppColors.whiteColor, // Figma: border #FFFFFF
+                            width: 1, // Figma: border-width 1px
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color.fromARGB(
+                                28,
+                                116,
+                                115,
+                                115,
+                              ), // Figma: #0000001C
+                              blurRadius: 2, // Figma: blur 20px
+                              offset: Offset(
+                                0,
+                                0,
+                              ), // Figma: 0px 0px (no offset)
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          participantName,
+                          style: AppTypography.sfProHeadLineTextStyle22
+                              .copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.fontMainColor,
+                                fontSize: 20.sp,
+                              ),
+                        ),
+                      ),
+                      SizedBox(width: 42.w), // Balance back button
+                    ],
+                  ),
                 ),
+              ),
+            ],
+          ),
         );
       },
     );

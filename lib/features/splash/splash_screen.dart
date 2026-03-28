@@ -84,9 +84,9 @@ class _SplashViewState extends State<SplashView>
                 AppColors.whiteColor,
                 const Color.fromARGB(
                   255,
-                  179,
-                  199,
-                  220,
+                  255,
+                  255,
+                  255,
                 ).withValues(alpha: 0.02),
               ],
             ),
@@ -110,12 +110,12 @@ class _SplashViewState extends State<SplashView>
                       },
                       child: Image.asset(
                         AssetsConstant.mainLogo,
-                        width: 180.w,
-                        height: 180.h,
+                        width: 120.w,
+                        height: 120.h,
                         errorBuilder: (context, error, stackTrace) {
                           return Icon(
                             Icons.business_center,
-                            size: 150.w,
+                            size: 120.w,
                             color: AppColors.primary,
                           );
                         },
@@ -141,7 +141,7 @@ class _SplashViewState extends State<SplashView>
                 right: 0,
                 child: Center(
                   child: Text(
-                    'Version 1.2.2+12',
+                    'Version 1.2.2+13',
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.deviderColor,

@@ -94,38 +94,15 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: Colors.black,
-        leading: CustomNavButton(
-          onPressed: () => Navigator.pop(context),
-          icon: CupertinoIcons.back,
-          iconColor: Colors.black,
-        ),
-        middle: Text(
-          widget.isBarcodeMode ? 'Barcode Scanner' : 'QR Code Scanner',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-
-        trailing: IconButton(
-          icon: Icon(
-            cameraController.torchEnabled ? Icons.flash_on : Icons.flash_off,
-            color: Colors.white,
-          ),
-          onPressed: () => cameraController.toggleTorch(),
-        ),
-      ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Scanner Area
-            Padding(
+      body: Stack(
+        children: [
+          // Scanner Area
+          SafeArea(
+            child: Padding(
               padding: EdgeInsets.all(24.w),
               child: Column(
                 children: [
+                  SizedBox(height: 60.h),
                   // Instruction Text
                   Text(
                     widget.isBarcodeMode
@@ -177,17 +154,64 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
                 ],
               ),
             ),
+          ),
 
-            // Processing Overlay
-            if (isProcessing)
-              Container(
-                color: Colors.black.withValues(alpha: 0.7),
-                child: Center(
-                  child: ProcessingLoader(isBarcodeMode: widget.isBarcodeMode),
-                ),
+          // Processing Overlay
+          if (isProcessing)
+            Container(
+              color: Colors.black.withOpacity(0.7),
+              child: Center(
+                child: ProcessingLoader(isBarcodeMode: widget.isBarcodeMode),
               ),
-          ],
-        ),
+            ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.black,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: CupertinoIcons.back,
+                    iconColor: Colors.black,
+                  ),
+                  Text(
+                    widget.isBarcodeMode ? 'Barcode Scanner' : 'QR Code Scanner',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      cameraController.torchEnabled
+                          ? Icons.flash_on
+                          : Icons.flash_off,
+                      color: Colors.white,
+                    ),
+                    onPressed: () => setState(() {
+                      cameraController.toggleTorch();
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

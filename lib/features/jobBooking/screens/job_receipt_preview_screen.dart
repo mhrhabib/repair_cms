@@ -10,6 +10,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart';
+import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/core/services/file_service.dart';
@@ -994,73 +995,118 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.kBg,
-        appBar: CupertinoNavigationBar(
-          backgroundColor: AppColors.kBg,
-          leading: CustomNavButton(
-            onPressed: () {
-              if (widget.fromBooking) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (_) => const HomeScreen(initialIndex: 1),
-                  ),
-                  (route) => false,
-                );
-              } else {
-                Navigator.of(context).pop();
-              }
-            },
-            icon: CupertinoIcons.back,
-          ),
-          middle: Text(
-            'Receipt Preview',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-
-          trailing: CustomNavButton(
-            onPressed: _showPrintOptionsSheet,
-            icon: SolarIconsOutline.printer,
-          ),
-        ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ─ Section header: Job Receipt ──────────────────────────────
-              // _SectionHeader(
-              //   icon: Icons.receipt_long_rounded,
-              //   label: 'Job Receipt',
-              //   color: AppColors.primary,
-              // ),
-              SizedBox(height: 10.h),
-
-              // ─ Receipt card ─────────────────────────────────────────────
-              _buildReceiptCard(),
-
-              SizedBox(height: 24.h),
-
-              // ─ Section header: Device Label ─────────────────────────────
-              _SectionHeader(
-                icon: Icons.label_important_rounded,
-                label: 'Device Label',
-                color: const Color(0xFF6C63FF),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 72.h,
+                left: 16.w,
+                right: 16.w,
+                bottom: 16.h,
               ),
-              SizedBox(height: 10.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ─ Section header: Job Receipt ──────────────────────────────
+                  // _SectionHeader(
+                  //   icon: Icons.receipt_long_rounded,
+                  //   label: 'Job Receipt',
+                  //   color: AppColors.primary,
+                  // ),
+                  SizedBox(height: 10.h),
 
-              // ─ Device label card ─────────────────────────────────────────
-              _buildDeviceLabelCard(),
+                  // ─ Receipt card ─────────────────────────────────────────────
+                  _buildReceiptCard(),
 
-              SizedBox(height: 36.h),
-            ],
-          ),
+                  SizedBox(height: 24.h),
+
+                  // ─ Section header: Device Label ─────────────────────────────
+                  _SectionHeader(
+                    icon: Icons.label_important_rounded,
+                    label: 'Device Label',
+                    color: const Color(0xFF6C63FF),
+                  ),
+                  SizedBox(height: 10.h),
+
+                  // ─ Device label card ─────────────────────────────────────────
+                  _buildDeviceLabelCard(),
+
+                  SizedBox(height: 36.h),
+                ],
+              ),
+            ),
+
+            // Custom Header
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 8.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.kBg.withValues(alpha: 0.1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomNavButton(
+                      onPressed: () {
+                        if (widget.fromBooking) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const HomeScreen(initialIndex: 1),
+                            ),
+                            (route) => false,
+                          );
+                        } else {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      icon: CupertinoIcons.back,
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(28.r),
+                        border: Border.all(
+                          color: AppColors.whiteColor, // Figma: border #FFFFFF
+                          width: 1, // Figma: border-width 1px
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromARGB(
+                              28,
+                              116,
+                              115,
+                              115,
+                            ), // Figma: #0000001C
+                            blurRadius: 2, // Figma: blur 20px
+                            offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'Receipt Preview',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                    ),
+                    CustomNavButton(
+                      onPressed: _showPrintOptionsSheet,
+                      icon: SolarIconsOutline.printer,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-
-        // Floating Print Button at the bottom
       ),
     );
   }

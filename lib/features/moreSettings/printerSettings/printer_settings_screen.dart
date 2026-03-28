@@ -14,133 +14,170 @@ class PrinterSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
-        leading: CustomNavButton(
-          onPressed: () => Navigator.pop(context),
-          icon: CupertinoIcons.back,
-        ),
-        middle: const Text(
-          'Printer Settings',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 72.h,
+              left: 10.0,
+              right: 10.0,
+              bottom: 10.0,
+            ),
+            child: Column(
+              children: [
+                // A4 Receipt Printer
+                _buildSettingsItem(
+                  iconsWidget: Icon(
+                    SolarIconsOutline.documentText,
+                    color: Colors.blue,
+                  ),
+                  title: 'A4 Receipt Printer',
+                  onTap: () {
+                    try {
+                      debugPrint(
+                        '🔄 [PrinterSettings] Navigating to A4 Printer',
+                      );
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const A4ReceiptPrinterScreen(),
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint(
+                        '❌ [PrinterSettings] Error navigating to A4 Printer: $e',
+                      );
+                    }
+                  },
+                ),
+
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.deviderColor,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Thermal Printer (80mm)
+                _buildSettingsItem(
+                  iconsWidget: Image.asset(
+                    'assets/icon/Vector (Stroke).png',
+                    height: 24,
+                    width: 24,
+                  ),
+                  title: 'Thermal Printer (80mm)',
+                  onTap: () {
+                    try {
+                      debugPrint(
+                        '🔄 [PrinterSettings] Navigating to Thermal Printer',
+                      );
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const ThermalPrinterScreen(),
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint(
+                        '❌ [PrinterSettings] Error navigating to Thermal Printer: $e',
+                      );
+                    }
+                  },
+                ),
+
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.deviderColor,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Label Printer
+                _buildSettingsItem(
+                  iconsWidget: Image.asset(
+                    'assets/icon/label.png',
+                    height: 24,
+                    width: 24,
+                  ),
+                  title: 'Label Printer',
+                  onTap: () {
+                    try {
+                      debugPrint(
+                        '🔄 [PrinterSettings] Navigating to Label Printer',
+                      );
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const LabelPrinterScreen(),
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint(
+                        '❌ [PrinterSettings] Error navigating to Label Printer: $e',
+                      );
+                    }
+                  },
+                ),
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.deviderColor,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          children: [
-            // A4 Receipt Printer
-            _buildSettingsItem(
-              iconsWidget: Icon(
-                SolarIconsOutline.documentText,
-                color: Colors.blue,
-              ),
-              title: 'A4 Receipt Printer',
-              onTap: () {
-                try {
-                  debugPrint('🔄 [PrinterSettings] Navigating to A4 Printer');
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const A4ReceiptPrinterScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [PrinterSettings] Error navigating to A4 Printer: $e',
-                  );
-                }
-              },
-            ),
 
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: CupertinoIcons.back,
+                  ),
+                  Text(
+                    'Printer Settings',
+                    style: AppTypography.sfProHeadLineTextStyle22,
+                  ),
+                  const SizedBox(width: 44), // Spacer
+                ],
               ),
             ),
-
-            // Thermal Printer (80mm)
-            _buildSettingsItem(
-              iconsWidget: Image.asset(
-                'assets/icon/Vector (Stroke).png',
-                height: 24,
-                width: 24,
-              ),
-              title: 'Thermal Printer (80mm)',
-              onTap: () {
-                try {
-                  debugPrint(
-                    '🔄 [PrinterSettings] Navigating to Thermal Printer',
-                  );
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const ThermalPrinterScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [PrinterSettings] Error navigating to Thermal Printer: $e',
-                  );
-                }
-              },
-            ),
-
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
-              ),
-            ),
-
-            // Label Printer
-            _buildSettingsItem(
-              iconsWidget: Image.asset(
-                'assets/icon/label.png',
-                height: 24,
-                width: 24,
-              ),
-              title: 'Label Printer',
-              onTap: () {
-                try {
-                  debugPrint(
-                    '🔄 [PrinterSettings] Navigating to Label Printer',
-                  );
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const LabelPrinterScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [PrinterSettings] Error navigating to Label Printer: $e',
-                  );
-                }
-              },
-            ),
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

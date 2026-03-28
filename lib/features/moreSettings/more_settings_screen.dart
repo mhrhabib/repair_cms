@@ -146,17 +146,17 @@ class MoreSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        title: Text('More', style: AppTypography.sfProHeadLineTextStyle22),
-        centerTitle: true,
-        leading: Container(), // Empty container to hide back button
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          children: [
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 72.h,
+              left: 10.0,
+              right: 10.0,
+              bottom: 10.0,
+            ),
+            child: Column(
+              children: [
             // Printer Settings
             _buildSettingsItem(
               iconsWidget: Icon(SolarIconsOutline.printer, color: Colors.blue),
@@ -288,8 +288,37 @@ class MoreSettingsScreen extends StatelessWidget {
 
             // Logout Button - Added at the bottom
             _buildLogoutItem(context),
-          ],
-        ),
+              ],
+            ),
+          ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.scaffoldBackgroundColor.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'More',
+                    style: AppTypography.sfProHeadLineTextStyle22,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:solar_icons/solar_icons.dart';
 import '../../../../core/constants/app_colors.dart';
 
@@ -270,8 +271,7 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                 Expanded(
                   child: Text(
                     'Discover WiFi Printers',
-                    style: TextStyle(
-                      fontSize: 20.sp,
+                    style: AppTypography.sfProHintTextStyle17.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -289,7 +289,7 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(28.r),
                 border: Border.all(color: Colors.blue.shade200),
               ),
               child: Row(
@@ -325,7 +325,7 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                   foregroundColor: Colors.white,
                   minimumSize: Size(double.infinity, 48.h),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.r),
+                    borderRadius: BorderRadius.circular(28.r),
                   ),
                 ),
               )
@@ -408,52 +408,99 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                       itemCount: _discoveredPrinters.length,
                       itemBuilder: (context, index) {
                         final printer = _discoveredPrinters[index];
-                        return Card(
-                          margin: EdgeInsets.only(bottom: 8.h),
-                          child: ListTile(
-                            leading: Container(
-                              padding: EdgeInsets.all(8.w),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              child: Icon(
-                                Icons.print,
-                                color: Colors.green.shade700,
-                                size: 24.sp,
-                              ),
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 12.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 12.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7F7F8),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(
+                              color: AppColors.whiteColor,
+                              width: 1,
                             ),
-                            title: Text(
-                              printer.ipAddress,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15.sp,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color.fromARGB(28, 116, 115, 115),
+                                blurRadius: 2,
+                                offset: const Offset(0, 0),
+                                spreadRadius: 2,
                               ),
-                            ),
-                            subtitle: Text(
-                              'Port: ${printer.port}',
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            trailing: ElevatedButton(
-                              onPressed: () {
-                                widget.onPrinterSelected(
-                                  printer.ipAddress,
-                                  printer.port,
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16.w,
-                                  vertical: 8.h,
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(12.w),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  SolarIconsOutline.printer,
+                                  color: Colors.green.shade700,
+                                  size: 24.sp,
                                 ),
                               ),
-                              child: const Text('Use'),
-                            ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        printer.ipAddress,
+                                        style: AppTypography.sfProText15
+                                            .copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF1E2D4D),
+                                            ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 2.h),
+                                    Text(
+                                      'Port: ${printer.port}',
+                                      style: AppTypography.fontSize12.copyWith(
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              SizedBox(
+                                height: 36.h,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    widget.onPrinterSelected(
+                                      printer.ipAddress,
+                                      printer.port,
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 20.w,
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'Use',
+                                    style: AppTypography.fontSize12.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },

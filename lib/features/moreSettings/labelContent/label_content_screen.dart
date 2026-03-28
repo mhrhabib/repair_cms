@@ -293,222 +293,244 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
-        leading: CustomNavButton(
-          onPressed: () => Navigator.pop(context),
-          icon: CupertinoIcons.back,
-        ),
-        middle: Text(
-          'Label Content',
-          style: AppTypography.sfProHeadLineTextStyle22,
-        ),
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          // ── Label preview card ─────────────────────────────────────────
-          Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(28.r),
-              border: Border.all(color: Colors.grey.shade300, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+          SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Label Preview',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
+                SizedBox(height: MediaQuery.of(context).padding.top + 72.h),
+                // ── Label preview card ─────────────────────────────────────────
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28.r),
+                    border: Border.all(color: Colors.grey.shade300, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Label Preview',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // The on-screen preview uses the same builder as the
+                      // off-screen render so WYSIWYG is guaranteed.
+                      RepaintBoundary(
+                        key: _labelPreviewKey,
+                        child: _buildLabelWidget(
+                          jobData: _jobData,
+                          showBarcode: barcode,
+                          showJobNo: jobNo,
+                          showJobQR: jobQR,
+                          showTrackingQR: trackingPortalQR,
+                          showCustomerName: customerName,
+                          showModelBrand: modelBrand,
+                          showDate: date,
+                          showJobType: jobType,
+                          showSymptom: symptom,
+                          showPhysicalLocation: physicalLocation,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                // The on-screen preview uses the same builder as the
-                // off-screen render so WYSIWYG is guaranteed.
-                RepaintBoundary(
-                  key: _labelPreviewKey,
-                  child: _buildLabelWidget(
-                    jobData: _jobData,
-                    showBarcode: barcode,
-                    showJobNo: jobNo,
-                    showJobQR: jobQR,
-                    showTrackingQR: trackingPortalQR,
-                    showCustomerName: customerName,
-                    showModelBrand: modelBrand,
-                    showDate: date,
-                    showJobType: jobType,
-                    showSymptom: symptom,
-                    showPhysicalLocation: physicalLocation,
+
+                // ── Toggle list card ───────────────────────────────────────────
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Label Details',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildToggleItem(
+                        'QR-Code (Tracking-Portal)',
+                        trackingPortalQR,
+                        (value) => setState(() {
+                          trackingPortalQR = value;
+                          if (value) jobQR = false;
+                        }),
+                      ),
+                      _buildToggleItem(
+                        'QR-Code (Job)',
+                        jobQR,
+                        (value) => setState(() {
+                          jobQR = value;
+                          if (value) trackingPortalQR = false;
+                        }),
+                      ),
+                      _buildToggleItem(
+                        'Barcode',
+                        barcode,
+                        (value) => setState(() => barcode = value),
+                      ),
+                      _buildToggleItem(
+                        'Job No.',
+                        jobNo,
+                        (value) => setState(() => jobNo = value),
+                      ),
+                      _buildToggleItem(
+                        'Customer Name / Company Name',
+                        customerName,
+                        (value) => setState(() => customerName = value),
+                      ),
+                      _buildToggleItem(
+                        'Model, Brand',
+                        modelBrand,
+                        (value) => setState(() => modelBrand = value),
+                      ),
+                      _buildToggleItem(
+                        'Date',
+                        date,
+                        (value) => setState(() => date = value),
+                      ),
+                      _buildToggleItem(
+                        'Job type',
+                        jobType,
+                        (value) => setState(() => jobType = value),
+                      ),
+                      _buildToggleItem(
+                        'Symptom',
+                        symptom,
+                        (value) => setState(() => symptom = value),
+                      ),
+                      _buildToggleItem(
+                        'Physical location',
+                        physicalLocation,
+                        (value) => setState(() => physicalLocation = value),
+                        isLast: true,
+                      ),
+                    ],
                   ),
                 ),
+
+                // ── Action buttons ─────────────────────────────────────────────
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _saveSettings,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(26),
+                              ),
+                            ),
+                            child: const Text(
+                              'Save Settings',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            // ✅ Save first (awaited), then print
+                            onPressed: () async {
+                              await _saveSettings();
+                              await _testPrintLabel();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4A90E2),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(26),
+                              ),
+                            ),
+                            child: const Text(
+                              'Test Print',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16.h),
               ],
             ),
           ),
 
-          // ── Toggle list card ───────────────────────────────────────────
-          Expanded(
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(28.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: AppColors.kBg.withValues(alpha: 0.1),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: CupertinoIcons.back,
+                  ),
                   Text(
-                    'Label Details',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black54,
-                    ),
+                    'Label Content',
+                    style: AppTypography.sfProHeadLineTextStyle22,
                   ),
-                  const SizedBox(height: 24),
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        _buildToggleItem(
-                          'QR-Code (Tracking-Portal)',
-                          trackingPortalQR,
-                          (value) => setState(() {
-                            trackingPortalQR = value;
-                            if (value) jobQR = false;
-                          }),
-                        ),
-                        _buildToggleItem(
-                          'QR-Code (Job)',
-                          jobQR,
-                          (value) => setState(() {
-                            jobQR = value;
-                            if (value) trackingPortalQR = false;
-                          }),
-                        ),
-                        _buildToggleItem(
-                          'Barcode',
-                          barcode,
-                          (value) => setState(() => barcode = value),
-                        ),
-                        _buildToggleItem(
-                          'Job No.',
-                          jobNo,
-                          (value) => setState(() => jobNo = value),
-                        ),
-                        _buildToggleItem(
-                          'Customer Name / Company Name',
-                          customerName,
-                          (value) => setState(() => customerName = value),
-                        ),
-                        _buildToggleItem(
-                          'Model, Brand',
-                          modelBrand,
-                          (value) => setState(() => modelBrand = value),
-                        ),
-                        _buildToggleItem(
-                          'Date',
-                          date,
-                          (value) => setState(() => date = value),
-                        ),
-                        _buildToggleItem(
-                          'Job type',
-                          jobType,
-                          (value) => setState(() => jobType = value),
-                        ),
-                        _buildToggleItem(
-                          'Symptom',
-                          symptom,
-                          (value) => setState(() => symptom = value),
-                        ),
-                        _buildToggleItem(
-                          'Physical location',
-                          physicalLocation,
-                          (value) => setState(() => physicalLocation = value),
-                          isLast: true,
-                        ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(width: 44), // Spacer
                 ],
               ),
-            ),
-          ),
-
-          // ── Action buttons ─────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _saveSettings,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(26),
-                        ),
-                      ),
-                      child: const Text(
-                        'Save Settings',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: ElevatedButton(
-                      // ✅ Save first (awaited), then print
-                      onPressed: () async {
-                        await _saveSettings();
-                        await _testPrintLabel();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4A90E2),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(26),
-                        ),
-                      ),
-                      child: const Text(
-                        'Test Print',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
         ],

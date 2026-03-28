@@ -167,39 +167,87 @@ class _NotesScreenState extends State<NotesScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.whiteColor,
-        appBar: CupertinoNavigationBar(
-          backgroundColor: CupertinoColors.systemBackground.resolveFrom(
-            context,
-          ),
-          leading: CustomNavButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: CupertinoIcons.back,
-          ),
-          middle: Text(
-            'Notes',
-            style: TextStyle(
-              fontSize: 17.sp,
-              fontWeight: FontWeight.w600,
-              color: CupertinoColors.label.resolveFrom(context),
+        body: Stack(
+          children: [
+            Container(
+              margin: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 72.h,
+                left: 8.w,
+                right: 8.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: figmaYellow,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: _buildNotesList(),
             ),
-          ),
-          trailing: CustomNavButton(
-            onPressed: () => _navigateToAddNote(context, widget.job),
-            icon: CupertinoIcons.add_circled_solid,
-            size: 28.sp,
-            iconColor: figmaBlue,
-          ),
-        ),
-        body: Container(
-          margin: EdgeInsets.all(8.h),
-          decoration: BoxDecoration(
-            color: figmaYellow,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(16.r),
-              bottom: Radius.circular(16.r),
+
+            // Custom Header
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 8.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.kBg.withValues(alpha: 0.1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomNavButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: CupertinoIcons.back,
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 2.w,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(28.r),
+                        border: Border.all(
+                          color: AppColors.whiteColor, // Figma: border #FFFFFF
+                          width: 1, // Figma: border-width 1px
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromARGB(
+                              28,
+                              116,
+                              115,
+                              115,
+                            ), // Figma: #0000001C
+                            blurRadius: 2, // Figma: blur 20px
+                            offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'Notes',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                    ),
+                    CustomNavButton(
+                      onPressed: () => _navigateToAddNote(context, widget.job),
+                      icon: CupertinoIcons.add_circled_solid,
+                      size: 28.sp,
+                      iconColor: figmaBlue,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          child: _buildNotesList(),
+          ],
         ),
       ),
     );

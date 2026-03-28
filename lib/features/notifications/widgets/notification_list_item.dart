@@ -96,8 +96,14 @@ class _NotificationListItemState extends State<NotificationListItem>
                   children: [
                     Builder(
                       builder: (context) {
-                        final data = LabelFormatter.notificationData(widget.notification);
-                        final title = data?.title ?? LabelFormatter.formatLabel(widget.notification.message ?? '');
+                        final data = LabelFormatter.notificationData(
+                          widget.notification,
+                        );
+                        final title =
+                            data?.title ??
+                            LabelFormatter.formatLabel(
+                              widget.notification.message ?? '',
+                            );
                         final text = data?.text;
 
                         return Column(
@@ -127,21 +133,18 @@ class _NotificationListItemState extends State<NotificationListItem>
                         );
                       },
                     ),
-                    if ((widget.notification.quotationNo ?? '').isNotEmpty ||
-                        (widget.notification.conversationId ?? '')
-                            .isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.notification.quotationNo ??
-                            widget.notification.conversationId ??
-                            '',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
+
+                    Text(
+                      widget.notification.messageType ??
+                          widget.notification.messageType ??
+                          '',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
+                    ),
+
                     const SizedBox(height: 8),
                     Text(
                       widget.formatDate(widget.notification.createdAt),

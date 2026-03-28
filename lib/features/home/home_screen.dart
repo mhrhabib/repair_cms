@@ -140,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       children: [
         Container(
           height: 80.h,
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
             boxShadow: [
@@ -503,57 +504,60 @@ class _BottomNavItemState extends State<_BottomNavItem>
         },
         child: SizedBox(
           width: 68.w,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 42.w,
-                height: 42.h,
-                decoration: BoxDecoration(
-                  color: widget.isSelected
-                      ? const Color(0xFFF7F7F8)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(46.r),
-                  border: Border.all(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 42.w,
+                  height: 42.h,
+                  decoration: BoxDecoration(
                     color: widget.isSelected
-                        ? AppColors.whiteColor
+                        ? const Color(0xFFF7F7F8)
                         : Colors.transparent,
-                    width: 1,
+                    borderRadius: BorderRadius.circular(46.r),
+                    border: Border.all(
+                      color: widget.isSelected
+                          ? AppColors.whiteColor
+                          : Colors.transparent,
+                      width: 1,
+                    ),
+                    boxShadow: widget.isSelected
+                        ? [
+                            const BoxShadow(
+                              color: Color.fromARGB(28, 116, 115, 115),
+                              blurRadius: 2,
+                              offset: Offset(0, 0),
+                              spreadRadius: 2,
+                            ),
+                          ]
+                        : null,
                   ),
-                  boxShadow: widget.isSelected
-                      ? [
-                          const BoxShadow(
-                            color: Color.fromARGB(28, 116, 115, 115),
-                            blurRadius: 2,
-                            offset: Offset(0, 0),
-                            spreadRadius: 2,
-                          ),
-                        ]
-                      : null,
+                  child: Center(
+                    child: Icon(
+                      widget.icon,
+                      color: widget.isSelected
+                          ? AppColors.primary
+                          : AppColors.lightFontColor,
+                      size: 24.sp,
+                    ),
+                  ),
                 ),
-                child: Center(
-                  child: Icon(
-                    widget.icon,
+                SizedBox(height: 1.h),
+                Text(
+                  widget.label,
+                  style: AppTypography.fontSize10.copyWith(
                     color: widget.isSelected
                         ? AppColors.primary
                         : AppColors.lightFontColor,
-                    size: 24.sp,
+                    fontWeight: widget.isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
-              ),
-              SizedBox(height: 1.h),
-              Text(
-                widget.label,
-                style: AppTypography.fontSize10.copyWith(
-                  color: widget.isSelected
-                      ? AppColors.primary
-                      : AppColors.lightFontColor,
-                  fontWeight: widget.isSelected
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

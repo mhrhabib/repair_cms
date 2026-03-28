@@ -1,7 +1,10 @@
+import 'package:drop_down_search_field/drop_down_search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../../../core/utils/widgets/custom_dropdown_search_field.dart';
 import '../models/printer_config_model.dart';
 
 class PrinterConfigurationForm extends StatefulWidget {
@@ -11,8 +14,9 @@ class PrinterConfigurationForm extends StatefulWidget {
   final Map<String, List<String>> brandModels;
   final Function(PrinterConfigModel) onSave;
   final Function(PrinterConfigModel) onTestPrint;
-  final Function(PrinterConfigModel)? onTestLabel; // Optional for label printers
-  final VoidCallback onScan;
+  final Function(PrinterConfigModel)?
+  onTestLabel; // Optional for label printers
+  final Future<Map<String, dynamic>?> Function() onScan;
   final bool isSaving;
   final bool isPrinting;
 
@@ -31,7 +35,8 @@ class PrinterConfigurationForm extends StatefulWidget {
   });
 
   @override
-  State<PrinterConfigurationForm> createState() => _PrinterConfigurationFormState();
+  State<PrinterConfigurationForm> createState() =>
+      _PrinterConfigurationFormState();
 }
 
 class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
@@ -42,31 +47,73 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
   late String _selectedProtocol;
   late bool _setAsDefault;
 
+  // Controllers for CustomDropdownSearch fields
+  late TextEditingController _brandController;
+  late TextEditingController _modelController;
+  late TextEditingController _protocolController;
+  late TextEditingController _paperWidthController;
+  late TextEditingController _labelSizeController;
+
   // Type specific fields
   int? _paperWidth; // For thermal
   LabelSize? _selectedLabelSize; // For label
 
+  List<String> get _protocolItems => widget.printerType == 'a4'
+      ? ['RAW/TCP', 'IPP', 'LPR/LPD', 'HTTP', 'HTTPS', 'System Default']
+      : widget.printerType == 'thermal'
+      ? ['TCP', 'USB']
+      : ['TCP', 'IPP', 'USB'];
+
   @override
   void initState() {
     super.initState();
-    _selectedBrand = widget.initialConfig?.printerBrand ?? (widget.supportedBrands.isNotEmpty ? widget.supportedBrands.first : 'Generic');
+    _selectedBrand =
+        widget.initialConfig?.printerBrand ??
+        (widget.supportedBrands.isNotEmpty
+            ? widget.supportedBrands.first
+            : 'Generic');
     _selectedModel = widget.initialConfig?.printerModel;
-    _ipController = TextEditingController(text: widget.initialConfig?.ipAddress ?? '');
-    _portController = TextEditingController(text: widget.initialConfig?.port?.toString() ?? '9100');
+    _ipController = TextEditingController(
+      text: widget.initialConfig?.ipAddress ?? '',
+    );
+    _portController = TextEditingController(
+      text: widget.initialConfig?.port?.toString() ?? '9100',
+    );
     _selectedProtocol = widget.initialConfig?.protocol ?? 'TCP';
-    _setAsDefault = widget.initialConfig?.isDefault ?? false;
 
     if (widget.printerType == 'thermal') {
       _paperWidth = widget.initialConfig?.paperWidth ?? 80;
     } else if (widget.printerType == 'label') {
       _selectedLabelSize = widget.initialConfig?.labelSize;
     }
+
+    _setAsDefault = widget.initialConfig?.isDefault ?? false;
+
+    // Initialize text controllers for dropdowns
+    _brandController = TextEditingController(text: _selectedBrand);
+    _modelController = TextEditingController(text: _selectedModel ?? '');
+    _protocolController = TextEditingController(text: _selectedProtocol);
+    _paperWidthController = TextEditingController(
+      text: _paperWidth != null
+          ? '${_paperWidth}mm ${_paperWidth == 80 ? '(Standard)' : '(Compact)'}'
+          : '',
+    );
+    _labelSizeController = TextEditingController(
+      text: _selectedLabelSize != null
+          ? '${_selectedLabelSize!.name} (${_selectedLabelSize!.width}×${_selectedLabelSize!.height} mm)'
+          : '',
+    );
   }
 
   @override
   void dispose() {
     _ipController.dispose();
     _portController.dispose();
+    _brandController.dispose();
+    _modelController.dispose();
+    _protocolController.dispose();
+    _paperWidthController.dispose();
+    _labelSizeController.dispose();
     super.dispose();
   }
 
@@ -97,34 +144,128 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
           ),
           SizedBox(height: 24.h),
 
+          // Brand
           _buildLabel('Printer Brand'),
-          _buildDropdownField(
-            hint: 'Select Brand',
-            value: _selectedBrand,
+          CustomDropdownSearch<String>(
+            controller: _brandController,
+            textFieldConfiguration: TextFieldConfiguration(
+              controller: _brandController,
+              style: GoogleFonts.roboto(
+                fontSize: 16.sp,
+                color: AppColors.fontMainColor,
+              ),
+              decoration: InputDecoration(
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Colors.blue,
+                  ), // You can customize this
+                ),
+                hintText: 'Select Brand',
+                hintStyle: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  color: Color(0xFFB2B5BE),
+                ),
+                suffixIcon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.fontMainColor,
+                  size: 32,
+                ),
+              ),
+            ),
             items: widget.supportedBrands,
-            onChanged: (value) {
+            hintText: 'Select Brand',
+            suggestionsCallback: (query) => widget.supportedBrands
+                .where((b) => b.toLowerCase().contains(query.toLowerCase()))
+                .toList(),
+            itemBuilder: (context, brand) =>
+                ListTile(title: Text(brand, style: AppTypography.sfProText15)),
+            onSuggestionSelected: (brand) {
               setState(() {
-                _selectedBrand = value!;
+                _selectedBrand = brand;
+                _brandController.text = brand;
                 _selectedModel = null;
-                if (widget.printerType == 'label') _selectedLabelSize = null;
+                _modelController.clear();
+                if (widget.printerType == 'label') {
+                  _selectedLabelSize = null;
+                  _labelSizeController.clear();
+                }
               });
             },
           ),
           SizedBox(height: 16.h),
 
+          // Model
           _buildLabel('Printer Model'),
-          _buildDropdownField(
-            hint: 'Select Model',
-            value: _selectedModel,
+          CustomDropdownSearch<String>(
+            controller: _modelController,
             items: widget.brandModels[_selectedBrand] ?? [],
-            onChanged: (value) {
+            textFieldConfiguration: TextFieldConfiguration(
+              controller: _modelController,
+              style: GoogleFonts.roboto(
+                fontSize: 16.sp,
+                color: AppColors.fontMainColor,
+              ),
+              decoration: InputDecoration(
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Colors.blue,
+                  ), // You can customize this
+                ),
+                hintText: 'Select Model',
+                hintStyle: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  color: Color(0xFFB2B5BE),
+                ),
+                suffixIcon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.fontMainColor,
+                  size: 32,
+                ),
+              ),
+            ),
+            hintText: 'Select Model',
+            suggestionsCallback: (query) {
+              final models = widget.brandModels[_selectedBrand] ?? [];
+              return models
+                  .where((m) => m.toLowerCase().contains(query.toLowerCase()))
+                  .toList();
+            },
+            itemBuilder: (context, model) =>
+                ListTile(title: Text(model, style: AppTypography.sfProText15)),
+            onSuggestionSelected: (model) {
               setState(() {
-                _selectedModel = value;
-                if (widget.printerType == 'label' && value != null && _selectedBrand == 'Brother') {
-                   if (value.startsWith('TD-4')) {
-                    _selectedLabelSize = LabelSize(width: 100, height: 150, name: '100x150 (TD-4)');
-                  } else if (value.startsWith('TD-2')) {
-                    _selectedLabelSize = LabelSize(width: 50, height: 26, name: '50x26 (TD-2)');
+                _selectedModel = model;
+                _modelController.text = model;
+                if (widget.printerType == 'label' &&
+                    _selectedBrand == 'Brother') {
+                  if (model.startsWith('TD-4')) {
+                    _selectedLabelSize = LabelSize(
+                      width: 100,
+                      height: 150,
+                      name: '100x150 (TD-4)',
+                    );
+                  } else if (model.startsWith('TD-2')) {
+                    _selectedLabelSize = LabelSize(
+                      width: 50,
+                      height: 26,
+                      name: '50x26 (TD-2)',
+                    );
+                  }
+                  if (_selectedLabelSize != null) {
+                    _labelSizeController.text =
+                        '${_selectedLabelSize!.name} (${_selectedLabelSize!.width}×${_selectedLabelSize!.height} mm)';
                   }
                 }
               });
@@ -132,30 +273,93 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
           ),
           SizedBox(height: 16.h),
 
+          // Paper Width (thermal only)
           if (widget.printerType == 'thermal') ...[
             _buildLabel('Paper Width'),
-            _buildDropdownFieldGeneric<int>(
-              hint: 'Select Width',
-              value: _paperWidth,
-              items: [80, 58],
-              itemBuilder: (width) => '${width}mm ${width == 80 ? '(Standard)' : '(Compact)'}',
-              onChanged: (value) => setState(() => _paperWidth = value),
+            CustomDropdownSearch<int>(
+              controller: _paperWidthController,
+              textFieldConfiguration: TextFieldConfiguration(
+                controller: _paperWidthController,
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  color: AppColors.fontMainColor,
+                ),
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Colors.blue,
+                    ), // You can customize this
+                  ),
+                  hintText: 'Select Width',
+                  hintStyle: GoogleFonts.roboto(
+                    fontSize: 16.sp,
+                    color: Color(0xFFB2B5BE),
+                  ),
+                  suffixIcon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.fontMainColor,
+                    size: 32,
+                  ),
+                ),
+              ),
+              items: const [80, 58],
+              hintText: 'Select Width',
+              suggestionsCallback: (query) => [80, 58]
+                  .where((w) => '${w}mm'.contains(query) || query.isEmpty)
+                  .toList(),
+              itemBuilder: (context, width) => ListTile(
+                title: Text(
+                  '${width}mm ${width == 80 ? '(Standard)' : '(Compact)'}',
+                  style: AppTypography.sfProText15,
+                ),
+              ),
+              onSuggestionSelected: (width) {
+                setState(() {
+                  _paperWidth = width;
+                  _paperWidthController.text =
+                      '${width}mm ${width == 80 ? '(Standard)' : '(Compact)'}';
+                });
+              },
             ),
             SizedBox(height: 16.h),
           ],
 
+          // Label Size (label only)
           if (widget.printerType == 'label') ...[
             _buildLabel('Label Size'),
-             _buildDropdownFieldGeneric<LabelSize>(
-                hint: 'Select Size',
-                value: _selectedLabelSize,
-                items: _getLabelSizesForBrand(),
-                itemBuilder: (size) => '${size.name} (${size.width}×${size.height} mm)',
-                onChanged: (value) => setState(() => _selectedLabelSize = value),
+            CustomDropdownSearch<LabelSize>(
+              controller: _labelSizeController,
+              items: _getLabelSizesForBrand(),
+              hintText: 'Select Size',
+              suggestionsCallback: (query) => _getLabelSizesForBrand()
+                  .where(
+                    (s) => s.name.toLowerCase().contains(query.toLowerCase()),
+                  )
+                  .toList(),
+              itemBuilder: (context, size) => ListTile(
+                title: Text(
+                  '${size.name} (${size.width}×${size.height} mm)',
+                  style: AppTypography.sfProText15,
+                ),
               ),
+              onSuggestionSelected: (size) {
+                setState(() {
+                  _selectedLabelSize = size;
+                  _labelSizeController.text =
+                      '${size.name} (${size.width}×${size.height} mm)';
+                });
+              },
+            ),
             SizedBox(height: 16.h),
           ],
 
+          // IP Address
           _buildLabel('IP Address'),
           _buildInputField(
             controller: _ipController,
@@ -163,14 +367,21 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
             suffixIcon: IconButton(
               icon: const Icon(Icons.wifi_find, color: AppColors.primary),
               onPressed: () async {
-                widget.onScan();
-                // We'll trust that the screen's scan logic updates the controller or state correctly.
-                // In a more complex setup, we'd pass back the selected IP to this form.
+                final result = await widget.onScan();
+                if (result != null && result['ip'] != null) {
+                  setState(() {
+                    _ipController.text = result['ip'];
+                    if (result['port'] != null) {
+                      _portController.text = result['port'].toString();
+                    }
+                  });
+                }
               },
             ),
           ),
           SizedBox(height: 16.h),
 
+          // Port
           _buildLabel('Port'),
           _buildInputField(
             controller: _portController,
@@ -179,23 +390,63 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
           ),
           SizedBox(height: 16.h),
 
+          // Protocol
           _buildLabel('Printer Protocol'),
-          _buildDropdownField(
-            hint: 'Protocol',
-            value: _selectedProtocol,
-            items: widget.printerType == 'a4' 
-              ? ['RAW/TCP', 'IPP', 'LPR/LPD', 'HTTP', 'HTTPS', 'System Default']
-              : widget.printerType == 'thermal' ? ['TCP', 'USB'] : ['TCP', 'IPP', 'USB'],
-            onChanged: (value) {
+          CustomDropdownSearch<String>(
+            controller: _protocolController,
+            textFieldConfiguration: TextFieldConfiguration(
+              controller: _protocolController,
+              style: GoogleFonts.roboto(
+                fontSize: 16.sp,
+                color: AppColors.fontMainColor,
+              ),
+              decoration: InputDecoration(
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Colors.blue,
+                  ), // You can customize this
+                ),
+                hintText: 'Select Protocol',
+                hintStyle: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  color: Color(0xFFB2B5BE),
+                ),
+                suffixIcon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.fontMainColor,
+                  size: 32,
+                ),
+              ),
+            ),
+            items: _protocolItems,
+            hintText: 'Select Protocol',
+            suggestionsCallback: (query) => _protocolItems
+                .where((p) => p.toLowerCase().contains(query.toLowerCase()))
+                .toList(),
+            itemBuilder: (context, protocol) => ListTile(
+              title: Text(protocol, style: AppTypography.sfProText15),
+            ),
+            onSuggestionSelected: (protocol) {
               setState(() {
-                _selectedProtocol = value!;
-                if (value == 'IPP') _portController.text = '631';
-                else if (value == 'TCP' || value == 'RAW/TCP') _portController.text = '9100';
+                _selectedProtocol = protocol;
+                _protocolController.text = protocol;
+                if (protocol == 'IPP') {
+                  _portController.text = '631';
+                } else if (protocol == 'TCP' || protocol == 'RAW/TCP') {
+                  _portController.text = '9100';
+                }
               });
             },
           ),
           SizedBox(height: 24.h),
 
+          // Set as default checkbox
           Row(
             children: [
               SizedBox(
@@ -205,7 +456,9 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
                   value: _setAsDefault,
                   onChanged: (val) => setState(() => _setAsDefault = val!),
                   activeColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
                 ),
               ),
               SizedBox(width: 8.w),
@@ -217,50 +470,66 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
           ),
           SizedBox(height: 32.h),
 
+          // Save Button
           SizedBox(
             width: double.infinity,
             height: 56.h,
             child: ElevatedButton(
-              onPressed: widget.isSaving ? null : () {
-                final config = PrinterConfigModel(
-                  printerType: widget.printerType,
-                  printerBrand: _selectedBrand,
-                  printerModel: _selectedModel,
-                  ipAddress: _ipController.text.trim(),
-                  protocol: _selectedProtocol,
-                  port: int.tryParse(_portController.text),
-                  isDefault: _setAsDefault,
-                  paperWidth: _paperWidth,
-                  labelSize: _selectedLabelSize,
-                );
-                widget.onSave(config);
-              },
+              onPressed: widget.isSaving
+                  ? null
+                  : () {
+                      final config = PrinterConfigModel(
+                        printerType: widget.printerType,
+                        printerBrand: _selectedBrand,
+                        printerModel: _selectedModel,
+                        ipAddress: _ipController.text.trim(),
+                        protocol: _selectedProtocol,
+                        port: int.tryParse(_portController.text),
+                        isDefault: _setAsDefault,
+                        paperWidth: _paperWidth,
+                        labelSize: _selectedLabelSize,
+                      );
+                      widget.onSave(config);
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28.r),
+                ),
                 elevation: 0,
               ),
-              child: widget.isSaving 
-                ? const CircularProgressIndicator(color: Colors.white)
-                : Text('Save Settings', style: AppTypography.primaryButtonTextStyle.copyWith(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+              child: widget.isSaving
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : Text(
+                      'Save Settings',
+                      style: AppTypography.primaryButtonTextStyle.copyWith(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
           SizedBox(height: 16.h),
 
+          // Test print buttons
           if (_ipController.text.trim().isNotEmpty) ...[
             if (widget.printerType == 'label')
               Row(
                 children: [
-                   Expanded(
+                  Expanded(
                     child: _buildSecondaryButton(
-                      onPressed: widget.isPrinting ? null : () => widget.onTestPrint(_getCurrentConfig()),
+                      onPressed: widget.isPrinting
+                          ? null
+                          : () => widget.onTestPrint(_getCurrentConfig()),
                       text: 'Test Receipt',
                     ),
                   ),
                   SizedBox(width: 12.w),
                   Expanded(
                     child: _buildSecondaryButton(
-                      onPressed: widget.isPrinting ? null : () => widget.onTestLabel?.call(_getCurrentConfig()),
+                      onPressed: widget.isPrinting
+                          ? null
+                          : () => widget.onTestLabel?.call(_getCurrentConfig()),
                       text: 'Test Label',
                     ),
                   ),
@@ -270,7 +539,9 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
               SizedBox(
                 width: double.infinity,
                 child: _buildSecondaryButton(
-                  onPressed: widget.isPrinting ? null : () => widget.onTestPrint(_getCurrentConfig()),
+                  onPressed: widget.isPrinting
+                      ? null
+                      : () => widget.onTestPrint(_getCurrentConfig()),
                   text: 'Test Print',
                 ),
               ),
@@ -294,17 +565,26 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
     );
   }
 
-  Widget _buildSecondaryButton({required VoidCallback? onPressed, required String text}) {
+  Widget _buildSecondaryButton({
+    required VoidCallback? onPressed,
+    required String text,
+  }) {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         side: const BorderSide(color: AppColors.primary),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         padding: EdgeInsets.symmetric(vertical: 16.h),
       ),
       child: Text(
         text,
-        style: TextStyle(color: AppColors.primary, fontSize: 16.sp, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: AppColors.primary,
+          fontSize: 16.sp,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -341,7 +621,9 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
       style: AppTypography.sfProText15,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: AppTypography.sfProText15.copyWith(color: AppColors.fontSecondaryColor.withValues(alpha: 0.3)),
+        hintStyle: AppTypography.sfProText15.copyWith(
+          color: AppColors.fontSecondaryColor.withValues(alpha: 0.3),
+        ),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: AppColors.scaffoldBackgroundColor.withValues(alpha: 0.5),
@@ -353,59 +635,6 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16.r),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdownField({
-    required String hint,
-    String? value,
-    required List<String> items,
-    required void Function(String?) onChanged,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      decoration: BoxDecoration(
-        color: AppColors.scaffoldBackgroundColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: items.contains(value) ? value : null,
-          hint: Text(hint, style: AppTypography.sfProText15.copyWith(color: AppColors.fontSecondaryColor.withValues(alpha: 0.3))),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.fontSecondaryColor),
-          isExpanded: true,
-          style: AppTypography.sfProText15,
-          items: items.map((String item) => DropdownMenuItem<String>(value: item, child: Text(item))).toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdownFieldGeneric<T>({
-    required String hint,
-    T? value,
-    required List<T> items,
-    required String Function(T) itemBuilder,
-    required void Function(T?) onChanged,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      decoration: BoxDecoration(
-        color: AppColors.scaffoldBackgroundColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: items.contains(value) ? value : null,
-          hint: Text(hint, style: AppTypography.sfProText15.copyWith(color: AppColors.fontSecondaryColor.withValues(alpha: 0.3))),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.fontSecondaryColor),
-          isExpanded: true,
-          style: AppTypography.sfProText15,
-          items: items.map((T item) => DropdownMenuItem<T>(value: item, child: Text(itemBuilder(item)))).toList(),
-          onChanged: onChanged,
         ),
       ),
     );

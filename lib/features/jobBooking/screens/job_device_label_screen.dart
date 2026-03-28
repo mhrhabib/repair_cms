@@ -245,197 +245,244 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
-        ),
-        leading: CustomNavButton(
-          onPressed: () {
-            if (widget.fromBooking) {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (context) => const HomeScreen(initialIndex: 1),
-                ),
-                (route) => false,
-              );
-            } else {
-              Navigator.of(context).pop();
-            }
-          },
-          icon: CupertinoIcons.back,
-        ),
-        middle: Text(
-          'Device Label',
-          style: TextStyle(
-            fontSize: 17.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
-        trailing: CustomNavButton(
-          onPressed: _handlePrintTap,
-          icon: SolarIconsOutline.printer,
-          size: 24.sp,
-          iconColor: AppColors.fontSecondaryColor,
-        ),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+      body: Stack(
         children: [
-          // Label Preview Content
-          Container(
-            margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: Colors.grey.shade300, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade300,
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              SizedBox(height: MediaQuery.of(context).padding.top + 72.h),
+              // Label Preview Content
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.grey.shade300, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade300,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Container(
-              // Let content size itself naturally
-              color: Colors.white,
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Barcode and QR Code row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                child: Container(
+                  // Let content size itself naturally
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Barcode section
-                      if (_labelSettings.showBarcode ||
-                          _labelSettings.showJobNo)
-                        Expanded(
-                          flex: 6,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              if (_labelSettings.showBarcode)
-                                SizedBox(
-                                  height: 60.h,
-                                  child: BarcodeWidget(
-                                    barcode: Barcode.code128(),
-                                    data: _getBarcodeData(),
-                                    drawText: false,
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.black,
+                      // Barcode and QR Code row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Barcode section
+                          if (_labelSettings.showBarcode ||
+                              _labelSettings.showJobNo)
+                            Expanded(
+                              flex: 6,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  if (_labelSettings.showBarcode)
+                                    SizedBox(
+                                      height: 60.h,
+                                      child: BarcodeWidget(
+                                        barcode: Barcode.code128(),
+                                        data: _getBarcodeData(),
+                                        drawText: false,
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w400,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  if (_labelSettings.showBarcode &&
+                                      _labelSettings.showJobNo)
+                                    SizedBox(height: 8.h),
+                                  if (_labelSettings.showJobNo)
+                                    Text(
+                                      _getJobNumber(),
+                                      style: TextStyle(
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black,
+                                      ),
+                                      textAlign: TextAlign.left,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          if ((_labelSettings.showBarcode ||
+                                  _labelSettings.showJobNo) &&
+                              (_labelSettings.showJobQR ||
+                                  _labelSettings.showTrackingPortalQR))
+                            SizedBox(width: 16.w),
+                          // QR Code section
+                          if (_labelSettings.showJobQR ||
+                              _labelSettings.showTrackingPortalQR)
+                            Expanded(
+                              flex: 4,
+                              child: Column(
+                                children: [
+                                  SizedBox(
+                                    height: 80.h,
+                                    child: QrImageView(
+                                      data: _labelSettings.showJobQR
+                                          ? _getQRCodeData()
+                                          : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
+                                      version: QrVersions.auto,
+                                      size: 90.w,
+                                      backgroundColor: Colors.white,
                                     ),
                                   ),
-                                ),
-                              if (_labelSettings.showBarcode &&
-                                  _labelSettings.showJobNo)
-                                SizedBox(height: 8.h),
-                              if (_labelSettings.showJobNo)
-                                Text(
-                                  _getJobNumber(),
-                                  style: TextStyle(
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.black,
-                                  ),
-                                  textAlign: TextAlign.left,
-                                ),
-                            ],
-                          ),
-                        ),
-                      if ((_labelSettings.showBarcode ||
-                              _labelSettings.showJobNo) &&
-                          (_labelSettings.showJobQR ||
-                              _labelSettings.showTrackingPortalQR))
-                        SizedBox(width: 16.w),
-                      // QR Code section
-                      if (_labelSettings.showJobQR ||
-                          _labelSettings.showTrackingPortalQR)
-                        Expanded(
-                          flex: 4,
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                height: 80.h,
-                                child: QrImageView(
-                                  data: _labelSettings.showJobQR
-                                      ? _getQRCodeData()
-                                      : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
-                                  version: QrVersions.auto,
-                                  size: 90.w,
-                                  backgroundColor: Colors.white,
-                                ),
+                                  SizedBox(height: 4.h),
+                                ],
                               ),
+                            ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // Job information - single line (conditional based on settings)
+                      if (_labelSettings.showJobNo ||
+                          _labelSettings.showCustomerName ||
+                          _labelSettings.showModelBrand ||
+                          _labelSettings.showDate ||
+                          _labelSettings.showJobType ||
+                          _labelSettings.showSymptom ||
+                          _labelSettings.showPhysicalLocation)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_labelSettings.showJobNo ||
+                                _labelSettings.showCustomerName ||
+                                _labelSettings.showModelBrand)
+                              Text(
+                                [
+                                  if (_labelSettings.showJobNo) _getJobNumber(),
+                                  if (_labelSettings.showCustomerName)
+                                    _getCustomerName(),
+                                  if (_labelSettings.showModelBrand)
+                                    '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
+                                ].where((e) => e.isNotEmpty).join(' | '),
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                  height: 1.3,
+                                ),
+                                textAlign: TextAlign.left,
+                              ),
+                            if ((_labelSettings.showJobNo ||
+                                    _labelSettings.showCustomerName ||
+                                    _labelSettings.showModelBrand) &&
+                                (_labelSettings.showSymptom ||
+                                    _labelSettings.showPhysicalLocation))
                               SizedBox(height: 4.h),
-                            ],
-                          ),
+                            if (_labelSettings.showSymptom ||
+                                _labelSettings.showPhysicalLocation)
+                              Text(
+                                [
+                                  if (_labelSettings.showSymptom) _getDefect(),
+                                  if (_labelSettings.showPhysicalLocation)
+                                    'BOX: ${_getPhysicalLocation()}',
+                                ].where((e) => e.isNotEmpty).join(' | '),
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                  height: 1.3,
+                                ),
+                                textAlign: TextAlign.left,
+                              ),
+                          ],
                         ),
                     ],
                   ),
+                ),
+              ),
+            ],
+          ),
 
-                  SizedBox(height: 16.h),
-
-                  // Job information - single line (conditional based on settings)
-                  if (_labelSettings.showJobNo ||
-                      _labelSettings.showCustomerName ||
-                      _labelSettings.showModelBrand ||
-                      _labelSettings.showDate ||
-                      _labelSettings.showJobType ||
-                      _labelSettings.showSymptom ||
-                      _labelSettings.showPhysicalLocation)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_labelSettings.showJobNo ||
-                            _labelSettings.showCustomerName ||
-                            _labelSettings.showModelBrand)
-                          Text(
-                            [
-                              if (_labelSettings.showJobNo) _getJobNumber(),
-                              if (_labelSettings.showCustomerName)
-                                _getCustomerName(),
-                              if (_labelSettings.showModelBrand)
-                                '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
-                            ].where((e) => e.isNotEmpty).join(' | '),
-                            style: TextStyle(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
-                              height: 1.3,
-                            ),
-                            textAlign: TextAlign.left,
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () {
+                      if (widget.fromBooking) {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const HomeScreen(initialIndex: 1),
                           ),
-                        if ((_labelSettings.showJobNo ||
-                                _labelSettings.showCustomerName ||
-                                _labelSettings.showModelBrand) &&
-                            (_labelSettings.showSymptom ||
-                                _labelSettings.showPhysicalLocation))
-                          SizedBox(height: 4.h),
-                        if (_labelSettings.showSymptom ||
-                            _labelSettings.showPhysicalLocation)
-                          Text(
-                            [
-                              if (_labelSettings.showSymptom) _getDefect(),
-                              if (_labelSettings.showPhysicalLocation)
-                                'BOX: ${_getPhysicalLocation()}',
-                            ].where((e) => e.isNotEmpty).join(' | '),
-                            style: TextStyle(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
-                              height: 1.3,
-                            ),
-                            textAlign: TextAlign.left,
-                          ),
+                          (route) => false,
+                        );
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    icon: CupertinoIcons.back,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(
+                        color: AppColors.whiteColor, // Figma: border #FFFFFF
+                        width: 1, // Figma: border-width 1px
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            28,
+                            116,
+                            115,
+                            115,
+                          ), // Figma: #0000001C
+                          blurRadius: 2, // Figma: blur 20px
+                          offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                          spreadRadius: 2,
+                        ),
                       ],
                     ),
+                    child: Text(
+                      'Device Label',
+                      style: TextStyle(
+                        fontSize: 17.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                  ),
+                  CustomNavButton(
+                    onPressed: _handlePrintTap,
+                    icon: SolarIconsOutline.printer,
+                    size: 24.sp,
+                    iconColor: AppColors.fontSecondaryColor,
+                  ),
                 ],
               ),
             ),
@@ -567,43 +614,46 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // doesn't get clipped at the left/top physical edge by the SDK margin.
       // A value of ~4% of canvas width gives ~47 dots on a 1181-dot canvas
       // which matches the typical 4mm hardware margin on TD-4 media.
+
+      // ─── REPLACE WITH THIS ───────────────────────────────────────────────────
       final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
-      final double offsetX = isBrother
-          ? (isTD4 ? widthPx * 0.04 : 50.0)
-          : 0.0;
-      final double offsetY = isBrother
-          ? (isTD4 ? heightPx * 0.04 : 50.0)
-          : 0.0;
+
+      // TD-4: Brother SDK adds its own internal left/top hardware margin.
+      // We do NOT translate the canvas — instead we push content rightward
+      // by using a larger left padding so everything stays within the
+      // printable area and matches the TD-2D / Xprinter visual layout.
+      // TD-2D / Xprinter: fixed 50px offset (original behaviour preserved).
+      final double offsetX = isBrother ? (isTD4 ? 0.0 : 50.0) : 0.0;
+      final double offsetY = isBrother ? (isTD4 ? 0.0 : 50.0) : 0.0;
       if (offsetX > 0 || offsetY > 0) canvas.translate(offsetX, offsetY);
 
-      // Subtract BOTH the left AND right offsets so the drawable region is
-      // symmetric — previously only the left/top offset was subtracted, which
-      // allowed content to run all the way to the opposite edge of the canvas.
       final drawableWidth = widthPx.toDouble() - 2 * offsetX;
       final drawableHeight = heightPx.toDouble() - 2 * offsetY;
 
-      // Calculate layout dimensions (percentage-based, using drawable area).
-      // TD-4: use 5% edge padding to create a safe inset from all four sides.
-      //   Note: the 4% canvas translate above already compensates for the
-      //   hardware left/top margin, so 5% padding is a visual safety inset.
-      // TD-2D / Xprinter: original 2% padding.
-      final padding = isTD4
-          ? drawableWidth * 0.05   // TD-4: 5% safe inset
-          : drawableWidth * 0.02;  // TD-2D / Xprinter: original
-      final contentWidth = drawableWidth - (padding * 2);
-      // TD-4: narrower barcode (55%) so content fits horizontally with the
-      //   offset applied; TD-2D/Xprinter keep the original 65%.
-      final barcodeWidth = isTD4
-          ? contentWidth * 0.55
+      // TD-4: large left padding shifts the entire layout toward the centre
+      // of the label, compensating for the Brother SDK's printable-area offset.
+      // Value is ~8% of canvas width ≈ 94px on a 1181px (50mm @300DPI) canvas.
+      // TD-2D / Xprinter: original 2% padding unchanged.
+      final double padding = isTD4
+          ? drawableWidth *
+                0.08 // TD-4: push content right into printable zone
+          : drawableWidth * 0.02; // TD-2D / Xprinter: original
+      final double contentWidth = drawableWidth - (padding * 2);
+
+      // Barcode width: TD-4 uses 60% (slightly narrower than TD-2's 65%) so it
+      // doesn't collide with the QR on the wider canvas.
+      final double barcodeWidth = isTD4
+          ? contentWidth * 0.60
           : contentWidth * 0.65;
-      // TD-4: cap barcode height at a tighter range to avoid overflow.
-      final barcodeHeight = isTD4
-          ? (drawableHeight * 0.18).clamp(80.0, 220.0)
+
+      // Barcode height: TD-4 uses 22% of drawable height for a taller, more
+      // scannable barcode. Clamped to a safe range for various label sizes.
+      final double barcodeHeight = isTD4
+          ? (drawableHeight * 0.22).clamp(100.0, 280.0)
           : drawableHeight * 0.24;
-      // TD-4: smaller QR so barcode + QR fit on the reduced drawable area.
-      final qrSize = isTD4
-          ? contentWidth * 0.22
-          : contentWidth * 0.22; // same ratio, kept for clarity
+
+      // QR size: TD-4 uses 30% of content width for a larger, clearly scannable QR.
+      final double qrSize = isTD4 ? contentWidth * 0.30 : contentWidth * 0.22;
 
       // Draw barcode using barcode package
       final barcodeData = _getBarcodeData();
@@ -620,23 +670,16 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         );
       }
 
-      // Font size proportional to the canvas height so text fits regardless
-      // of device pixel ratio. 26.sp would be device-scaled (e.g. 78px on a 3×
-      // device) and overflow a 208-dot Xprinter label. We clamp between 11–26.
-      // For TD-4 (300 DPI, ~150 mm tall) we use a smaller range so text is
-      // legible without overflowing the reduced drawable area after the offset.
+      // TD-4: font at 5% of drawable height gives ~88px on a 1772px canvas —
+      // large, bold text that fills the label like TD-2D / Xprinter output.
+      // Clamped 60–100px to stay legible on all TD-4 media sizes.
+      // TD-2D / Xprinter: original values unchanged.
       final double baseFontSize = isTD4
-          ? (drawableHeight * 0.04).clamp(
-              40.0,
-              65.0,
-            ) // TD-4: reduced range to fit content
-          : (drawableHeight * 0.075).clamp(
-              18.0,
-              26.0,
-            ); // TD-2D / Xprinter: original
+          ? (drawableHeight * 0.05).clamp(60.0, 100.0)
+          : (drawableHeight * 0.075).clamp(18.0, 26.0);
       final double lineSpacing = isTD4
-          ? baseFontSize * 1.35 // proportional gap for large canvas
-          : baseFontSize + 3.0; // original fixed gap for small labels
+          ? baseFontSize * 1.4
+          : baseFontSize + 3.0;
 
       // Draw job number under barcode (only if showJobNo is enabled)
       double currentY = padding;

@@ -76,21 +76,21 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
   }
 
   Future<void> _deletePrinter(PrinterConfigModel printer) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showCupertinoDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => CupertinoAlertDialog(
         title: const Text('Delete Printer'),
         content: Text(
-          'Delete ${printer.printerModel ?? printer.printerBrand}?',
+          'Are you sure you want to delete ${printer.printerModel ?? printer.printerBrand}?',
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
+            isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],
@@ -125,8 +125,8 @@ class _ThermalPrinterScreenState extends State<ThermalPrinterScreen> {
     }
   }
 
-  Future<void> _showWiFiScanner() async {
-    await showDialog<Map<String, dynamic>>(
+  Future<Map<String, dynamic>?> _showWiFiScanner() async {
+    return await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => WiFiPrinterScanner(
         onPrinterSelected: (String ipAddress, int port) {
@@ -206,78 +206,132 @@ thermal printer configuration.
 
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
-        leading: CustomNavButton(
-          onPressed: () {
-            if (isFormView) {
-              setState(() {
-                _isAdding = false;
-                _editingPrinter = null;
-              });
-            } else {
-              Navigator.pop(context);
-            }
-          },
-          icon: Icons.arrow_back_ios_new,
-        ),
-        middle: Text(
-          'Thermal Printer',
-          style: AppTypography.sfProHeadLineTextStyle22,
-        ),
-        trailing: !isFormView
-            ? Padding(
-                padding: EdgeInsets.only(right: 4.w),
-                child: CustomTextButton(
-                  onPressed: () => setState(() => _isAdding = true),
-                  text: 'Add',
-                ),
-              )
-            : null,
-      ),
-      body: SafeArea(
-        child: isFormView
-            ? SingleChildScrollView(
-                padding: EdgeInsets.all(16.w),
-                child: PrinterConfigurationForm(
-                  printerType: 'thermal',
-                  initialConfig: _editingPrinter,
-                  supportedBrands: _supportedBrands,
-                  brandModels: _brandModels,
-                  onSave: _saveSettings,
-                  onScan: _showWiFiScanner,
-                  onTestPrint: _testPrint,
-                  isSaving: _isSaving,
-                  isPrinting: _isPrinting,
-                ),
-              )
-            : _savedPrinters.isEmpty
-            ? PrinterEmptyState(title: "No Thermal Printer")
-            : ListView(
-                padding: EdgeInsets.all(16.w),
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 16.h, left: 4.w),
-                    child: Text(
-                      'Available Printers',
-                      style: AppTypography.sfProText15.copyWith(
-                        color: AppColors.fontSecondaryColor.withValues(
-                          alpha: 0.6,
-                        ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(top: 72.h),
+              child: isFormView
+                  ? SingleChildScrollView(
+                      padding: EdgeInsets.all(16.w),
+                      child: PrinterConfigurationForm(
+                        printerType: 'thermal',
+                        initialConfig: _editingPrinter,
+                        supportedBrands: _supportedBrands,
+                        brandModels: _brandModels,
+                        onSave: _saveSettings,
+                        onScan: _showWiFiScanner,
+                        onTestPrint: _testPrint,
+                        isSaving: _isSaving,
+                        isPrinting: _isPrinting,
                       ),
+                    )
+                  : _savedPrinters.isEmpty
+                  ? PrinterEmptyState(title: "No Thermal Printer")
+                  : ListView(
+                      padding: EdgeInsets.all(16.w),
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 16.h, left: 4.w),
+                          child: Text(
+                            'Available Printers',
+                            style: AppTypography.sfProText15.copyWith(
+                              color: AppColors.fontSecondaryColor.withValues(
+                                alpha: 0.6,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ..._savedPrinters.map(
+                          (printer) => PrinterListItem(
+                            printer: printer,
+                            onEdit: () =>
+                                setState(() => _editingPrinter = printer),
+                            onDelete: () => _deletePrinter(printer),
+                            onSetDefault: () => _setAsDefaultPrinter(printer),
+                            isDefault: printer.isDefault,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () {
+                      if (isFormView) {
+                        setState(() {
+                          _isAdding = false;
+                          _editingPrinter = null;
+                        });
+                      } else {
+                        Navigator.pop(context);
+                      }
+                    },
+                    icon: Icons.arrow_back_ios_new,
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 2.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(
+                        color: AppColors.whiteColor, // Figma: border #FFFFFF
+                        width: 1, // Figma: border-width 1px
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            28,
+                            116,
+                            115,
+                            115,
+                          ), // Figma: #0000001C
+                          blurRadius: 2, // Figma: blur 20px
+                          offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Thermal Printer',
+                      style: AppTypography.sfProHeadLineTextStyle22,
                     ),
                   ),
-                  ..._savedPrinters.map(
-                    (printer) => PrinterListItem(
-                      printer: printer,
-                      onEdit: () => setState(() => _editingPrinter = printer),
-                      onDelete: () => _deletePrinter(printer),
-                      onSetDefault: () => _setAsDefaultPrinter(printer),
-                      isDefault: printer.isDefault,
-                    ),
-                  ),
+                  if (!isFormView)
+                    CustomTextButton(
+                      onPressed: () => setState(() => _isAdding = true),
+                      text: 'Add',
+                    )
+                  else
+                    const SizedBox(width: 44), // Spacer
                 ],
               ),
+            ),
+          ),
+        ],
       ),
     );
   }

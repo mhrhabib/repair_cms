@@ -81,24 +81,80 @@ class _StatusScreenState extends State<StatusScreen> {
           if (_cachedJobData != null) {
             return Scaffold(
               backgroundColor: AppColors.kBg,
-              appBar: CupertinoNavigationBar(
-                backgroundColor: AppColors.kBg,
-                leading: CustomNavButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: CupertinoIcons.back,
-                ),
-                middle: Text(
-                  'Status',
-                  style: AppTypography.sfProHeadLineTextStyle22,
-                ),
-                trailing: CustomTextButton(
-                  text: 'Add',
-                  onPressed: _showAddStatusBottomSheet,
-                  textColor: AppColors.fontSecondaryColor,
-                  fontSize: 16.sp,
-                ),
+              body: Stack(
+                children: [
+                  _buildStatusScreen(context, _cachedJobData!),
+
+                  // Custom Header
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).padding.top,
+                        left: 16.w,
+                        right: 16.w,
+                        bottom: 8.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.kBg.withValues(alpha: 0.1),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          CustomNavButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: CupertinoIcons.back,
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 2.w,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF7F7F8),
+                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.circular(28.r),
+                              border: Border.all(
+                                color: AppColors
+                                    .whiteColor, // Figma: border #FFFFFF
+                                width: 1, // Figma: border-width 1px
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color.fromARGB(
+                                    28,
+                                    116,
+                                    115,
+                                    115,
+                                  ), // Figma: #0000001C
+                                  blurRadius: 2, // Figma: blur 20px
+                                  offset: Offset(
+                                    0,
+                                    0,
+                                  ), // Figma: 0px 0px (no offset)
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'Status',
+                              style: AppTypography.sfProHeadLineTextStyle22,
+                            ),
+                          ),
+                          CustomTextButton(
+                            text: 'Add',
+                            onPressed: _showAddStatusBottomSheet,
+                            textColor: AppColors.fontSecondaryColor,
+                            fontSize: 16.sp,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              body: _buildStatusScreen(context, _cachedJobData!),
             );
           }
 
@@ -132,13 +188,15 @@ class _StatusScreenState extends State<StatusScreen> {
     );
 
     return Container(
-      margin: EdgeInsets.all(12.h),
+      margin: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 72.h,
+        left: 12.w,
+        right: 12.w,
+        bottom: 12.h,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(16.r),
-          bottom: Radius.circular(16.r),
-        ),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
         children: [

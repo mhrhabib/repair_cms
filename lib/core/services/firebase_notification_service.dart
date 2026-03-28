@@ -163,9 +163,9 @@ class FirebaseNotificationService {
       final localNotify = SetUpDI.getIt<LocalNotificationService>();
 
       final conversationId = message.data['conversationId']?.toString() ?? '';
-      final jobNo        = message.data['jobNo']?.toString();
-      final type         = message.data['type']?.toString();
-      final action       = message.data['action']?.toString();
+      final jobNo = message.data['jobNo']?.toString();
+      final type = message.data['type']?.toString();
+      final action = message.data['action']?.toString();
       final notifMessage = message.data['message']?.toString();
 
       localNotify.showMessageNotification(
@@ -187,18 +187,18 @@ class FirebaseNotificationService {
     );
 
     final conversationId = message.data['conversationId']?.toString() ?? '';
-    final jobNo          = message.data['jobNo']?.toString();
-    final type           = message.data['type']?.toString();
-    final action         = message.data['action']?.toString();
-    final notifMessage   = message.data['message']?.toString();
+    final jobNo = message.data['jobNo']?.toString();
+    final type = message.data['type']?.toString();
+    final action = message.data['action']?.toString();
+    final notifMessage = message.data['message']?.toString();
 
     debugPrint(
       '🚀 [FirebaseNotificationService] Deep link → conversation:$conversationId job:$jobNo type:$type action:$action',
     );
 
     SetUpDI.getIt<LocalNotificationService>().showMessageNotification(
-      senderName: 'Opening...',
-      messageText: 'Navigating...',
+      senderName: '',
+      messageText: '',
       conversationId: conversationId,
       jobNo: jobNo,
       type: type,

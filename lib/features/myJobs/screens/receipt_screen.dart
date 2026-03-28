@@ -36,8 +36,8 @@ class ReceiptScreen extends StatelessWidget {
     // Show all configured printers so user can choose between A4, Label (Xprinter), or Thermal
     final List<PrinterConfigModel> configuredPrinters = [
       ...allPrinters['a4'] ?? [],
-      ...allPrinters['thermal'] ?? [],
-      ...allPrinters['label'] ?? [],
+      // ...allPrinters['thermal'] ?? [],
+      // ...allPrinters['label'] ?? [],
     ];
 
     debugPrint('📊 Found ${configuredPrinters.length} A4 printers');
@@ -1064,49 +1064,98 @@ class ReceiptScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
-
-        leading: CustomNavButton(
-          onPressed: () => Navigator.pop(context),
-          icon: Icons.arrow_back_ios_new,
-        ),
-        middle: Text(
-          'Job Receipt',
-          style: AppTypography.sfProHeadLineTextStyle22,
-        ),
-        trailing: Padding(
-          padding: EdgeInsets.only(right: 10.w),
-          child: CustomNavButton(
-            onPressed: () => _showPrinterSelection(context),
-            icon: SolarIconsOutline.printer,
-            iconColor: AppColors.fontSecondaryColor,
-            size: 24.r,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.all(16),
-            constraints: const BoxConstraints(maxWidth: 800),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.only(top: 82.h),
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                constraints: const BoxConstraints(maxWidth: 800),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: RepaintBoundary(
-              key: _printKey,
-              child: JobReceiptWidgetNew(jobData: job),
+                child: RepaintBoundary(
+                  key: _printKey,
+                  child: JobReceiptWidgetNew(jobData: job),
+                ),
+              ),
             ),
           ),
-        ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icons.arrow_back_ios_new,
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(
+                        color: AppColors.whiteColor, // Figma: border #FFFFFF
+                        width: 1, // Figma: border-width 1px
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            28,
+                            116,
+                            115,
+                            115,
+                          ), // Figma: #0000001C
+                          blurRadius: 2, // Figma: blur 20px
+                          offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Job Receipt',
+                      style: AppTypography.sfProHeadLineTextStyle22,
+                    ),
+                  ),
+                  CustomNavButton(
+                    onPressed: () => _showPrinterSelection(context),
+                    icon: SolarIconsOutline.printer,
+                    iconColor: AppColors.fontSecondaryColor,
+                    size: 24.r,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2235,70 +2284,73 @@ class _PrinterSelectionDialog extends StatelessWidget {
             // Then execute print and wait for result
             await onPrint(printer);
           },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                _getPrinterIcon(printer.printerType),
-                size: 24.r,
-                color: AppColors.fontMainColor,
-              ),
-              SizedBox(width: 12.w),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '${printer.printerBrand} ${printer.printerModel ?? ""}',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF007AFF),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Icon(
+                  _getPrinterIcon(printer.printerType),
+                  size: 24.r,
+                  color: AppColors.fontMainColor,
+                ),
+                SizedBox(width: 12.w),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '${printer.printerBrand} ${printer.printerModel ?? ""}',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF007AFF),
+                          ),
                         ),
-                      ),
-                      if (isDefault) ...[
-                        SizedBox(width: 8.w),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6.w,
-                            vertical: 2.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade100,
-                            borderRadius: BorderRadius.circular(4.r),
-                          ),
-                          child: Text(
-                            'DEFAULT',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green.shade700,
+                        if (isDefault) ...[
+                          SizedBox(width: 8.w),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6.w,
+                              vertical: 2.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade100,
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                            child: Text(
+                              'DEFAULT',
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green.shade700,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    printer.ipAddress,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: Colors.grey.shade600,
                     ),
-                  ),
-                  Text(
-                    _getPrinterTitle(printer.printerType),
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: Colors.grey.shade500,
+                    SizedBox(height: 2.h),
+                    Text(
+                      printer.ipAddress,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    Text(
+                      _getPrinterTitle(printer.printerType),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       }).toList(),

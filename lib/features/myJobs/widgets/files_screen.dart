@@ -294,22 +294,24 @@ class _FilesScreenState extends State<FilesScreen> {
   }
 
   void _deleteFile(String filePath) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete File'),
-        content: const Text('Are you sure you want to delete this file?'),
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Delete File?'),
+        content: const Text(
+          'Are you sure you want to delete this file? This action cannot be undone.',
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
+            isDestructiveAction: true,
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.of(context).pop();
               _performDeleteFile(filePath);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],
@@ -386,177 +388,224 @@ class _FilesScreenState extends State<FilesScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: CupertinoNavigationBar(
-          backgroundColor: CupertinoColors.systemBackground.resolveFrom(
-            context,
-          ),
-          leading: CustomNavButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: CupertinoIcons.back,
-          ),
-          middle: Text(
-            'Files',
-            style: TextStyle(
-              fontSize: 17.sp,
-              fontWeight: FontWeight.w600,
-              color: CupertinoColors.label.resolveFrom(context),
-            ),
-          ),
-          trailing: CustomNavButton(
-            onPressed: _showUploadMethodSheet,
-            icon: CupertinoIcons.add_circled_solid,
-            size: 28.sp,
-            iconColor: const Color(0xFF007AFF),
-          ),
-        ),
-        body: BlocBuilder<JobCubit, JobStates>(
-          buildWhen: (previous, current) {
-            // Rebuild for file-related states and job details
-            return current is JobLoading ||
-                current is JobError ||
-                current is JobDetailSuccess ||
-                current is JobFileUploading ||
-                current is JobFileUploadSuccess ||
-                current is JobFileDeleteSuccess;
-          },
-          builder: (context, state) {
-            // Show loading for file upload
-            if (state is JobFileUploading) {
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Color(0xFF007AFF)),
-                    SizedBox(height: 16),
-                    Text(
-                      'Uploading file...',
-                      style: TextStyle(fontSize: 16, color: Color(0xFF8E8E93)),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            // Show loading only if we're specifically loading AND we don't have data yet
-            if (state is JobLoading && !_isInitialized) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF007AFF)),
-              );
-            }
-
-            if (state is JobError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Color(0xFFFF3B30),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Error loading files',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        state.message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8E8E93),
+        body: Stack(
+          children: [
+            BlocBuilder<JobCubit, JobStates>(
+              buildWhen: (previous, current) {
+                // Rebuild for file-related states and job details
+                return current is JobLoading ||
+                    current is JobError ||
+                    current is JobDetailSuccess ||
+                    current is JobFileUploading ||
+                    current is JobFileUploadSuccess ||
+                    current is JobFileDeleteSuccess;
+              },
+              builder: (context, state) {
+                // ... state handling ...
+                // Show loading for file upload
+                if (state is JobFileUploading) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: Color(0xFF007AFF)),
+                        SizedBox(height: 16),
+                        Text(
+                          'Uploading file...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF8E8E93),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<JobCubit>().getJobById(
-                          widget.jobId.data?.sId ?? '',
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007AFF),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            // Get files from current state
-            List<File>? files;
-            if (state is JobDetailSuccess) {
-              files = state.job.data?.files;
-            } else if (state is JobFileUploadSuccess) {
-              files = state.job.data?.files;
-            } else if (state is JobFileDeleteSuccess) {
-              files = state.job.data?.files;
-            } else {
-              // Try to get files from existing job data
-              final jobCubit = context.read<JobCubit>();
-              if (jobCubit.state is JobDetailSuccess) {
-                final successState = jobCubit.state as JobDetailSuccess;
-                if (successState.job.data?.sId == widget.jobId.data?.sId) {
-                  files = successState.job.data?.files;
+                  );
                 }
-              }
-            }
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // File Upload Info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'File Upload',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Supported files: .doc, xls, jpg, png, mp4',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF8E8E93),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // Show loading only if we're specifically loading AND we don't have data yet
+                if (state is JobLoading && !_isInitialized) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF007AFF)),
+                  );
+                }
 
-                // Files List or Empty State
-                Expanded(
-                  child: files == null || files.isEmpty
-                      ? _buildEmptyState()
-                      : _buildFilesList(files),
+                if (state is JobError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Color(0xFFFF3B30),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Error loading files',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            state.message,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            context.read<JobCubit>().getJobById(
+                              widget.jobId.data?.sId ?? '',
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF007AFF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // Get files from current state
+                List<File>? files;
+                if (state is JobDetailSuccess) {
+                  files = state.job.data?.files;
+                } else if (state is JobFileUploadSuccess) {
+                  files = state.job.data?.files;
+                } else if (state is JobFileDeleteSuccess) {
+                  files = state.job.data?.files;
+                } else {
+                  // Try to get files from existing job data
+                  final jobCubit = context.read<JobCubit>();
+                  if (jobCubit.state is JobDetailSuccess) {
+                    final successState = jobCubit.state as JobDetailSuccess;
+                    if (successState.job.data?.sId == widget.jobId.data?.sId) {
+                      files = successState.job.data?.files;
+                    }
+                  }
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).padding.top + 60.h),
+                    // File Upload Info
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'File Upload',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Supported files: .doc, xls, jpg, png, mp4',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Files List or Empty State
+                    Expanded(
+                      child: files == null || files.isEmpty
+                          ? _buildEmptyState()
+                          : _buildFilesList(files),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            // Custom Header
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 8.h,
                 ),
-              ],
-            );
-          },
+                decoration: BoxDecoration(
+                  color: AppColors.kBg.withValues(alpha: 0.1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomNavButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: CupertinoIcons.back,
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(28.r),
+                        border: Border.all(
+                          color: AppColors.whiteColor, // Figma: border #FFFFFF
+                          width: 1, // Figma: border-width 1px
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromARGB(
+                              28,
+                              116,
+                              115,
+                              115,
+                            ), // Figma: #0000001C
+                            blurRadius: 2, // Figma: blur 20px
+                            offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'Files',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                    ),
+                    CustomNavButton(
+                      onPressed: _showUploadMethodSheet,
+                      icon: CupertinoIcons.add_circled_solid,
+                      size: 28.sp,
+                      iconColor: const Color(0xFF007AFF),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -840,30 +889,35 @@ class FullscreenImageViewer extends StatelessWidget {
           tooltip: 'Close',
         ),
       ),
-      body: Center(
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.contain,
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            final value = progress.expectedTotalBytes != null
-                ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
-                : null;
-            return Center(
-              child: CircularProgressIndicator(
-                value: value,
-                color: const Color(0xFF007AFF),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stack) {
-            return const Center(
-              child: Text(
-                'Failed to load image',
-                style: TextStyle(color: Colors.white),
-              ),
-            );
-          },
+      body: InteractiveViewer(
+        minScale: 1.0,
+        maxScale: 4.0,
+        child: Center(
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              final value = progress.expectedTotalBytes != null
+                  ? progress.cumulativeBytesLoaded /
+                        progress.expectedTotalBytes!
+                  : null;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: value,
+                  color: const Color(0xFF007AFF),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stack) {
+              return const Center(
+                child: Text(
+                  'Failed to load image',
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

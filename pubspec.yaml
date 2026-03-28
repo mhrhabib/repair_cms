@@ -2,7 +2,7 @@ name: repair_cms
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.2.2+12
+version: 1.2.2+13
 
 environment:
   sdk: ^3.8.1
@@ -89,6 +89,7 @@ dependencies:
   url_launcher: ^6.3.2
   figma_squircle: ^0.6.3
   fl_country_code_picker: ^0.0.4
+  flutter_inappwebview: ^6.1.5
 
 
 dev_dependencies:

@@ -169,155 +169,134 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
         return Scaffold(
           backgroundColor: AppColors.kBg,
           resizeToAvoidBottomInset: true,
-          appBar: CupertinoNavigationBar(
-            backgroundColor: AppColors.kBg,
-            leading: CustomNavButton(
-              onPressed: () {
-                if (!mounted) return;
-                try {
-                  debugPrint('🔄 [PasswordSecurityScreen] Navigating back');
-                  Navigator.pop(context);
-                } catch (e) {
-                  debugPrint(
-                    '❌ [PasswordSecurityScreen] Error navigating back: $e',
-                  );
-                }
-              },
-              icon: CupertinoIcons.back,
-            ),
-            middle: Text(
-              'Password & Security',
-              style: AppTypography.sfProHeadLineTextStyle22,
-            ),
-          ),
-          body: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-            child: Container(
-              height: 500.h,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+          body: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top + 60.h,
+                  left: 12.w,
+                  right: 12.w,
+                  bottom: 12.h,
+                ),
+                child: Container(
+                  height: 500.h,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Password Section Header
-                    const SizedBox(height: 16),
-
-                    // Current Password Field
-                    _buildPasswordField(
-                      label: 'Password',
-                      controller: _currentPasswordController,
-                      focusNode: _currentPasswordFocusNode,
-                      obscureText: _obscureCurrentPassword,
-                      onToggleVisibility: () {
-                        if (!mounted) return;
-                        try {
-                          setState(() {
-                            _obscureCurrentPassword = !_obscureCurrentPassword;
-                          });
-                        } catch (e) {
-                          debugPrint(
-                            '❌ [PasswordSecurityScreen] Error toggling password visibility: $e',
-                          );
-                        }
-                      },
-                    ),
-
-                    SizedBox(height: 4.h),
-
-                    // Security Settings Section Header
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => ChangePasswordBottomSheet.show(context),
-                        child: Text(
-                          'Change Password',
-                          textHeightBehavior: const TextHeightBehavior(
-                            applyHeightToFirstAscent: false,
-                            applyHeightToLastDescent: false,
-                          ),
-                          style: GoogleFonts.roboto(
-                            color: AppColors.primary,
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        _buildPasswordField(
+                          label: 'Password',
+                          controller: _currentPasswordController,
+                          focusNode: _currentPasswordFocusNode,
+                          obscureText: _obscureCurrentPassword,
+                          onToggleVisibility: () {
+                            if (!mounted) return;
+                            try {
+                              setState(() {
+                                _obscureCurrentPassword =
+                                    !_obscureCurrentPassword;
+                              });
+                            } catch (e) {
+                              debugPrint(
+                                '❌ [PasswordSecurityScreen] Error toggling password visibility: $e',
+                              );
+                            }
+                          },
+                        ),
+                        SizedBox(height: 4.h),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () =>
+                                ChangePasswordBottomSheet.show(context),
+                            child: Text(
+                              'Change Password',
+                              style: GoogleFonts.roboto(
+                                color: AppColors.primary,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Two-Factor Authentication Toggle
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'Two-factor authentication (2FA)',
-                        style: GoogleFonts.roboto(
-                          color: AppColors.fontMainColor,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 11.sp,
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            'Two-factor authentication (2FA)',
+                            style: GoogleFonts.roboto(
+                              color: AppColors.fontMainColor,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 11.sp,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        SizedBox(height: 30.h),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Trusted Email Toggle
-                    // _buildToggleField(
-                    //   label: 'Trusted E-Mail',
-                    //   value: _isTrustedEmailEnabled,
-                    //   onChanged: (value) {
-                    //     if (!mounted) return;
-                    //     try {
-                    //       debugPrint(
-                    //         '🔄 [PasswordSecurityScreen] Toggling trusted email: $value',
-                    //       );
-                    //       setState(() {
-                    //         _isTrustedEmailEnabled = value;
-                    //       });
-                    //     } catch (e) {
-                    //       debugPrint(
-                    //         '❌ [PasswordSecurityScreen] Error toggling trusted email: $e',
-                    //       );
-                    //     }
-                    //   },
-                    // ),
-                    SizedBox(height: 30.h),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          // Bottom Save Button (same pattern as Personal Details)
-          // bottomNavigationBar: _hasChanges
-          //     ? SafeArea(
-          //         child: Container(
-          //           color: Colors.transparent,
-          //           child: Padding(
-          //             padding: EdgeInsets.only(
-          //               bottom: MediaQuery.of(context).viewInsets.bottom + 2,
-          //               left: 12.w,
-          //               right: 12.w,
-          //               top: 2,
-          //             ),
-          //             child: CustomButton(
-          //               text: 'Save',
-          //               onPressed: _canSave ? _saveChanges : null,
-          //               isLoading: state is ProfileLoading,
-          //             ),
-          //           ),
-          //         ),
-          //       )
-          //     : const SizedBox.shrink(),
+              // Custom Header
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top,
+                    left: 16.w,
+                    right: 16.w,
+                    bottom: 8.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.kBg.withValues(alpha: 0.1),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CustomNavButton(
+                        onPressed: () {
+                          if (!mounted) return;
+                          try {
+                            debugPrint(
+                              '🔄 [PasswordSecurityScreen] Navigating back',
+                            );
+                            Navigator.pop(context);
+                          } catch (e) {
+                            debugPrint(
+                              '❌ [PasswordSecurityScreen] Error navigating back: $e',
+                            );
+                          }
+                        },
+                        icon: CupertinoIcons.back,
+                      ),
+                      Text(
+                        'Password & Security',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                      SizedBox(width: 40.w), // Spacer to balance back button
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

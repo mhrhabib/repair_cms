@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:intl/intl.dart';
 import 'package:repair_cms/core/app_exports.dart';
@@ -168,15 +169,15 @@ class _DashboardScreenState extends State<DashboardScreen>
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          padding: EdgeInsets.all(16.w),
+          height: MediaQuery.of(context).size.height * 0.75,
+          padding: EdgeInsets.all(20.w),
           decoration: ShapeDecoration(
             color: AppColors.whiteColor,
             shape: SmoothRectangleBorder(
               borderRadius: SmoothBorderRadius.only(
-                topLeft: SmoothRadius(cornerRadius: 20.r, cornerSmoothing: 1.0),
+                topLeft: SmoothRadius(cornerRadius: 30.r, cornerSmoothing: 1.0),
                 topRight: SmoothRadius(
-                  cornerRadius: 20.r,
+                  cornerRadius: 30.r,
                   cornerSmoothing: 1.0,
                 ),
               ),
@@ -184,14 +185,24 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           child: Column(
             children: [
+              // Handle
+              Container(
+                width: 40.w,
+                height: 4.h,
+                margin: EdgeInsets.only(bottom: 16.h),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
               // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Select date Range',
-                    style: AppTypography.fontSize20.copyWith(
-                      fontWeight: FontWeight.bold,
+                    'Select date range',
+                    style: AppTypography.sfProHeadLineTextStyle22.copyWith(
+                      color: const Color(0xFF1E2D4D),
                     ),
                   ),
                   CustomNavButton(
@@ -206,10 +217,10 @@ class _DashboardScreenState extends State<DashboardScreen>
               Container(
                 padding: EdgeInsets.all(12.w),
                 decoration: ShapeDecoration(
-                  color: AppColors.borderColor,
+                  color: AppColors.borderColor.withValues(alpha: 0.3),
                   shape: SmoothRectangleBorder(
                     borderRadius: SmoothBorderRadius(
-                      cornerRadius: 8.r,
+                      cornerRadius: 28.r,
                       cornerSmoothing: 1.0,
                     ),
                   ),
@@ -217,12 +228,19 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Icon(
+                      SolarIconsOutline.calendar,
+                      size: 20.sp,
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(width: 8.w),
                     Text(
                       tempStartDate != null && tempEndDate != null
-                          ? '${DateFormat('dd.MM.yyyy').format(tempStartDate!)} - ${DateFormat('dd.MM.yyyy').format(tempEndDate!)}'
-                          : 'Select start and end dates',
+                          ? '${DateFormat('dd MMM, yyyy').format(tempStartDate!)} - ${DateFormat('dd MMM, yyyy').format(tempEndDate!)}'
+                          : 'Select dates',
                       style: AppTypography.fontSize16.copyWith(
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E2D4D),
                       ),
                     ),
                   ],
@@ -232,29 +250,52 @@ class _DashboardScreenState extends State<DashboardScreen>
 
               // Date Range Picker
               Expanded(
-                child: SfDateRangePicker(
-                  selectionMode: DateRangePickerSelectionMode.range,
-                  initialSelectedRange:
-                      tempStartDate != null && tempEndDate != null
-                      ? PickerDateRange(tempStartDate, tempEndDate)
-                      : null,
-                  onSelectionChanged:
-                      (DateRangePickerSelectionChangedArgs args) {
-                        if (args.value is PickerDateRange) {
-                          setModalState(() {
-                            tempStartDate = args.value.startDate;
-                            tempEndDate = args.value.endDate;
-                          });
-                        }
-                      },
-                  monthViewSettings: const DateRangePickerMonthViewSettings(
-                    enableSwipeSelection: false,
+                child: Container(
+                  margin: EdgeInsets.symmetric(vertical: 8.h),
+                  decoration: ShapeDecoration(
+                    color: AppColors.borderColor.withValues(alpha: 0.15),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(
+                        cornerRadius: 28.r,
+                        cornerSmoothing: 1.0,
+                      ),
+                    ),
                   ),
-                  selectionColor: AppColors.primary,
-                  startRangeSelectionColor: AppColors.primary,
-                  endRangeSelectionColor: AppColors.primary,
-                  rangeSelectionColor: AppColors.primary.withValues(alpha: 0.2),
-                  todayHighlightColor: AppColors.primary,
+                  clipBehavior: Clip.antiAlias,
+                  child: SfDateRangePicker(
+                    backgroundColor: Colors.transparent,
+                    selectionMode: DateRangePickerSelectionMode.range,
+                    initialSelectedRange:
+                        tempStartDate != null && tempEndDate != null
+                        ? PickerDateRange(tempStartDate, tempEndDate)
+                        : null,
+                    onSelectionChanged:
+                        (DateRangePickerSelectionChangedArgs args) {
+                          if (args.value is PickerDateRange) {
+                            setModalState(() {
+                              tempStartDate = args.value.startDate;
+                              tempEndDate = args.value.endDate;
+                            });
+                          }
+                        },
+                    headerStyle: DateRangePickerHeaderStyle(
+                      backgroundColor: Colors.transparent,
+                      textStyle: AppTypography.fontSize16.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    monthViewSettings: const DateRangePickerMonthViewSettings(
+                      enableSwipeSelection: false,
+                      firstDayOfWeek: 1,
+                    ),
+                    selectionColor: AppColors.primary,
+                    startRangeSelectionColor: AppColors.primary,
+                    endRangeSelectionColor: AppColors.primary,
+                    rangeSelectionColor: AppColors.primary.withValues(
+                      alpha: 0.2,
+                    ),
+                    todayHighlightColor: AppColors.primary,
+                  ),
                 ),
               ),
               SizedBox(height: 20.h),
@@ -264,27 +305,21 @@ class _DashboardScreenState extends State<DashboardScreen>
                 children: [
                   // Clear Button
                   Expanded(
-                    child: OutlinedButton(
+                    child: CupertinoButton(
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(28.r),
                       onPressed: () {
                         setModalState(() {
                           tempStartDate = null;
                           tempEndDate = null;
                         });
                       },
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        side: BorderSide(color: AppColors.primary),
-                        shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(
-                            cornerRadius: 8.r,
-                            cornerSmoothing: 1.0,
-                          ),
-                        ),
-                      ),
                       child: Text(
                         'Clear',
                         style: AppTypography.fontSize16.copyWith(
-                          color: AppColors.primary,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -293,7 +328,10 @@ class _DashboardScreenState extends State<DashboardScreen>
 
                   // Apply Button
                   Expanded(
-                    child: ElevatedButton(
+                    child: CupertinoButton(
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(28.r),
                       onPressed: tempStartDate != null && tempEndDate != null
                           ? () {
                               // Update the main state with selected dates
@@ -316,26 +354,18 @@ class _DashboardScreenState extends State<DashboardScreen>
                               ).showCustomSnackbar(context);
                             }
                           : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(
-                            cornerRadius: 8.r,
-                            cornerSmoothing: 1.0,
-                          ),
-                        ),
-                      ),
                       child: Text(
                         'Apply',
                         style: AppTypography.fontSize16.copyWith(
                           color: Colors.white,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom),
             ],
           ),
         ),

@@ -14,6 +14,7 @@ class CustomDropdownSearch<T> extends StatelessWidget {
   final bool isMultiSelectDropdown;
   final double? maxHeight;
   final Color? suggestionsBoxColor;
+  final TextFieldConfiguration? textFieldConfiguration;
 
   const CustomDropdownSearch({
     super.key,
@@ -28,6 +29,7 @@ class CustomDropdownSearch<T> extends StatelessWidget {
     this.isMultiSelectDropdown = false,
     this.maxHeight,
     this.suggestionsBoxColor,
+    this.textFieldConfiguration,
   });
 
   @override
@@ -37,40 +39,42 @@ class CustomDropdownSearch<T> extends StatelessWidget {
       isMultiSelectDropdown: isMultiSelectDropdown,
       itemBuilder: itemBuilder,
       suggestionsCallback: suggestionsCallback,
-      textFieldConfiguration: TextFieldConfiguration(
-        controller: controller,
-        style: GoogleFonts.roboto(
-          fontSize: 32.sp,
-          color: AppColors.fontMainColor,
-        ),
-        decoration: InputDecoration(
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 16.w,
-            vertical: 16.h,
+      textFieldConfiguration:
+          textFieldConfiguration ??
+          TextFieldConfiguration(
+            controller: controller,
+            style: GoogleFonts.roboto(
+              fontSize: 32.sp,
+              color: AppColors.fontMainColor,
+            ),
+            decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 16.h,
+              ),
+              border: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: Colors.blue,
+                ), // You can customize this
+              ),
+              hintText: hintText,
+              hintStyle: GoogleFonts.roboto(
+                fontSize: 32.sp,
+                color: Color(0xFFB2B5BE),
+              ),
+              suffixIcon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.fontMainColor,
+                size: 32,
+              ),
+            ),
           ),
-          border: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: Colors.blue,
-            ), // You can customize this
-          ),
-          hintText: hintText,
-          hintStyle: GoogleFonts.roboto(
-            fontSize: 32.sp,
-            color: Color(0xFFB2B5BE),
-          ),
-          suffixIcon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: AppColors.fontMainColor,
-            size: 32,
-          ),
-        ),
-      ),
       onSuggestionSelected: onSuggestionSelected,
       noItemsFoundBuilder: (context) => Padding(
         padding: EdgeInsets.all(16.w),

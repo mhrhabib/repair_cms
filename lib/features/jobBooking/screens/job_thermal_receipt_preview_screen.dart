@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/services/file_service.dart';
 import 'package:flutter/cupertino.dart';
@@ -105,40 +106,101 @@ class _JobThermalReceiptPreviewScreenState
       return;
     }
 
-    final selectedPrinter = await showDialog<PrinterConfigModel>(
+    showCupertinoModalPopup<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Thermal Printer'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: thermalPrinters.length,
-            itemBuilder: (context, index) {
-              final printer = thermalPrinters[index];
-              return ListTile(
-                leading: const Icon(Icons.print),
-                title: Text(
-                  '${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}',
-                ),
-                subtitle: Text('${printer.ipAddress}:${printer.port}'),
-                onTap: () => Navigator.of(context).pop(printer),
-              );
-            },
-          ),
+      builder: (BuildContext context) => CupertinoActionSheet(
+        title: Text(
+          'Select Thermal Printer',
+          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
+        message: Text(
+          'Choose a printer to print the receipt',
+          style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+        ),
+        actions: thermalPrinters.map((printer) {
+          final isDefault = printer.isDefault;
+          return CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _printThermalReceipt(printer);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.receipt_long,
+                    size: 24.r,
+                    color: AppColors.fontMainColor,
+                  ),
+                  SizedBox(width: 12.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '${printer.printerBrand} ${printer.printerModel ?? ""}',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF007AFF),
+                            ),
+                          ),
+                          if (isDefault) ...[
+                            SizedBox(width: 8.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6.w,
+                                vertical: 2.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                'DEFAULT',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        printer.ipAddress,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Text(
+                        'Thermal',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(context).pop(),
+          isDefaultAction: true,
+          child: const Text('Cancel'),
+        ),
       ),
     );
-
-    if (selectedPrinter != null && mounted) {
-      _printThermalReceipt(selectedPrinter);
-    }
   }
 
   Future<void> _printThermalReceipt(PrinterConfigModel printer) async {
@@ -202,14 +264,7 @@ class _JobThermalReceiptPreviewScreenState
             child: Card(
               child: Padding(
                 padding: EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Printing...'),
-                  ],
-                ),
+                child: CupertinoActivityIndicator(radius: 16),
               ),
             ),
           ),
@@ -588,70 +643,115 @@ class _JobThermalReceiptPreviewScreenState
       },
       child: Scaffold(
         backgroundColor: AppColors.kBg,
-        extendBodyBehindAppBar: true,
-        appBar: CupertinoNavigationBar(
-          backgroundColor: AppColors.kBg.withValues(alpha: 0.1),
-          border: null,
-          leading: CustomNavButton(
-            onPressed: () => _goHome(),
-            icon: CupertinoIcons.back,
-          ),
-          middle: Text(
-            'Thermal Receipt Preview',
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          trailing: CustomNavButton(
-            onPressed: _showPrinterSelection,
-            icon: Icons.print,
-            size: 20.sp,
-            iconColor: const Color(0xFF3A4A67),
-          ),
-        ),
-        body: _isLoadingCompleteData
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading receipt data...'),
-                  ],
-                ),
-              )
-            : SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 50.h,
-                  bottom: 16.h,
-                ),
-                child: Center(
-                  child: Container(
-                    width: 300,
-                    margin: EdgeInsets.symmetric(vertical: 16.h),
-
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16.r),
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
+        body: Stack(
+          children: [
+            _isLoadingCompleteData
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Loading receipt data...'),
                       ],
                     ),
-                    child: ThermalReceiptWidget(
-                      jobData: _completeJobData ?? _convertToSingleJobModel(),
-                      logoEnabled: false, // Logo removed as per requirements
-                      qrCodeEnabled: true,
-                      enableTelephoneNumber: true,
+                  )
+                : SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).padding.top + 72.h,
+                      bottom: 16.h,
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 300,
+                        margin: EdgeInsets.symmetric(vertical: 16.h),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16.r),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ThermalReceiptWidget(
+                          jobData:
+                              _completeJobData ?? _convertToSingleJobModel(),
+                          logoEnabled: false,
+                          qrCodeEnabled: true,
+                          enableTelephoneNumber: true,
+                        ),
+                      ),
                     ),
                   ),
+            // Custom Header
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 8.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.kBg.withValues(alpha: 0.1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomNavButton(
+                      onPressed: () => _goHome(),
+                      icon: CupertinoIcons.back,
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(28.r),
+                        border: Border.all(
+                          color: AppColors.whiteColor, // Figma: border #FFFFFF
+                          width: 1, // Figma: border-width 1px
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromARGB(
+                              28,
+                              116,
+                              115,
+                              115,
+                            ), // Figma: #0000001C
+                            blurRadius: 2, // Figma: blur 20px
+                            offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'Thermal Preview',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                    ),
+                    CustomNavButton(
+                      onPressed: _showPrinterSelection,
+                      icon: Icons.print,
+                      size: 20.sp,
+                      iconColor: const Color(0xFF3A4A67),
+                    ),
+                  ],
                 ),
               ),
+            ),
+          ],
+        ),
         bottomNavigationBar: Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(

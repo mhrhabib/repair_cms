@@ -26,6 +26,7 @@ import 'package:repair_cms/features/myJobs/screens/receipt_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/files_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/status_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
     as job_booking;
 
@@ -809,98 +810,30 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   }
 
   void _deleteFile(String filePath) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Delete File?'),
+        content: const Text(
+          'Are you sure you want to delete this file? This action cannot be undone.',
         ),
-        child: Padding(
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 60.w,
-                height: 60.h,
-                decoration: BoxDecoration(
-                  color: AppColors.warningColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  SolarIconsOutline.trashBin2,
-                  size: 30.sp,
-                  color: AppColors.warningColor,
-                ),
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                'Delete File?',
-                style: AppTypography.fontSize20.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.fontMainColor,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                'Are you sure you want to delete this file? This action cannot be undone.',
-                style: AppTypography.fontSize14.copyWith(
-                  color: AppColors.lightFontColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 24.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: AppTypography.fontSize14.copyWith(
-                          color: AppColors.lightFontColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        context.read<JobCubit>().deleteJobFile(
-                          jobId: widget.job.data?.sId ?? '',
-                          filePath: filePath,
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.warningColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                      ),
-                      child: Text(
-                        'Delete',
-                        style: AppTypography.fontSize14.copyWith(
-                          color: AppColors.whiteColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
           ),
-        ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.read<JobCubit>().deleteJobFile(
+                jobId: widget.job.data?.sId ?? '',
+                filePath: filePath,
+              );
+            },
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
@@ -930,6 +863,19 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         userId: job.data?.userId,
         createdAt: job.data?.createdAt,
         updatedAt: job.data?.updatedAt,
+        services: job.data?.services
+            ?.map(
+              (s) =>
+                  job_booking.ServiceData.fromJson(s as Map<String, dynamic>),
+            )
+            .toList(),
+        assignedItems: job.data?.assignedItems
+            ?.map(
+              (i) => job_booking.AssignedItemData.fromJson(
+                i as Map<String, dynamic>,
+              ),
+            )
+            .toList(),
         jobStatus: job.data?.jobStatus
             ?.map(
               (js) => job_booking.JobStatus(
@@ -1519,12 +1465,44 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                           onPressed: () => Navigator.of(context).pop(),
                           icon: CupertinoIcons.back,
                         ),
-                        Text(
-                          jobNo,
-                          style: TextStyle(
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1E2D4D),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7F7F8),
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.circular(28.r),
+                            border: Border.all(
+                              color:
+                                  AppColors.whiteColor, // Figma: border #FFFFFF
+                              width: 1, // Figma: border-width 1px
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color.fromARGB(
+                                  28,
+                                  116,
+                                  115,
+                                  115,
+                                ), // Figma: #0000001C
+                                blurRadius: 2, // Figma: blur 20px
+                                offset: Offset(
+                                  0,
+                                  0,
+                                ), // Figma: 0px 0px (no offset)
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            jobNo,
+                            style: TextStyle(
+                              fontSize: 17.sp,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E2D4D),
+                            ),
                           ),
                         ),
                         CustomNavButton(
@@ -2459,6 +2437,42 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     ),
   );
 
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  String _getFileExtension(String fileName) {
+    if (!fileName.contains('.')) return '';
+    return fileName.split('.').last.toLowerCase();
+  }
+
+  IconData _getFileIcon(String fileName) {
+    final ext = _getFileExtension(fileName);
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+        return Icons.image;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      case 'mp4':
+      case 'mov':
+        return Icons.video_library;
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
   Widget _fileCard(File file) {
     // Determine display name: prefer fileName, else extract from file path or url
     final name =
@@ -2478,8 +2492,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     final isImage =
         ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension) &&
         (file.imageUrl?.isNotEmpty == true);
+
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (isImage) {
           Navigator.push(
             context,
@@ -2487,6 +2502,25 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               builder: (_) => FullscreenImageViewer(imageUrl: file.imageUrl!),
             ),
           );
+        } else if (file.imageUrl != null && file.imageUrl!.isNotEmpty) {
+          try {
+            final uri = Uri.parse(file.imageUrl!);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } else {
+              if (mounted) {
+                SnackbarDemo(
+                  message: 'Cannot open file externally',
+                ).showCustomSnackbar(context);
+              }
+            }
+          } catch (e) {
+            if (mounted) {
+              SnackbarDemo(
+                message: 'Failed to open file: $e',
+              ).showCustomSnackbar(context);
+            }
+          }
         }
       },
       child: Container(
@@ -2521,16 +2555,18 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                             child: Image.network(
                               file.imageUrl!,
                               fit: BoxFit.contain,
-                              errorBuilder: (_, _, _) => const Icon(
-                                Icons.broken_image,
-                                size: 40,
-                                color: Colors.grey,
+                              errorBuilder: (_, _, _) => Center(
+                                child: Icon(
+                                  _getFileIcon(name),
+                                  size: 40.sp,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           )
                         : Center(
                             child: Icon(
-                              Icons.insert_drive_file,
+                              _getFileIcon(name),
                               size: 48.sp,
                               color: Colors.grey.shade400,
                             ),
@@ -2566,12 +2602,29 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.all(8.r),
-              child: Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500),
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF1E2D4D),
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    _formatFileSize(file.size ?? 0),
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

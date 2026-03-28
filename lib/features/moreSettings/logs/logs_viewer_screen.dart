@@ -5,6 +5,7 @@ import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/set_up_di.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Logs Viewer Screen - Shows all Talker logs for debugging
 /// Client can share logs with you for remote troubleshooting
@@ -17,40 +18,74 @@ class LogsViewerScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg,
-        leading: CustomNavButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: CupertinoIcons.back,
-        ),
-        middle: const Text('Debug Logs'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CustomNavButton(
-              onPressed: () => _shareLogs(talker),
-              icon: CupertinoIcons.share,
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 72.h),
+            child: TalkerScreen(
+              talker: talker,
+              theme: TalkerScreenTheme(
+                backgroundColor: AppColors.kBg,
+                textColor: Colors.black,
+              ),
             ),
-            CustomNavButton(
-              onPressed: () {
-                talker.cleanHistory();
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Logs cleared')));
-              },
-              icon: CupertinoIcons.delete,
+          ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: CupertinoIcons.back,
+                  ),
+                  const Text(
+                    'Debug Logs',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CustomNavButton(
+                        onPressed: () => _shareLogs(talker),
+                        icon: CupertinoIcons.share,
+                      ),
+                      CustomNavButton(
+                        onPressed: () {
+                          talker.cleanHistory();
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(
+                            const SnackBar(content: Text('Logs cleared')),
+                          );
+                        },
+                        icon: CupertinoIcons.delete,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
-      body: TalkerScreen(
-        talker: talker,
-        theme: TalkerScreenTheme(
-          backgroundColor: AppColors.kBg,
-          textColor: Colors.black,
-        ),
+          ),
+        ],
       ),
     );
   }

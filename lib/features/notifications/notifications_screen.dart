@@ -46,68 +46,122 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kBg,
-      appBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.kBg.withValues(alpha: 0.1),
-        border: null,
-        leading: CustomNavButton(
-          onPressed: () {
-            if (!mounted) return;
-            try {
-              debugPrint('🔄 [NotificationsScreen] Navigating back');
-              Navigator.pop(context);
-            } catch (e) {
-              debugPrint('❌ [NotificationsScreen] Error navigating back: $e');
-            }
-          },
-          icon: CupertinoIcons.back,
-        ),
-        middle: Text(
-          'Notifications',
-          style: AppTypography.sfProHeadLineTextStyle22,
-        ),
-        trailing: _notifications.isEmpty
-            ? null
-            : CustomNavButton(
-                onPressed: _showNotificationSettings,
-                icon: SolarIconsOutline.settings,
-                size: 24.sp,
+      body: Stack(
+        children: [
+          BlocConsumer<NotificationCubit, NotificationState>(
+            listener: (context, state) {
+              if (!mounted) return;
+              try {
+                if (state is NotificationLoaded) {
+                  setState(() => _notifications = state.notifications);
+                  debugPrint(
+                    '✅ [NotificationsScreen] Loaded ${state.notifications.length} notifications',
+                  );
+                }
+                if (state is NotificationError) {
+                  debugPrint('❌ [NotificationsScreen] Error: ${state.message}');
+                  showCustomToast(state.message, isError: true);
+                }
+              } catch (e) {
+                debugPrint('❌ [NotificationsScreen] Error in listener: $e');
+              }
+            },
+            builder: (context, state) {
+              if (state is NotificationLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state is NotificationLoaded) {
+                if (state.notifications.isEmpty) return _buildEmptyState();
+                return _buildNotificationsList();
+              }
+
+              if (state is NotificationError) {
+                return _buildErrorState(state.message);
+              }
+
+              // initial or fallback
+              return _buildEmptyState();
+            },
+          ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
               ),
-      ),
-      body: BlocConsumer<NotificationCubit, NotificationState>(
-        listener: (context, state) {
-          if (!mounted) return;
-          try {
-            if (state is NotificationLoaded) {
-              setState(() => _notifications = state.notifications);
-              debugPrint(
-                '✅ [NotificationsScreen] Loaded ${state.notifications.length} notifications',
-              );
-            }
-            if (state is NotificationError) {
-              debugPrint('❌ [NotificationsScreen] Error: ${state.message}');
-              showCustomToast(state.message, isError: true);
-            }
-          } catch (e) {
-            debugPrint('❌ [NotificationsScreen] Error in listener: $e');
-          }
-        },
-        builder: (context, state) {
-          if (state is NotificationLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state is NotificationLoaded) {
-            if (state.notifications.isEmpty) return _buildEmptyState();
-            return _buildNotificationsList();
-          }
-
-          if (state is NotificationError) {
-            return _buildErrorState(state.message);
-          }
-
-          // initial or fallback
-          return _buildEmptyState();
-        },
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () {
+                      if (!mounted) return;
+                      try {
+                        debugPrint('🔄 [NotificationsScreen] Navigating back');
+                        Navigator.pop(context);
+                      } catch (e) {
+                        debugPrint(
+                          '❌ [NotificationsScreen] Error navigating back: $e',
+                        );
+                      }
+                    },
+                    icon: CupertinoIcons.back,
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 2.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(
+                        color: AppColors.whiteColor, // Figma: border #FFFFFF
+                        width: 1, // Figma: border-width 1px
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            28,
+                            116,
+                            115,
+                            115,
+                          ), // Figma: #0000001C
+                          blurRadius: 2, // Figma: blur 20px
+                          offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Notifications',
+                      style: AppTypography.sfProHeadLineTextStyle22,
+                    ),
+                  ),
+                  if (_notifications.isNotEmpty)
+                    CustomNavButton(
+                      onPressed: _showNotificationSettings,
+                      icon: SolarIconsOutline.settings,
+                      size: 24.sp,
+                    )
+                  else
+                    SizedBox(width: 40.w), // Spacer to balance the back button
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -203,6 +257,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SizedBox(height: MediaQuery.of(context).padding.top + 60.h),
         const Padding(
           padding: EdgeInsets.all(16),
           child: Text(
