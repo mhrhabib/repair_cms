@@ -863,19 +863,6 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         userId: job.data?.userId,
         createdAt: job.data?.createdAt,
         updatedAt: job.data?.updatedAt,
-        services: job.data?.services
-            ?.map(
-              (s) =>
-                  job_booking.ServiceData.fromJson(s as Map<String, dynamic>),
-            )
-            .toList(),
-        assignedItems: job.data?.assignedItems
-            ?.map(
-              (i) => job_booking.AssignedItemData.fromJson(
-                i as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
         jobStatus: job.data?.jobStatus
             ?.map(
               (js) => job_booking.JobStatus(
@@ -1304,7 +1291,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                             Divider(height: 1, color: Colors.grey.shade200),
                             _receiptRow(
                               SolarIconsOutline.documentText,
-                              'Quote',
+                              'Thermal Receipt',
                               true,
                               () {
                                 Navigator.push(
