@@ -2,7 +2,7 @@ name: repair_cms
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.2.2+14
+version: 1.2.2+15
 
 environment:
   sdk: ^3.8.1
@@ -120,4 +120,8 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/icon/icon.png"
   min_sdk_android: 21
-  remove_alpha_ios: true
+  remove_alpha_ios: false
+  # Updated: Use Primary Blue instead of white to avoid the "whitish" look
+  adaptive_icon_background: "#FFFFFF" # AppColors.primary
+  adaptive_icon_foreground: "assets/icon/icon_ios.png"
+

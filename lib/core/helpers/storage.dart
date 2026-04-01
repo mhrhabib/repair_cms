@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:repair_cms/core/services/biometric_storage_service.dart';
+
 
 final storage = GetStorage();
 bool isUser = false;
@@ -28,18 +28,20 @@ class LocalSettings {
   }
 
   static Future<void> clearAll() async {
-    // Erase all GetStorage data (including printer settings, tokens, etc.)
-    await storage.erase();
+    debugPrint('🧹 [Storage] Clearing session data (token, userId, etc.)');
 
-    // Clear secure biometric data if any
-    await BiometricStorageService.clearBiometricData();
+    // Remove session-specific data
+    await storage.remove('token');
+    await storage.remove('userId');
+    await storage.remove('userData');
+    await storage.remove('email'); // Optional: clear pre-filled email if desired
 
     // Reset global state variables
     isUser = false;
     userIdFromServer = null;
     isLocaleEng = false;
 
-    debugPrint('🧹 [Storage] All local storage and printer settings cleared');
+    debugPrint('✅ [Storage] Session cleared. Biometrics and Printer settings preserved.');
   }
 }
 

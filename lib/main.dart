@@ -72,11 +72,7 @@ void main() async {
   // Log Talker initialization
   SetUpDI.getIt<Talker>().info('RepairCMS App Started');
 
-  runApp(
-    RestartWidget(
-      child: OKToast(child: const MyApp()),
-    ),
-  );
+  runApp(RestartWidget(child: OKToast(child: const MyApp())));
 }
 
 class MyApp extends StatelessWidget {
@@ -87,88 +83,33 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ConnectivityCubit(Connectivity())),
-        BlocProvider(
-          create: (context) =>
-              SignInCubit(repository: SetUpDI.getIt<SignInRepository>()),
-        ),
-        BlocProvider(
-          create: (context) => ForgotPasswordCubit(
-            repository: SetUpDI.getIt<ForgotPasswordRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) =>
-              ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>()),
-        ),
-        BlocProvider(
-          create: (context) => CompanyCubit(
-            companyRepository: SetUpDI.getIt<CompanyRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) =>
-              JobCubit(repository: SetUpDI.getIt<JobRepository>()),
-        ),
-        BlocProvider(
-          create: (context) =>
-              DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>()),
-        ),
-        BlocProvider(
-          create: (context) =>
-              QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>()),
-        ),
-        BlocProvider(
-          create: (context) => ServiceCubit(
-            serviceRepository: SetUpDI.getIt<ServiceRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => JobCreateCubit(
-            jobRepository: SetUpDI.getIt<JobBookingRepository>(),
-          ),
-        ),
+        BlocProvider(create: (context) => SignInCubit(repository: SetUpDI.getIt<SignInRepository>())),
+        BlocProvider(create: (context) => ForgotPasswordCubit(repository: SetUpDI.getIt<ForgotPasswordRepository>())),
+        BlocProvider(create: (context) => ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>())),
+        BlocProvider(create: (context) => CompanyCubit(companyRepository: SetUpDI.getIt<CompanyRepository>())),
+        BlocProvider(create: (context) => JobCubit(repository: SetUpDI.getIt<JobRepository>())),
+        BlocProvider(create: (context) => DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>())),
+        BlocProvider(create: (context) => QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>())),
+        BlocProvider(create: (context) => ServiceCubit(serviceRepository: SetUpDI.getIt<ServiceRepository>())),
+        BlocProvider(create: (context) => JobCreateCubit(jobRepository: SetUpDI.getIt<JobBookingRepository>())),
         BlocProvider(create: (context) => JobBookingCubit()),
         BlocProvider(
-          create: (context) => JobFileUploadCubit(
-            fileUploadRepository:
-                SetUpDI.getIt<JobBookingFileUploadRepository>(),
-          ),
-        ),
-        BlocProvider(
           create: (context) =>
-              BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>()),
+              JobFileUploadCubit(fileUploadRepository: SetUpDI.getIt<JobBookingFileUploadRepository>()),
+        ),
+        BlocProvider(create: (context) => BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>())),
+        BlocProvider(create: (context) => ModelsCubit(modelsRepository: SetUpDI.getIt<ModelsRepository>())),
+        BlocProvider(
+          create: (context) => AccessoriesCubit(accessoriesRepository: SetUpDI.getIt<AccessoriesRepository>()),
         ),
         BlocProvider(
-          create: (context) =>
-              ModelsCubit(modelsRepository: SetUpDI.getIt<ModelsRepository>()),
+          create: (context) => ContactTypeCubit(contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>()),
         ),
+        BlocProvider(create: (context) => JobTypeCubit(jobTypeRepository: SetUpDI.getIt<JobTypeRepository>())),
+        BlocProvider(create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>())),
+        BlocProvider(create: (context) => JobReceiptCubit(jobReceiptRepository: SetUpDI.getIt<JobReceiptRepository>())),
         BlocProvider(
-          create: (context) => AccessoriesCubit(
-            accessoriesRepository: SetUpDI.getIt<AccessoriesRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => ContactTypeCubit(
-            contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => JobTypeCubit(
-            jobTypeRepository: SetUpDI.getIt<JobTypeRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>()),
-        ),
-        BlocProvider(
-          create: (context) => JobReceiptCubit(
-            jobReceiptRepository: SetUpDI.getIt<JobReceiptRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => NotificationCubit(
-            notificationRepository: SetUpDI.getIt<NotificationRepository>(),
-          ),
+          create: (context) => NotificationCubit(notificationRepository: SetUpDI.getIt<NotificationRepository>()),
         ),
         BlocProvider(
           create: (context) => MessageCubit(
@@ -186,9 +127,7 @@ class MyApp extends StatelessWidget {
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'RepairCMS',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-            ),
+            theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
             routerConfig: AppRouter.router,
           ),
         ),
@@ -240,9 +179,6 @@ class _RestartWidgetState extends State<RestartWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyedSubtree(
-      key: _key,
-      child: widget.child,
-    );
+    return KeyedSubtree(key: _key, child: widget.child);
   }
 }
