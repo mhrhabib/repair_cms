@@ -14,6 +14,7 @@ import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/core/services/file_service.dart';
 import 'dart:ui' as ui;
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
 
@@ -1006,6 +1007,107 @@ class ReceiptScreen extends StatelessWidget {
     );
   }
 
+  /// Test print using hardcoded base64 PDF — routes through saved printers
+  Future<void> _testPrintBase64Pdf(BuildContext context) async {
+    const rawValue =
+        'application/pdf;base64,JVBERi0xLjMKJf////8KOSAwIG9iago8PAovVHlwZSAvRXh0R1N0YXRlCi9jYSAxCj4+CmVuZG9iago4IDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMSAwIFIKL01lZGlhQm94IFswIDAgNTk1LjI4MDAyOSA4NDEuODkwMDE1XQovQ29udGVudHMgNiAwIFIKL1Jlc291cmNlcyA3IDAgUgovVXNlclVuaXQgMQo+PgplbmRvYmoKNyAwIG9iago8PAovUHJvY1NldCBbL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSV0KL0V4dEdTdGF0ZSA8PAovR3MxIDkgMCBSCj4+Ci9Gb250IDw8Ci9GMSAxMCAwIFIKL0YyIDEyIDAgUgo+PgovWE9iamVjdCA8PAovSTEgMTEgMCBSCj4+Ci9Db2xvclNwYWNlIDw8Cj4+Cj4+CmVuZG9iagoxNCAwIG9iagoocmVhY3QtcGRmKQplbmRvYmoKMTUgMCBvYmoKKHJlYWN0LXBkZikKZW5kb2JqCjE2IDAgb2JqCihEOjIwMjYwNDAxMTI0NDI5WikKZW5kb2JqCjEzIDAgb2JqCjw8Ci9Qcm9kdWNlciAxNCAwIFIKL0NyZWF0b3IgMTUgMCBSCi9DcmVhdGlvbkRhdGUgMTYgMCBSCj4+CmVuZG9iagoxMCAwIG9iago8PAovVHlwZSAvRm9udAovQmFzZUZvbnQgL0hlbHZldGljYQovU3VidHlwZSAvVHlwZTEKL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcKPj4KZW5kb2JqCjEyIDAgb2JqCjw8Ci9UeXBlIC9Gb250Ci9CYXNlRm9udCAvSGVsdmV0aWNhLUJvbGQKL1N1YnR5cGUgL1R5cGUxCi9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nCj4+CmVuZG9iago0IDAgb2JqCjw8Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9UeXBlIC9DYXRhbG9nCi9QYWdlcyAxIDAgUgovTmFtZXMgMiAwIFIKL1ZpZXdlclByZWZlcmVuY2VzIDUgMCBSCj4+CmVuZG9iagoxIDAgb2JqCjw8Ci9UeXBlIC9QYWdlcwovQ291bnQgMQovS2lkcyBbOCAwIFJdCj4+CmVuZG9iagoyIDAg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MDAwMDAwIDY1NTM1IGYgCjAwMDAwMDA4MzkgMDAwMDAgbiAKMDAwMDAwMDg5NiAwMDAwMCBuIAowMDAwMDAwNzUyIDAwMDAwIG4gCjAwMDAwMDA3MzEgMDAwMDAgbiAKMDAwMDAwMDk0MyAwMDAwMCBuIAowMDAwMDAzNjk4IDAwMDAwIG4gCjAwMDAwMDAxODkgMDAwMDAgbiAKMDAwMDAwMDA1OSAwMDAwMCBuIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDA1MzAgMDAwMDAgbiAKMDAwMDAwMzM1MyAwMDAwMCBuIAowMDAwMDAwNjI4IDAwMDAwIG4gCjAwMDAwMDA0NTQgMDAwMDAgbiAKMDAwMDAwMDM2MiAwMDAwMCBuIAowMDAwMDAwMzkwIDAwMDAwIG4gCjAwMDAwMDA0MTggMDAwMDAgbiAKMDAwMDAwMDk4NiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDE4Ci9Sb290IDMgMCBSCi9JbmZvIDEzIDAgUgovSUQgWzwxNTA3ODU5MWViNjA1NTI5NDA4NDEyZDBkODUyNTZjYj4gPDE1MDc4NTkxZWI2MDU1Mjk0MDg0MTJkMGQ4NTI1NmNiPl0KPj4Kc3RhcnR4cmVmCjcxODYKJSVFT0YK';
+
+    final base64String = rawValue.contains(',')
+        ? rawValue.split(',').last
+        : rawValue;
+    final Uint8List pdfBytes = base64Decode(base64String);
+
+    final allPrinters = _settingsService.getAllPrinters();
+    final List<PrinterConfigModel> configuredPrinters = [
+      ...allPrinters['a4'] ?? [],
+    ];
+
+    if (configuredPrinters.isEmpty) {
+      // No saved printers — fall back to system dialog
+      // ignore: use_build_context_synchronously
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdfBytes,
+        name: 'test_web_receipt.pdf',
+        format: PdfPageFormat.a4,
+      );
+      return;
+    }
+
+    final defaultA4 = _settingsService.getDefaultPrinter('a4');
+    final defaultPrinterType = defaultA4 != null ? 'a4' : null;
+
+    // ignore: use_build_context_synchronously
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (context) => _PrinterSelectionDialog(
+        printers: configuredPrinters,
+        defaultPrinterType: defaultPrinterType,
+        onPrint: (printer) => _sendPdfBytesToPrinter(context, pdfBytes, printer),
+      ),
+    );
+  }
+
+  /// Send already-decoded PDF bytes to a selected printer
+  Future<void> _sendPdfBytesToPrinter(
+    BuildContext context,
+    Uint8List pdfBytes,
+    PrinterConfigModel printer,
+  ) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      bool success = false;
+
+      if (['raw', 'tcp', 'jetdirect', '9100']
+          .contains(printer.protocol.toLowerCase())) {
+        final port = printer.port ?? 9100;
+        try {
+          final socket = await Socket.connect(
+            printer.ipAddress,
+            port,
+            timeout: const Duration(seconds: 5),
+          );
+          socket.add(pdfBytes);
+          await socket.flush();
+          socket.destroy();
+          success = true;
+        } catch (e) {
+          debugPrint('❌ TCP send failed, falling back to system dialog: $e');
+          success = await Printing.layoutPdf(
+            onLayout: (_) async => pdfBytes,
+            name: 'test_web_receipt.pdf',
+            format: PdfPageFormat.a4,
+          );
+        }
+      } else {
+        success = await Printing.layoutPdf(
+          onLayout: (_) async => pdfBytes,
+          name: 'test_web_receipt.pdf',
+          format: PdfPageFormat.a4,
+        );
+      }
+
+      navigator.pop();
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(success ? 'Test PDF sent to printer!' : 'Print cancelled'),
+        ),
+      );
+    } catch (e) {
+      try { navigator.pop(); } catch (_) {}
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('Print error: $e')),
+      );
+    }
+  }
+
   /// Generate receipt text from job data
   String _generateReceiptText() {
     final customer = job.data?.customerDetails;
@@ -1087,6 +1189,19 @@ class ReceiptScreen extends StatelessWidget {
                   key: _printKey,
                   child: JobReceiptWidgetNew(jobData: job),
                 ),
+              ),
+            ),
+          ),
+
+          // Temporary test button — remove after testing
+          Positioned(
+            bottom: 24,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: TextButton(
+                onPressed: () => _testPrintBase64Pdf(context),
+                child: const Text('Test Base64 PDF Print'),
               ),
             ),
           ),
