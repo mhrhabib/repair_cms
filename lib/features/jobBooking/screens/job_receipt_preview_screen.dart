@@ -778,45 +778,86 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
   double _getDotsPerMm(PrinterConfigModel? printer) {
     final model = printer?.printerModel?.toUpperCase() ?? '';
-    if (model.startsWith('TD-4')) return 11.811;
-    if (model.contains('TD-2350')) return 11.82;
-    if (model.startsWith('TD-2')) return 8.0;
-    if (printer?.printerBrand.toLowerCase() == 'xprinter') return 8.0;
+
+    debugPrint('🔍 Checking printer model: "$model"');
+
+    if (model.startsWith('TD-4')) {
+      debugPrint('✅ TD-4 series detected: 300 DPI (11.811 dots/mm)');
+      return 11.811;
+    }
+
+    if (model.contains('TD-2350')) {
+      debugPrint('✅ TD-2350 series detected: 300 DPI (11.82 dots/mm)');
+      return 11.82;
+    }
+
+    if (model.startsWith('TD-2')) {
+      debugPrint('✅ Other TD-2 series detected: 203 DPI (8.0 dots/mm)');
+      return 8.0;
+    }
+
+    if (printer?.printerBrand.toLowerCase() == 'xprinter') {
+      debugPrint('✅ Xprinter detected: 203 DPI (8.0 dots/mm)');
+      return 8.0;
+    }
+
+    debugPrint('⚠️ Unknown printer model, using default 203 DPI');
     return 8.0;
   }
 
   Future<Uint8List?> _captureLabelAsImage(PrinterConfigModel printer) async {
     try {
+      debugPrint('📸 Generating label image (ReceiptPreview flow)');
       final labelWidthMm = printer.labelSize?.width ?? 50;
       final labelHeightMm = printer.labelSize?.height ?? 26;
+
       final dotsPerMm = _getDotsPerMm(printer);
       final widthPx = (labelWidthMm * dotsPerMm).round();
       final heightPx = (labelHeightMm * dotsPerMm).round();
 
+      final isTD4 = (printer.printerModel?.toUpperCase() ?? '').startsWith(
+        'TD-4',
+      );
+
+      final canvasWidth = isTD4 ? heightPx : widthPx;
+      final canvasHeight = isTD4 ? widthPx : heightPx;
+
+      debugPrint(
+        '📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${canvasWidth}x${canvasHeight}px (${isTD4 ? "Landscape for TD-4 rotation" : "Portrait"})',
+      );
+
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(
         recorder,
-        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+        Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()),
       );
 
       final bgPaint = Paint()..color = Colors.white;
       canvas.drawRect(
-        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+        Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()),
         bgPaint,
       );
 
       final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
-      final double offsetX = isBrother ? 50.0 : 0.0;
-      final double offsetY = isBrother ? 50.0 : 0.0;
+      final double offsetX = isBrother ? (isTD4 ? 0.0 : 50.0) : 0.0;
+      final double offsetY = isBrother ? (isTD4 ? 0.0 : 50.0) : 0.0;
       if (offsetX > 0 || offsetY > 0) canvas.translate(offsetX, offsetY);
 
-      final drawableWidth = widthPx - offsetX;
-      final drawableHeight = heightPx - offsetY;
-      final padding = drawableWidth * 0.02;
-      final contentWidth = drawableWidth - (padding * 2);
-      final barcodeWidth = contentWidth * 0.65;
-      final barcodeHeight = drawableHeight * 0.24;
-      final qrSize = contentWidth * 0.22;
+      final drawableWidth = canvasWidth.toDouble() - 2 * offsetX;
+      final drawableHeight = canvasHeight.toDouble() - 2 * offsetY;
+
+      final double padding = isTD4
+          ? drawableWidth * 0.04
+          : drawableWidth * 0.02;
+      final double contentWidth = drawableWidth - (padding * 2);
+
+      final double barcodeWidth = isTD4
+          ? contentWidth * 0.62
+          : contentWidth * 0.65;
+      final double barcodeHeight = isTD4
+          ? (drawableHeight * 0.30).clamp(150.0, 320.0)
+          : drawableHeight * 0.24;
+      final double qrSize = isTD4 ? contentWidth * 0.30 : contentWidth * 0.22;
 
       final barcodeData = _getBarcodeData();
       if (_labelSettings.showBarcode) {
@@ -830,10 +871,12 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         );
       }
 
-      final double baseFontSize = (drawableHeight * 0.075).clamp(18.0, 26.0);
-      final double lineSpacing = baseFontSize + 3.0;
-      double currentY = padding;
+      final double baseFontSize = isTD4
+          ? (drawableHeight * 0.04).clamp(36.0, 52.0)
+          : (drawableHeight * 0.075).clamp(18.0, 26.0);
+      final double lineSpacing = isTD4 ? baseFontSize * 1.35 : baseFontSize + 3.0;
 
+      double currentY = padding;
       if (_labelSettings.showBarcode) {
         currentY = padding + barcodeHeight + 4;
         if (_labelSettings.showJobNo) {
@@ -888,12 +931,14 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
             color: Colors.black,
           ),
         );
+
         final qrX = drawableWidth - padding - qrSize;
         canvas.save();
         canvas.translate(qrX, padding);
         canvas.scale(qrSize / 200);
         qrPainter.paint(canvas, const Size(200, 200));
         canvas.restore();
+
         final qrBottomY = padding + qrSize;
         if (qrBottomY > currentY) currentY = qrBottomY;
       }
@@ -919,6 +964,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         if (line.isNotEmpty) textLines.add(line);
       }
 
+      double lineY = currentY;
       for (int i = 0; i < textLines.length; i++) {
         final lp = TextPainter(
           text: TextSpan(
@@ -932,15 +978,21 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
           textDirection: TextDirection.ltr,
         );
         lp.layout(maxWidth: contentWidth);
-        lp.paint(canvas, Offset(padding, currentY + (i * lineSpacing)));
+        lp.paint(canvas, Offset(padding, lineY));
+        lineY += lp.height + 4;
       }
 
       final picture = recorder.endRecording();
-      final image = await picture.toImage(widthPx, heightPx);
+      final image = await picture.toImage(canvasWidth, canvasHeight);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
       if (byteData == null) return null;
-      return byteData.buffer.asUint8List();
+
+      final imageBytes = byteData.buffer.asUint8List();
+      debugPrint(
+        '✅ Generated ${canvasWidth}x$canvasHeight label image (${imageBytes.length} bytes)',
+      );
+      return imageBytes;
     } catch (e) {
       debugPrint('❌ Error generating label image: $e');
       return null;

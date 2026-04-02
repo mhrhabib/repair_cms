@@ -52,8 +52,20 @@ import 'package:repair_cms/features/quickTask/repository/quick_task_repository.d
 import 'package:repair_cms/set_up_di.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
+import 'package:flutter/services.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set status bar configuration globally
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.black, // Sets the background color of the status bar to black
+      statusBarIconBrightness: Brightness.light, // Sets the icons/text to white so they are visible on black
+      statusBarBrightness: Brightness.dark, // For iOS
+    ),
+  );
+
   await GetStorage.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 

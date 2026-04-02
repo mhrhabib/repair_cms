@@ -60,7 +60,7 @@ class ReceiptScreen extends StatelessWidget {
     // ignore: use_build_context_synchronously
     await showCupertinoModalPopup<PrinterConfigModel>(
       context: context,
-      builder: (context) => _PrinterSelectionDialog(
+      builder: (_) => _PrinterSelectionDialog(
         printers: configuredPrinters,
         defaultPrinterType: defaultPrinterType,
         onPrint: (printer) => _printReceipt(context, printer),
@@ -1039,7 +1039,7 @@ class ReceiptScreen extends StatelessWidget {
     // ignore: use_build_context_synchronously
     await showCupertinoModalPopup<void>(
       context: context,
-      builder: (context) => _PrinterSelectionDialog(
+      builder: (_) => _PrinterSelectionDialog(
         printers: configuredPrinters,
         defaultPrinterType: defaultPrinterType,
         onPrint: (printer) => _sendPdfBytesToPrinter(context, pdfBytes, printer),
@@ -1056,10 +1056,11 @@ class ReceiptScreen extends StatelessWidget {
     final navigator = Navigator.of(context, rootNavigator: true);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
+    // ignore: use_build_context_synchronously
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
     try {

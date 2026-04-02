@@ -662,10 +662,11 @@ class BrotherPrinterService implements BasePrinterService {
     final validFlag = 0x80; // Bit 7: Valid command
     final autoCut = 0x02; // Bit 1: Auto-cut
     // High-quality bit is only meaningful for TD-4 (300 DPI)
-    final highQuality = isTD4 ? 0x04 : 0x00; // Bit 2: High quality for TD-4
+    // We remove it from the command flags for now to avoid potential mirroring issues
+    // final highQuality = isTD4 ? 0x04 : 0x00; 
     final mirrorOff = 0x00; // Bit 0: No mirror
 
-    bytes.add(validFlag | autoCut | highQuality | mirrorOff);
+    bytes.add(validFlag | autoCut | mirrorOff);
 
     if (isTD4) {
       // TD-4 series: full 10-byte ESC i z format
@@ -693,7 +694,7 @@ class BrotherPrinterService implements BasePrinterService {
     bytes.add(0x00);
 
     _talker.debug(
-      '[BrotherRawTCP] Media settings: ${labelWidth}x${labelHeight}mm, ${dotsPerMm > 10 ? "high quality (TD-4)" : "normal (TD-2)"}',
+      '[BrotherRawTCP] Media settings: ${labelWidth}x${labelHeight}mm, ${dotsPerMm > 10 ? "TD-4" : "TD-2"}',
     );
 
     // 5. Set orientation
@@ -720,10 +721,11 @@ class BrotherPrinterService implements BasePrinterService {
       '[BrotherRawTCP] 🎯 Target raster: ${widthDots}x$heightDots dots',
     );
 
-    // Image is already generated at 2x resolution to match raster dimensions
-    // No scaling needed - direct 1:1 mapping
+    // Processing image for TD-4: Image is landscape (e.g. 1772x1181)
+    // Raster is portrait (e.g. 1181x1772 lines).
+    // Mapping: srcX = y, srcY = x.
     _talker.info(
-      '[BrotherRawTCP] 📊 Using 1:1 mapping (image already at correct resolution)',
+      '[BrotherRawTCP] 📊 Mapping strategy: ${isTD4 ? "Landscape to Portrait (TD-4)" : "Standard Portrait (TD-2D)"}',
     );
 
     // Process each raster line
@@ -736,15 +738,24 @@ class BrotherPrinterService implements BasePrinterService {
       final pixelData = List<int>.filled(lineBytes, 0x00);
 
       for (var x = 0; x < widthDots; x++) {
-        // Direct 1:1 mapping with Y-flip for correct text orientation
-        if (x >= imageWidth || y >= imageHeight) {
-          // Outside image bounds - leave as white (0)
+        // Map to source image coordinates
+        int srcX, srcY;
+        if (isTD4) {
+          // TD-4: Swap mapping for pre-rotated landscape canvas
+          srcX = y; // Feed direction (y) maps to image side direction
+          srcY = x; // Print head direction (x) maps to image vertical direction
+        } else {
+          // TD-2D: Standard mapping with Y-flip
+          srcX = x;
+          srcY = imageHeight - 1 - y;
+        }
+
+        // Bounds check
+        if (srcX < 0 || srcX >= imageWidth || srcY < 0 || srcY >= imageHeight) {
           continue;
         }
 
-        // Get pixel from source image (RGBA), flip Y axis for correct text orientation
-        final srcX = x;
-        final srcY = imageHeight - 1 - y; // Flip Y for correct orientation
+        // Get pixel from source image (RGBA)
         final pixelIndex = (srcY * imageWidth + srcX) * 4;
         final r = byteData.getUint8(pixelIndex);
         final g = byteData.getUint8(pixelIndex + 1);

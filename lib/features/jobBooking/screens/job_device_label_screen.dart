@@ -568,6 +568,12 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final labelWidthMm = printer.labelSize?.width ?? 50;
       final labelHeightMm = printer.labelSize?.height ?? 26;
 
+      // TD-4 detection: layout adjustments apply ONLY to TD-4 series.
+      // TD-2D and Xprinter use the original values — their output is already correct.
+      final isTD4 = (printer.printerModel?.toUpperCase() ?? '').startsWith(
+        'TD-4',
+      );
+
       // Get DPI-aware dots per mm for the selected printer
       final dotsPerMm = _getDotsPerMm(printer);
       final dpi = dotsPerMm > 10 ? 300 : 203;
@@ -578,32 +584,34 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final widthPx = (labelWidthMm * dotsPerMm).round();
       final heightPx = (labelHeightMm * dotsPerMm).round();
 
+      // For TD-4, we swap width and height for the canvas because the printer
+      // prints rotated 90 degrees CCW. By drawing on a landscape canvas,
+      // we compensate for this rotation.
+      final canvasWidth = isTD4 ? heightPx : widthPx;
+      final canvasHeight = isTD4 ? widthPx : heightPx;
+
       debugPrint(
         '📐 Printer: ${printer.printerModel ?? "unknown"} (${printer.printerBrand}), DPI: $dpi',
       );
       debugPrint(
-        '📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${widthPx}x${heightPx}px (NATIVE 1x)',
+        '📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${canvasWidth}x${canvasHeight}px (${isTD4 ? "Landscape for rotation" : "Portrait"})',
       );
 
       // Create a picture recorder and canvas at exact printer resolution
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(
         recorder,
-        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+        Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()),
       );
 
       // White background
       final bgPaint = Paint()..color = Colors.white;
       canvas.drawRect(
-        Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
+        Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()),
         bgPaint,
       );
 
-      // TD-4 detection: layout adjustments apply ONLY to TD-4 series.
-      // TD-2D and Xprinter use the original values — their output is already correct.
-      final isTD4 = (printer.printerModel?.toUpperCase() ?? '').startsWith(
-        'TD-4',
-      );
+
 
       // Offset compensates for Brother's unprintable hardware margins.
       // For Xprinter and other brands the TSPL SIZE/GAP commands already
@@ -615,44 +623,42 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // A value of ~4% of canvas width gives ~47 dots on a 1181-dot canvas
       // which matches the typical 4mm hardware margin on TD-4 media.
 
-      // ─── REPLACE WITH THIS ───────────────────────────────────────────────────
       final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
 
-      // TD-4: Brother SDK adds its own internal left/top hardware margin.
-      // We do NOT translate the canvas — instead we push content rightward
-      // by using a larger left padding so everything stays within the
-      // printable area and matches the TD-2D / Xprinter visual layout.
-      // TD-2D / Xprinter: fixed 50px offset (original behaviour preserved).
+      // TD-2D / Xprinter: 50px canvas translate compensates for the Brother
+      // hardware margin on smaller labels. TD-4: no translate needed — margin
+      // is handled via the padding percentage below.
       final double offsetX = isBrother ? (isTD4 ? 0.0 : 50.0) : 0.0;
       final double offsetY = isBrother ? (isTD4 ? 0.0 : 50.0) : 0.0;
       if (offsetX > 0 || offsetY > 0) canvas.translate(offsetX, offsetY);
 
-      final drawableWidth = widthPx.toDouble() - 2 * offsetX;
-      final drawableHeight = heightPx.toDouble() - 2 * offsetY;
+      final drawableWidth = canvasWidth.toDouble() - 2 * offsetX;
+      final drawableHeight = canvasHeight.toDouble() - 2 * offsetY;
 
-      // TD-4: large left padding shifts the entire layout toward the centre
-      // of the label, compensating for the Brother SDK's printable-area offset.
-      // Value is ~8% of canvas width ≈ 94px on a 1181px (50mm @300DPI) canvas.
+      // Padding: TD-4 uses 4% (~4mm on 102mm label) matching the reference image
+      // left/right margins. The old 8% was too large — it squeezed content into
+      // the centre and, combined with the oversized font, caused right-side clipping.
       // TD-2D / Xprinter: original 2% padding unchanged.
       final double padding = isTD4
-          ? drawableWidth *
-                0.08 // TD-4: push content right into printable zone
+          ? drawableWidth * 0.04 // TD-4: 4% ≈ 4mm on 102mm label
           : drawableWidth * 0.02; // TD-2D / Xprinter: original
       final double contentWidth = drawableWidth - (padding * 2);
 
-      // Barcode width: TD-4 uses 60% (slightly narrower than TD-2's 65%) so it
-      // doesn't collide with the QR on the wider canvas.
+      // Barcode width: 62% of content area — same visual ratio as reference image.
+      // TD-2D / Xprinter: 65% (original unchanged).
       final double barcodeWidth = isTD4
-          ? contentWidth * 0.60
+          ? contentWidth * 0.62
           : contentWidth * 0.65;
 
-      // Barcode height: TD-4 uses 22% of drawable height for a taller, more
-      // scannable barcode. Clamped to a safe range for various label sizes.
+      // Barcode height: 30% of drawable height gives a tall, clearly scannable
+      // barcode. Clamped 150–320px for all TD-4 media sizes.
+      // TD-2D / Xprinter: original 24% unchanged.
       final double barcodeHeight = isTD4
-          ? (drawableHeight * 0.22).clamp(100.0, 280.0)
+          ? (drawableHeight * 0.30).clamp(150.0, 320.0)
           : drawableHeight * 0.24;
 
-      // QR size: TD-4 uses 30% of content width for a larger, clearly scannable QR.
+      // QR size: 30% of content width for a large, clearly scannable code.
+      // TD-2D / Xprinter: original 22% unchanged.
       final double qrSize = isTD4 ? contentWidth * 0.30 : contentWidth * 0.22;
 
       // Draw barcode using barcode package
@@ -670,15 +676,18 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
         );
       }
 
-      // TD-4: font at 5% of drawable height gives ~88px on a 1772px canvas —
-      // large, bold text that fills the label like TD-2D / Xprinter output.
-      // Clamped 60–100px to stay legible on all TD-4 media sizes.
+      // TD-4: 4% of drawable height gives proportional text matching the reference
+      // image (~3-4mm tall on the physical label). The old clamp of 60–100px was
+      // the primary cause of the "too big" complaint — text at 60px on a 732px
+      // canvas (62mm label) rendered at ~5mm per line, making text oversized and
+      // causing long lines to overflow the contentWidth, clipping the QR code.
+      // Clamp 36–52px covers all common TD-4 label sizes (51mm–150mm height).
       // TD-2D / Xprinter: original values unchanged.
       final double baseFontSize = isTD4
-          ? (drawableHeight * 0.05).clamp(60.0, 100.0)
+          ? (drawableHeight * 0.04).clamp(36.0, 52.0)
           : (drawableHeight * 0.075).clamp(18.0, 26.0);
       final double lineSpacing = isTD4
-          ? baseFontSize * 1.4
+          ? baseFontSize * 1.35
           : baseFontSize + 3.0;
 
       // Draw job number under barcode (only if showJobNo is enabled)
@@ -809,7 +818,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       // End recording and create image
       final picture = recorder.endRecording();
-      final image = await picture.toImage(widthPx, heightPx);
+      final image = await picture.toImage(canvasWidth, canvasHeight);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       image.dispose();
@@ -821,7 +830,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
       final imageBytes = byteData.buffer.asUint8List();
       debugPrint(
-        '✅ Generated ${widthPx}x$heightPx image (${imageBytes.length} bytes) at ${dotsPerMm == 12 ? 300 : 203} DPI',
+        '✅ Generated ${canvasWidth}x$canvasHeight image (${imageBytes.length} bytes) at $dpi DPI',
       );
       return imageBytes;
     } catch (e, st) {
