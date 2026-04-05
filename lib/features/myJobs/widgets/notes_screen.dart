@@ -320,7 +320,7 @@ class _NotesScreenState extends State<NotesScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        FontAwesomeIcons.solidPenToSquare,
+                        SolarIconsOutline.pen2,
                         color: figmaBlue,
                         size: 16.r,
                       ),

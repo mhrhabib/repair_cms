@@ -5,7 +5,6 @@ import 'dart:io' as io;
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -54,6 +53,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       context.read<JobCubit>().getJobById(widget.jobId);
     });
   }
+  static const statusBarColor = Colors.black;
+  static const statusBarIconBrightness = Brightness.light;
 
   @override
   Widget build(BuildContext context) {
@@ -85,27 +86,30 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       child: PopScope(
         canPop: true,
         onPopInvokedWithResult: (didPop, _) => context.read<JobCubit>().getJobs(),
-        child: Scaffold(
-          backgroundColor: AppColors.kBg,
-          body: BlocBuilder<JobCubit, JobStates>(
-            builder: (context, state) {
-              if (_currentJob != null) return _UnifiedJobDetails(job: _currentJob!);
-              if (state is JobLoading)
+        
+
+          child: Scaffold(
+            backgroundColor: AppColors.kBg,
+            body: BlocBuilder<JobCubit, JobStates>(
+              builder: (context, state) {
+                if (_currentJob != null) return _UnifiedJobDetails(job: _currentJob!);
+                if (state is JobLoading)
+                  return Center(
+                    child: CupertinoActivityIndicator(radius: 16.r, color: Colors.blue),
+                  );
+                if (state is JobDetailSuccess) {
+                  _currentJob = state.job;
+                  return _UnifiedJobDetails(job: state.job);
+                }
+                if (state is JobError) return Center(child: Text('Error: ${state.message}'));
                 return Center(
                   child: CupertinoActivityIndicator(radius: 16.r, color: Colors.blue),
                 );
-              if (state is JobDetailSuccess) {
-                _currentJob = state.job;
-                return _UnifiedJobDetails(job: state.job);
-              }
-              if (state is JobError) return Center(child: Text('Error: ${state.message}'));
-              return Center(
-                child: CupertinoActivityIndicator(radius: 16.r, color: Colors.blue),
-              );
-            },
+              },
+            ),
           ),
         ),
-      ),
+      
     );
   }
 }
@@ -1881,11 +1885,14 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       child: Row(
         children: [
           SizedBox(
-            width: 85.w,
-            child: Text(
-              'Due date',
-              textAlign: TextAlign.right,
-              style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: AppColors.lightFontColor),
+            width: 72.w,
+            child: FittedBox(
+             fit: BoxFit.scaleDown,
+              child: Text(
+                'Due date',
+                textAlign: TextAlign.right,
+                style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: AppColors.lightFontColor),
+              ),
             ),
           ),
           SizedBox(width: 24.w),
@@ -1909,6 +1916,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             SizedBox(
               width: 72.w,
               child: FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Text(
                   'Assignee',
                   textAlign: TextAlign.right,
@@ -2171,7 +2179,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     onTap: () => _openNoteSheet(note),
                     child: Row(
                       children: [
-                        Icon(FontAwesomeIcons.solidPenToSquare, size: 14.r, color: AppColors.kBlue),
+                        Icon(SolarIconsOutline.pen2, size: 14.r, color: AppColors.kBlue),
                         SizedBox(width: 4.w),
                         Text(
                           'Edit',
@@ -2311,18 +2319,17 @@ class _NoteSheetState extends State<_NoteSheet> {
               Padding(
                 padding: EdgeInsets.fromLTRB(16.r, 8.r, 16.r, 16.r),
                 child: Stack(
-                  alignment: Alignment.center,
+                  alignment: Alignment.topLeft,
                   children: [
                     Text(
                       _isEditing ? 'Edit note' : 'Add a note',
                       style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600),
                     ),
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.centerRight,
                       child: CustomTextButton(
-                        height: 30.h,
-                        width: 60.w,
-                        text: 'Cancel',
+                       
+                        text: 'Close',
                         textColor: AppColors.fontSecondaryColor,
                         fontSize: 14.r,
                         onPressed: () => Navigator.pop(context),
@@ -2363,7 +2370,7 @@ class _NoteSheetState extends State<_NoteSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _loading ? Colors.grey : AppColors.kBlue,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.r)),
                     ),
                     child: _loading
                         ? SizedBox(

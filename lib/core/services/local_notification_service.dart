@@ -49,7 +49,7 @@ class LocalNotificationService {
 
       final initializationSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
 
-      await _notifications.initialize(initializationSettings, onDidReceiveNotificationResponse: _onNotificationTapped);
+      await _notifications.initialize(settings: initializationSettings, onDidReceiveNotificationResponse: _onNotificationTapped);
 
       _isInitialized = true;
       debugPrint('✅ [LocalNotificationService] Initialized successfully');
@@ -138,10 +138,10 @@ class LocalNotificationService {
       final displayMessage = messageText.length > 100 ? '${messageText.substring(0, 100)}...' : messageText;
 
       await _notifications.show(
-        notificationId,
-        senderName,
-        displayMessage,
-        notificationDetails,
+        id: notificationId,
+        title: senderName,
+        body: displayMessage,
+        notificationDetails: notificationDetails,
         payload: 'conversation:$conversationId'
             '${jobNo != null ? '|job:$jobNo' : ''}'
             '${type != null ? '|type:$type' : ''}'
@@ -158,7 +158,7 @@ class LocalNotificationService {
   /// Cancel a specific notification
   Future<void> cancelNotification(int id) async {
     try {
-      await _notifications.cancel(id);
+      await _notifications.cancel(id: id);
       debugPrint('🔕 [LocalNotificationService] Cancelled notification: $id');
     } catch (e) {
       debugPrint('❌ [LocalNotificationService] Error canceling notification: $e');

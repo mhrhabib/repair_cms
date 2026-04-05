@@ -342,7 +342,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                               Navigator.pop(context);
 
                               // Reload dashboard data with new date range
-                              context.read<DashboardCubit>().getDashboardStats(
+                              context.read<DashboardCubit>().loadAllDashboardData(
                                 startDate: _selectedStartDate,
                                 endDate: _selectedEndDate,
                                 userId: storage.read('userId'),

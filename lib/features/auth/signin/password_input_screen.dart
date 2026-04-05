@@ -256,7 +256,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                                   obscureText: _obscureText,
                                   decoration: InputDecoration(
                                     hintText: 'Enter your password',
-                                    hintStyle: AppTypography.sfProHintTextStyle17,
+                                    hintStyle: AppTypography.sfProHintTextStyle17.copyWith(color: AppColors.lightFontColor),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide.none,

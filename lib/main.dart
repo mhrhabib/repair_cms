@@ -57,6 +57,12 @@ import 'package:flutter/services.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Lock to portrait only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   // Set status bar configuration globally
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -139,7 +145,17 @@ class MyApp extends StatelessWidget {
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'RepairCMS',
-            theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+            
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+              appBarTheme: const AppBarTheme(
+                systemOverlayStyle: SystemUiOverlayStyle(
+                  statusBarColor: Colors.black,
+                  statusBarIconBrightness: Brightness.light, // Android
+                  statusBarBrightness: Brightness.dark, // iOS
+                ),
+              ),
+            ),
             routerConfig: AppRouter.router,
           ),
         ),

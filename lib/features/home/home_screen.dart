@@ -101,9 +101,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           // Apply backdrop filter only when expanded
           if (_isExpanded)
             BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              filter: ImageFilter.compose(inner: ImageFilter.dilate(), outer: ImageFilter.blur(sigmaX: 1, sigmaY: 1)),
               child: Container(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: Colors.black.withValues(alpha: 0.5),
                 width: double.infinity,
                 height: double.infinity,
               ),
@@ -173,20 +173,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           border: Border.all(color: AppColors.whiteColor, width: 4.w),
         ),
-        child: AnimatedBuilder(
-          animation: _rotationAnimation,
-          builder: (context, child) {
-            return Transform.rotate(
-              angle: _rotationAnimation.value * 4.2 * math.pi,
-              child: Icon(
-                _isExpanded ? FontAwesomeIcons.xmark : FontAwesomeIcons.plus,
-                color: AppColors.whiteColor,
-                size: 32.sp,
-                weight: 800,
-                fill: 0.8,
-              ),
-            );
-          },
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _rotationAnimation,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: _rotationAnimation.value * 4.2 * math.pi,
+                child: FaIcon(
+                  _isExpanded ? FontAwesomeIcons.xmark : FontAwesomeIcons.plus,
+                  color: AppColors.whiteColor,
+                  size: 32.sp,
+                  weight: 800,
+                  fill: 0.8,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -237,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       // QR Scanner Button
                       _buildExpandableButton(
-                        icon: SolarIconsOutline.suitcase,
+                        icon: SolarIconsOutline.suitcaseTag,
                         label: 'Express Job',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () async {
