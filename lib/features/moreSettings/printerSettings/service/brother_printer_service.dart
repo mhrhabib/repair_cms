@@ -623,11 +623,21 @@ class BrotherPrinterService implements BasePrinterService {
     const esc = 0x1B;
 
     // Calculate dimensions at NATIVE printer resolution (no 2x multiplier)
-    // TD-2: 51x26mm @ 8 dots/mm = 408x208 dots
-    // TD-4: 100x150mm @ 11.811 dots/mm = 1181x1772 dots
     final widthDots = (labelWidth * dotsPerMm).round();
     final heightDots = (labelHeight * dotsPerMm).round();
-    final lineBytes = (widthDots / 8).ceil();
+    final imageLineBytes = (widthDots / 8).ceil();
+
+    // TD-4 series has a 4-inch print head (128 bytes = 1024 dots per line).
+    // The raster line byte count must match the print head width, not the
+    // label width. Content is centered within the print head line.
+    // TD-2 series print head matches the label width, so no padding needed.
+    final isTD4 = modelString.toUpperCase().startsWith('TD-4');
+    final int printHeadLineBytes = isTD4 ? 128 : imageLineBytes;
+    // Position content on the TD-4 print head. The 50mm label sits on the
+    // 4-inch (102mm) print head with a physical left margin. We shift content
+    // right by ~60% of the gap to align with the label's printable area.
+    final int totalGap = printHeadLineBytes - imageLineBytes;
+    final int leftPadBytes = isTD4 ? (totalGap * 0.60).round() : 0;
 
     _talker.info(
       '[BrotherRawTCP] 📐 Label config: ${labelWidth}x${labelHeight}mm',
@@ -638,12 +648,9 @@ class BrotherPrinterService implements BasePrinterService {
     _talker.info(
       '[BrotherRawTCP] 📐 Raster dimensions: ${widthDots}x$heightDots dots (NATIVE 1x)',
     );
-    _talker.info('[BrotherRawTCP] 📐 Line bytes: $lineBytes bytes per line');
-
-    // TD-4 series (e.g. TD-4550DNWB) requires a 10-byte ESC i z format that
-    // includes an explicit media-type byte (n2) between the PI flag and the
-    // width byte. TD-2 series uses a 9-byte format without n2.
-    final isTD4 = modelString.toUpperCase().startsWith('TD-4');
+    _talker.info(
+      '[BrotherRawTCP] 📐 Line bytes: $printHeadLineBytes per line (image: $imageLineBytes, left pad: $leftPadBytes)',
+    );
 
     // 1. Invalidate command - 100 null bytes
     for (var i = 0; i < 100; i++) {
@@ -721,34 +728,25 @@ class BrotherPrinterService implements BasePrinterService {
       '[BrotherRawTCP] 🎯 Target raster: ${widthDots}x$heightDots dots',
     );
 
-    // Processing image for TD-4: Image is landscape (e.g. 1772x1181)
-    // Raster is portrait (e.g. 1181x1772 lines).
-    // Mapping: srcX = y, srcY = x.
+    // Both TD-2D and TD-4 use portrait canvas (widthDots x heightDots).
+    // Standard Y-flip mapping: srcX = x, srcY = imageHeight - 1 - y.
     _talker.info(
-      '[BrotherRawTCP] 📊 Mapping strategy: ${isTD4 ? "Landscape to Portrait (TD-4)" : "Standard Portrait (TD-2D)"}',
+      '[BrotherRawTCP] 📊 Mapping strategy: Standard Portrait Y-flip (${isTD4 ? "TD-4" : "TD-2D"})',
     );
 
     // Process each raster line
     for (var y = 0; y < heightDots; y++) {
       bytes.add(0x67); // 'g' command
       bytes.add(0x00); // Flags
-      bytes.add(lineBytes & 0xFF); // Line length
+      bytes.add(printHeadLineBytes & 0xFF); // Line length (full print head width)
 
-      // Create pixel data for this line
-      final pixelData = List<int>.filled(lineBytes, 0x00);
+      // Create pixel data for this line (full print head width, zeroed = white)
+      final pixelData = List<int>.filled(printHeadLineBytes, 0x00);
 
       for (var x = 0; x < widthDots; x++) {
-        // Map to source image coordinates
-        int srcX, srcY;
-        if (isTD4) {
-          // TD-4: Swap mapping for pre-rotated landscape canvas
-          srcX = y; // Feed direction (y) maps to image side direction
-          srcY = x; // Print head direction (x) maps to image vertical direction
-        } else {
-          // TD-2D: Standard mapping with Y-flip
-          srcX = x;
-          srcY = imageHeight - 1 - y;
-        }
+        // Map to source image coordinates — same Y-flip for all Brother TD printers
+        final srcX = x;
+        final srcY = imageHeight - 1 - y;
 
         // Bounds check
         if (srcX < 0 || srcX >= imageWidth || srcY < 0 || srcY >= imageHeight) {
@@ -769,10 +767,13 @@ class BrotherPrinterService implements BasePrinterService {
         final isBlack = a >= 128 && gray < 128;
 
         if (isBlack) {
-          final byteIndex = x ~/ 8;
+          // Offset by leftPadBytes to center content on the print head
+          final byteIndex = leftPadBytes + (x ~/ 8);
           final bitIndex =
               7 - (x % 8); // MSB first (7-0 right to left) - fixes mirroring
-          pixelData[byteIndex] |= (1 << bitIndex);
+          if (byteIndex < printHeadLineBytes) {
+            pixelData[byteIndex] |= (1 << bitIndex);
+          }
         }
       }
 
@@ -798,7 +799,7 @@ class BrotherPrinterService implements BasePrinterService {
       '[BrotherRawTCP] ✅ Generated ${bytes.length} bytes of raster data',
     );
     _talker.info(
-      '[BrotherRawTCP] 📊 Raster lines: $heightDots, Bytes per line: $lineBytes',
+      '[BrotherRawTCP] 📊 Raster lines: $heightDots, Bytes per line: $printHeadLineBytes (image: $imageLineBytes)',
     );
     _talker.info(
       '[BrotherRawTCP] 🎯 Expected label: ${labelWidth}x${labelHeight}mm',
