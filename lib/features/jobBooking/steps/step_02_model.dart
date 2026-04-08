@@ -256,7 +256,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
                                 Text(
                                   model.name?.split('"')[1] ?? '',
                                   style: GoogleFonts.roboto(
-                                    fontSize: 22.sp,
+                                    fontSize: 20.sp,
                                     color: AppColors.fontMainColor,
                                   ),
                                 ),
@@ -291,13 +291,11 @@ class StepModelWidgetState extends State<StepModelWidget> {
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: ListTile(
-                          title: Text(
-                            model.name ?? 'Unknown Model',
-                            style: GoogleFonts.roboto(
-                              fontSize: 22.sp,
-                              color: AppColors.fontMainColor,
-                            ),
-                          ),
+                              title: CustomDropdownSearch.highlightedText(
+      text: model.name ?? 'Unknown Model',
+      query: _searchController.text,
+      style: TextStyle(fontSize: 20.sp, color:   AppColors.fontMainColor,),
+    ),
                         ),
                       );
                     },

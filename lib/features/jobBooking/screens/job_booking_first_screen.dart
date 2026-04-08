@@ -177,24 +177,24 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Top colored bar
-                    Container(
-                      height: 12.h,
-                      width: MediaQuery.of(context).size.width * 0.07,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          //topRight: Radius.circular(8),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.shade300,
-                            blurRadius: 1,
-                            blurStyle: BlurStyle.outer,
-                          ),
-                        ],
-                      ),
-                    ),
+                    // Container(
+                    //   height: 12.h,
+                    //   width: MediaQuery.of(context).size.width * 0.07,
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.primary,
+                    //     borderRadius: const BorderRadius.only(
+                    //       topLeft: Radius.circular(8),
+                    //       //topRight: Radius.circular(8),
+                    //     ),
+                    //     boxShadow: [
+                    //       BoxShadow(
+                    //         color: Colors.grey.shade300,
+                    //         blurRadius: 1,
+                    //         blurStyle: BlurStyle.outer,
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
 
                     SizedBox(height: 12.h),
 
@@ -306,6 +306,7 @@ class _JobBookingFirstScreenState extends State<JobBookingFirstScreen> {
                                 controller: _searchController,
                                 focusNode: _searchFocusNode,
                                 onChanged: _onSearchChanged,
+                                cursorColor: AppColors.warningColor,
                                 decoration: InputDecoration(
                                   hintText: 'Search services...',
                                   hintStyle: AppTypography.fontSize14.copyWith(

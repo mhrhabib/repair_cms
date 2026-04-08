@@ -221,7 +221,7 @@ class StepBrandWidgetState extends State<StepBrandWidget> {
                                 Text(
                                   brand.name?.split('"')[1] ?? '',
                                   style: GoogleFonts.roboto(
-                                    fontSize: 22.sp,
+                                    fontSize: 20.sp,
                                     color: AppColors.fontMainColor,
                                   ),
                                 ),
@@ -257,13 +257,12 @@ class StepBrandWidgetState extends State<StepBrandWidget> {
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: ListTile(
-                          title: Text(
-                            brand.name ?? 'Unknown Brand',
-                            style: GoogleFonts.roboto(
-                              fontSize: 22.sp,
-                              color: AppColors.fontMainColor,
-                            ),
-                          ),
+                           title: CustomDropdownSearch.highlightedText(
+      text: brand.name ?? 'Unknown Brand',
+      query: _searchController.text,
+      style: TextStyle(fontSize: 20.sp, color:   AppColors.fontMainColor,),
+    ),
+                          
                         ),
                       );
                     },

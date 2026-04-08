@@ -707,7 +707,7 @@ class ReceiptScreen extends StatelessWidget {
                               ),
                             ),
                           );
-                        }).toList(),
+                        }),
 
                         // Financial Summary
                         pw.Container(

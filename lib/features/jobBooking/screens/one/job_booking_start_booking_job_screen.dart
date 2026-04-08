@@ -274,8 +274,9 @@ class _JobBookingStartBookingJobScreenState
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
                               child: ListTile(
-                                title: Text(
-                                  brand.name ?? 'Unknown Brand',
+                                title: CustomDropdownSearch.highlightedText(
+                                  text: brand.name ?? 'Unknown Brand',
+                                  query: _searchController.text,
                                   style: AppTypography.fontSize16.copyWith(
                                     color: Colors.black,
                                     fontWeight: FontWeight.w500,

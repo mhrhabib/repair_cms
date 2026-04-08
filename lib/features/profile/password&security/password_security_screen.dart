@@ -21,7 +21,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
       TextEditingController();
 
   final bool _isTwoFactorEnabled = true;
-  bool _isTrustedEmailEnabled = true;
+  final bool _isTrustedEmailEnabled = true;
 
   // Track original values to detect changes
   final String _originalCurrentPassword = '';

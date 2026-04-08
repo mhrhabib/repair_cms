@@ -445,6 +445,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          cursorColor: AppColors.warningColor,
           textInputAction: TextInputAction.next,
           style: GoogleFonts.roboto(
             fontSize: 18.sp,

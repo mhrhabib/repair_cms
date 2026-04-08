@@ -238,11 +238,12 @@ class StepJobTypeWidgetState extends State<StepJobTypeWidget> {
 
                 TextField(
                   controller: _referenceController,
-                  style: AppTypography.fontSize22.copyWith(fontSize: 32.sp),
+                  style: AppTypography.fontSize22.copyWith(fontSize: 22.sp),
+                  cursorColor: AppColors.warningColor,
                   decoration: InputDecoration(
                     hintText: 'Enter reference',
                     hintStyle: GoogleFonts.roboto(
-                      fontSize: 32.sp,
+                      fontSize: 22.sp,
                       color: Color(0xFFB2B5BE),
                     ),
                     border: const UnderlineInputBorder(

@@ -157,15 +157,16 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
                   child: TextField(
                     controller: _itemController,
                     focusNode: _itemFocusNode,
+                    cursorColor: AppColors.warningColor,
                     onChanged: _onSearchChanged,
                     style: GoogleFonts.roboto(
-                      fontSize: 32.sp,
+                      fontSize:  22.sp,
                       color: AppColors.fontMainColor,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Answer here',
                       hintStyle: GoogleFonts.roboto(
-                        fontSize: 32.sp,
+                        fontSize: 22.sp,
                         color: const Color(0xFFB2B5BE),
                       ),
                       // prefixIcon: Padding(

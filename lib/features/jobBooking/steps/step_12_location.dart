@@ -76,11 +76,12 @@ class StepLocationWidgetState extends State<StepLocationWidget> {
               children: [
                 TextField(
                   controller: _locationController,
-                  style: GoogleFonts.roboto(fontSize: 32.sp),
+                  cursorColor: AppColors.warningColor,
+                  style: GoogleFonts.roboto(fontSize: 22.sp),
                   decoration: InputDecoration(
                     hintText: 'Answer here',
                     hintStyle: GoogleFonts.roboto(
-                      fontSize: 32.sp,
+                      fontSize: 22.sp,
                       color: Color(0xFFB2B5BE),
                     ),
                     border: const UnderlineInputBorder(

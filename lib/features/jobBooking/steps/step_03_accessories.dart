@@ -197,7 +197,7 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                                 Text(
                                   accessory.label?.split('"')[1] ?? '',
                                   style: GoogleFonts.roboto(
-                                    fontSize: 22.sp,
+                                    fontSize: 20.sp,
                                     color: AppColors.fontMainColor,
                                   ),
                                 ),
@@ -233,13 +233,11 @@ class StepAccessoriesWidgetState extends State<StepAccessoriesWidget> {
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: ListTile(
-                          title: Text(
-                            accessory.label ?? 'Unknown Accessory',
-                            style: GoogleFonts.roboto(
-                              fontSize: 22.sp,
-                              color: AppColors.fontMainColor,
-                            ),
-                          ),
+                              title: CustomDropdownSearch.highlightedText(
+      text: accessory.label ?? 'Unknown Accessory',
+      query: _searchController.text,
+      style: TextStyle(fontSize: 20.sp, color:   AppColors.fontMainColor,),
+    ),
                         ),
                       );
                     },

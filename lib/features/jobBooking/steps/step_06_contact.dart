@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/utils/widgets/custom_dropdown_search_field.dart';
 import 'package:repair_cms/features/jobBooking/cubits/contactType/contact_type_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
@@ -674,6 +675,7 @@ class StepContactWidgetState extends State<StepContactWidget> {
                           TextField(
                             controller: searchController,
                             focusNode: searchFocusNode,
+                            cursorColor: AppColors.warningColor,
                             style: GoogleFonts.roboto(
                               fontSize: 24.sp,
                               fontWeight: FontWeight.w400,
@@ -686,6 +688,7 @@ class StepContactWidgetState extends State<StepContactWidget> {
                                 color: const Color(0xFFB2B5BE),
                                 fontWeight: FontWeight.w400,
                               ),
+                              
                               border: UnderlineInputBorder(
                                 borderSide: BorderSide(
                                   color: Colors.grey.shade300,
@@ -995,7 +998,11 @@ class StepContactWidgetState extends State<StepContactWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(displayName, style: AppTypography.fontSize16),
+                 CustomDropdownSearch.highlightedText(
+      text: displayName,
+      query: currentSearchQuery,
+      style: TextStyle(fontSize: 20.sp, color:   AppColors.fontMainColor,),
+    ),
             Text(
               profile.customerNumber ?? 'No customer number',
               style: AppTypography.fontSize14.copyWith(

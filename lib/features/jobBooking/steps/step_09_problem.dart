@@ -111,6 +111,7 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
                 TextField(
                   controller: _problemDescriptionController,
                   maxLines: 4,
+                  cursorColor: AppColors.warningColor,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     hintText: 'Describe the problem in detail',
@@ -127,6 +128,7 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
                 TextField(
                   controller: _internalNoteController,
                   maxLines: 4,
+                  cursorColor: AppColors.warningColor,
                   decoration: InputDecoration(
                     hintText: 'Add internal notes (optional)',
                     hintStyle: TextStyle(color: Colors.grey[400]),

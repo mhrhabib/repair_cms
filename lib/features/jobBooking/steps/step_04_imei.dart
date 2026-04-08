@@ -65,14 +65,15 @@ class StepImeiWidgetState extends State<StepImeiWidget> {
             controller: _imeiController,
             focusNode: _imeiFocusNode,
             style: GoogleFonts.roboto(
-              fontSize: 32.sp,
+              fontSize: 22.sp,
               fontWeight: FontWeight.w400,
               color: AppColors.fontMainColor,
             ),
+            cursorColor: AppColors.warningColor,
             decoration: InputDecoration(
               hintText: 'Answer here',
               hintStyle: GoogleFonts.roboto(
-                fontSize: 32.sp,
+                fontSize: 22.sp,
                 color: const Color(0xFFB2B5BE),
                 fontWeight: FontWeight.w400,
               ),

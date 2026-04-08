@@ -179,7 +179,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         stream.removeListener(listener!);
         _checkingImageRotation.remove(key);
       }
-    }, onError: (dynamic _, __) {
+    }, onError: (dynamic _, _) {
       if (mounted) setState(() => _imageRotationTurns[key] = 0);
       stream.removeListener(listener!);
       _checkingImageRotation.remove(key);
@@ -2078,8 +2078,8 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension) && (file.imageUrl?.isNotEmpty == true);
 
     // Ensure rotation is calculated (no-op if already done)
-    final _rotationKey = file.imageUrl ?? file.file ?? file.fileName ?? file.url ?? '';
-    _ensureImageRotationForFile(file, _rotationKey);
+    final rotationKey = file.imageUrl ?? file.file ?? file.fileName ?? file.url ?? '';
+    _ensureImageRotationForFile(file, rotationKey);
 
     return GestureDetector(
       onTap: () async {
@@ -2125,7 +2125,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                         ? ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                             child: RotatedBox(
-                              quarterTurns: _imageRotationTurns[_rotationKey] ?? 0,
+                              quarterTurns: _imageRotationTurns[rotationKey] ?? 0,
                               child: Image.network(
                                 file.imageUrl!,
                                 fit: BoxFit.contain,

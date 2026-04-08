@@ -2,7 +2,6 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';

@@ -90,43 +90,46 @@ class _JobBookingTopBarState extends State<JobBookingTopBar>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // ── Typeform-style animated progress bar at the very top ──────────
-        Container(
-          height: 12.h,
-          width: double.infinity,
-          color: const Color(0xFFE3F2FD),
-          child: AnimatedBuilder(
-            animation: _progressAnimation,
-            builder: (context, _) {
-              return FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: _progressAnimation.value.clamp(0.0, 1.0),
-                child: Container(
-                  decoration: const BoxDecoration(color: Color(0xFF2196F3)),
-                ),
-              );
-            },
-          ),
-        ),
-
-        SizedBox(height: 16.h),
-
-        // ── Close button on the right ─────────────────────────────────────
-        if (widget.showCancelButton)
-          Padding(
-            padding: EdgeInsets.only(right: 16.w),
-            child: CustomTextButton(
-              onPressed: () => _onCancel(context),
-              text: 'Close',
+    return Align(
+      alignment: Alignment.topRight,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // ── Typeform-style animated progress bar at the very top ──────────
+          // Container(
+          //   height: 12.h,
+          //   width: double.infinity,
+          //   color: const Color(0xFFE3F2FD),
+          //   child: AnimatedBuilder(
+          //     animation: _progressAnimation,
+          //     builder: (context, _) {
+          //       return FractionallySizedBox(
+          //         alignment: Alignment.centerLeft,
+          //         widthFactor: _progressAnimation.value.clamp(0.0, 1.0),
+          //         child: Container(
+          //           decoration: const BoxDecoration(color: Color(0xFF2196F3)),
+          //         ),
+          //       );
+          //     },
+          //   ),
+          // ),
+      
+          SizedBox(height: 8.h),
+      
+          // ── Close button on the right ─────────────────────────────────────
+          if (widget.showCancelButton)
+            Padding(
+              padding: EdgeInsets.only(right: 16.w),
+              child: CustomTextButton(
+                onPressed: () => _onCancel(context),
+                text: 'Close',
+              ),
             ),
-          ),
-
-        SizedBox(height: 8.h),
-      ],
+      
+          SizedBox(height: 8.h),
+        ],
+      ),
     );
   }
 }

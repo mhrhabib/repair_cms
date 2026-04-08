@@ -207,6 +207,7 @@ class StepSecurityWidgetState extends State<StepSecurityWidget> {
                     TextField(
                       controller: _passwordController,
                       focusNode: _passwordFocusNode,
+                      cursorColor: AppColors.warningColor,
                       onChanged: (_) => _updateDeviceSecurityInCubit(),
                       decoration: InputDecoration(
                         hintText: 'Enter password or PIN...',

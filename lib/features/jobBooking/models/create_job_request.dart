@@ -101,8 +101,8 @@ class Job {
       'model': model,
       'servicesIds': servicesIds,
       'assignedItemsIds': assignedItemsIds,
-      if (validUserId != null) 'userId': validUserId,
-      if (validLoggedUserId != null) 'loggedUserId': validLoggedUserId,
+      'userId': ?validUserId,
+      'loggedUserId': ?validLoggedUserId,
       'jobStatus': jobStatus
           .where((status) => _isValidObjectId(status.userId))
           .map((status) => status.toJson())
@@ -116,7 +116,7 @@ class Job {
       if (_isValidObjectId(customerId)) 'customerId': customerId,
       'customerDetails': customerDetails.toJson(),
       'files': files?.map((file) => file.toJson()).toList(),
-      if (validLocation != null) 'location': validLocation,
+      'location': ?validLocation,
       'physicalLocation': physicalLocation,
       'signatureFilePath': signatureFilePath,
       'salutationHTMLmarkup': salutationHTMLmarkup,
