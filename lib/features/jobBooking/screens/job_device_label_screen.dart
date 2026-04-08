@@ -253,8 +253,8 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
               SizedBox(height: MediaQuery.of(context).padding.top + 72.h),
               // Label Preview Content
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
-                padding: EdgeInsets.all(16.w),
+                margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8.r),
@@ -270,7 +270,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                 child: Container(
                   // Let content size itself naturally
                   color: Colors.white,
-                  padding: const EdgeInsets.all(12),
+                  // padding: const EdgeInsets.all(8),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,7 +373,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                                     '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
                                 ].where((e) => e.isNotEmpty).join(' | '),
                                 style: TextStyle(
-                                  fontSize: 18.sp,
+                                  fontSize: 15.sp,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black,
                                   height: 1.3,
@@ -395,7 +395,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                                     'BOX: ${_getPhysicalLocation()}',
                                 ].where((e) => e.isNotEmpty).join(' | '),
                                 style: TextStyle(
-                                  fontSize: 18.sp,
+                                  fontSize: 15.sp,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black,
                                   height: 1.3,
@@ -468,12 +468,15 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                         ),
                       ],
                     ),
-                    child: Text(
-                      'Device Label',
-                      style: TextStyle(
-                        fontSize: 17.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade800,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      child: Text(
+                        'Device Label',
+                        style: TextStyle(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
+                        ),
                       ),
                     ),
                   ),
@@ -629,8 +632,11 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       final drawableWidth = canvasWidth.toDouble() - 2 * offsetX;
       final drawableHeight = canvasHeight.toDouble() - 2 * offsetY;
 
-      // All printers use the same proportional layout (unified for consistent output).
-      final double padding = drawableWidth * 0.02;
+      // TD-4: 5% padding (~2.5mm) clears the physical die-cut label margins.
+      // TD-2D/Xprinter: 2% (already offset by 50px canvas translate).
+      final double padding = isTD4Model
+          ? drawableWidth * 0.05
+          : drawableWidth * 0.02;
       final double contentWidth = drawableWidth - (padding * 2);
       final double barcodeWidth = contentWidth * 0.65;
       final double barcodeHeight = drawableHeight * 0.24;
@@ -652,7 +658,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       }
 
       // Font size: proportional to drawable height, same for all printers.
-      final double baseFontSize = (drawableHeight * 0.075).clamp(18.0, 26.0);
+      final double baseFontSize = (drawableHeight * 0.09).clamp(20.0, 32.0);
       final double lineSpacing = baseFontSize + 3.0;
 
       // Draw job number under barcode (only if showJobNo is enabled)

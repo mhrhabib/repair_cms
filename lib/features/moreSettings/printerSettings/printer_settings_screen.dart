@@ -168,9 +168,37 @@ class PrinterSettingsScreen extends StatelessWidget {
                     onPressed: () => Navigator.pop(context),
                     icon: CupertinoIcons.back,
                   ),
-                  Text(
-                    'Printer Settings',
-                    style: AppTypography.sfProHeadLineTextStyle22,
+                  Container(
+                      padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 2.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(
+                        color: AppColors.whiteColor, // Figma: border #FFFFFF
+                        width: 1, // Figma: border-width 1px
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            28,
+                            116,
+                            115,
+                            115,
+                          ), // Figma: #0000001C
+                          blurRadius: 2, // Figma: blur 20px
+                          offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Printer Settings',
+                      style: AppTypography.sfProHeadLineTextStyle22,
+                    ),
                   ),
                   const SizedBox(width: 44), // Spacer
                 ],

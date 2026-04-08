@@ -53,8 +53,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       context.read<JobCubit>().getJobById(widget.jobId);
     });
   }
-  static const statusBarColor = Colors.black;
-  static const statusBarIconBrightness = Brightness.light;
+
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +145,48 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
 
   // ── files ──
   final ImagePicker _imagePicker = ImagePicker();
+  // Track image rotations per file (quarterTurns)
+  final Map<String, int> _imageRotationTurns = {};
+  final Set<String> _checkingImageRotation = {};
+
+  void _ensureImageRotationForFile(File file, String key) {
+    if (key.isEmpty) return;
+    if (_imageRotationTurns.containsKey(key) || _checkingImageRotation.contains(key)) return;
+    _checkingImageRotation.add(key);
+
+    ImageProvider provider;
+    if (file.imageUrl != null && file.imageUrl!.isNotEmpty) {
+      provider = NetworkImage(file.imageUrl!);
+    } else if (file.file != null && file.file!.isNotEmpty) {
+      provider = FileImage(io.File(file.file!));
+    } else {
+      _imageRotationTurns[key] = 0;
+      _checkingImageRotation.remove(key);
+      return;
+    }
+
+    final stream = provider.resolve(const ImageConfiguration());
+    ImageStreamListener? listener;
+    listener = ImageStreamListener((ImageInfo info, bool _) {
+      try {
+        final w = info.image.width;
+        final h = info.image.height;
+        final turns = (w > h) ? 1 : 0;
+        if (mounted) setState(() => _imageRotationTurns[key] = turns);
+      } catch (_) {
+        if (mounted) setState(() => _imageRotationTurns[key] = 0);
+      } finally {
+        stream.removeListener(listener!);
+        _checkingImageRotation.remove(key);
+      }
+    }, onError: (dynamic _, __) {
+      if (mounted) setState(() => _imageRotationTurns[key] = 0);
+      stream.removeListener(listener!);
+      _checkingImageRotation.remove(key);
+    });
+
+    stream.addListener(listener);
+  }
 
   @override
   void initState() {
@@ -1091,15 +1132,15 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                                 ),
                               );
                             }),
-                            Divider(height: 1, color: Colors.grey.shade200),
-                            _receiptRow(
-                              SolarIconsOutline.documentText,
-                              'Invoice',
-                              true,
-                              () => debugPrint('Invoice tapped'),
-                            ),
-                            Divider(height: 1, color: Colors.grey.shade200),
-                            _receiptRow(SolarIconsOutline.documentText, 'Service Report', false, () {}),
+                            // Divider(height: 1, color: Colors.grey.shade200),
+                            // _receiptRow(
+                            //   SolarIconsOutline.documentText,
+                            //   'Invoice',
+                            //   true,
+                            //   () => debugPrint('Invoice tapped'),
+                            // ),
+                            // Divider(height: 1, color: Colors.grey.shade200),
+                            // _receiptRow(SolarIconsOutline.documentText, 'Service Report', false, () {}),
                           ],
                         ),
                       ),
@@ -2036,6 +2077,10 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         : ext(file.url?.split('?').first);
     final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension) && (file.imageUrl?.isNotEmpty == true);
 
+    // Ensure rotation is calculated (no-op if already done)
+    final _rotationKey = file.imageUrl ?? file.file ?? file.fileName ?? file.url ?? '';
+    _ensureImageRotationForFile(file, _rotationKey);
+
     return GestureDetector(
       onTap: () async {
         if (isImage) {
@@ -2079,11 +2124,14 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     child: isImage
                         ? ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                            child: Image.network(
-                              file.imageUrl!,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, _, _) => Center(
-                                child: Icon(_getFileIcon(name), size: 40.sp, color: Colors.grey),
+                            child: RotatedBox(
+                              quarterTurns: _imageRotationTurns[_rotationKey] ?? 0,
+                              child: Image.network(
+                                file.imageUrl!,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, _, _) => Center(
+                                  child: Icon(_getFileIcon(name), size: 40.sp, color: Colors.grey),
+                                ),
                               ),
                             ),
                           )
@@ -2122,11 +2170,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500, color: const Color(0xFF1E2D4D)),
                   ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    _formatFileSize(file.size ?? 0),
-                    style: TextStyle(fontSize: 10.sp, color: Colors.grey.shade500),
-                  ),
+                  
                 ],
               ),
             ),
