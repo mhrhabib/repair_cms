@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/utils/label_formatter.dart';
 import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
 import 'package:repair_cms/features/notifications/models/notificaiton_model.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
@@ -68,7 +69,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             },
             builder: (context, state) {
               if (state is NotificationLoading) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: CupertinoActivityIndicator(color: AppColors.fontSecondaryColor,));
               }
 
               if (state is NotificationLoaded) {
@@ -281,6 +282,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   debugPrint(
                     '✅ [NotificationsScreen] Marking notification as read',
                   );
+                    // Optimistically update UI
+                    if (mounted) {
+                      setState(() {
+                        _notifications[index].isRead = true;
+                      });
+                    }
                   final userId = storage.read('userId') ?? '';
                   final notificationId = notification.sId ?? '';
 
@@ -378,7 +385,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     alignment: Alignment.center,
                     child: SizedBox(
                       child: Text(
-                        notification.message ?? '',
+                      LabelFormatter
+                      .formatLabel(  notification.message ?? ''),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 16,

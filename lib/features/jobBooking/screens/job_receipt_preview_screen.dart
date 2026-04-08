@@ -30,6 +30,7 @@ import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_
 import 'package:repair_cms/features/moreSettings/labelContent/service/label_content_settings_service.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/show_toast.dart';
+import 'package:repair_cms/core/utils/label_image_generator.dart';
 import 'package:repair_cms/features/jobBooking/services/escpos_generator_service.dart';
 
 class JobReceiptPreviewScreen extends StatefulWidget {
@@ -774,260 +775,24 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     );
   }
 
-  // ─── Label image capture (from JobDeviceLabelScreen) ──────────────────────
-
-  double _getDotsPerMm(PrinterConfigModel? printer) {
-    final model = printer?.printerModel?.toUpperCase() ?? '';
-
-    debugPrint('🔍 Checking printer model: "$model"');
-
-    if (model.startsWith('TD-4')) {
-      debugPrint('✅ TD-4 series detected: 300 DPI (11.811 dots/mm)');
-      return 11.811;
-    }
-
-    if (model.contains('TD-2350')) {
-      debugPrint('✅ TD-2350 series detected: 300 DPI (11.82 dots/mm)');
-      return 11.82;
-    }
-
-    if (model.startsWith('TD-2')) {
-      debugPrint('✅ Other TD-2 series detected: 203 DPI (8.0 dots/mm)');
-      return 8.0;
-    }
-
-    if (printer?.printerBrand.toLowerCase() == 'xprinter') {
-      debugPrint('✅ Xprinter detected: 203 DPI (8.0 dots/mm)');
-      return 8.0;
-    }
-
-    debugPrint('⚠️ Unknown printer model, using default 203 DPI');
-    return 8.0;
-  }
+  // ─── Label image capture (uses shared LabelImageGenerator) ────────────────
 
   Future<Uint8List?> _captureLabelAsImage(PrinterConfigModel printer) async {
-    try {
-      debugPrint('📸 Generating label image (ReceiptPreview flow)');
-      final labelWidthMm = printer.labelSize?.width ?? 50;
-      final labelHeightMm = printer.labelSize?.height ?? 26;
-
-      final dotsPerMm = _getDotsPerMm(printer);
-      final widthPx = (labelWidthMm * dotsPerMm).round();
-      final heightPx = (labelHeightMm * dotsPerMm).round();
-
-      final isTD4 = (printer.printerModel?.toUpperCase() ?? '').startsWith(
-        'TD-4',
-      );
-
-      final canvasWidth = isTD4 ? heightPx : widthPx;
-      final canvasHeight = isTD4 ? widthPx : heightPx;
-
-      debugPrint(
-        '📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${canvasWidth}x${canvasHeight}px (${isTD4 ? "Landscape for TD-4 rotation" : "Portrait"})',
-      );
-
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(
-        recorder,
-        Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()),
-      );
-
-      final bgPaint = Paint()..color = Colors.white;
-      canvas.drawRect(
-        Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()),
-        bgPaint,
-      );
-
-      final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
-      final double offsetX = isBrother ? (isTD4 ? 0.0 : 50.0) : 0.0;
-      final double offsetY = isBrother ? (isTD4 ? 0.0 : 50.0) : 0.0;
-      if (offsetX > 0 || offsetY > 0) canvas.translate(offsetX, offsetY);
-
-      final drawableWidth = canvasWidth.toDouble() - 2 * offsetX;
-      final drawableHeight = canvasHeight.toDouble() - 2 * offsetY;
-
-      final double padding = isTD4
-          ? drawableWidth * 0.04
-          : drawableWidth * 0.02;
-      final double contentWidth = drawableWidth - (padding * 2);
-
-      final double barcodeWidth = isTD4
-          ? contentWidth * 0.62
-          : contentWidth * 0.65;
-      final double barcodeHeight = isTD4
-          ? (drawableHeight * 0.30).clamp(150.0, 320.0)
-          : drawableHeight * 0.24;
-      final double qrSize = isTD4 ? contentWidth * 0.30 : contentWidth * 0.22;
-
-      final barcodeData = _getBarcodeData();
-      if (_labelSettings.showBarcode) {
-        _drawBarcode(
-          canvas,
-          barcodeData,
-          padding,
-          padding,
-          barcodeWidth,
-          barcodeHeight,
-        );
-      }
-
-      final double baseFontSize = isTD4
-          ? (drawableHeight * 0.04).clamp(36.0, 52.0)
-          : (drawableHeight * 0.075).clamp(18.0, 26.0);
-      final double lineSpacing = isTD4 ? baseFontSize * 1.35 : baseFontSize + 3.0;
-
-      double currentY = padding;
-      if (_labelSettings.showBarcode) {
-        currentY = padding + barcodeHeight + 4;
-        if (_labelSettings.showJobNo) {
-          final tp = TextPainter(
-            text: TextSpan(
-              text: _getJobNumber(),
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: baseFontSize,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-          );
-          tp.layout(maxWidth: barcodeWidth);
-          tp.paint(
-            canvas,
-            Offset(padding + (barcodeWidth - tp.width) / 2, currentY),
-          );
-          currentY += lineSpacing;
-        }
-      } else if (_labelSettings.showJobNo) {
-        final tp = TextPainter(
-          text: TextSpan(
-            text: _getJobNumber(),
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: baseFontSize,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        tp.layout(maxWidth: contentWidth);
-        tp.paint(canvas, Offset(padding, padding));
-        currentY = padding + lineSpacing;
-      }
-
-      if (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR) {
-        final qrPainter = QrPainter(
-          data: _labelSettings.showJobQR
-              ? _getQRCodeData()
-              : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
-          version: QrVersions.auto,
-          errorCorrectionLevel: QrErrorCorrectLevel.M,
-          eyeStyle: const QrEyeStyle(
-            eyeShape: QrEyeShape.square,
-            color: Colors.black,
-          ),
-          dataModuleStyle: const QrDataModuleStyle(
-            dataModuleShape: QrDataModuleShape.square,
-            color: Colors.black,
-          ),
-        );
-
-        final qrX = drawableWidth - padding - qrSize;
-        canvas.save();
-        canvas.translate(qrX, padding);
-        canvas.scale(qrSize / 200);
-        qrPainter.paint(canvas, const Size(200, 200));
-        canvas.restore();
-
-        final qrBottomY = padding + qrSize;
-        if (qrBottomY > currentY) currentY = qrBottomY;
-      }
-
-      currentY += 8;
-      final List<String> textLines = [];
-      if (_labelSettings.showCustomerName || _labelSettings.showModelBrand) {
-        final line = [
-          if (_labelSettings.showCustomerName) _getCustomerName(),
-          if (_labelSettings.showModelBrand) _getDeviceName(),
-        ].where((e) => e.isNotEmpty).join(' | ');
-        if (line.isNotEmpty) textLines.add(line);
-      }
-      if (_labelSettings.showModelBrand) {
-        textLines.add('IMEI: ${_getDeviceIMEI()}');
-      }
-      if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation) {
-        final line = [
-          if (_labelSettings.showSymptom) _getDefect(),
-          if (_labelSettings.showPhysicalLocation)
-            'BOX: ${_getPhysicalLocation()}',
-        ].where((e) => e.isNotEmpty).join(' | ');
-        if (line.isNotEmpty) textLines.add(line);
-      }
-
-      double lineY = currentY;
-      for (int i = 0; i < textLines.length; i++) {
-        final lp = TextPainter(
-          text: TextSpan(
-            text: textLines[i],
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: baseFontSize,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        lp.layout(maxWidth: contentWidth);
-        lp.paint(canvas, Offset(padding, lineY));
-        lineY += lp.height + 4;
-      }
-
-      final picture = recorder.endRecording();
-      final image = await picture.toImage(canvasWidth, canvasHeight);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      image.dispose();
-      if (byteData == null) return null;
-
-      final imageBytes = byteData.buffer.asUint8List();
-      debugPrint(
-        '✅ Generated ${canvasWidth}x$canvasHeight label image (${imageBytes.length} bytes)',
-      );
-      return imageBytes;
-    } catch (e) {
-      debugPrint('❌ Error generating label image: $e');
-      return null;
-    }
-  }
-
-  void _drawBarcode(
-    Canvas canvas,
-    String data,
-    double x,
-    double y,
-    double width,
-    double height,
-  ) {
-    final barcodeGen = Barcode.code128();
-    final elements = barcodeGen.make(
-      data,
-      width: width,
-      height: height,
-      drawText: false,
+    return LabelImageGenerator.captureLabelAsImage(
+      printer: printer,
+      labelSettings: _labelSettings,
+      labelData: LabelData(
+        jobNumber: _getJobNumber(),
+        customerName: _getCustomerName(),
+        deviceName: _getDeviceName(),
+        deviceIMEI: _getDeviceIMEI(),
+        defect: _getDefect(),
+        physicalLocation: _getPhysicalLocation(),
+        jobId: widget.jobResponse.data?.sId ?? '',
+        barcodeData: _getBarcodeData(),
+        qrCodeData: _getQRCodeData(),
+      ),
     );
-    final blackPaint = Paint()..color = Colors.black;
-    for (final element in elements) {
-      if (element is BarcodeBar && element.black) {
-        canvas.drawRect(
-          Rect.fromLTWH(
-            x + element.left,
-            y + element.top,
-            element.width,
-            element.height,
-          ),
-          blackPaint,
-        );
-      }
-    }
   }
 
   // ─── BUILD ─────────────────────────────────────────────────────────────────
@@ -1144,9 +909,12 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                           ),
                         ],
                       ),
-                      child: Text(
-                        'Receipt Preview',
-                        style: AppTypography.sfProHeadLineTextStyle22,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        child: Text(
+                          'Receipt Preview',
+                          style: AppTypography.sfProHeadLineTextStyle22,
+                        ),
                       ),
                     ),
                     CustomNavButton(

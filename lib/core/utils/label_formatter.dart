@@ -115,7 +115,7 @@ class LabelFormatter {
 
     // ── Job notification ───────────────────────────────────────────────────
     if (messageType == 'job-notification') {
-      final jobNo = notification.conversationId ?? ''; // fallback field
+      final jobNo = notification.jobNo ?? notification.messageData?['jobNo']?.toString() ?? '';
       String title = '🟠 Job Update';
       String text = jobNo.isNotEmpty
           ? 'Job No. $jobNo has been updated'

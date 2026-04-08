@@ -1,11 +1,11 @@
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
+import 'package:repair_cms/core/utils/label_image_generator.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
@@ -441,254 +441,23 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
     await _showPrinterSelection();
   }
 
-  /// Get dots per mm based on printer model (TD-2: 8.0, TD-4: 11.811)
-  /// Get dots per mm based on printer model
-  /// TD-2350D/DA: 300 DPI (11.82 dots/mm) - 50mm = 591 dots
-  /// Other TD-2: 203 DPI (8 dots/mm)
-  /// TD-4: 300 DPI (11.811 dots/mm)
-  double _getDotsPerMm(PrinterConfigModel? printer) {
-    final model = printer?.printerModel?.toUpperCase() ?? '';
-
-    debugPrint('🔍 Checking printer model: "$model"');
-
-    // TD-4 series MUST be checked FIRST (before TD-2)
-    if (model.startsWith('TD-4')) {
-      debugPrint('✅ TD-4 series detected: 300 DPI (11.811 dots/mm)');
-      return 11.811; // 300 DPI for TD-4
-    }
-
-    // TD-2350D and TD-2350DA are 300 DPI printers
-    if (model.contains('TD-2350')) {
-      debugPrint('✅ TD-2350 series detected: 300 DPI (11.82 dots/mm)');
-      return 11.82;
-    }
-
-    // Other TD-2 series (non-2350) are 203 DPI
-    if (model.startsWith('TD-2')) {
-      debugPrint('✅ Other TD-2 series detected: 203 DPI (8.0 dots/mm)');
-      return 8.0;
-    }
-
-    // Handle Xprinter (Standard 203 DPI for most XP models)
-    if (printer?.printerBrand.toLowerCase() == 'xprinter') {
-      debugPrint('✅ Xprinter detected: 203 DPI (8.0 dots/mm)');
-      return 8.0;
-    }
-
-    debugPrint('⚠️ Unknown printer model, using default 203 DPI');
-    return 8.0;
-  }
-
-  /// Generate label image at exact printer resolution
-  /// TD-2350D: 300 DPI (11.82 dots/mm) - 50×26mm = 591×307 dots
-  /// TD-4 series: 300 DPI (11.811 dots/mm)
-  /// Other TD-2: 203 DPI (8 dots/mm)
+  /// Generate label image using the shared LabelImageGenerator
   Future<Uint8List?> _captureLabelAsImage(PrinterConfigModel printer) async {
-    try {
-      debugPrint('📸 Generating label image at printer resolution');
-
-      // Use the SELECTED printer's size & DPI (not the default printer)
-      final labelWidthMm = printer.labelSize?.width ?? 50;
-      final labelHeightMm = printer.labelSize?.height ?? 26;
-
-      // Get DPI-aware dots per mm for the selected printer
-      final dotsPerMm = _getDotsPerMm(printer);
-      final dpi = dotsPerMm > 10 ? 300 : 203;
-
-      // Convert to pixels at NATIVE resolution (no 2x multiplier!)
-      // TD-2: 51x26mm @ 8 dots/mm = 408x208 dots
-      // TD-4: 100x150mm @ 11.811 dots/mm = 1181x1772 dots
-      final widthPx = (labelWidthMm * dotsPerMm).round();
-      final heightPx = (labelHeightMm * dotsPerMm).round();
-
-      // All printers use portrait canvas matching raster dimensions (widthDots x heightDots).
-      // TD-2D, TD-4, and Xprinter all use the same orientation.
-      final canvasWidth = widthPx;
-      final canvasHeight = heightPx;
-
-      debugPrint('📐 Printer: ${printer.printerModel ?? "unknown"} (${printer.printerBrand}), DPI: $dpi');
-      debugPrint('📐 Label: ${labelWidthMm}x${labelHeightMm}mm → Image: ${canvasWidth}x${canvasHeight}px (Portrait)');
-
-      // Create a picture recorder and canvas at exact printer resolution
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()));
-
-      // White background
-      final bgPaint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()), bgPaint);
-
-      // Offset compensates for Brother's unprintable hardware margins.
-      // For Xprinter and other brands the TSPL SIZE/GAP commands already
-      // handle the printable area, so zero offset is correct.
-      //
-      // TD-4: The Brother TD-4 SDK applies its own internal media offset.
-      // We compensate by translating the canvas right/down so content
-      // doesn't get clipped at the left/top physical edge by the SDK margin.
-      // A value of ~4% of canvas width gives ~47 dots on a 1181-dot canvas
-      // which matches the typical 4mm hardware margin on TD-4 media.
-
-      final bool isBrother = printer.printerBrand.toLowerCase() == 'brother';
-      final bool isTD4Model = (printer.printerModel?.toUpperCase() ?? '').startsWith('TD-4');
-
-      // TD-2D: 50px canvas translate compensates for hardware margins on smaller print head.
-      // TD-4: No canvas offset — positioning is handled by raster line centering on the wider print head.
-      // Xprinter: TSPL SIZE/GAP commands handle the printable area, so zero offset.
-      final double offsetX = isBrother ? (isTD4Model ? 0.0 : 50.0) : 0.0;
-      final double offsetY = isBrother ? (isTD4Model ? 0.0 : 50.0) : 0.0;
-      if (offsetX > 0 || offsetY > 0) canvas.translate(offsetX, offsetY);
-
-      final drawableWidth = canvasWidth.toDouble() - 2 * offsetX;
-      final drawableHeight = canvasHeight.toDouble() - 2 * offsetY;
-
-      // TD-4: 4% padding (~2.5mm) clears the physical die-cut label margins.
-      // TD-2D/Xprinter: 2% (already offset by 50px canvas translate).
-      final double padding = isTD4Model ? drawableWidth * 0.04 : drawableWidth * 0.02;
-      final double contentWidth = drawableWidth - (padding * 2);
-      final double barcodeWidth = contentWidth * 0.62;
-      final double barcodeHeight = drawableHeight * 0.24;
-      final double qrSize = contentWidth * 0.22;
-
-      // Draw barcode using barcode package
-      final barcodeData = _getBarcodeData();
-
-      // Draw barcode as rectangles (only if barcode setting is enabled)
-      if (_labelSettings.showBarcode) {
-        _drawBarcode(canvas, barcodeData, padding, padding, barcodeWidth, barcodeHeight);
-      }
-
-      // Font size: proportional to drawable height, same for all printers.
-      final double baseFontSize = (drawableHeight * 0.09).clamp(20.0, 32.0);
-      final double lineSpacing = baseFontSize + 3.0;
-
-      // Draw job number under barcode (only if showJobNo is enabled)
-      double currentY = padding;
-      if (_labelSettings.showBarcode) {
-        currentY = padding + barcodeHeight + 4;
-        if (_labelSettings.showJobNo) {
-          final textPainter = TextPainter(
-            text: TextSpan(
-              text: _getJobNumber(),
-              style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.bold),
-            ),
-            textDirection: TextDirection.ltr,
-          );
-          textPainter.layout(maxWidth: barcodeWidth);
-          textPainter.paint(canvas, Offset(padding + (barcodeWidth - textPainter.width) / 2, currentY));
-          currentY += lineSpacing;
-        }
-      } else if (_labelSettings.showJobNo) {
-        final textPainter = TextPainter(
-          text: TextSpan(
-            text: _getJobNumber(),
-            style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.bold),
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        textPainter.layout(maxWidth: contentWidth);
-        textPainter.paint(canvas, Offset(padding, padding));
-        currentY = padding + lineSpacing;
-      }
-
-      // Draw QR code at same top position as barcode (aligned) - only if QR enabled
-      if (_labelSettings.showJobQR || _labelSettings.showTrackingPortalQR) {
-        final qrPainter = QrPainter(
-          data: _labelSettings.showJobQR
-              ? _getQRCodeData()
-              : 'https://tracking.portal/${widget.jobResponse.data?.sId ?? ''}',
-          version: QrVersions.auto,
-          errorCorrectionLevel: QrErrorCorrectLevel.M,
-          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
-          dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
-        );
-
-        final qrX = drawableWidth - padding - qrSize;
-        canvas.save();
-        canvas.translate(qrX, padding); // Same Y position as barcode
-        canvas.scale(qrSize / 200); // QrPainter draws at ~200px
-        qrPainter.paint(canvas, const Size(200, 200));
-        canvas.restore();
-
-        // Update currentY based on QR height
-        final qrBottomY = padding + qrSize;
-        if (qrBottomY > currentY) {
-          currentY = qrBottomY;
-        }
-      }
-
-      // Draw info text BELOW both barcode and QR (after tallest element)
-      currentY += 8; // Add spacing
-
-      // Build single flowing text block so text fills each line before wrapping
-      final List<String> textParts = [];
-
-      if (_labelSettings.showCustomerName) {
-        final name = _getCustomerName();
-        if (name.isNotEmpty) textParts.add(name);
-      }
-      if (_labelSettings.showModelBrand) {
-        final device = _getDeviceName();
-        if (device.isNotEmpty) textParts.add('$device IMEI: ${_getDeviceIMEI()}');
-      }
-      if (_labelSettings.showSymptom) {
-        final defect = _getDefect();
-        if (defect.isNotEmpty) textParts.add(defect);
-      }
-      if (_labelSettings.showPhysicalLocation) {
-        final location = _getPhysicalLocation();
-        if (location.isNotEmpty) textParts.add('BOX: $location');
-      }
-
-      // Paint as a single text block - text flows and fills each line before wrapping
-      if (textParts.isNotEmpty) {
-        final combinedText = textParts.join(' | ');
-        final linePainter = TextPainter(
-          text: TextSpan(
-            text: combinedText,
-            style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.w600),
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        linePainter.layout(maxWidth: contentWidth);
-        linePainter.paint(canvas, Offset(padding, currentY));
-      }
-
-      // End recording and create image
-      final picture = recorder.endRecording();
-      final image = await picture.toImage(canvasWidth, canvasHeight);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-
-      image.dispose();
-
-      if (byteData == null) {
-        debugPrint('❌ Failed to convert image to bytes');
-        return null;
-      }
-
-      final imageBytes = byteData.buffer.asUint8List();
-      debugPrint('✅ Generated ${canvasWidth}x$canvasHeight image (${imageBytes.length} bytes) at $dpi DPI');
-      return imageBytes;
-    } catch (e, st) {
-      debugPrint('❌ Error generating label image: $e');
-      debugPrint('Stack trace: $st');
-      return null;
-    }
-  }
-
-  /// Draw Code128 barcode manually using the barcode package
-  void _drawBarcode(Canvas canvas, String data, double x, double y, double width, double height) {
-    // Use barcode_widget's Barcode class (same as BarcodeWidget uses)
-    final barcodeGen = Barcode.code128();
-    final elements = barcodeGen.make(data, width: width, height: height, drawText: false);
-
-    final blackPaint = Paint()..color = Colors.black;
-
-    for (final element in elements) {
-      // BarcodeElement has left, top, width, height properties
-      // BarcodeBar extends BarcodeElement and has a 'black' property
-      if (element is BarcodeBar && element.black) {
-        canvas.drawRect(Rect.fromLTWH(x + element.left, y + element.top, element.width, element.height), blackPaint);
-      }
-    }
+    return LabelImageGenerator.captureLabelAsImage(
+      printer: printer,
+      labelSettings: _labelSettings,
+      labelData: LabelData(
+        jobNumber: _getJobNumber(),
+        customerName: _getCustomerName(),
+        deviceName: _getDeviceName(),
+        deviceIMEI: _getDeviceIMEI(),
+        defect: _getDefect(),
+        physicalLocation: _getPhysicalLocation(),
+        jobId: widget.jobResponse.data?.sId ?? '',
+        barcodeData: _getBarcodeData(),
+        qrCodeData: _getQRCodeData(),
+      ),
+    );
   }
 }
 

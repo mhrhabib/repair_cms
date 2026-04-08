@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/features/notifications/models/notificaiton_model.dart';
@@ -146,9 +147,25 @@ class NotificationRepositoryImpl implements NotificationRepository {
       );
       debugPrint('   🔔 Notification ID: $notificationId');
 
+      // Preferred payload: isRead + locationId (if available)
+      final storage = GetStorage();
+      final locationId = storage.read('locationId');
+      final payload = {
+        'isRead': true,
+        'locationId': ?locationId,
+      };
+
       dio.Response response = await BaseClient.patch(
         url: ApiEndpoints.markNotificationAsRead.replaceAll('<id>', notificationId),
+        payload: payload,
       );
+
+      // If server responds with 404, try the alternate '/read' route (some envs use this)
+      if (response.statusCode == 404) {
+        final altUrl = '${ApiEndpoints.markNotificationAsRead.replaceAll('<id>', notificationId)}/read';
+        debugPrint('   ⚠️ Received 404, retrying with alternate URL: $altUrl');
+        response = await BaseClient.patch(url: altUrl, payload: payload);
+      }
 
       debugPrint(
         '✅ [NotificationRepository] Mark as read response received:',

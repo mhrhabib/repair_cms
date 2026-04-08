@@ -26,6 +26,7 @@ class NotificationListItem extends StatefulWidget {
 
 class _NotificationListItemState extends State<NotificationListItem>
     with SingleTickerProviderStateMixin {
+  bool _optimisticRead = false;
   bool _isMenuOpen = false;
   late AnimationController _menuController;
   late Animation<double> _expandAnimation;
@@ -67,15 +68,30 @@ class _NotificationListItemState extends State<NotificationListItem>
 
   @override
   Widget build(BuildContext context) {
-    final bool isRead = widget.notification.isRead ?? false;
+    final bool isRead = (widget.notification.isRead ?? false) || _optimisticRead;
+    final jobNo = widget.notification.jobNo ?? widget.notification.messageData?['jobNo']?.toString();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: isRead ? AppColors.whiteColor : AppColors.kBg,
-      ),
-      child: Stack(
+    return InkWell(
+      // Disable ripple/highlight on parent so child's menu button won't show item effect
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      focusColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      splashFactory: NoSplash.splashFactory,
+      onTap: () {
+        // Optimistically mark as read and call handler
+        if (!(widget.notification.isRead ?? false)) {
+          setState(() => _optimisticRead = true);
+          widget.onMarkAsRead();
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: isRead ? AppColors.whiteColor : AppColors.kBg,
+        ),
+        child: Stack(
         alignment: Alignment.centerRight,
         children: [
           Row(
@@ -126,6 +142,17 @@ class _NotificationListItemState extends State<NotificationListItem>
                                   fontSize: 13,
                                   color: Colors.grey[700],
                                   height: 1.3,
+                                ),
+                              ),
+                            ],
+                            if (jobNo != null && jobNo.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                jobNo,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[800],
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
@@ -216,6 +243,7 @@ class _NotificationListItemState extends State<NotificationListItem>
             ),
           ),
         ],
+      ),
       ),
     );
   }
