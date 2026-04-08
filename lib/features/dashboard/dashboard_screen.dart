@@ -19,6 +19,7 @@ import 'package:solar_icons/solar_icons.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'dart:math' as math;
 import 'widgets/job_progress_widget.dart';
+import 'package:repair_cms/core/utils/responsive_helper.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -483,12 +484,25 @@ class _DashboardScreenState extends State<DashboardScreen>
                             _buildGreetingSection(),
                             SizedBox(height: 12.h),
 
-                            // Incomplete To-Do's Card
-                            _buildIncompleteToDoCard(context),
-                            SizedBox(height: 12.h),
-
-                            // Completed Jobs Card
-                            _buildCompletedJobsCard(),
+                            // Incomplete To-Do's and Completed Jobs Row for Tablet
+                            if (ResponsiveHelper.isTablet(context))
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: _buildIncompleteToDoCard(context)),
+                                  SizedBox(width: 16.w),
+                                  Expanded(child: _buildCompletedJobsCard()),
+                                ],
+                              )
+                            else
+                              Column(
+                                children: [
+                                  _buildIncompleteToDoCard(context),
+                                  SizedBox(height: 12.h),
+                                  _buildCompletedJobsCard(),
+                                ],
+                              ),
+                            
                             SizedBox(height: 16.h),
 
                             // Job Progress Card - Using the new widget

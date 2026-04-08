@@ -9,6 +9,8 @@ import 'package:repair_cms/features/moreSettings/more_settings_screen.dart';
 import 'package:repair_cms/features/myJobs/screens/my_jobs_screen.dart';
 import 'package:repair_cms/features/scanner/job_scanner_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:repair_cms/features/home/widgets/side_navigation_bar.dart';
+import 'package:repair_cms/core/utils/responsive_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -94,25 +96,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return Scaffold(
-      body: Stack(
+      body: Row(
         children: [
-          _screens[_currentIndex],
-          // Apply backdrop filter only when expanded
-          if (_isExpanded)
-            BackdropFilter(
-              filter: ImageFilter.compose(inner: ImageFilter.dilate(), outer: ImageFilter.blur(sigmaX: 1, sigmaY: 1)),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.5),
-                width: double.infinity,
-                height: double.infinity,
-              ),
+          if (isTablet)
+            SideNavigationBar(
+              currentIndex: _currentIndex,
+              onItemSelected: _onItemTapped,
+              onAddPressed: _toggleExpansion, // Or navigate directly to New Job
             ),
-          // Position the expandable FAB above all content
-          _buildExpandableFAB(),
+          Expanded(
+            child: Stack(
+              children: [
+                _screens[_currentIndex],
+                // Apply backdrop filter only when expanded
+                if (_isExpanded)
+                  BackdropFilter(
+                    filter: ImageFilter.compose(inner: ImageFilter.dilate(), outer: ImageFilter.blur(sigmaX: 1, sigmaY: 1)),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+                  ),
+                // Position the expandable FAB above all content
+                if (!isTablet) _buildExpandableFAB(),
+                if (isTablet && _isExpanded) _buildExpandableFAB(), // Show over content when expanded on tablet
+              ],
+            ),
+          ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: isTablet ? null : _buildBottomNavigationBar(),
     );
   }
 

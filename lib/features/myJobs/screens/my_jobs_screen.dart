@@ -11,6 +11,7 @@ import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:repair_cms/core/utils/responsive_helper.dart';
 
 class MyJobsScreen extends StatefulWidget {
   final String? initialStatus;
@@ -378,6 +379,23 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     ),
                   ),
                 ),
+              );
+            }
+
+            if (ResponsiveHelper.isTablet(context)) {
+              return GridView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                itemCount: state.hasMore ? jobs.length : jobs.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16.w,
+                  mainAxisSpacing: 16.h,
+                  mainAxisExtent: 180.h, // Fixed height for consistency
+                ),
+                itemBuilder: (context, index) {
+                  final job = jobs[index];
+                  return JobCardWidget(job: job);
+                },
               );
             }
 
