@@ -94,7 +94,6 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
   void _saveChanges() {
     if (!_canSave) return;
-
     // Implement save logic here
     debugPrint('Saving security changes...');
     debugPrint('Current Password: ${_currentPasswordController.text}');

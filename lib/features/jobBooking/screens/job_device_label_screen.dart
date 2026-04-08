@@ -320,7 +320,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
                       SizedBox(height: 16.h),
 
-                      // Job information - single line (conditional based on settings)
+                      // Job information - single flowing text block
                       if (_labelSettings.showJobNo ||
                           _labelSettings.showCustomerName ||
                           _labelSettings.showModelBrand ||
@@ -328,46 +328,20 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                           _labelSettings.showJobType ||
                           _labelSettings.showSymptom ||
                           _labelSettings.showPhysicalLocation)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (_labelSettings.showJobNo ||
-                                _labelSettings.showCustomerName ||
-                                _labelSettings.showModelBrand)
-                              Text(
-                                [
-                                  if (_labelSettings.showJobNo) _getJobNumber(),
-                                  if (_labelSettings.showCustomerName) _getCustomerName(),
-                                  if (_labelSettings.showModelBrand) '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
-                                ].where((e) => e.isNotEmpty).join(' | '),
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                  height: 1.3,
-                                ),
-                                textAlign: TextAlign.left,
-                              ),
-                            if ((_labelSettings.showJobNo ||
-                                    _labelSettings.showCustomerName ||
-                                    _labelSettings.showModelBrand) &&
-                                (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation))
-                              SizedBox(height: 4.h),
-                            if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation)
-                              Text(
-                                [
-                                  if (_labelSettings.showSymptom) _getDefect(),
-                                  if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
-                                ].where((e) => e.isNotEmpty).join(' | '),
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                  height: 1.3,
-                                ),
-                                textAlign: TextAlign.left,
-                              ),
-                          ],
+                        Text(
+                          [
+                            if (_labelSettings.showCustomerName) _getCustomerName(),
+                            if (_labelSettings.showModelBrand) '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
+                            if (_labelSettings.showSymptom) _getDefect(),
+                            if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
+                          ].where((e) => e.isNotEmpty).join(' | '),
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.left,
                         ),
                     ],
                   ),
@@ -644,50 +618,38 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
       // Draw info text BELOW both barcode and QR (after tallest element)
       currentY += 8; // Add spacing
 
-      // Build text lines based on settings
-      final List<String> textLines = [];
+      // Build single flowing text block so text fills each line before wrapping
+      final List<String> textParts = [];
 
-      // First line: Customer | Device
-      if (_labelSettings.showCustomerName || _labelSettings.showModelBrand) {
-        final line = [
-          if (_labelSettings.showCustomerName) _getCustomerName(),
-          if (_labelSettings.showModelBrand) _getDeviceName(),
-        ].where((e) => e.isNotEmpty).join(' | ');
-        if (line.isNotEmpty) textLines.add(line);
+      if (_labelSettings.showCustomerName) {
+        final name = _getCustomerName();
+        if (name.isNotEmpty) textParts.add(name);
       }
-
-      // IMEI line
       if (_labelSettings.showModelBrand) {
-        textLines.add('IMEI: ${_getDeviceIMEI()}');
+        final device = _getDeviceName();
+        if (device.isNotEmpty) textParts.add('$device IMEI: ${_getDeviceIMEI()}');
+      }
+      if (_labelSettings.showSymptom) {
+        final defect = _getDefect();
+        if (defect.isNotEmpty) textParts.add(defect);
+      }
+      if (_labelSettings.showPhysicalLocation) {
+        final location = _getPhysicalLocation();
+        if (location.isNotEmpty) textParts.add('BOX: $location');
       }
 
-      // Defect/Location line
-      if (_labelSettings.showSymptom || _labelSettings.showPhysicalLocation) {
-        final line = [
-          if (_labelSettings.showSymptom) _getDefect(),
-          if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
-        ].where((e) => e.isNotEmpty).join(' | ');
-        if (line.isNotEmpty) textLines.add(line);
-      }
-
-      // Paint each line.
-      // Use an accumulating lineY so that wrapped (multi-visual-row) lines
-      // don't cause the following line to overlap. Fixed i*lineSpacing was
-      // the cause of overlap on small Xprinter labels where long text wraps.
-      double lineY = currentY;
-      for (int i = 0; i < textLines.length; i++) {
+      // Paint as a single text block - text flows and fills each line before wrapping
+      if (textParts.isNotEmpty) {
+        final combinedText = textParts.join(' | ');
         final linePainter = TextPainter(
           text: TextSpan(
-            text: textLines[i],
+            text: combinedText,
             style: TextStyle(color: Colors.black, fontSize: baseFontSize, fontWeight: FontWeight.w600),
           ),
           textDirection: TextDirection.ltr,
         );
         linePainter.layout(maxWidth: contentWidth);
-        linePainter.paint(canvas, Offset(padding, lineY));
-        // Advance by the ACTUAL painted height (which includes all wrapped
-        // rows), plus a small inter-line gap.
-        lineY += linePainter.height + 4;
+        linePainter.paint(canvas, Offset(padding, currentY));
       }
 
       // End recording and create image
