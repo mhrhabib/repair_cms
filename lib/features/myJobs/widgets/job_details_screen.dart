@@ -823,7 +823,8 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 sId: d.sId,
                 brand: d.brand,
                 model: d.model,
-                imei: d.serialNo,
+                imei: d.serialNo ?? d.imei,
+                serialNo: d.serialNo ?? d.imei,
                 condition: d.condition
                     ?.map((c) => job_booking.ConditionItem(value: c.value ?? '', id: c.id ?? ''))
                     .toList(),
@@ -1059,8 +1060,10 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                           children: [
                             _plainRow('Device', _deviceName()),
                             Divider(height: 1, color: Colors.grey.shade200),
-                            _plainRow('IME/Serial', _imeiSerial()),
-                            Divider(height: 1, color: Colors.grey.shade200),
+                            if (_imeiSerial().isNotEmpty)
+                              _plainRow('IMEI/Serial', _imeiSerial()),
+                            if (_imeiSerial().isNotEmpty)
+                              Divider(height: 1, color: Colors.grey.shade200),
                             _actionRow('Security', 'Show Security', _showSecurityDialog),
                           ],
                         ),
@@ -1783,11 +1786,17 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
 
   String _imeiSerial() {
     final d = widget.job.data!;
-    String serial = d.deviceData?.serialNo ?? '';
-    if (d.device?.isNotEmpty == true && serial.isEmpty) {
-      serial = d.device!.first.serialNo ?? '';
+    // Check deviceData first (both serialNo and imei fields)
+    String serial = d.deviceData?.serialNo ?? d.deviceData?.imei ?? '';
+    // Fall back to device list if deviceData is empty
+    if (serial.isEmpty && d.device?.isNotEmpty == true) {
+      serial = d.device!.first.serialNo ?? d.device!.first.imei ?? '';
     }
-    return serial.isEmpty ? 'Not specified' : serial;
+    // Skip if empty or N/A
+    if (serial.isEmpty || serial.toUpperCase() == 'N/A') {
+      return '';
+    }
+    return serial;
   }
 
   void _showSecurityDialog() {

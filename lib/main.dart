@@ -67,7 +67,7 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.black, // Sets the background color of the status bar to black
-      statusBarIconBrightness: Brightness.light, // Sets the icons/text to white so they are visible on black
+      statusBarIconBrightness: Brightness.dark, // Sets the icons/text to white so they are visible on black
       statusBarBrightness: Brightness.dark, // For iOS
     ),
   );
@@ -145,7 +145,7 @@ class MyApp extends StatelessWidget {
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'RepairCMS',
-            
+
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
               appBarTheme: const AppBarTheme(
@@ -156,6 +156,16 @@ class MyApp extends StatelessWidget {
                 ),
               ),
             ),
+            builder: (context, child) {
+              return AnnotatedRegion<SystemUiOverlayStyle>(
+                value: const SystemUiOverlayStyle(
+                  statusBarColor: Colors.black,
+                  statusBarIconBrightness: Brightness.dark, // Android
+                  statusBarBrightness: Brightness.dark, // iOS
+                ),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
             routerConfig: AppRouter.router,
           ),
         ),

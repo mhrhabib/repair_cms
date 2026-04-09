@@ -249,13 +249,18 @@ class LabelImageGenerator {
       }
       if (labelSettings.showModelBrand) {
         final device = labelData.deviceName;
-        if (device.isNotEmpty) {
-          textParts.add('$device IMEI: ${labelData.deviceIMEI}');
+        if (device.isNotEmpty && device.toUpperCase() != 'N/A') {
+          // Only include IMEI if it's not "N/A"
+          if (labelData.deviceIMEI.toUpperCase() != 'N/A') {
+            textParts.add('$device IMEI: ${labelData.deviceIMEI}');
+          } else {
+            textParts.add(device);
+          }
         }
       }
       if (labelSettings.showSymptom) {
         final defect = labelData.defect;
-        if (defect.isNotEmpty) textParts.add(defect);
+        if (defect.isNotEmpty && defect.toUpperCase() != 'N/A') textParts.add(defect);
       }
       if (labelSettings.showPhysicalLocation) {
         final location = labelData.physicalLocation;

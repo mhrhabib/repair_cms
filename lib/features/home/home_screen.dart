@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
@@ -94,25 +95,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          _screens[_currentIndex],
-          // Apply backdrop filter only when expanded
-          if (_isExpanded)
-            BackdropFilter(
-              filter: ImageFilter.compose(inner: ImageFilter.dilate(), outer: ImageFilter.blur(sigmaX: 1, sigmaY: 1)),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.5),
-                width: double.infinity,
-                height: double.infinity,
-              ),
-            ),
-          // Position the expandable FAB above all content
-          _buildExpandableFAB(),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.black,
+        statusBarIconBrightness: Brightness.dark, // Android
+        statusBarBrightness: Brightness.dark, // iOS
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            _screens[_currentIndex],
+            // Apply backdrop filter only when expanded
+            if (_isExpanded)
+              BackdropFilter(
+                filter: ImageFilter.compose(inner: ImageFilter.dilate(), outer: ImageFilter.blur(sigmaX: 1, sigmaY: 1)),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              ),
+            // Position the expandable FAB above all content
+            _buildExpandableFAB(),
+          ],
+        ),
+        bottomNavigationBar: _buildBottomNavigationBar(),
+      ),
     );
   }
 

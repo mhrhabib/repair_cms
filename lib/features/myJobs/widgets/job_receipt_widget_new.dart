@@ -476,11 +476,13 @@ class JobReceiptWidgetNew extends StatelessWidget {
       );
     }
 
+    final deviceName = _getDeviceName(deviceData, device);
     final deviceDetails = [
-      _getDeviceName(deviceData, device),
-      if (_getDeviceIMEI(deviceData, device).isNotEmpty)
+      if (deviceName.isNotEmpty && deviceName.toUpperCase() != 'N/A') deviceName,
+      if (deviceName.isNotEmpty && _getDeviceIMEI(deviceData, device).isNotEmpty &&
+          _getDeviceIMEI(deviceData, device).toUpperCase() != 'N/A')
         'IMEI: ${_getDeviceIMEI(deviceData, device)}',
-      _getDeviceCondition(deviceData, device),
+      if (deviceName.isNotEmpty) _getDeviceCondition(deviceData, device),
     ].where((e) => e.isNotEmpty).join(', ');
 
     return Column(
@@ -494,7 +496,8 @@ class JobReceiptWidgetNew extends StatelessWidget {
             defect?.reference ?? '',
           ].where((e) => e.isNotEmpty).join(', '),
         ),
-        buildRow('Description:', _buildDefectDescription(defect)),
+        if (_buildDefectDescription(defect).isNotEmpty)
+          buildRow('Description:', _buildDefectDescription(defect)),
       ],
     );
   }
@@ -506,7 +509,7 @@ class JobReceiptWidgetNew extends StatelessWidget {
   }
 
   String _getDeviceIMEI(DeviceData? deviceData, Device? device) {
-    return deviceData?.imei ?? device?.imei ?? '';
+    return deviceData?.imei ?? deviceData?.serialNo ?? device?.imei ?? device?.serialNo ?? '';
   }
 
   String _getDeviceCondition(DeviceData? deviceData, Device? device) {

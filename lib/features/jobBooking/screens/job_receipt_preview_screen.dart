@@ -85,7 +85,9 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
   }
 
   String _getDeviceIMEI() =>
-      widget.jobResponse.data?.device?.firstOrNull?.imei ?? '';
+      widget.jobResponse.data?.device?.firstOrNull?.imei ??
+      widget.jobResponse.data?.device?.firstOrNull?.serialNo ??
+      '';
 
   String _getDeviceSerialNumber() =>
       widget.jobResponse.data?.device?.firstOrNull?.serialNo ?? '';
@@ -230,9 +232,17 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     buffer.writeln('*** DEVICE LABEL ***');
     buffer.writeln('JOB: ${_getJobNumber()}');
     buffer.writeln('CUSTOMER: ${_getCustomerName()}');
-    buffer.writeln('DEVICE: ${_getDeviceName()}');
-    buffer.writeln('IMEI: ${_getDeviceIMEI()}');
-    buffer.writeln('DEFECT: ${_getDefect()}');
+    final deviceName = _getDeviceName();
+    if (deviceName.isNotEmpty && deviceName.toUpperCase() != 'N/A') {
+      buffer.writeln('DEVICE: $deviceName');
+      if (_getDeviceIMEI().toUpperCase() != 'N/A') {
+        buffer.writeln('IMEI: ${_getDeviceIMEI()}');
+      }
+    }
+    final defect = _getDefect();
+    if (defect.toUpperCase() != 'N/A') {
+      buffer.writeln('DEFECT: $defect');
+    }
     buffer.writeln('LOCATION: ${_getPhysicalLocation()}');
     buffer.writeln('ID: ${widget.jobResponse.data?.sId ?? 'N/A'}');
     return buffer.toString();
@@ -884,7 +894,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                           Navigator.of(context).pop();
                         }
                       },
-                      icon: CupertinoIcons.back,
+                      icon: widget.fromBooking ? CupertinoIcons.check_mark : CupertinoIcons.back,
                     ),
                     Container(
                       decoration: BoxDecoration(
@@ -1102,7 +1112,8 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                   SizedBox(height: 4.h),
                 Text(
                   [
-                    if (_labelSettings.showSymptom) _getDefect(),
+                    if (_labelSettings.showSymptom)
+                      _getDefect().toUpperCase() != 'N/A' ? _getDefect() : '',
                     if (_labelSettings.showPhysicalLocation)
                       'BOX: ${_getPhysicalLocation()}',
                   ].where((e) => e.isNotEmpty).join(' | '),

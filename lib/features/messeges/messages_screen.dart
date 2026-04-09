@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -34,65 +35,72 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.kBg,
-      body: Stack(
-        children: [
-          BlocConsumer<MessageCubit, MessageState>(
-            listener: (context, state) {
-              if (state is ConversationsLoaded) {
-                setState(() {
-                  _conversations = state.conversations;
-                });
-              }
-              if (state is MessageError) {
-                SnackbarDemo(message: state.message)
-                    .showCustomSnackbar(context);
-              }
-            },
-            builder: (context, state) {
-              if (state is MessageLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              return Padding(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 60.h,
-                ),
-                child: _conversations.isEmpty
-                    ? _buildEmptyState()
-                    : _buildMessagesList(),
-              );
-            },
-          ),
-
-          // Custom Header
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top,
-                left: 16.w,
-                right: 16.w,
-                bottom: 8.h,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.kBg.withValues(alpha: 0.1),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Messages',
-                    style: AppTypography.sfProHeadLineTextStyle22,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.black,
+        statusBarIconBrightness: Brightness.dark, // Android
+        statusBarBrightness: Brightness.dark, // iOS
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.kBg,
+        body: Stack(
+          children: [
+            BlocConsumer<MessageCubit, MessageState>(
+              listener: (context, state) {
+                if (state is ConversationsLoaded) {
+                  setState(() {
+                    _conversations = state.conversations;
+                  });
+                }
+                if (state is MessageError) {
+                  SnackbarDemo(message: state.message)
+                      .showCustomSnackbar(context);
+                }
+              },
+              builder: (context, state) {
+                if (state is MessageLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+      
+                return Padding(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 60.h,
                   ),
-                ],
+                  child: _conversations.isEmpty
+                      ? _buildEmptyState()
+                      : _buildMessagesList(),
+                );
+              },
+            ),
+      
+            // Custom Header
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 8.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.kBg.withValues(alpha: 0.1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Messages',
+                      style: AppTypography.sfProHeadLineTextStyle22,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

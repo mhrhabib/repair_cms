@@ -513,9 +513,9 @@ class BrotherPrinterService implements BasePrinterService {
     final int printHeadLineBytes = isTD4 ? 128 : imageLineBytes;
     // Position content on the TD-4 print head. The 50mm label sits on the
     // 4-inch (102mm) print head with a physical left margin. We shift content
-    // right by ~75% of the gap to align with the label's printable area.
+    // right by ~76% of the gap to align with the label's printable area.
     final int totalGap = printHeadLineBytes - imageLineBytes;
-    final int leftPadBytes = isTD4 ? (totalGap * 0.78).round() : 0;
+    final int leftPadBytes = isTD4 ? (totalGap * 0.76).round() : 0;
 
     _talker.info('[BrotherRawTCP] 📐 Label config: ${labelWidth}x${labelHeight}mm');
     _talker.info('[BrotherRawTCP] 📐 DPI: ${dotsPerMm > 10 ? 300 : 203}, Dots/mm: ${dotsPerMm.toStringAsFixed(3)}');

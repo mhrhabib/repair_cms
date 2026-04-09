@@ -38,11 +38,12 @@ class FirebaseNotificationService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // Tell iOS to show notification banners even when app is in foreground
+        // Disable iOS automatic foreground banners — we show local notifications
+        // manually via LocalNotificationService to avoid duplicate notifications
         await _fcm.setForegroundNotificationPresentationOptions(
-          alert: true,
-          badge: true,
-          sound: true,
+          alert: false,
+          badge: false,
+          sound: false,
         );
 
         // On iOS, we need to wait for the APNS token before getting FCM token
@@ -159,25 +160,26 @@ class FirebaseNotificationService {
     );
     debugPrint('Data: ${message.data}');
 
-    if (message.notification != null) {
-      final localNotify = SetUpDI.getIt<LocalNotificationService>();
+    final conversationId = message.data['conversationId']?.toString() ?? '';
+    final jobNo = message.data['jobNo']?.toString();
+    final type = message.data['type']?.toString();
+    final action = message.data['action']?.toString();
+    final notifMessage = message.data['message']?.toString();
 
-      final conversationId = message.data['conversationId']?.toString() ?? '';
-      final jobNo = message.data['jobNo']?.toString();
-      final type = message.data['type']?.toString();
-      final action = message.data['action']?.toString();
-      final notifMessage = message.data['message']?.toString();
+    // Use notification payload if available, fall back to data payload
+    final title = message.notification?.title ?? message.data['title']?.toString() ?? 'New Notification';
+    final body = message.notification?.body ?? message.data['body']?.toString() ?? '';
 
-      localNotify.showMessageNotification(
-        senderName: message.notification?.title ?? 'New Notification',
-        messageText: message.notification?.body ?? '',
-        conversationId: conversationId,
-        jobNo: jobNo,
-        type: type,
-        action: action,
-        notifMessage: notifMessage,
-      );
-    }
+    final localNotify = SetUpDI.getIt<LocalNotificationService>();
+    localNotify.showMessageNotification(
+      senderName: title,
+      messageText: body,
+      conversationId: conversationId,
+      jobNo: jobNo,
+      type: type,
+      action: action,
+      notifMessage: notifMessage,
+    );
   }
 
   /// Handle messages that opened the app from background/terminated state

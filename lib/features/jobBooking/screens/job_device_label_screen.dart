@@ -143,7 +143,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
 
   String _getDeviceIMEI() {
     final device = widget.jobResponse.data?.device?.firstOrNull;
-    return device?.imei ?? 'N/A';
+    return device?.imei ?? device?.serialNo ?? 'N/A';
   }
 
   String _getCustomerName() {
@@ -331,8 +331,14 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                         Text(
                           [
                             if (_labelSettings.showCustomerName) _getCustomerName(),
-                            if (_labelSettings.showModelBrand) '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}',
-                            if (_labelSettings.showSymptom) _getDefect(),
+                            if (_labelSettings.showModelBrand)
+                              _getDeviceName().isNotEmpty
+                                  ? (_getDeviceIMEI().toUpperCase() != 'N/A'
+                                      ? '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}'
+                                      : _getDeviceName())
+                                  : '',
+                            if (_labelSettings.showSymptom)
+                              _getDefect().toUpperCase() != 'N/A' ? _getDefect() : '',
                             if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
                           ].where((e) => e.isNotEmpty).join(' | '),
                           style: TextStyle(
@@ -372,7 +378,7 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                         Navigator.of(context).pop();
                       }
                     },
-                    icon: CupertinoIcons.back,
+                    icon: widget.fromBooking ? CupertinoIcons.check_mark : CupertinoIcons.back,
                   ),
                   Container(
                     decoration: BoxDecoration(
