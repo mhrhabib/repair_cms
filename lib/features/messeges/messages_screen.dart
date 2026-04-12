@@ -37,9 +37,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.black,
-        statusBarIconBrightness: Brightness.dark, // Android
-        statusBarBrightness: Brightness.dark, // iOS
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // Android: dark icons
+        statusBarBrightness: Brightness.light, // iOS: light background = dark icons
       ),
       child: Scaffold(
         backgroundColor: AppColors.kBg,

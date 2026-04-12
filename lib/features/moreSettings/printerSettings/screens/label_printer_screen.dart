@@ -25,35 +25,18 @@ class _LabelPrinterScreenState extends State<LabelPrinterScreen> {
   final PrinterSettingsService _settingsService = PrinterSettingsService();
 
   // Supported label printer brands
-  final List<String> _supportedBrands = ['Brother', 'Xprinter', 'Dymo'];
+  final List<String> _supportedBrands = ['Brother', 'Xprinter',];
 
   // Models for each brand
   final Map<String, List<String>> _brandModels = {
     'Brother': [
-      'TD-2030A',
-      'TD-2125N',
-      'TD-2125NWB',
-      'TD-2135N',
-      'TD-2135NWB',
       'TD-2350D',
-      'TD-2350DA',
-      'TD-4210D',
-      'TD-4410D',
-      'TD-4420DN',
-      'TD-4520DN',
       'TD-4550DNWB',
-      'TD-455DNWB',
     ],
     'Xprinter': [
-      'XP-80C',
-      'XP-365B',
-      'XP-N160II',
       'XP-410B',
-      'XP-420B',
-      'XP-470B',
-      'XP-DT425B',
     ],
-    'Dymo': ['LabelWriter 450', 'LabelWriter 4XL', 'LabelWriter 550'],
+    //'Dymo': ['LabelWriter 450', 'LabelWriter 4XL', 'LabelWriter 550'],
   };
 
   List<PrinterConfigModel> _savedPrinters = [];

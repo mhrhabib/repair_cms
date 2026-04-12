@@ -45,13 +45,14 @@ class _SignInScreenState extends State<SignInScreen> {
 
     // Open keyboard automatically
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       FocusScope.of(context).requestFocus(_emailFocusNode);
       _checkBiometricOnStart();
       _loadBiometricType();
     });
 
     _emailFocusNode.addListener(() {
-      setState(() {});
+      if (mounted) setState(() {});
     });
   }
 
@@ -285,8 +286,8 @@ class _SignInScreenState extends State<SignInScreen> {
                                         // hide default InputDecorator error text because we show a custom widget below
                                         errorStyle: const TextStyle(color: Colors.transparent, fontSize: 0, height: 0),
                                       ),
-                                      // Ensure caret and focus behavior are explicit so cursor is visible
-                                      autofocus: true,
+                                      // Focus handled by addPostFrameCallback with mounted check
+                                      autofocus: false,
                                       showCursor: true,
                                       cursorColor: AppColors.blackColor,
                                       enableInteractiveSelection: true,

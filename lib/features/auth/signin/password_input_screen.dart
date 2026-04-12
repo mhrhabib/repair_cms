@@ -38,7 +38,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     super.initState();
     _passwordController.addListener(_validatePassword);
     _passwordFocusNode.addListener(() {
-      setState(() {});
+      if (mounted) setState(() {});
     });
     _loadBiometricType();
   }
@@ -57,6 +57,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     try {
       final biometricType = await BiometricStorageService.getBiometricType();
       final hasStoredCredentials = await BiometricStorageService.hasBiometricCredentials();
+      if (!mounted) return;
       setState(() {
         _biometricType = biometricType;
         _hasStoredCredentials = hasStoredCredentials;

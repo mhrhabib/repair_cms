@@ -2309,7 +2309,9 @@ class _NoteSheetState extends State<_NoteSheet> {
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.note?.text ?? '');
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
   }
 
   @override
@@ -2340,11 +2342,13 @@ class _NoteSheetState extends State<_NoteSheet> {
         : cubit.addJobNote(jobId: jid, noteText: text, userId: uid, userName: uname);
     fut
         .then((_) {
+          if (!mounted) return;
           setState(() => _loading = false);
           widget.onSaved();
           Navigator.pop(context, true);
         })
         .catchError((e) {
+          if (!mounted) return;
           setState(() => _loading = false);
           SnackbarDemo(message: 'Failed: $e').showCustomSnackbar(context);
         });

@@ -1,3 +1,4 @@
+import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart';
@@ -40,7 +41,15 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
         _problemDescriptionController.text = state.defect.defect.first.value;
       }
       if (state.defect.internalNote.isNotEmpty) {
-        _internalNoteController.text = state.defect.internalNote.join('\n');
+        // Each note may be a Map (new structured format) or a plain String
+        // (legacy). Extract the text field for display either way.
+        _internalNoteController.text = state.defect.internalNote
+            .map((note) {
+              if (note is Map) return (note['text'] ?? '').toString();
+              return note?.toString() ?? '';
+            })
+            .where((text) => text.isNotEmpty)
+            .join('\n');
       }
     }
   }
@@ -54,9 +63,32 @@ class StepProblemWidgetState extends State<StepProblemWidget> {
   }
 
   void _saveToCubit() {
-    final internalNotes = _internalNoteController.text.trim().isNotEmpty
-        ? [_internalNoteController.text.trim()]
-        : <String>[];
+    final noteText = _internalNoteController.text.trim();
+
+    final List<dynamic> internalNotes;
+    if (noteText.isNotEmpty) {
+      final storage = GetStorage();
+      final String userId = (storage.read('userId') ?? '').toString();
+      final String userName = (storage.read('fullName') ?? '').toString();
+      final String createdAt = DateTime.now().toIso8601String();
+      final String idSuffix = userId.length >= 8
+          ? userId.substring(0, 8)
+          : userId;
+      final String noteId =
+          '${DateTime.now().millisecondsSinceEpoch}-$idSuffix';
+
+      internalNotes = [
+        {
+          'text': noteText,
+          'userId': userId,
+          'createdAt': createdAt,
+          'userName': userName,
+          'id': noteId,
+        },
+      ];
+    } else {
+      internalNotes = <dynamic>[];
+    }
 
     // Update internal notes and defect description in cubit
     context.read<JobBookingCubit>().updateDefectInfo(
