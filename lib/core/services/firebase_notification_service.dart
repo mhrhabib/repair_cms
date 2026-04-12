@@ -38,12 +38,11 @@ class FirebaseNotificationService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // We handle foreground notifications manually via LocalNotificationService
-        // to have more control and avoid duplication.
+        // Tell iOS to show notification banners even when app is in foreground
         await _fcm.setForegroundNotificationPresentationOptions(
-          alert: false,
-          badge: false,
-          sound: false,
+          alert: true,
+          badge: true,
+          sound: true,
         );
 
         // On iOS, we need to wait for the APNS token before getting FCM token
@@ -155,19 +154,22 @@ class FirebaseNotificationService {
     debugPrint(
       '📩 [FirebaseNotificationService] Foreground message received: ${message.messageId}',
     );
-    debugPrint(
-      '   Title: ${message.notification?.title}',
-    );
-    debugPrint(
-      '   Body: ${message.notification?.body}',
-    );
+    debugPrint('   Title: ${message.notification?.title}');
+    debugPrint('   Body: ${message.notification?.body}');
     debugPrint('   Data: ${message.data}');
-    
+
     final localNotify = SetUpDI.getIt<LocalNotificationService>();
 
     // Prefer the standard notification payload, but support data-only messages
-    final senderName = message.notification?.title ?? message.data['title']?.toString() ?? 'RepairCMS';
-    final messageText = message.notification?.body ?? message.data['body']?.toString() ?? message.data['message']?.toString() ?? '';
+    final senderName =
+        message.notification?.title ??
+        message.data['title']?.toString() ??
+        'RepairCMS';
+    final messageText =
+        message.notification?.body ??
+        message.data['body']?.toString() ??
+        message.data['message']?.toString() ??
+        '';
     final conversationId = message.data['conversationId']?.toString() ?? '';
     final jobNo = message.data['jobNo']?.toString();
     final type = message.data['type']?.toString();
@@ -176,7 +178,9 @@ class FirebaseNotificationService {
 
     // Only show a local notification if there's something to display
     if ((message.notification != null) || messageText.isNotEmpty) {
-      debugPrint('🔔 [FirebaseNotificationService] Showing local notification for foreground message');
+      debugPrint(
+        '🔔 [FirebaseNotificationService] Showing local notification for foreground message',
+      );
       localNotify.showMessageNotification(
         senderName: senderName,
         messageText: messageText,
@@ -187,7 +191,9 @@ class FirebaseNotificationService {
         notifMessage: notifMessage,
       );
     } else {
-      debugPrint('⚠️ [FirebaseNotificationService] Foreground message has no notification payload or displayable body in data');
+      debugPrint(
+        '⚠️ [FirebaseNotificationService] Foreground message has no notification payload or displayable body in data',
+      );
     }
   }
 

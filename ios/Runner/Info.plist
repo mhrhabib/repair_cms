@@ -63,7 +63,5 @@
 		<string>https</string>
 		<string>http</string>
 	</array>
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
 </dict>
 </plist>
