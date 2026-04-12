@@ -36,7 +36,7 @@ class _CustomNavButtonState extends State<CustomNavButton>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 100),
     );
 
     // Dissolve effect: ease-in opacity fade

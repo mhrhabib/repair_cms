@@ -122,6 +122,6 @@ flutter_launcher_icons:
   min_sdk_android: 21
   remove_alpha_ios: false
   # Updated: Use Primary Blue instead of white to avoid the "whitish" look
-  adaptive_icon_background: "#FFFFFF" # AppColors.primary
+  adaptive_icon_background: "#c2c2c2" # AppColors.primary
   adaptive_icon_foreground: "assets/icon/icon.png"
 

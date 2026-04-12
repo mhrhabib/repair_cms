@@ -114,10 +114,10 @@ class LocalNotificationService {
         'messages_channel', // Channel ID
         'Messages', // Channel name
         channelDescription: 'Notifications for new messages',
-        importance: Importance.high,
+        importance: Importance.max, // High importance for heads-up
         priority: Priority.high,
         showWhen: true,
-        icon: '@mipmap/notification_icon',
+        icon: '@drawable/notification_icon',
         enableVibration: true,
         playSound: true,
         ticker: 'New message',
@@ -125,8 +125,11 @@ class LocalNotificationService {
       );
 
       // iOS notification details
+      // presentBanner + presentList are required on iOS 14+ (presentAlert alone is deprecated)
       const iosDetails = DarwinNotificationDetails(
         presentAlert: true,
+        presentBanner: true,
+        presentList: true,
         presentBadge: true,
         presentSound: true,
         badgeNumber: 1,
@@ -238,7 +241,8 @@ class LocalNotificationService {
       } else if (defaultTargetPlatform == TargetPlatform.iOS) {
         final iosImplementation = _notifications
             .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
-        final settings = await iosImplementation?.requestPermissions();
+        final settings = await iosImplementation?.requestPermissions(alert: true, badge: true, sound: true);
+        debugPrint('📱 [LocalNotificationService] Checked iOS permissions: $settings');
         return settings ?? false;
       }
       return false;

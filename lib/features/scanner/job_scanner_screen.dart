@@ -85,9 +85,8 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
       MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: code)),
     );
 
-    // Optional: Keep the snackbar if you still want to show a toast,
-    // or remove it since the screen transition might be obvious enough.
-    SnackbarDemo(message: 'Job ID scanned: $code').showCustomSnackbar(context);
+    // Removed snackbar as per user request
+    // SnackbarDemo(message: 'Job ID scanned: $code').showCustomSnackbar(context);
   }
 
   @override
@@ -177,9 +176,7 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
                 right: 16.w,
                 bottom: 8.h,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.black,
-              ),
+              decoration: const BoxDecoration(color: Colors.black),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -189,7 +186,9 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
                     iconColor: Colors.black,
                   ),
                   Text(
-                    widget.isBarcodeMode ? 'Barcode Scanner' : 'QR Code Scanner',
+                    widget.isBarcodeMode
+                        ? 'Barcode Scanner'
+                        : 'QR Code Scanner',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18.sp,
@@ -253,9 +252,10 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
                     builder: (context) => JobDetailsScreen(jobId: jobId),
                   ),
                 );
-                SnackbarDemo(
-                  message: 'Job ID entered: $jobId',
-                ).showCustomSnackbar(context);
+                // Removed snackbar as per user request
+                // SnackbarDemo(
+                //   message: 'Job ID entered: $jobId',
+                // ).showCustomSnackbar(context);
               }
             },
             style: ElevatedButton.styleFrom(
