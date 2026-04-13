@@ -81,11 +81,10 @@ class _JobThermalReceiptPreviewScreenState
     }
   }
 
-  Future<void> _showPrinterSelection() async {
-    debugPrint('🖨️ Opening thermal printer selection');
-
+  /// Handle print button tap: show selection if multiple printers exist, otherwise print directly
+  Future<void> _handlePrintTap() async {
     final allPrinters = _settingsService.getAllPrinters();
-    final thermalPrinters = allPrinters['thermal'] ?? [];
+    final List<PrinterConfigModel> thermalPrinters = allPrinters['thermal'] ?? [];
 
     if (thermalPrinters.isEmpty) {
       showDialog(
@@ -105,6 +104,18 @@ class _JobThermalReceiptPreviewScreenState
       );
       return;
     }
+
+    if (thermalPrinters.length == 1) {
+      // Rule 2: if one printer setup just print
+      await _printThermalReceipt(thermalPrinters.first);
+    } else {
+      // Rule 1: if two or more printer setup show user to select
+      await _showPrinterSelectionDialog(thermalPrinters);
+    }
+  }
+
+  Future<void> _showPrinterSelectionDialog(List<PrinterConfigModel> thermalPrinters) async {
+    debugPrint('🖨️ Opening thermal printer selection');
 
     showCupertinoModalPopup<void>(
       context: context,
@@ -741,7 +752,7 @@ class _JobThermalReceiptPreviewScreenState
                       ),
                     ),
                     CustomNavButton(
-                      onPressed: _showPrinterSelection,
+                      onPressed: _handlePrintTap,
                       icon: Icons.print,
                       size: 20.sp,
                       iconColor: const Color(0xFF3A4A67),
@@ -786,7 +797,7 @@ class _JobThermalReceiptPreviewScreenState
               SizedBox(width: 12.w),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _showPrinterSelection,
+                  onPressed: _handlePrintTap,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 14.h),
                     backgroundColor: AppColors.primary,

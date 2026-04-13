@@ -50,6 +50,7 @@ class CustomDropdownSearch<T> extends StatefulWidget {
   }
 
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final List<T> items;
   final String hintText;
   final String noItemsText;
@@ -61,10 +62,12 @@ class CustomDropdownSearch<T> extends StatefulWidget {
   final double? maxHeight;
   final Color? suggestionsBoxColor;
   final TextFieldConfiguration? textFieldConfiguration;
+  final bool showSuggestionsWhenEmpty;
 
   const CustomDropdownSearch({
     super.key,
     required this.controller,
+    this.focusNode,
     required this.items,
     required this.hintText,
     required this.onSuggestionSelected,
@@ -76,6 +79,7 @@ class CustomDropdownSearch<T> extends StatefulWidget {
     this.maxHeight,
     this.suggestionsBoxColor,
     this.textFieldConfiguration,
+    this.showSuggestionsWhenEmpty = false,
   });
 
   @override
@@ -98,12 +102,18 @@ class _CustomDropdownSearchState<T> extends State<CustomDropdownSearch<T>> {
         displayAllSuggestionWhenTap: widget.displayAllSuggestionWhenTap,
         isMultiSelectDropdown: widget.isMultiSelectDropdown,
         itemBuilder: widget.itemBuilder,
-        suggestionsCallback: widget.suggestionsCallback,
+        suggestionsCallback: (pattern) {
+          if (!widget.showSuggestionsWhenEmpty && pattern.isEmpty) {
+            return [];
+          }
+          return widget.suggestionsCallback(pattern);
+        },
         suggestionsBoxController: _suggestionsBoxController,
         textFieldConfiguration:
             widget.textFieldConfiguration ??
             TextFieldConfiguration(
               controller: widget.controller,
+              focusNode: widget.focusNode,
               style: GoogleFonts.roboto(fontSize: 22.sp, color: AppColors.fontMainColor),
               cursorColor: AppColors.warningColor,
               decoration: InputDecoration(

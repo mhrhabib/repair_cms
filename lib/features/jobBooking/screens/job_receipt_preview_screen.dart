@@ -297,16 +297,22 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         ? 'label'
         : 'a4';
 
-    final selectedPrinter = await showDialog<PrinterConfigModel>(
-      context: context,
-      builder: (_) => _PrinterSelectionDialog(
-        printers: configuredPrinters,
-        defaultPrinterType: defaultPrinterType,
-      ),
-    );
+    if (configuredPrinters.length == 1) {
+      // Rule 2: if one printer setup just print
+      _printReceipt(configuredPrinters.first);
+    } else {
+      // Rule 1: if two or more printer setup show user to select
+      final selectedPrinter = await showDialog<PrinterConfigModel>(
+        context: context,
+        builder: (_) => _PrinterSelectionDialog(
+          printers: configuredPrinters,
+          defaultPrinterType: defaultPrinterType,
+        ),
+      );
 
-    if (selectedPrinter != null && mounted) {
-      _printReceipt(selectedPrinter);
+      if (selectedPrinter != null && mounted) {
+        _printReceipt(selectedPrinter);
+      }
     }
   }
 

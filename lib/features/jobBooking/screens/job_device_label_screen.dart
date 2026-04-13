@@ -42,18 +42,6 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
   // Label content settings
   late LabelContentSettings _labelSettings;
 
-  /// Get the last used or default printer for one-click printing
-  PrinterConfigModel? _getDefaultPrinter() {
-    final allPrinters = _settingsService.getAllPrinters();
-    final List<PrinterConfigModel> labelPrinters = allPrinters['label'] ?? [];
-
-    if (labelPrinters.isEmpty) return null;
-
-    // Try to get last used printer from storage
-    // For now, return the first available printer
-    return labelPrinters.first;
-  }
-
   /// Enhanced print method using centralized printer service
   Future<void> _printLabel(PrinterConfigModel printer) async {
     // If protocol is USB and printer supports image printing, try image path
@@ -334,11 +322,10 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
                             if (_labelSettings.showModelBrand)
                               _getDeviceName().isNotEmpty
                                   ? (_getDeviceIMEI().toUpperCase() != 'N/A'
-                                      ? '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}'
-                                      : _getDeviceName())
+                                        ? '${_getDeviceName()} IMEI: ${_getDeviceIMEI()}'
+                                        : _getDeviceName())
                                   : '',
-                            if (_labelSettings.showSymptom)
-                              _getDefect().toUpperCase() != 'N/A' ? _getDefect() : '',
+                            if (_labelSettings.showSymptom) _getDefect().toUpperCase() != 'N/A' ? _getDefect() : '',
                             if (_labelSettings.showPhysicalLocation) 'BOX: ${_getPhysicalLocation()}',
                           ].where((e) => e.isNotEmpty).join(' | '),
                           style: TextStyle(
@@ -436,15 +423,23 @@ class _JobDeviceLabelScreenState extends State<JobDeviceLabelScreen> {
     );
   }
 
-  /// Handle print button tap: try default printer, otherwise show selection
+  /// Handle print button tap: show selection if multiple printers exist, otherwise print directly
   Future<void> _handlePrintTap() async {
-    final defaultPrinter = _getDefaultPrinter();
-    if (defaultPrinter != null) {
-      await _printLabel(defaultPrinter);
+    final allPrinters = _settingsService.getAllPrinters();
+    final List<PrinterConfigModel> labelPrinters = allPrinters['label'] ?? [];
+
+    if (labelPrinters.isEmpty) {
+      showCustomToast('No label printers configured', isError: true);
       return;
     }
 
-    await _showPrinterSelection();
+    if (labelPrinters.length == 1) {
+      // Rule 2: if one printer setup just print
+      await _printLabel(labelPrinters.first);
+    } else {
+      // Rule 1: if two or more printer setup show user to select
+      await _showPrinterSelection();
+    }
   }
 
   /// Generate label image using the shared LabelImageGenerator

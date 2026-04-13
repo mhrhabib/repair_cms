@@ -140,8 +140,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   // Separate change detection for profile data and avatar
   bool get _hasProfileDataChanges {
-    return _nameController.text != _originalName ||
-        _positionController.text != _originalPosition;
+    return _nameController.text != _originalName || _positionController.text != _originalPosition;
   }
 
   bool get _hasAvatarChanges {
@@ -156,9 +155,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     final profileCubit = context.read<ProfileCubit>();
     final signInCubit = context.read<SignInCubit>();
 
-    final userId = signInCubit.userId == ''
-        ? storage.read('userId')
-        : signInCubit.userId;
+    final userId = signInCubit.userId == '' ? storage.read('userId') : signInCubit.userId;
 
     if (userId == null || userId.isEmpty) {
       _showErrorSnackBar('User ID not found');
@@ -214,10 +211,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
       debugPrint('🚀 [PersonalDetailsScreen] Uploading avatar');
       // Upload avatar only using the separate method
-      final newImageUrl = await profileCubit.updateUserAvatar(
-        userId,
-        _selectedImage!.path,
-      );
+      final newImageUrl = await profileCubit.updateUserAvatar(userId, _selectedImage!.path);
 
       // Clear selected image after successful upload and set the new avatar URL
       if (mounted) {
@@ -267,16 +261,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -2)),
           ],
         ),
         child: SafeArea(
@@ -287,20 +274,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey.shade200),
-                  ),
+                  border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Choose Profile Picture',
-                      style: GoogleFonts.roboto(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
+                      style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
@@ -334,9 +315,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               // Remove photo option
               BlocBuilder<ProfileCubit, ProfileStates>(
                 builder: (context, state) {
-                  if (state is ProfileLoaded &&
-                      state.user.avatar != null &&
-                      state.user.avatar!.isNotEmpty) {
+                  if (state is ProfileLoaded && state.user.avatar != null && state.user.avatar!.isNotEmpty) {
                     return _buildBottomSheetOption(
                       icon: Icons.delete,
                       title: 'Remove Photo',
@@ -398,18 +377,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   void _uploadImageImmediately(XFile image) {
     if (!mounted) {
-      debugPrint(
-        '⚠️ [PersonalDetailsScreen] Widget not mounted, aborting upload',
-      );
+      debugPrint('⚠️ [PersonalDetailsScreen] Widget not mounted, aborting upload');
       return;
     }
 
     final profileCubit = context.read<ProfileCubit>();
     final signInCubit = context.read<SignInCubit>();
 
-    final userId = signInCubit.userId == ''
-        ? storage.read('userId')
-        : signInCubit.userId;
+    final userId = signInCubit.userId == '' ? storage.read('userId') : signInCubit.userId;
 
     if (userId == null || userId.isEmpty) {
       _showErrorSnackBar('User ID not found');
@@ -442,9 +417,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
             // Show success message
           } catch (e) {
-            debugPrint(
-              '❌ [PersonalDetailsScreen] Error updating UI after upload: $e',
-            );
+            debugPrint('❌ [PersonalDetailsScreen] Error updating UI after upload: $e');
           }
         })
         .catchError((error) {
@@ -456,9 +429,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               _selectedImage = null;
             });
           } catch (e) {
-            debugPrint(
-              '❌ [PersonalDetailsScreen] Error updating UI after error: $e',
-            );
+            debugPrint('❌ [PersonalDetailsScreen] Error updating UI after error: $e');
           }
           _showErrorSnackBar('Failed to upload avatar: $error');
         });
@@ -466,9 +437,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   void _removeProfilePicture(String userId) {
     if (!mounted) {
-      debugPrint(
-        '⚠️ [PersonalDetailsScreen] Widget not mounted, aborting remove',
-      );
+      debugPrint('⚠️ [PersonalDetailsScreen] Widget not mounted, aborting remove');
       return;
     }
 
@@ -489,15 +458,11 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             // Show success message
             showCustomToast('Profile picture removed', isError: false);
           } catch (e) {
-            debugPrint(
-              '❌ [PersonalDetailsScreen] Error updating UI after remove: $e',
-            );
+            debugPrint('❌ [PersonalDetailsScreen] Error updating UI after remove: $e');
           }
         })
         .catchError((error) {
-          debugPrint(
-            '❌ [PersonalDetailsScreen] Failed to remove picture: $error',
-          );
+          debugPrint('❌ [PersonalDetailsScreen] Failed to remove picture: $error');
           _showErrorSnackBar('Failed to remove profile picture: $error');
         });
   }
@@ -513,24 +478,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       leading: Container(
         width: 44,
         height: 44,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
         child: Icon(icon, color: color, size: 24),
       ),
       title: Text(
         title,
-        style: GoogleFonts.roboto(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: Colors.black87,
-        ),
+        style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
       ),
-      subtitle: Text(
-        subtitle,
-        style: GoogleFonts.roboto(fontSize: 14, color: Colors.grey.shade600),
-      ),
+      subtitle: Text(subtitle, style: GoogleFonts.roboto(fontSize: 14, color: Colors.grey.shade600)),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap,
     );
@@ -613,9 +568,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                     right: 16.w,
                     bottom: 8.h,
                   ),
-                  decoration: BoxDecoration(
-                    color: AppColors.kBg.withValues(alpha: 0.1),
-                  ),
+                  decoration: BoxDecoration(color: AppColors.kBg.withValues(alpha: 0.1)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -623,22 +576,15 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                         onPressed: () {
                           if (!mounted) return;
                           try {
-                            debugPrint(
-                              '🔄 [PersonalDetailsScreen] Navigating back',
-                            );
+                            debugPrint('🔄 [PersonalDetailsScreen] Navigating back');
                             Navigator.pop(context);
                           } catch (e) {
-                            debugPrint(
-                              '❌ [PersonalDetailsScreen] Error navigating back: $e',
-                            );
+                            debugPrint('❌ [PersonalDetailsScreen] Error navigating back: $e');
                           }
                         },
                         icon: CupertinoIcons.back,
                       ),
-                      Text(
-                        'Personal Details',
-                        style: AppTypography.sfProHeadLineTextStyle22,
-                      ),
+                      Text('Personal Details', style: AppTypography.sfProHeadLineTextStyle22),
                       const SizedBox(width: 48), // Spacer for centering title
                     ],
                   ),
@@ -653,7 +599,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 
   Widget _buildBody(BuildContext context, ProfileStates state) {
-    if (state is ProfileLoading || state is ProfileInitial) {
+    // Only show a full-screen loader if we have NO user data at all
+    if ((state is ProfileLoading || state is ProfileInitial) && !_controllersInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -672,22 +619,13 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       final user = state.user;
 
       return SingleChildScrollView(
-        padding: EdgeInsets.only(
-          bottom: 20,
-          top: MediaQuery.of(context).padding.top + 72.h,
-          left: 12.w,
-          right: 12.w,
-        ),
+        padding: EdgeInsets.only(bottom: 20, top: MediaQuery.of(context).padding.top + 72.h, left: 12.w, right: 12.w),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
             ],
           ),
           child: Padding(
@@ -712,22 +650,15 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       child: Stack(
                         children: [
                           // Profile Image with loading state
-                          if (_isLoadingAvatarUrl &&
-                              user.avatar != null &&
-                              user.avatar!.isNotEmpty)
+                          if (_isLoadingAvatarUrl && user.avatar != null && user.avatar!.isNotEmpty)
                             Container(
                               width: double.infinity,
                               height: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                shape: BoxShape.circle,
-                              ),
+                              decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle),
                               child: const Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.blue,
-                                  ),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                                 ),
                               ),
                             )
@@ -749,9 +680,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                               ),
                               child: const Center(
                                 child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               ),
                             ),
@@ -764,16 +693,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       bottom: 0,
                       right: 0,
                       child: GestureDetector(
-                        onTap: (_isUploadingAvatar || _isLoadingAvatarUrl)
-                            ? null
-                            : _showImageSourceBottomSheet,
+                        onTap: (_isUploadingAvatar || _isLoadingAvatarUrl) ? null : _showImageSourceBottomSheet,
                         child: Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: (_isUploadingAvatar || _isLoadingAvatarUrl)
-                                ? Colors.grey
-                                : Colors.blue,
+                            color: (_isUploadingAvatar || _isLoadingAvatarUrl) ? Colors.grey : Colors.blue,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 3),
                             boxShadow: [
@@ -785,9 +710,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                             ],
                           ),
                           child: Icon(
-                            _isUploadingAvatar
-                                ? Icons.hourglass_empty
-                                : Icons.camera_alt,
+                            _isUploadingAvatar ? Icons.hourglass_empty : Icons.camera_alt,
                             color: Colors.white,
                             size: 18,
                           ),
@@ -798,17 +721,11 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 ),
 
                 // Loading Avatar URL Text
-                if (_isLoadingAvatarUrl &&
-                    user.avatar != null &&
-                    user.avatar!.isNotEmpty) ...[
+                if (_isLoadingAvatarUrl && user.avatar != null && user.avatar!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
                     'Loading avatar...',
-                    style: GoogleFonts.roboto(
-                      color: Colors.blue,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: GoogleFonts.roboto(color: Colors.blue, fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ],
 
@@ -817,30 +734,18 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                   const SizedBox(height: 12),
                   Text(
                     'Uploading avatar...',
-                    style: GoogleFonts.roboto(
-                      color: Colors.blue,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: GoogleFonts.roboto(color: Colors.blue, fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ],
 
                 const SizedBox(height: 32),
 
                 // Rest of your form fields...
-                _buildInputField(
-                  label: 'Full Name',
-                  controller: _nameController,
-                  focusNode: _nameFocusNode,
-                ),
+                _buildInputField(label: 'Full Name', controller: _nameController, focusNode: _nameFocusNode),
                 SizedBox(height: 12.h),
                 _buildReadOnlyField(label: 'Email', value: user.email ?? ''),
                 SizedBox(height: 12.h),
-                _buildInputField(
-                  label: 'Position',
-                  controller: _positionController,
-                  focusNode: _positionFocusNode,
-                ),
+                _buildInputField(label: 'Position', controller: _positionController, focusNode: _positionFocusNode),
                 const SizedBox(height: 20),
                 _buildRoleField(value: user.userType ?? ''),
                 SizedBox(height: 30.h),
@@ -877,8 +782,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   Widget _buildBottomButton(BuildContext context, ProfileStates state) {
     // Only show save button for profile data changes, not for avatar changes
-    if ((state is ProfileLoading && !_isUploadingAvatar) ||
-        !_hasProfileDataChanges) {
+    if ((state is ProfileLoading && !_isUploadingAvatar) || !_hasProfileDataChanges) {
       return const SizedBox.shrink();
     }
 
@@ -894,12 +798,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           ),
           child: CustomButton(
             text: 'Save Profile Data',
-            onPressed:
-                (state is ProfileLoading ||
-                    _isUploadingAvatar ||
-                    _isLoadingAvatarUrl)
-                ? null
-                : _saveChanges,
+            onPressed: (state is ProfileLoading || _isUploadingAvatar || _isLoadingAvatarUrl) ? null : _saveChanges,
             isLoading: state is ProfileLoading,
           ),
         ),
@@ -917,11 +816,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
-            color: Colors.black54,
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w500,
-          ),
+          style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -943,10 +838,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           style: AppTypography.fontSize16Normal,
         ),
@@ -960,11 +852,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
-            color: Colors.black54,
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w500,
-          ),
+          style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -981,10 +869,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           style: AppTypography.fontSize16Normal,
         ),
@@ -998,11 +883,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       children: [
         Text(
           'Role',
-          style: GoogleFonts.roboto(
-            color: Colors.black54,
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w500,
-          ),
+          style: GoogleFonts.roboto(color: Colors.black54, fontSize: 13.sp, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -1011,10 +892,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey.shade50,
-            suffixIcon: const Icon(
-              Icons.keyboard_arrow_down,
-              color: Colors.blue,
-            ),
+            // suffixIcon: const Icon(
+            //   Icons.keyboard_arrow_down,
+            //   color: Colors.blue,
+            // ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -1027,10 +908,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           style: AppTypography.fontSize16Normal,
         ),

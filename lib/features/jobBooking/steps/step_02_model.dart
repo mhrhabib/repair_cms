@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:flutter/cupertino.dart';
 import 'dart:convert';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,11 +17,7 @@ import 'package:repair_cms/features/jobBooking/cubits/model/models_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/models_model.dart';
 
 class StepModelWidget extends StatefulWidget {
-  const StepModelWidget({
-    super.key,
-    required this.brandId,
-    required this.onCanProceedChanged,
-  });
+  const StepModelWidget({super.key, required this.brandId, required this.onCanProceedChanged});
 
   final String brandId;
   final void Function(bool canProceed) onCanProceedChanged;
@@ -100,18 +97,19 @@ class StepModelWidgetState extends State<StepModelWidget> {
 
     final companyState = context.read<CompanyCubit>().state;
     if (companyState is CompanyLoaded) {
-      context.read<JobBookingCubit>().updateReceiptFooterFromCompany(
-        companyState.company,
-      );
+      context.read<JobBookingCubit>().updateReceiptFooterFromCompany(companyState.company);
     }
 
     final jobReceiptState = context.read<JobReceiptCubit>().state;
     if (jobReceiptState is JobReceiptLoaded) {
       final storage = GetStorage();
-      storage.write('jobReceiptData', jsonEncode({
-        'salutation': jobReceiptState.receipt.salutation,
-        'termsAndConditions': jobReceiptState.receipt.termsAndConditions,
-      }));
+      storage.write(
+        'jobReceiptData',
+        jsonEncode({
+          'salutation': jobReceiptState.receipt.salutation,
+          'termsAndConditions': jobReceiptState.receipt.termsAndConditions,
+        }),
+      );
       context.read<JobBookingCubit>().updateReceiptData();
     }
   }
@@ -119,11 +117,7 @@ class StepModelWidgetState extends State<StepModelWidget> {
   Future<void> _addNewModel(String modelName) async {
     setState(() => _isAddingModel = true);
 
-    await context.read<ModelsCubit>().createModel(
-      name: modelName,
-      userId: _userId,
-      brandId: widget.brandId,
-    );
+    await context.read<ModelsCubit>().createModel(name: modelName, userId: _userId, brandId: widget.brandId);
 
     if (!mounted) return;
 
@@ -134,13 +128,9 @@ class StepModelWidgetState extends State<StepModelWidget> {
         orElse: () => ModelsModel(),
       );
       _selectModel(modelName, newModel.sId ?? '');
-      SnackbarDemo(
-        message: 'Model "$modelName" added successfully!',
-      ).showCustomSnackbar(context);
+      SnackbarDemo(message: 'Model "$modelName" added successfully!').showCustomSnackbar(context);
     } else if (state is ModelsError) {
-      SnackbarDemo(
-        message: 'Failed to add model: ${state.message}',
-      ).showCustomSnackbar(context);
+      SnackbarDemo(message: 'Failed to add model: ${state.message}').showCustomSnackbar(context);
     }
 
     setState(() => _isAddingModel = false);
@@ -148,315 +138,182 @@ class StepModelWidgetState extends State<StepModelWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: 24.h),
-                TitleWidget(
-                  stepNumber: 2,
-                  title: 'Enter the device Model',
-                  subTitle: '(E.g. iPhone 16, Galaxy S24)',
-                ),
-
-                SizedBox(height: 32.h),
-              ],
-            ),
-          ),
-        ),
-
-        // Dropdown
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: BlocBuilder<ModelsCubit, ModelsState>(
-              builder: (context, state) {
-                if (state is ModelsLoading && _selectedModel.isEmpty) {
-                  return SizedBox(
-                    height: 60.h,
-                    child: Center(child: ShimmerLoader()),
-                  );
-                }
-                if (state is ModelsError) {
-                  return Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Failed to load models',
-                          style: AppTypography.fontSize14.copyWith(
-                            color: Colors.red,
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        ElevatedButton(
-                          onPressed: () => context
-                              .read<ModelsCubit>()
-                              .getModels(brandId: widget.brandId),
-                          child: Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                if (state is ModelsLoaded || state is ModelsSearchResult) {
-                  final models = state is ModelsLoaded
-                      ? state.models
-                      : (state as ModelsSearchResult).models;
-                  final allModels = state is ModelsLoaded
-                      ? state.models
-                      : (state as ModelsSearchResult).allModels;
-
-                  return CustomDropdownSearch<ModelsModel>(
-                    controller: _searchController,
-                    items: models,
-                    hintText: 'Answer here',
-                    noItemsText: 'No models found',
-                    displayAllSuggestionWhenTap: true,
-                    isMultiSelectDropdown: false,
-                    suggestionsBoxColor: AppColors.whiteColor,
-                    onSuggestionSelected: (model) async {
-                      if (model.sId == null &&
-                          model.name?.startsWith('Add "') == true) {
-                        final modelName = model.name?.split('"')[1] ?? '';
-                        if (modelName.isNotEmpty) await _addNewModel(modelName);
-                      } else {
-                        _selectModel(
-                          model.name ?? 'Unknown Model',
-                          model.sId ?? '',
-                        );
-                      }
-                    },
-                    itemBuilder: (context, model) {
-                      final isNewOption =
-                          model.sId == null &&
-                          model.name?.startsWith('Add "') == true;
-                      if (isNewOption) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE3F2FD),
-                            border: Border.all(
-                              color: AppColors.primary,
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: ListTile(
-                            title: Row(
-                              children: [
-                                Text(
-                                  model.name?.split('"')[1] ?? '',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 20.sp,
-                                    color: AppColors.fontMainColor,
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w,
-                                    vertical: 2.h,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(4.r),
-                                  ),
-                                  child: Text(
-                                    'NEW',
-                                    style: AppTypography.fontSize12.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: _selectedModel == model.name
-                              ? const Color(0xFFFFF59D)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: ListTile(
-                              title: CustomDropdownSearch.highlightedText(
-      text: model.name ?? 'Unknown Model',
-      query: _searchController.text,
-      style: TextStyle(fontSize: 20.sp, color:   AppColors.fontMainColor,),
-    ),
-                        ),
-                      );
-                    },
-                    suggestionsCallback: (pattern) {
-                      if (pattern.isEmpty) return allModels;
-                      final filtered = allModels
-                          .where(
-                            (m) => (m.name ?? '').toLowerCase().contains(
-                              pattern.toLowerCase(),
-                            ),
-                          )
-                          .toList();
-                      final exactMatch = filtered.any(
-                        (m) => m.name?.toLowerCase() == pattern.toLowerCase(),
-                      );
-                      if (!exactMatch && pattern.isNotEmpty) {
-                        filtered.insert(
-                          0,
-                          ModelsModel(
-                            sId: null,
-                            name: 'Add "$pattern" as new model',
-                          ),
-                        );
-                      }
-                      return filtered;
-                    },
-                  );
-                }
-                return CustomDropdownSearch<ModelsModel>(
-                  controller: _searchController,
-                  items: [],
-                  hintText: 'Loading models...',
-                  noItemsText: 'No models available',
-                  displayAllSuggestionWhenTap: false,
-                  isMultiSelectDropdown: false,
-                  onSuggestionSelected: (model) {},
-                  itemBuilder: (context, model) =>
-                      ListTile(title: Text(model.name ?? 'Unknown')),
-                  suggestionsCallback: (pattern) => [],
-                );
-              },
-            ),
-          ),
-        ),
-
-        // Selected model
-        // BlocBuilder<JobBookingCubit, JobBookingState>(
-        //   builder: (context, bookingState) {
-        //     final deviceModel = bookingState is JobBookingData
-        //         ? bookingState.device.model
-        //         : '';
-        //     if (deviceModel.isNotEmpty) {
-        //       return SliverToBoxAdapter(
-        //         child: Padding(
-        //           padding: EdgeInsets.symmetric(
-        //             horizontal: 24.w,
-        //             vertical: 16.h,
-        //           ),
-        //           child: Container(
-        //             padding: EdgeInsets.all(16.w),
-        //             decoration: BoxDecoration(
-        //               color: AppColors.primary.withValues(alpha: 0.1),
-        //               borderRadius: BorderRadius.circular(12.r),
-        //               border: Border.all(color: AppColors.primary),
-        //             ),
-        //             child: Row(
-        //               children: [
-        //                 Icon(
-        //                   Icons.check_circle,
-        //                   color: AppColors.primary,
-        //                   size: 20.sp,
-        //                 ),
-        //                 SizedBox(width: 12.w),
-        //                 Expanded(
-        //                   child: Column(
-        //                     crossAxisAlignment: CrossAxisAlignment.start,
-        //                     children: [
-        //                       Text(
-        //                         'Selected Model',
-        //                         style: AppTypography.fontSize12.copyWith(
-        //                           color: Colors.grey.shade600,
-        //                         ),
-        //                       ),
-        //                       Text(
-        //                         deviceModel,
-        //                         style: AppTypography.fontSize16Bold.copyWith(
-        //                           color: AppColors.primary,
-        //                         ),
-        //                       ),
-        //                     ],
-        //                   ),
-        //                 ),
-        //                 GestureDetector(
-        //                   onTap: () {
-        //                     setState(() {
-        //                       _selectedModel = '';
-        //                       _searchController.clear();
-        //                     });
-        //                     context.read<JobBookingCubit>().updateDeviceInfo(
-        //                       model: '',
-        //                     );
-        //                     widget.onCanProceedChanged(false);
-        //                   },
-        //                   child: Icon(
-        //                     Icons.close,
-        //                     color: Colors.grey,
-        //                     size: 20.sp,
-        //                   ),
-        //                 ),
-        //               ],
-        //             ),
-        //           ),
-        //         ),
-        //       );
-        //     }
-        //     return const SliverToBoxAdapter(child: SizedBox.shrink());
-        //   },
-        // ),
-        if (_isAddingModel)
+    return BlocListener<ModelsCubit, ModelsState>(
+      listener: (context, state) {
+        if (state is ModelsLoaded || state is ModelsSearchResult) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _searchFocusNode.requestFocus();
+            }
+          });
+        }
+      },
+      child: CustomScrollView(
+        slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 16.w,
-                    height: 16.h,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    'Adding model...',
-                    style: AppTypography.fontSize14.copyWith(
-                      color: Colors.grey,
-                    ),
-                  ),
+                  SizedBox(height: 24.h),
+                  TitleWidget(stepNumber: 2, title: 'Enter the device Model', subTitle: '(E.g. iPhone 16, Galaxy S24)'),
+                  SizedBox(height: 32.h),
                 ],
               ),
             ),
           ),
 
-        // BlocBuilder<ModelsCubit, ModelsState>(
-        //   builder: (context, state) {
-        //     if (state is ModelsLoaded && state.models.isNotEmpty) {
-        //       return SliverToBoxAdapter(
-        //         child: Padding(
-        //           padding: EdgeInsets.symmetric(horizontal: 24.w),
-        //           child: Text(
-        //             '${state.models.length} models available',
-        //             style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
-        //             textAlign: TextAlign.center,
-        //           ),
-        //         ),
-        //       );
-        //     }
-        //     return const SliverToBoxAdapter(child: SizedBox.shrink());
-        //   },
-        // ),
-        const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
-      ],
+          // Dropdown
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: BlocBuilder<ModelsCubit, ModelsState>(
+                builder: (context, state) {
+                  if (state is ModelsLoading && _selectedModel.isEmpty) {
+                    return SizedBox(
+                      height: 60.h,
+                      child: Center(child: ShimmerLoader()),
+                    );
+                  }
+                  if (state is ModelsError) {
+                    return Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Failed to load models', style: AppTypography.fontSize14.copyWith(color: Colors.red)),
+                          SizedBox(height: 8.h),
+                          ElevatedButton(
+                            onPressed: () => context.read<ModelsCubit>().getModels(brandId: widget.brandId),
+                            child: Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  if (state is ModelsLoaded || state is ModelsSearchResult) {
+                    final models = state is ModelsLoaded ? state.models : (state as ModelsSearchResult).models;
+                    final allModels = state is ModelsLoaded ? state.models : (state as ModelsSearchResult).allModels;
+
+                    return CustomDropdownSearch<ModelsModel>(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      items: models,
+                      hintText: 'Answer here',
+                      noItemsText: 'No models found',
+                      displayAllSuggestionWhenTap: true,
+                      isMultiSelectDropdown: false,
+                      showSuggestionsWhenEmpty: false,
+                      suggestionsBoxColor: AppColors.whiteColor,
+                      onSuggestionSelected: (model) async {
+                        if (model.sId == null && model.name?.startsWith('Add "') == true) {
+                          final modelName = model.name?.split('"')[1] ?? '';
+                          if (modelName.isNotEmpty) await _addNewModel(modelName);
+                        } else {
+                          _selectModel(model.name ?? 'Unknown Model', model.sId ?? '');
+                        }
+                      },
+                      itemBuilder: (context, model) {
+                        final isNewOption = model.sId == null && model.name?.startsWith('Add "') == true;
+                        if (isNewOption) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE3F2FD),
+                              border: Border.all(color: AppColors.primary, width: 1.5),
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: ListTile(
+                              title: Row(
+                                children: [
+                                  Text(
+                                    model.name?.split('"')[1] ?? '',
+                                    style: GoogleFonts.roboto(fontSize: 20.sp, color: AppColors.fontMainColor),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary,
+                                      borderRadius: BorderRadius.circular(4.r),
+                                    ),
+                                    child: Text(
+                                      'NEW',
+                                      style: AppTypography.fontSize12.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: _selectedModel == model.name ? const Color(0xFFFFF59D) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: ListTile(
+                            title: CustomDropdownSearch.highlightedText(
+                              text: model.name ?? 'Unknown Model',
+                              query: _searchController.text,
+                              style: TextStyle(fontSize: 20.sp, color: AppColors.fontMainColor),
+                            ),
+                          ),
+                        );
+                      },
+                      suggestionsCallback: (pattern) {
+                        if (pattern.isEmpty) return [];
+                        final filtered = allModels
+                            .where((m) => (m.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
+                            .toList();
+                        final exactMatch = filtered.any((m) => m.name?.toLowerCase() == pattern.toLowerCase());
+                        if (!exactMatch && pattern.isNotEmpty) {
+                          filtered.insert(0, ModelsModel(sId: null, name: 'Add "$pattern" as new model'));
+                        }
+                        return filtered;
+                      },
+                    );
+                  }
+                  return CustomDropdownSearch<ModelsModel>(
+                    controller: _searchController,
+                    items: [],
+                    hintText: 'Loading models...',
+                    noItemsText: 'No models available',
+                    displayAllSuggestionWhenTap: false,
+                    isMultiSelectDropdown: false,
+                    onSuggestionSelected: (model) {},
+                    itemBuilder: (context, model) => ListTile(title: Text(model.name ?? 'Unknown')),
+                    suggestionsCallback: (pattern) => [],
+                  );
+                },
+              ),
+            ),
+          ),
+
+          if (_isAddingModel)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(width: 16.w, height: 16.h, child: CupertinoActivityIndicator(radius: 8.r)),
+                    SizedBox(width: 8.w),
+                    Text('Adding model...', style: AppTypography.fontSize14.copyWith(color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ),
+          const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
+        ],
+      ),
     );
   }
 

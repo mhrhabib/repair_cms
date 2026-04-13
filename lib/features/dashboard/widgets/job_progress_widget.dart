@@ -11,15 +11,21 @@ class JobProgressWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<DashboardCubit, DashboardState>(
       builder: (context, state) {
+        final cubit = context.read<DashboardCubit>();
         int totalActiveJobs = 0;
         int onHoldJobs = 0;
         int repairInProgressJobs = 0;
         int quotationConfirmedJobs = 0;
         int quotationRejectedJobs = 0;
-        bool isLoading = state is DashboardLoading;
 
-        if (state is DashboardLoaded && state.jobProgress != null) {
-          final progress = state.jobProgress!;
+        // Try to get data from state, or from cubit cache if loading/initial
+        final progress = (state is DashboardLoaded)
+            ? state.jobProgress
+            : ((state is DashboardLoading || state is DashboardInitial) ? cubit.jobProgress : null);
+
+        bool isLoading = (state is DashboardLoading || state is DashboardInitial) && progress == null;
+
+        if (progress != null) {
           totalActiveJobs = progress.totalJobs;
           onHoldJobs = progress.partsNotAvailableJobs;
           repairInProgressJobs = progress.inProgressJobs;

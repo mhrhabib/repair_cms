@@ -57,15 +57,21 @@ class ReceiptScreen extends StatelessWidget {
 
     debugPrint('✅ Default printer type: $defaultPrinterType');
 
-    // ignore: use_build_context_synchronously
-    await showCupertinoModalPopup<PrinterConfigModel>(
-      context: context,
-      builder: (_) => _PrinterSelectionDialog(
-        printers: configuredPrinters,
-        defaultPrinterType: defaultPrinterType,
-        onPrint: (printer) => _printReceipt(context, printer),
-      ),
-    );
+    if (configuredPrinters.length == 1) {
+      // Rule 2: if one printer setup just print
+      await _printReceipt(context, configuredPrinters.first);
+    } else {
+      // Rule 1: if two or more printer setup show user to select
+      // ignore: use_build_context_synchronously
+      await showCupertinoModalPopup<PrinterConfigModel>(
+        context: context,
+        builder: (_) => _PrinterSelectionDialog(
+          printers: configuredPrinters,
+          defaultPrinterType: defaultPrinterType,
+          onPrint: (printer) => _printReceipt(context, printer),
+        ),
+      );
+    }
   }
 
   /// Print receipt with selected printer

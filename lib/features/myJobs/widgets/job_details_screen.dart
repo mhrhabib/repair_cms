@@ -26,8 +26,7 @@ import 'package:repair_cms/features/myJobs/widgets/files_screen.dart';
 import 'package:repair_cms/features/myJobs/widgets/status_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
-    as job_booking;
+import 'package:repair_cms/features/jobBooking/models/create_job_request.dart' as job_booking;
 
 // ─────────────────────────────────────────────
 // Colors
@@ -60,9 +59,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         if (state is JobError) {
-          SnackbarDemo(
-            message: 'Error: ${state.message}',
-          ).showCustomSnackbar(context);
+          SnackbarDemo(message: 'Error: ${state.message}').showCustomSnackbar(context);
         }
         if (state is JobDetailSuccess) {
           setState(() => _currentJob = state.job);
@@ -86,33 +83,24 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       },
       child: PopScope(
         canPop: true,
-        onPopInvokedWithResult: (didPop, _) =>
-            context.read<JobCubit>().getJobs(),
+        onPopInvokedWithResult: (didPop, _) => context.read<JobCubit>().getJobs(),
 
         child: Scaffold(
           backgroundColor: AppColors.kBg,
           body: BlocBuilder<JobCubit, JobStates>(
             builder: (context, state) {
-              if (_currentJob != null)
-                return _UnifiedJobDetails(job: _currentJob!);
+              if (_currentJob != null) return _UnifiedJobDetails(job: _currentJob!);
               if (state is JobLoading)
                 return Center(
-                  child: CupertinoActivityIndicator(
-                    radius: 16.r,
-                    color: Colors.blue,
-                  ),
+                  child: CupertinoActivityIndicator(radius: 16.r, color: Colors.blue),
                 );
               if (state is JobDetailSuccess) {
                 _currentJob = state.job;
                 return _UnifiedJobDetails(job: state.job);
               }
-              if (state is JobError)
-                return Center(child: Text('Error: ${state.message}'));
+              if (state is JobError) return Center(child: Text('Error: ${state.message}'));
               return Center(
-                child: CupertinoActivityIndicator(
-                  radius: 16.r,
-                  color: Colors.blue,
-                ),
+                child: CupertinoActivityIndicator(radius: 16.r, color: Colors.blue),
               );
             },
           ),
@@ -160,9 +148,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
 
   void _ensureImageRotationForFile(File file, String key) {
     if (key.isEmpty) return;
-    if (_imageRotationTurns.containsKey(key) ||
-        _checkingImageRotation.contains(key))
-      return;
+    if (_imageRotationTurns.containsKey(key) || _checkingImageRotation.contains(key)) return;
     _checkingImageRotation.add(key);
 
     ImageProvider provider;
@@ -219,16 +205,13 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       try {
         //add time also
         final dt = DateTime.parse(d.dueDate!);
-        _selectedDueDate =
-            '${dt.day}. ${_monthName(dt.month)} ${dt.year} ${dt.hour}:${dt.minute}';
+        _selectedDueDate = '${dt.day}. ${_monthName(dt.month)} ${dt.year} ${dt.hour}:${dt.minute}';
       } catch (_) {}
     }
     if (d.jobPriority != null && d.jobPriority!.isNotEmpty) {
       _selectedPriority = _cap(d.jobPriority!);
     }
-    _internalNotes = d.defect?.isNotEmpty == true
-        ? d.defect!.first.internalNote ?? []
-        : [];
+    _internalNotes = d.defect?.isNotEmpty == true ? d.defect!.first.internalNote ?? [] : [];
     _setCurrentAssignee();
   }
 
@@ -260,8 +243,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
 
   String _defectType() {
     final d = widget.job.data!;
-    if (d.defect?.isNotEmpty == true &&
-        d.defect!.first.defect?.isNotEmpty == true) {
+    if (d.defect?.isNotEmpty == true && d.defect!.first.defect?.isNotEmpty == true) {
       return d.defect!.first.defect!.first.value ?? 'Not specified';
     }
     return 'Not specified';
@@ -269,26 +251,21 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
 
   String _problemDesc() {
     final d = widget.job.data!;
-    if (d.defect?.isNotEmpty == true)
-      return d.defect!.first.description ?? 'No description';
+    if (d.defect?.isNotEmpty == true) return d.defect!.first.description ?? 'No description';
     return 'No description';
   }
 
   String _latestStatusTitle() {
     final statuses = widget.job.data?.jobStatus ?? [];
     if (statuses.isEmpty) return 'No status';
-    statuses.sort(
-      (a, b) => (b.createAtStatus ?? 0).compareTo(a.createAtStatus ?? 0),
-    );
+    statuses.sort((a, b) => (b.createAtStatus ?? 0).compareTo(a.createAtStatus ?? 0));
     return _formatStatusTitle(statuses.first.title ?? '');
   }
 
   String _latestStatusDate() {
     final statuses = widget.job.data?.jobStatus ?? [];
     if (statuses.isEmpty) return '';
-    statuses.sort(
-      (a, b) => (b.createAtStatus ?? 0).compareTo(a.createAtStatus ?? 0),
-    );
+    statuses.sort((a, b) => (b.createAtStatus ?? 0).compareTo(a.createAtStatus ?? 0));
     final ts = statuses.first.createAtStatus;
     if (ts == null) return '';
     final dt = DateTime.fromMillisecondsSinceEpoch(ts);
@@ -312,12 +289,10 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   String _contactName() {
     final d = widget.job.data!;
     if (d.customerDetails != null) {
-      return '${d.customerDetails!.firstName ?? ''} ${d.customerDetails!.lastName ?? ''}'
-          .trim();
+      return '${d.customerDetails!.firstName ?? ''} ${d.customerDetails!.lastName ?? ''}'.trim();
     }
     if (d.contact?.isNotEmpty == true) {
-      return '${d.contact!.first.firstName ?? ''} ${d.contact!.first.lastName ?? ''}'
-          .trim();
+      return '${d.contact!.first.firstName ?? ''} ${d.contact!.first.lastName ?? ''}'.trim();
     }
     return 'Unknown Contact';
   }
@@ -352,32 +327,19 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           padding: EdgeInsets.all(10.r),
           decoration: ShapeDecoration(
             color: Colors.white,
-            shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(
-                cornerRadius: 28.r,
-                cornerSmoothing: 1.0,
-              ),
-            ),
+            shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0)),
             shadows: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 8)),
             ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _menuButton(
-                label: _isJobComplete
-                    ? 'Set Job Incomplete'
-                    : 'Set Job Complete',
+                label: _isJobComplete ? 'Set Job Incomplete' : 'Set Job Complete',
                 onTap: () {
                   _closeMoreMenu();
-                  _isJobComplete
-                      ? _showIncompleteConfirmation()
-                      : _showCompleteBottomSheet();
+                  _isJobComplete ? _showIncompleteConfirmation() : _showCompleteBottomSheet();
                 },
               ),
               SizedBox(height: 8.h),
@@ -385,9 +347,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 label: _isDeviceReturned ? 'Device Returned' : 'Return Device',
                 onTap: () {
                   _closeMoreMenu();
-                  _isDeviceReturned
-                      ? _setDeviceNotReturned()
-                      : _showReturnDeviceConfirmation();
+                  _isDeviceReturned ? _setDeviceNotReturned() : _showReturnDeviceConfirmation();
                 },
               ),
             ],
@@ -403,18 +363,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEEEFF4),
-          borderRadius: BorderRadius.circular(28.r),
-        ),
+        decoration: BoxDecoration(color: const Color(0xFFEEEFF4), borderRadius: BorderRadius.circular(28.r)),
         child: Text(
           label,
           textAlign: TextAlign.center,
-          style: GoogleFonts.roboto(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF1E2D4D),
-          ),
+          style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF1E2D4D)),
         ),
       ),
     );
@@ -436,10 +389,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               SizedBox(height: 12.h),
               Container(
                 padding: EdgeInsets.all(8.r),
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
+                decoration: BoxDecoration(color: CupertinoColors.systemGrey6, borderRadius: BorderRadius.circular(8.r)),
                 child: CupertinoTextField(
                   controller: notesCtrl,
                   placeholder: 'Add notes...',
@@ -451,31 +401,18 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               SizedBox(height: 12.h),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
+                decoration: BoxDecoration(color: CupertinoColors.systemGrey6, borderRadius: BorderRadius.circular(8.r)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          CupertinoIcons.mail,
-                          size: 18.sp,
-                          color: AppColors.kBlue,
-                        ),
+                        Icon(CupertinoIcons.mail, size: 18.sp, color: AppColors.kBlue),
                         SizedBox(width: 8.w),
-                        Text(
-                          'Send email to customer',
-                          style: TextStyle(fontSize: 15.sp),
-                        ),
+                        Text('Send email to customer', style: TextStyle(fontSize: 15.sp)),
                       ],
                     ),
-                    CupertinoSwitch(
-                      value: sendEmail,
-                      onChanged: (v) => ss(() => sendEmail = v),
-                    ),
+                    CupertinoSwitch(value: sendEmail, onChanged: (v) => ss(() => sendEmail = v)),
                   ],
                 ),
               ),
@@ -496,10 +433,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                   currentJob: widget.job,
                 );
               },
-              child: Text(
-                'Confirm Complete',
-                style: TextStyle(fontSize: 17.sp),
-              ),
+              child: Text('Confirm Complete', style: TextStyle(fontSize: 17.sp)),
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
@@ -521,16 +455,10 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         ),
         content: Padding(
           padding: EdgeInsets.only(top: 8.h),
-          child: Text(
-            'This will change status to "In Progress".',
-            style: TextStyle(fontSize: 13.sp),
-          ),
+          child: Text('This will change status to "In Progress".', style: TextStyle(fontSize: 13.sp)),
         ),
         actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: () {
@@ -547,10 +475,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             },
             child: Text(
               'Mark Incomplete',
-              style: TextStyle(
-                fontSize: 17.sp,
-                color: CupertinoColors.systemOrange,
-              ),
+              style: TextStyle(fontSize: 17.sp, color: CupertinoColors.systemOrange),
             ),
           ),
         ],
@@ -568,16 +493,10 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         ),
         content: Padding(
           padding: EdgeInsets.only(top: 8.h),
-          child: Text(
-            'This will archive the job and move it to trash.',
-            style: TextStyle(fontSize: 13.sp),
-          ),
+          child: Text('This will archive the job and move it to trash.', style: TextStyle(fontSize: 13.sp)),
         ),
         actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: () {
@@ -593,10 +512,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             },
             child: Text(
               'Mark Returned',
-              style: TextStyle(
-                fontSize: 17.sp,
-                color: CupertinoColors.systemGreen,
-              ),
+              style: TextStyle(fontSize: 17.sp, color: CupertinoColors.systemGreen),
             ),
           ),
         ],
@@ -637,9 +553,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 ? (context.read<JobCubit>().state as JobNoteUpdateSuccess).job
                 : widget.job;
             setState(() {
-              _internalNotes = j.data?.defect?.isNotEmpty == true
-                  ? j.data!.defect!.first.internalNote ?? []
-                  : [];
+              _internalNotes = j.data?.defect?.isNotEmpty == true ? j.data!.defect!.first.internalNote ?? [] : [];
             });
           },
         ),
@@ -651,9 +565,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
         child: Padding(
           padding: EdgeInsets.all(24.w),
           child: Column(
@@ -662,30 +574,18 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               Container(
                 width: 60.w,
                 height: 60.h,
-                decoration: BoxDecoration(
-                  color: AppColors.warningColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  SolarIconsOutline.trashBin2,
-                  size: 30.sp,
-                  color: AppColors.warningColor,
-                ),
+                decoration: BoxDecoration(color: AppColors.warningColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                child: Icon(SolarIconsOutline.trashBin2, size: 30.sp, color: AppColors.warningColor),
               ),
               SizedBox(height: 16.h),
               Text(
                 'Delete Note?',
-                style: AppTypography.fontSize20.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.fontMainColor,
-                ),
+                style: AppTypography.fontSize20.copyWith(fontWeight: FontWeight.w600, color: AppColors.fontMainColor),
               ),
               SizedBox(height: 8.h),
               Text(
                 'Are you sure you want to delete this note? This action cannot be undone.',
-                style: AppTypography.fontSize14.copyWith(
-                  color: AppColors.lightFontColor,
-                ),
+                style: AppTypography.fontSize14.copyWith(color: AppColors.lightFontColor),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 24.h),
@@ -696,9 +596,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                       ),
                       child: Text(
                         'Cancel',
@@ -721,9 +619,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.warningColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                       ),
                       child: Text(
@@ -750,9 +646,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Padding(
         padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
         child: Column(
@@ -796,10 +690,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           Container(
             width: 64.w,
             height: 64.h,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12.r)),
             child: Icon(icon, size: 32.sp, color: Colors.black87),
           ),
           SizedBox(height: 8.h),
@@ -813,38 +704,21 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   }
 
   Future<void> _pickCamera() async {
-    final f = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
-    );
+    final f = await _imagePicker.pickImage(source: ImageSource.camera, imageQuality: 85);
     if (f != null) _upload(f.path, f.name);
   }
 
   Future<void> _pickGallery() async {
-    final f = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
+    final f = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (f != null) _upload(f.path, f.name);
   }
 
   Future<void> _pickDocument() async {
     final r = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: [
-        'doc',
-        'docx',
-        'xls',
-        'xlsx',
-        'jpg',
-        'jpeg',
-        'png',
-        'mp4',
-        'pdf',
-      ],
+      allowedExtensions: ['doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'mp4', 'pdf'],
     );
-    if (r != null && r.files.single.path != null)
-      _upload(r.files.single.path!, r.files.single.name);
+    if (r != null && r.files.single.path != null) _upload(r.files.single.path!, r.files.single.name);
   }
 
   Future<void> _upload(String path, String name) async {
@@ -863,22 +737,14 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Delete File?'),
-        content: const Text(
-          'Are you sure you want to delete this file? This action cannot be undone.',
-        ),
+        content: const Text('Are you sure you want to delete this file? This action cannot be undone.'),
         actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          CupertinoDialogAction(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
           CupertinoDialogAction(
             isDestructiveAction: true,
             onPressed: () {
               Navigator.of(context).pop();
-              context.read<JobCubit>().deleteJobFile(
-                jobId: widget.job.data?.sId ?? '',
-                filePath: filePath,
-              );
+              context.read<JobCubit>().deleteJobFile(jobId: widget.job.data?.sId ?? '', filePath: filePath);
             },
             child: const Text('Delete'),
           ),
@@ -944,14 +810,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             ?.map(
               (d) => job_booking.DefectData(
                 sId: d.sId,
-                defect: d.defect
-                    ?.map(
-                      (i) => job_booking.DefectItem(
-                        value: i.value ?? '',
-                        id: i.id ?? '',
-                      ),
-                    )
-                    .toList(),
+                defect: d.defect?.map((i) => job_booking.DefectItem(value: i.value ?? '', id: i.id ?? '')).toList(),
                 description: d.description,
                 createdAt: d.createdAt,
                 updatedAt: d.updatedAt,
@@ -967,12 +826,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 imei: d.serialNo ?? d.imei,
                 serialNo: d.serialNo ?? d.imei,
                 condition: d.condition
-                    ?.map(
-                      (c) => job_booking.ConditionItem(
-                        value: c.value ?? '',
-                        id: c.id ?? '',
-                      ),
-                    )
+                    ?.map((c) => job_booking.ConditionItem(value: c.value ?? '', id: c.id ?? ''))
                     .toList(),
                 createdAt: d.createdAt,
                 updatedAt: d.updatedAt,
@@ -985,8 +839,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 companyLogo: job.data!.receiptFooter!.companyLogo ?? '',
                 companyLogoURL: job.data!.receiptFooter!.companyLogoURL ?? '',
                 address: job_booking.CompanyAddress(
-                  companyName:
-                      job.data!.receiptFooter!.address?.companyName ?? '',
+                  companyName: job.data!.receiptFooter!.address?.companyName ?? '',
                   street: job.data!.receiptFooter!.address?.street ?? '',
                   num: job.data!.receiptFooter!.address?.num ?? '',
                   zip: job.data!.receiptFooter!.address?.zip ?? '',
@@ -1015,15 +868,13 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 customerNo: job.data!.customerDetails!.customerNo ?? '',
                 email: job.data!.customerDetails!.email ?? '',
                 telephone: job.data!.customerDetails!.telephone ?? '',
-                telephonePrefix:
-                    job.data!.customerDetails!.telephonePrefix ?? '',
+                telephonePrefix: job.data!.customerDetails!.telephonePrefix ?? '',
                 salutation: job.data!.customerDetails!.salutation ?? '',
                 firstName: job.data!.customerDetails!.firstName ?? '',
                 lastName: job.data!.customerDetails!.lastName ?? '',
                 position: job.data!.customerDetails!.position ?? '',
                 vatNo: job.data!.customerDetails!.vatNo ?? '',
-                reverseCharge:
-                    job.data!.customerDetails!.reverseCharge ?? false,
+                reverseCharge: job.data!.customerDetails!.reverseCharge ?? false,
                 shippingAddress: job_booking.CustomerAddress(
                   street: '',
                   no: '',
@@ -1058,8 +909,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           });
           _setCurrentAssignee();
         }
-        if (state is AssignUserListError)
-          setState(() => _isLoadingUsers = false);
+        if (state is AssignUserListError) setState(() => _isLoadingUsers = false);
         if (state is JobNoteUpdateSuccess) {
           setState(() {
             _internalNotes = state.job.data?.defect?.isNotEmpty == true
@@ -1101,25 +951,15 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         if (state is JobStatusUpdateSuccess || state is JobStatusUpdated) {
-          SnackbarDemo(
-            message: 'Job status updated successfully',
-          ).showCustomSnackbar(context);
+          SnackbarDemo(message: 'Job status updated successfully').showCustomSnackbar(context);
         } else if (state is JobNoteUpdateSuccess) {
-          SnackbarDemo(
-            message: 'Note updated successfully',
-          ).showCustomSnackbar(context);
+          SnackbarDemo(message: 'Note updated successfully').showCustomSnackbar(context);
         } else if (state is JobFileUploadSuccess) {
-          SnackbarDemo(
-            message: 'File uploaded successfully',
-          ).showCustomSnackbar(context);
+          SnackbarDemo(message: 'File uploaded successfully').showCustomSnackbar(context);
         } else if (state is JobFileDeleteSuccess) {
-          SnackbarDemo(
-            message: 'File deleted successfully',
-          ).showCustomSnackbar(context);
+          SnackbarDemo(message: 'File deleted successfully').showCustomSnackbar(context);
         } else if (state is JobPrioritySuccess) {
-          SnackbarDemo(
-            message: 'Priority updated successfully',
-          ).showCustomSnackbar(context);
+          SnackbarDemo(message: 'Priority updated successfully').showCustomSnackbar(context);
         } else if (state is JobError) {
           SnackbarDemo(message: state.message).showCustomSnackbar(context);
         } else if (state is JobActionError) {
@@ -1135,18 +975,12 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             if (state is JobFileUploadSuccess) files = state.job.data?.files;
             if (state is JobFileDeleteSuccess) files = state.job.data?.files;
 
-            final isLoading =
-                state is JobLoading ||
-                state is JobActionLoading ||
-                state is JobFileUploading;
+            final isLoading = state is JobLoading || state is JobActionLoading || state is JobFileUploading;
 
             return Stack(
               children: [
                 SingleChildScrollView(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 60.h,
-                    bottom: 16.h,
-                  ),
+                  padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60.h, bottom: 16.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1156,32 +990,21 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Center(
-                              child: _infoRow(
-                                label: 'Contact',
-                                value: _contactName(),
-                                bold: true,
-                              ),
+                              child: _infoRow(label: 'Contact', value: _contactName(), bold: true),
                             ),
                             Divider(height: 1, color: Colors.grey.shade200),
                             _arrowRow(
                               leading: Stack(
                                 clipBehavior: Clip.none,
                                 children: [
-                                  Icon(
-                                    SolarIconsOutline.dialog2,
-                                    color: Colors.black87,
-                                    size: 24.sp,
-                                  ),
+                                  Icon(SolarIconsOutline.dialog2, color: Colors.black87, size: 24.sp),
                                   Positioned(
                                     top: -2,
                                     right: -2,
                                     child: Container(
                                       width: 10.w,
                                       height: 10.h,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.red,
-                                        shape: BoxShape.circle,
-                                      ),
+                                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                                     ),
                                   ),
                                 ],
@@ -1195,12 +1018,8 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                                     builder: (_) => ChatConversationScreen(
                                       conversationId: job.data!.sId!,
                                       recipientEmail: c?.email,
-                                      recipientName:
-                                          '${c?.firstName ?? ''} ${c?.lastName ?? ''}'
-                                              .trim()
-                                              .isNotEmpty
-                                          ? '${c?.firstName ?? ''} ${c?.lastName ?? ''}'
-                                                .trim()
+                                      recipientName: '${c?.firstName ?? ''} ${c?.lastName ?? ''}'.trim().isNotEmpty
+                                          ? '${c?.firstName ?? ''} ${c?.lastName ?? ''}'.trim()
                                           : 'Customer',
                                     ),
                                   ),
@@ -1217,16 +1036,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                         child: Column(
                           children: [
                             _arrowRow(
-                              label:
-                                  '${_latestStatusTitle()}\n${_latestStatusDate()}',
+                              label: '${_latestStatusTitle()}\n${_latestStatusDate()}',
                               prefixLabel: 'Status',
                               boldValue: true,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => StatusScreen(jobId: job),
-                                ),
-                              ),
+                              onTap: () =>
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => StatusScreen(jobId: job))),
                             ),
                             Divider(height: 1, color: Colors.grey.shade200),
                             _priorityRow(),
@@ -1246,15 +1060,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                           children: [
                             _plainRow('Device', _deviceName()),
                             Divider(height: 1, color: Colors.grey.shade200),
-                            if (_imeiSerial().isNotEmpty)
-                              _plainRow('IMEI/Serial', _imeiSerial()),
-                            if (_imeiSerial().isNotEmpty)
-                              Divider(height: 1, color: Colors.grey.shade200),
-                            _actionRow(
-                              'Security',
-                              'Show Security',
-                              _showSecurityDialog,
-                            ),
+                            if (_imeiSerial().isNotEmpty) _plainRow('IMEI/Serial', _imeiSerial()),
+                            if (_imeiSerial().isNotEmpty) Divider(height: 1, color: Colors.grey.shade200),
+                            _actionRow('Security', 'Show Security', _showSecurityDialog),
                           ],
                         ),
                       ),
@@ -1265,17 +1073,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _plainRow(
-                              'Physical Location',
-                              job.data?.physicalLocation ?? 'Not specified',
-                            ),
+                            _plainRow('Physical Location', job.data?.physicalLocation ?? 'Not specified'),
                             Divider(height: 1, color: Colors.grey.shade200),
                             _plainRow('Defect Type', _defectType()),
                             Divider(height: 1, color: Colors.grey.shade200),
-                            _plainRowMulti(
-                              'Problem description',
-                              _problemDesc(),
-                            ),
+                            _plainRowMulti('Problem description', _problemDesc()),
                           ],
                         ),
                       ),
@@ -1283,18 +1085,12 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                       // ── 4. Receipts ─────────────────────────
                       _sectionLabel('RECEIPTS'),
                       Container(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 0,
-                        ),
+                        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 0),
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         decoration: ShapeDecoration(
                           color: AppColors.kCardBg,
                           shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(
-                              cornerRadius: 28.r,
-                              cornerSmoothing: 1.0,
-                            ),
+                            borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0),
                             side: BorderSide(color: AppColors.borderColor),
                           ),
                           shadows: [
@@ -1305,59 +1101,38 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                             ),
                           ],
                         ),
-                        child: _receiptRow(
-                          SolarIconsOutline.tagHorizontal,
-                          'Job Label',
-                          true,
-                          () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => JobDeviceLabelScreen(
-                                  jobResponse: _toResponse(),
-                                  printOption: 'Device Label',
-                                  jobNo: job.data?.jobNo,
-                                ),
+                        child: _receiptRow(SolarIconsOutline.tagHorizontal, 'Job Label', true, () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => JobDeviceLabelScreen(
+                                jobResponse: _toResponse(),
+                                printOption: 'Device Label',
+                                jobNo: job.data?.jobNo,
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        }),
                       ),
                       SizedBox(height: 10.h),
                       _sectionCard(
                         child: Column(
                           children: [
-                            _receiptRow(
-                              SolarIconsOutline.documentText,
-                              'Job receipt',
-                              true,
-                              () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ReceiptScreen(job: job),
-                                  ),
-                                );
-                              },
-                            ),
+                            _receiptRow(SolarIconsOutline.documentText, 'Job receipt', true, () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => ReceiptScreen(job: job)));
+                            }),
                             Divider(height: 1, color: Colors.grey.shade200),
-                            _receiptRow(
-                              SolarIconsOutline.documentText,
-                              'Thermal Receipt',
-                              true,
-                              () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        JobThermalReceiptPreviewScreen(
-                                          jobResponse: _toResponse(),
-                                          printOption: 'Thermal Receipt',
-                                        ),
+                            _receiptRow(SolarIconsOutline.documentText, 'Thermal Receipt', true, () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => JobThermalReceiptPreviewScreen(
+                                    jobResponse: _toResponse(),
+                                    printOption: 'Thermal Receipt',
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                              );
+                            }),
                             // Divider(height: 1, color: Colors.grey.shade200),
                             // _receiptRow(
                             //   SolarIconsOutline.documentText,
@@ -1400,10 +1175,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                                   padding: EdgeInsets.symmetric(vertical: 16.h),
                                   child: Text(
                                     'No files uploaded yet',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 14.sp,
-                                    ),
+                                    style: TextStyle(color: Colors.grey.shade500, fontSize: 14.sp),
                                   ),
                                 ),
                               )
@@ -1412,13 +1184,12 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 padding: EdgeInsets.only(top: 8.h),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: 12,
-                                      mainAxisSpacing: 12,
-                                      childAspectRatio: 0.85,
-                                    ),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.85,
+                                ),
                                 itemCount: files.length,
                                 itemBuilder: (_, i) => _fileCard(files![i]),
                               ),
@@ -1455,18 +1226,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                                   padding: EdgeInsets.symmetric(vertical: 12.h),
                                   child: Text(
                                     'No notes yet',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 14.sp,
-                                    ),
+                                    style: TextStyle(color: Colors.grey.shade500, fontSize: 14.sp),
                                   ),
                                 )
                               else
-                                ..._internalNotes.map(
-                                  (n) => n.userId == null
-                                      ? SizedBox.shrink()
-                                      : _noteItem(n),
-                                ),
+                                ..._internalNotes.map((n) => n.userId == null ? SizedBox.shrink() : _noteItem(n)),
                             ],
                           ),
                         ),
@@ -1489,43 +1253,26 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                       right: 16.w,
                       bottom: 8.h,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.kBg.withValues(alpha: 0.1),
-                    ),
+                    decoration: BoxDecoration(color: AppColors.kBg.withValues(alpha: 0.1)),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        CustomNavButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: CupertinoIcons.back,
-                        ),
+                        CustomNavButton(onPressed: () => Navigator.of(context).pop(), icon: CupertinoIcons.back),
                         Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 6.h,
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF7F7F8),
                             shape: BoxShape.rectangle,
                             borderRadius: BorderRadius.circular(28.r),
                             border: Border.all(
-                              color:
-                                  AppColors.whiteColor, // Figma: border #FFFFFF
+                              color: AppColors.whiteColor, // Figma: border #FFFFFF
                               width: 1, // Figma: border-width 1px
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color.fromARGB(
-                                  28,
-                                  116,
-                                  115,
-                                  115,
-                                ), // Figma: #0000001C
+                                color: const Color.fromARGB(28, 116, 115, 115), // Figma: #0000001C
                                 blurRadius: 2, // Figma: blur 20px
-                                offset: Offset(
-                                  0,
-                                  0,
-                                ), // Figma: 0px 0px (no offset)
+                                offset: Offset(0, 0), // Figma: 0px 0px (no offset)
                                 spreadRadius: 2,
                               ),
                             ],
@@ -1539,10 +1286,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                             ),
                           ),
                         ),
-                        CustomNavButton(
-                          onPressed: _toggleMoreMenu,
-                          icon: CupertinoIcons.ellipsis,
-                        ),
+                        CustomNavButton(onPressed: _toggleMoreMenu, icon: CupertinoIcons.ellipsis),
                       ],
                     ),
                   ),
@@ -1552,11 +1296,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                   GestureDetector(
                     onTap: _closeMoreMenu,
                     behavior: HitTestBehavior.translucent,
-                    child: Container(
-                      width: double.infinity,
-                      height: double.infinity,
-                      color: Colors.transparent,
-                    ),
+                    child: Container(width: double.infinity, height: double.infinity, color: Colors.transparent),
                   ),
                   _buildMoreMenuOverlay(),
                 ],
@@ -1594,18 +1334,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           decoration: ShapeDecoration(
             color: AppColors.kCardBg,
             shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(
-                cornerRadius: 28.r,
-                cornerSmoothing: 1.0,
-              ),
+              borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0),
               side: BorderSide(color: AppColors.borderColor),
             ),
             shadows: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
             ],
           ),
           child: Padding(
@@ -1672,10 +1405,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
       ),
       isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
@@ -1688,10 +1418,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 Container(
                   width: 40.w,
                   height: 4.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2.r)),
                 ),
                 SizedBox(height: 20.h),
                 Text(
@@ -1712,11 +1439,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                       surface: Colors.white,
                       onSurface: const Color(0xFF1E253A),
                     ),
-                    textButtonTheme: TextButtonThemeData(
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.kBlue,
-                      ),
-                    ),
+                    textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: AppColors.kBlue)),
                   ),
                   child: CalendarDatePicker(
                     initialDate: selected,
@@ -1724,13 +1447,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     lastDate: DateTime(2100),
                     onDateChanged: (dt) {
                       setModalState(() {
-                        selected = DateTime(
-                          dt.year,
-                          dt.month,
-                          dt.day,
-                          selected.hour,
-                          selected.minute,
-                        );
+                        selected = DateTime(dt.year, dt.month, dt.day, selected.hour, selected.minute);
                       });
                     },
                   ),
@@ -1757,21 +1474,12 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                         );
                         if (time != null) {
                           setModalState(() {
-                            selected = DateTime(
-                              selected.year,
-                              selected.month,
-                              selected.day,
-                              time.hour,
-                              time.minute,
-                            );
+                            selected = DateTime(selected.year, selected.month, selected.day, time.hour, time.minute);
                           });
                         }
                       },
                       child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 8.h,
-                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(8.r),
@@ -1789,41 +1497,24 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     SizedBox(width: 12.w),
                     // AM/PM Toggle (Simplified representing the toggle in image)
                     Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
+                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8.r)),
                       child: Row(
                         children: [
                           GestureDetector(
                             onTap: () {
                               if (selected.hour >= 12) {
                                 setModalState(() {
-                                  selected = selected.subtract(
-                                    const Duration(hours: 12),
-                                  );
+                                  selected = selected.subtract(const Duration(hours: 12));
                                 });
                               }
                             },
                             child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12.w,
-                                vertical: 8.h,
-                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                               decoration: BoxDecoration(
-                                color: selected.hour < 12
-                                    ? Colors.white
-                                    : Colors.transparent,
+                                color: selected.hour < 12 ? Colors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8.r),
                                 boxShadow: selected.hour < 12
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.1,
-                                          ),
-                                          blurRadius: 4,
-                                        ),
-                                      ]
+                                    ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)]
                                     : null,
                               ),
                               child: Text(
@@ -1831,9 +1522,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                                 style: GoogleFonts.roboto(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: selected.hour < 12
-                                      ? const Color(0xFF1E253A)
-                                      : Colors.grey.shade500,
+                                  color: selected.hour < 12 ? const Color(0xFF1E253A) : Colors.grey.shade500,
                                 ),
                               ),
                             ),
@@ -1842,31 +1531,17 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                             onTap: () {
                               if (selected.hour < 12) {
                                 setModalState(() {
-                                  selected = selected.add(
-                                    const Duration(hours: 12),
-                                  );
+                                  selected = selected.add(const Duration(hours: 12));
                                 });
                               }
                             },
                             child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12.w,
-                                vertical: 8.h,
-                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                               decoration: BoxDecoration(
-                                color: selected.hour >= 12
-                                    ? Colors.white
-                                    : Colors.transparent,
+                                color: selected.hour >= 12 ? Colors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8.r),
                                 boxShadow: selected.hour >= 12
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.1,
-                                          ),
-                                          blurRadius: 4,
-                                        ),
-                                      ]
+                                    ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)]
                                     : null,
                               ),
                               child: Text(
@@ -1874,9 +1549,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                                 style: GoogleFonts.roboto(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: selected.hour >= 12
-                                      ? const Color(0xFF1E253A)
-                                      : Colors.grey.shade500,
+                                  color: selected.hour >= 12 ? const Color(0xFF1E253A) : Colors.grey.shade500,
                                 ),
                               ),
                             ),
@@ -1896,18 +1569,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     borderRadius: BorderRadius.circular(16.r),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      context.read<JobCubit>().updateJobDueDate(
-                        widget.job.data!.sId!,
-                        selected,
-                      );
+                      context.read<JobCubit>().updateJobDueDate(widget.job.data!.sId!, selected);
                     },
                     child: Text(
                       'Update',
-                      style: GoogleFonts.roboto(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                      style: GoogleFonts.roboto(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.white),
                     ),
                   ),
                 ),
@@ -1937,18 +1603,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           decoration: ShapeDecoration(
             color: AppColors.kCardBg,
             shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(
-                cornerRadius: 28.r,
-                cornerSmoothing: 1.0,
-              ),
+              borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0),
               side: BorderSide(color: AppColors.borderColor),
             ),
             shadows: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
             ],
           ),
           child: Padding(
@@ -1986,11 +1645,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                           borderRadius: BorderRadius.circular(32.r),
                           onPressed: () {
                             Navigator.pop(ctx);
-                            context.read<JobCubit>().updateJobAssignee(
-                              widget.job.data!.sId!,
-                              u.id,
-                              name,
-                            );
+                            context.read<JobCubit>().updateJobAssignee(widget.job.data!.sId!, u.id, name);
                           },
                           child: Text(
                             name,
@@ -2034,28 +1689,15 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     decoration: ShapeDecoration(
       color: AppColors.kCardBg,
       shape: SmoothRectangleBorder(
-        borderRadius: SmoothBorderRadius(
-          cornerRadius: 28.r,
-          cornerSmoothing: 1.0,
-        ),
+        borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0),
         side: BorderSide(color: AppColors.borderColor),
       ),
-      shadows: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
+      shadows: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
     ),
     child: Padding(padding: EdgeInsets.all(16.r), child: child),
   );
 
-  Widget _infoRow({
-    required String label,
-    required String value,
-    bool bold = false,
-  }) => Padding(
+  Widget _infoRow({required String label, required String value, bool bold = false}) => Padding(
     padding: EdgeInsets.symmetric(vertical: 12.h),
     child: Row(
       children: [
@@ -2064,11 +1706,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           child: Text(
             label,
             textAlign: TextAlign.right,
-            style: GoogleFonts.roboto(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w400,
-              color: AppColors.lightFontColor,
-            ),
+            style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: AppColors.lightFontColor),
           ),
         ),
         SizedBox(width: 24.w),
@@ -2122,19 +1760,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             child: Text(
               label,
               textAlign: TextAlign.left,
-              style: GoogleFonts.roboto(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.fontMainColor,
-              ),
+              style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w500, color: AppColors.fontMainColor),
             ),
           ),
           SizedBox(width: 8.w),
-          Icon(
-            Icons.arrow_forward_ios,
-            size: 14.sp,
-            color: AppColors.fontSecondaryColor,
-          ),
+          Icon(Icons.arrow_forward_ios, size: 14.sp, color: AppColors.fontSecondaryColor),
         ],
       ),
     ),
@@ -2170,8 +1800,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   void _showSecurityDialog() {
     final d = widget.job.data!;
     String securityMsg = 'No security details available';
-    if (d.device?.isNotEmpty == true &&
-        d.device!.first.securityLock?.isNotEmpty == true) {
+    if (d.device?.isNotEmpty == true && d.device!.first.securityLock?.isNotEmpty == true) {
       final locks = d.device!.first.securityLock!;
       securityMsg = locks
           .map((e) {
@@ -2179,9 +1808,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               if (e.containsKey('value')) {
                 return 'Value: ${e['value']}${e.containsKey('type') ? ' (${e['type']})' : ''}';
               }
-              return e.entries
-                  .map((ent) => '${ent.key}: ${ent.value}')
-                  .join(', ');
+              return e.entries.map((ent) => '${ent.key}: ${ent.value}').join(', ');
             }
             return e.toString();
           })
@@ -2199,51 +1826,37 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           padding: EdgeInsets.only(top: 8.h),
           child: Text(securityMsg, style: TextStyle(fontSize: 13.sp)),
         ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+        actions: [CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
       ),
     );
   }
 
-  Widget _actionRow(String label, String actionText, VoidCallback onTap) =>
-      Padding(
-        padding: EdgeInsets.symmetric(vertical: 12.h),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 90.w,
-              child: Text(
-                label,
-                textAlign: TextAlign.right,
-                style: GoogleFonts.roboto(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.lightFontColor,
-                ),
-              ),
-            ),
-            SizedBox(width: 24.w),
-            Expanded(
-              child: GestureDetector(
-                onTap: onTap,
-                child: Text(
-                  actionText,
-                  textAlign: TextAlign.left,
-                  style: GoogleFonts.roboto(
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.kBlue,
-                  ),
-                ),
-              ),
-            ),
-          ],
+  Widget _actionRow(String label, String actionText, VoidCallback onTap) => Padding(
+    padding: EdgeInsets.symmetric(vertical: 12.h),
+    child: Row(
+      children: [
+        SizedBox(
+          width: 90.w,
+          child: Text(
+            label,
+            textAlign: TextAlign.right,
+            style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: AppColors.lightFontColor),
+          ),
         ),
-      );
+        SizedBox(width: 24.w),
+        Expanded(
+          child: GestureDetector(
+            onTap: onTap,
+            child: Text(
+              actionText,
+              textAlign: TextAlign.left,
+              style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: AppColors.kBlue),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _plainRow(String label, String value) => Padding(
     padding: EdgeInsets.symmetric(vertical: 12.h),
@@ -2254,11 +1867,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           child: Text(
             label,
             textAlign: TextAlign.right,
-            style: GoogleFonts.roboto(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w400,
-              color: AppColors.lightFontColor,
-            ),
+            style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: AppColors.lightFontColor),
           ),
         ),
         SizedBox(width: 24.w),
@@ -2266,11 +1875,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           child: Text(
             value,
             textAlign: TextAlign.left,
-            style: GoogleFonts.roboto(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
+            style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: Colors.black87),
           ),
         ),
       ],
@@ -2284,20 +1889,12 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         padding: EdgeInsets.only(top: 12.h, bottom: 4.h),
         child: Text(
           label,
-          style: GoogleFonts.roboto(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w400,
-            color: AppColors.lightFontColor,
-          ),
+          style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: AppColors.lightFontColor),
         ),
       ),
       Text(
         value,
-        style: GoogleFonts.roboto(
-          fontSize: 15.sp,
-          color: Colors.black87,
-          height: 1.5,
-        ),
+        style: GoogleFonts.roboto(fontSize: 15.sp, color: Colors.black87, height: 1.5),
       ),
       SizedBox(height: 12.h),
     ],
@@ -2310,16 +1907,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       child: Row(
         children: [
           SizedBox(
-            width: 70
-                .w, // Reduced width slightly to accommodate horizontal padding
+            width: 70.w, // Reduced width slightly to accommodate horizontal padding
             child: Text(
               'Priority',
               textAlign: TextAlign.right,
-              style: GoogleFonts.roboto(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w400,
-                color: AppColors.lightFontColor,
-              ),
+              style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w400, color: AppColors.lightFontColor),
             ),
           ),
           SizedBox(width: 24.w),
@@ -2327,11 +1919,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           SizedBox(width: 4.w),
           Text(
             _priorityLabel(),
-            style: GoogleFonts.roboto(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
+            style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w600, color: AppColors.primary),
           ),
         ],
       ),
@@ -2362,11 +1950,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
           SizedBox(width: 24.w),
           Text(
             _selectedDueDate,
-            style: GoogleFonts.roboto(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.kBlue,
-            ),
+            style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: AppColors.kBlue),
           ),
         ],
       ),
@@ -2374,9 +1958,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   );
 
   Widget _assigneeRow() {
-    final initials = _selectedUserId != null
-        ? _initials(_selectedAssigneeName)
-        : 'U';
+    final initials = _selectedUserId != null ? _initials(_selectedAssigneeName) : 'U';
     return InkWell(
       onTap: _showAssigneeSheet,
       child: Padding(
@@ -2403,10 +1985,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               SizedBox(
                 width: 18.w,
                 height: 18.h,
-                child: CupertinoActivityIndicator(
-                  radius: 16.r,
-                  color: Colors.blue,
-                ),
+                child: CupertinoActivityIndicator(radius: 16.r, color: Colors.blue),
               )
             else ...[
               CircleAvatar(
@@ -2414,21 +1993,13 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 backgroundColor: Colors.green,
                 child: Text(
                   initials,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
                 ),
               ),
               SizedBox(width: 8.w),
               Text(
                 _selectedAssigneeName,
-                style: GoogleFonts.roboto(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.kBlue,
-                ),
+                style: GoogleFonts.roboto(fontSize: 15.sp, fontWeight: FontWeight.w500, color: AppColors.kBlue),
               ),
             ],
           ],
@@ -2437,12 +2008,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     );
   }
 
-  Widget _receiptRow(
-    IconData icon,
-    String title,
-    bool enabled,
-    VoidCallback onTap,
-  ) => InkWell(
+  Widget _receiptRow(IconData icon, String title, bool enabled, VoidCallback onTap) => InkWell(
     onTap: enabled ? onTap : null,
     child: Padding(
       padding: EdgeInsets.symmetric(vertical: 14.h),
@@ -2452,40 +2018,31 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             width: 90.w,
             child: Align(
               alignment: Alignment.centerRight,
-              child: Icon(
-                icon,
-                color: enabled ? Colors.grey : Colors.grey.shade300,
-                size: 24.sp,
-              ),
+              child: Icon(icon, color: enabled ? Colors.grey : Colors.grey.shade300, size: 24.sp),
             ),
           ),
           SizedBox(width: 24.w),
           Expanded(
             child: Text(
               title,
-              style: GoogleFonts.roboto(
-                fontSize: 15.sp,
-                color: enabled ? Colors.black87 : Colors.grey.shade400,
-              ),
+              style: GoogleFonts.roboto(fontSize: 15.sp, color: enabled ? Colors.black87 : Colors.grey.shade400),
             ),
           ),
           Icon(
             Icons.arrow_forward_ios,
             size: 14.sp,
-            color: enabled
-                ? AppColors.fontSecondaryColor
-                : Colors.grey.shade300,
+            color: enabled ? AppColors.fontSecondaryColor : Colors.grey.shade300,
           ),
         ],
       ),
     ),
   );
 
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
+  // String _formatFileSize(int bytes) {
+  //   if (bytes < 1024) return '$bytes B';
+  //   if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  //   return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  // }
 
   String _getFileExtension(String fileName) {
     if (!fileName.contains('.')) return '';
@@ -2520,37 +2077,25 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
   Widget _fileCard(File file) {
     // Determine display name: prefer fileName, else extract from file path or url
     final name =
-        file.fileName ??
-        (file.file?.split('/').last) ??
-        (file.url?.split('?').first.split('/').last) ??
-        'Unknown';
+        file.fileName ?? (file.file?.split('/').last) ?? (file.url?.split('?').first.split('/').last) ?? 'Unknown';
 
     // Detect image extension from: fileName → file path → url (before query params)
-    String ext(String? s) =>
-        s?.split('?').first.split('.').last.toLowerCase() ?? '';
+    String ext(String? s) => s?.split('?').first.split('.').last.toLowerCase() ?? '';
     final extension = ext(file.fileName) != ''
         ? ext(file.fileName)
         : ext(file.file) != ''
         ? ext(file.file)
         : ext(file.url?.split('?').first);
-    final isImage =
-        ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension) &&
-        (file.imageUrl?.isNotEmpty == true);
+    final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension) && (file.imageUrl?.isNotEmpty == true);
 
     // Ensure rotation is calculated (no-op if already done)
-    final rotationKey =
-        file.imageUrl ?? file.file ?? file.fileName ?? file.url ?? '';
+    final rotationKey = file.imageUrl ?? file.file ?? file.fileName ?? file.url ?? '';
     _ensureImageRotationForFile(file, rotationKey);
 
     return GestureDetector(
       onTap: () async {
         if (isImage) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => FullscreenImageViewer(imageUrl: file.imageUrl!),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (_) => FullscreenImageViewer(imageUrl: file.imageUrl!)));
         } else if (file.imageUrl != null && file.imageUrl!.isNotEmpty) {
           try {
             final uri = Uri.parse(file.imageUrl!);
@@ -2558,16 +2103,12 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
               await launchUrl(uri, mode: LaunchMode.externalApplication);
             } else {
               if (mounted) {
-                SnackbarDemo(
-                  message: 'Cannot open file externally',
-                ).showCustomSnackbar(context);
+                SnackbarDemo(message: 'Cannot open file externally').showCustomSnackbar(context);
               }
             }
           } catch (e) {
             if (mounted) {
-              SnackbarDemo(
-                message: 'Failed to open file: $e',
-              ).showCustomSnackbar(context);
+              SnackbarDemo(message: 'Failed to open file: $e').showCustomSnackbar(context);
             }
           }
         }
@@ -2576,10 +2117,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
         decoration: ShapeDecoration(
           color: Colors.white,
           shape: SmoothRectangleBorder(
-            borderRadius: SmoothBorderRadius(
-              cornerRadius: 12.r,
-              cornerSmoothing: 1.0,
-            ),
+            borderRadius: SmoothBorderRadius(cornerRadius: 12.r, cornerSmoothing: 1.0),
             side: const BorderSide(color: Color(0xFFE5E5EA)),
           ),
         ),
@@ -2592,37 +2130,24 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     width: double.infinity,
                     decoration: const BoxDecoration(
                       color: Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(12),
-                      ),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                     ),
                     child: isImage
                         ? ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                             child: RotatedBox(
-                              quarterTurns:
-                                  _imageRotationTurns[rotationKey] ?? 0,
+                              quarterTurns: _imageRotationTurns[rotationKey] ?? 0,
                               child: Image.network(
                                 file.imageUrl!,
                                 fit: BoxFit.contain,
                                 errorBuilder: (_, _, _) => Center(
-                                  child: Icon(
-                                    _getFileIcon(name),
-                                    size: 40.sp,
-                                    color: Colors.grey,
-                                  ),
+                                  child: Icon(_getFileIcon(name), size: 40.sp, color: Colors.grey),
                                 ),
                               ),
                             ),
                           )
                         : Center(
-                            child: Icon(
-                              _getFileIcon(name),
-                              size: 48.sp,
-                              color: Colors.grey.shade400,
-                            ),
+                            child: Icon(_getFileIcon(name), size: 48.sp, color: Colors.grey.shade400),
                           ),
                   ),
                   Positioned(
@@ -2636,18 +2161,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(6.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 4,
-                            ),
-                          ],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)],
                         ),
-                        child: const Icon(
-                          SolarIconsOutline.trashBin2,
-                          size: 16,
-                          color: AppColors.fontSecondaryColor,
-                        ),
+                        child: const Icon(SolarIconsOutline.trashBin2, size: 16, color: AppColors.fontSecondaryColor),
                       ),
                     ),
                   ),
@@ -2663,11 +2179,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF1E2D4D),
-                    ),
+                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500, color: const Color(0xFF1E2D4D)),
                   ),
                 ],
               ),
@@ -2692,32 +2204,20 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 backgroundColor: const Color(0xFFF0D48C),
                 child: Text(
                   _initials(note.userName ?? 'U'),
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                  style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
               ),
               SizedBox(width: 8.w),
               Text(
                 note.userName ?? 'Unknown',
-                style: GoogleFonts.roboto(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
+                style: GoogleFonts.roboto(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.black87),
               ),
             ],
           ),
           SizedBox(height: 8.h),
           Text(
             note.text ?? '',
-            style: GoogleFonts.roboto(
-              fontSize: 14.sp,
-              color: Colors.black87,
-              height: 1.4,
-            ),
+            style: GoogleFonts.roboto(fontSize: 14.sp, color: Colors.black87, height: 1.4),
           ),
           SizedBox(height: 6.h),
           Row(
@@ -2725,10 +2225,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             children: [
               Text(
                 time,
-                style: GoogleFonts.roboto(
-                  fontSize: 12.sp,
-                  color: Colors.grey.shade500,
-                ),
+                style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade500),
               ),
               Row(
                 children: [
@@ -2736,11 +2233,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     onTap: () => _openNoteSheet(note),
                     child: Row(
                       children: [
-                        Icon(
-                          SolarIconsOutline.pen2,
-                          size: 14.r,
-                          color: AppColors.kBlue,
-                        ),
+                        Icon(SolarIconsOutline.pen2, size: 14.r, color: AppColors.kBlue),
                         SizedBox(width: 4.w),
                         Text(
                           'Edit',
@@ -2758,19 +2251,11 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                     onTap: () => _deleteNote(note),
                     child: Row(
                       children: [
-                        Icon(
-                          SolarIconsOutline.trashBin2,
-                          size: 14.r,
-                          color: Colors.red,
-                        ),
+                        Icon(SolarIconsOutline.trashBin2, size: 14.r, color: Colors.red),
                         SizedBox(width: 4.w),
                         Text(
                           'Delete',
-                          style: GoogleFonts.roboto(
-                            color: Colors.red,
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: GoogleFonts.roboto(color: Colors.red, fontSize: 13.sp, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -2854,19 +2339,8 @@ class _NoteSheetState extends State<_NoteSheet> {
     final cubit = context.read<JobCubit>();
     final jid = widget.job.data?.sId ?? '';
     final fut = _isEditing
-        ? cubit.updateJobNote(
-            jobId: jid,
-            noteId: widget.note?.id ?? '',
-            noteText: text,
-            userId: uid,
-            userName: uname,
-          )
-        : cubit.addJobNote(
-            jobId: jid,
-            noteText: text,
-            userId: uid,
-            userName: uname,
-          );
+        ? cubit.updateJobNote(jobId: jid, noteId: widget.note?.id ?? '', noteText: text, userId: uid, userName: uname)
+        : cubit.addJobNote(jobId: jid, noteText: text, userId: uid, userName: uname);
     fut
         .then((_) {
           if (!mounted) return;
@@ -2889,9 +2363,7 @@ class _NoteSheetState extends State<_NoteSheet> {
         top: false,
         child: Container(
           height: MediaQuery.of(context).size.height * 0.9,
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Column(
             children: [
               Padding(
@@ -2899,10 +2371,7 @@ class _NoteSheetState extends State<_NoteSheet> {
                 child: Container(
                   width: 40.w,
                   height: 5.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(2.5.r),
-                  ),
+                  decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2.5.r)),
                 ),
               ),
               Padding(
@@ -2912,10 +2381,7 @@ class _NoteSheetState extends State<_NoteSheet> {
                   children: [
                     Text(
                       _isEditing ? 'Edit note' : 'Add a note',
-                      style: GoogleFonts.roboto(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600),
                     ),
                     Align(
                       alignment: Alignment.centerRight,
@@ -2945,10 +2411,7 @@ class _NoteSheetState extends State<_NoteSheet> {
                         decoration: InputDecoration(
                           hintText: 'Write a note...',
                           border: InputBorder.none,
-                          hintStyle: GoogleFonts.roboto(
-                            fontSize: 16.sp,
-                            color: Colors.grey.shade600,
-                          ),
+                          hintStyle: GoogleFonts.roboto(fontSize: 16.sp, color: Colors.grey.shade600),
                         ),
                       ),
                     ),
@@ -2964,18 +2427,13 @@ class _NoteSheetState extends State<_NoteSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _loading ? Colors.grey : AppColors.kBlue,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28.r),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.r)),
                     ),
                     child: _loading
                         ? SizedBox(
                             width: 20.w,
                             height: 20.h,
-                            child: CupertinoActivityIndicator(
-                              color: Colors.blue,
-                              radius: 16.r,
-                            ),
+                            child: CupertinoActivityIndicator(color: Colors.blue, radius: 16.r),
                           )
                         : Text(
                             'Save',

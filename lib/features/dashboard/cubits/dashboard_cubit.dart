@@ -30,11 +30,7 @@ class DashboardCubit extends Cubit<DashboardState> {
   }
 
   // Get completed jobs with date range
-  Future<void> getDashboardStats({
-    DateTime? startDate,
-    DateTime? endDate,
-    String? userId,
-  }) async {
+  Future<void> getDashboardStats({DateTime? startDate, DateTime? endDate, String? userId}) async {
     _safeEmit(DashboardLoading());
 
     try {
@@ -56,34 +52,23 @@ class DashboardCubit extends Cubit<DashboardState> {
       );
 
       if (isClosed) {
-        debugPrint(
-          '🔁 [DashboardCubit] Cubit closed; aborting getDashboardStats',
-        );
+        debugPrint('🔁 [DashboardCubit] Cubit closed; aborting getDashboardStats');
         return;
       }
 
       _dashboardStats = response;
 
       debugPrint('✅ [DashboardCubit] Successfully fetched dashboard stats');
-      debugPrint(
-        '📊 [DashboardCubit] Completed Jobs: ${response.completedJobs}',
-      );
+      debugPrint('📊 [DashboardCubit] Completed Jobs: ${response.completedJobs}');
       debugPrint('📈 [DashboardCubit] Total Jobs: ${response.totalJobs}');
 
-      _safeEmit(
-        DashboardLoaded(
-          dashboardStats: _dashboardStats,
-          jobProgress: _jobProgress,
-        ),
-      );
+      _safeEmit(DashboardLoaded(dashboardStats: _dashboardStats, jobProgress: _jobProgress));
     } on DashboardException catch (e) {
       debugPrint('❌ [DashboardCubit] Dashboard Error: ${e.message}');
       _safeEmit(DashboardError(message: e.message));
     } catch (e) {
       debugPrint('💥 [DashboardCubit] Unexpected Error: $e');
-      _safeEmit(
-        DashboardError(message: 'Unexpected error occurred: ${e.toString()}'),
-      );
+      _safeEmit(DashboardError(message: 'Unexpected error occurred: ${e.toString()}'));
     }
   }
 
@@ -105,36 +90,19 @@ class DashboardCubit extends Cubit<DashboardState> {
       _jobProgress = response;
 
       debugPrint('✅ [DashboardCubit] Successfully fetched job progress');
-      debugPrint(
-        '📊 [DashboardCubit] Total Active Jobs: ${response.totalJobs}',
-      );
-      debugPrint(
-        '🔄 [DashboardCubit] In Progress Jobs: ${response.inProgressJobs}',
-      );
-      debugPrint(
-        '⏸️ [DashboardCubit] On Hold Jobs: ${response.readyToReturnJobs}',
-      );
-      debugPrint(
-        '✅ [DashboardCubit] Quotation Confirmed: ${response.acceptedQuotesJobs}',
-      );
-      debugPrint(
-        '❌ [DashboardCubit] Quotation Rejected: ${response.rejectQuotesJobs}',
-      );
+      debugPrint('📊 [DashboardCubit] Total Active Jobs: ${response.totalJobs}');
+      debugPrint('🔄 [DashboardCubit] In Progress Jobs: ${response.inProgressJobs}');
+      debugPrint('⏸️ [DashboardCubit] On Hold Jobs: ${response.readyToReturnJobs}');
+      debugPrint('✅ [DashboardCubit] Quotation Confirmed: ${response.acceptedQuotesJobs}');
+      debugPrint('❌ [DashboardCubit] Quotation Rejected: ${response.rejectQuotesJobs}');
 
-      _safeEmit(
-        DashboardLoaded(
-          dashboardStats: _dashboardStats,
-          jobProgress: _jobProgress,
-        ),
-      );
+      _safeEmit(DashboardLoaded(dashboardStats: _dashboardStats, jobProgress: _jobProgress));
     } on DashboardException catch (e) {
       debugPrint('❌ [DashboardCubit] Dashboard Error: ${e.message}');
       _safeEmit(DashboardError(message: e.message));
     } catch (e) {
       debugPrint('💥 [DashboardCubit] Unexpected Job Progress Error: $e');
-      _safeEmit(
-        DashboardError(message: 'Unexpected error occurred: ${e.toString()}'),
-      );
+      _safeEmit(DashboardError(message: 'Unexpected error occurred: ${e.toString()}'));
     }
   }
 
@@ -143,7 +111,14 @@ class DashboardCubit extends Cubit<DashboardState> {
     DateTime? startDate,
     DateTime? endDate,
     String? userId,
+    bool force = false,
   }) async {
+    // Prevent redundant loads unless forced
+    if (state is DashboardLoading && !force) {
+      debugPrint('⏳ [DashboardCubit] Load already in progress, skipping redundant call');
+      return;
+    }
+
     _safeEmit(DashboardLoading());
 
     try {
@@ -169,23 +144,16 @@ class DashboardCubit extends Cubit<DashboardState> {
       final progressFuture = repository.getJobProgress(userId: userId);
 
       // Wait for both requests to complete with timeout protection
-      final results = await Future.wait([
-        statsFuture,
-        progressFuture,
-      ]).timeout(
+      final results = await Future.wait([statsFuture, progressFuture]).timeout(
         operationTimeout,
         onTimeout: () {
           debugPrint('⏱️ [DashboardCubit] loadAllDashboardData operation timeout');
-          throw DashboardException(
-            message: 'Dashboard data loading timed out. Please try again.',
-          );
+          throw DashboardException(message: 'Dashboard data loading timed out. Please try again.');
         },
       );
 
       if (isClosed) {
-        debugPrint(
-          '🔁 [DashboardCubit] Cubit closed; aborting loadAllDashboardData',
-        );
+        debugPrint('🔁 [DashboardCubit] Cubit closed; aborting loadAllDashboardData');
         return;
       }
 
@@ -196,39 +164,30 @@ class DashboardCubit extends Cubit<DashboardState> {
       debugPrint('📊 [DashboardCubit] Stats: ${_dashboardStats?.completedJobs ?? 0} completed');
       debugPrint('📈 [DashboardCubit] Progress: ${_jobProgress?.totalJobs ?? 0} total jobs');
 
-      _safeEmit(
-        DashboardLoaded(
-          dashboardStats: _dashboardStats,
-          jobProgress: _jobProgress,
-        ),
-      );
+      _safeEmit(DashboardLoaded(dashboardStats: _dashboardStats, jobProgress: _jobProgress));
     } on DashboardException catch (e) {
       debugPrint('❌ [DashboardCubit] Dashboard Error: ${e.message}');
       _safeEmit(DashboardError(message: e.message));
     } catch (e) {
       debugPrint('💥 [DashboardCubit] Unexpected All Data Error: $e');
-      _safeEmit(
-        DashboardError(message: 'Failed to load dashboard data: ${e.toString()}'),
-      );
+      _safeEmit(DashboardError(message: 'Failed to load dashboard data: ${e.toString()}'));
     }
   }
 
   Future<void> getTodayStats(String? userId) async {
-    final dateRange = repository.getTodayDateRange();
-    await loadAllDashboardData(
-      startDate: DateTime.parse(dateRange['startDate']!),
-      endDate: DateTime.parse(dateRange['endDate']!),
-      userId: userId,
-    );
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+
+    await loadAllDashboardData(startDate: startOfDay, endDate: endOfDay, userId: userId);
   }
 
   Future<void> getThisMonthStats(String? userId) async {
-    final dateRange = repository.getThisMonthDateRange();
-    await loadAllDashboardData(
-      startDate: DateTime.parse(dateRange['startDate']!),
-      endDate: DateTime.parse(dateRange['endDate']!),
-      userId: userId,
-    );
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59, 999);
+
+    await loadAllDashboardData(startDate: startOfMonth, endDate: endOfMonth, userId: userId);
   }
 
   void clearError() {

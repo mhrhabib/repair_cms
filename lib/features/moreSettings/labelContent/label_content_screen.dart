@@ -3,12 +3,10 @@ import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:repair_cms/core/utils/label_image_generator.dart';
 import 'package:repair_cms/features/moreSettings/labelContent/service/label_content_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-import 'package:flutter/rendering.dart';
 
 // ---------------------------------------------------------------------------
 // Optional Job data model — pass a real Job object when printing from a job
@@ -151,33 +149,54 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
       return;
     }
 
-    final printer = labelPrinters.firstWhere(
-      (p) => p.isDefault,
-      orElse: () => labelPrinters.first,
-    );
+    final printer = labelPrinters.firstWhere((p) => p.isDefault, orElse: () => labelPrinters.first);
 
-    debugPrint(
-      '🖨️ [LabelContentScreen] Using printer: ${printer.printerBrand} ${printer.printerModel}',
-    );
+    debugPrint('🖨️ [LabelContentScreen] Using printer: ${printer.printerBrand} ${printer.printerModel}');
 
     try {
-      // ── Step 1: render the label off-screen so barcode/QR are fully drawn ──
-      final imageBytes = await _renderLabelToImage();
+      // ── Step 1: Create settings object ──
+      final settings = LabelContentSettings(
+        showTrackingPortalQR: trackingPortalQR,
+        showJobQR: jobQR,
+        showBarcode: barcode,
+        showJobNo: jobNo,
+        showCustomerName: customerName,
+        showModelBrand: modelBrand,
+        showDate: date,
+        showJobType: jobType,
+        showSymptom: symptom,
+        showPhysicalLocation: physicalLocation,
+      );
+
+      // ── Step 2: Create data object ──
+      final labelData = LabelData(
+        jobNumber: _jobData.jobNumber,
+        customerName: _jobData.customerName,
+        deviceName: _jobData.modelBrand,
+        deviceIMEI: 'N/A', // Not available in preview but required by model
+        defect: _jobData.symptom,
+        physicalLocation: _jobData.physicalLocation,
+        jobId: _jobData.jobNumber, // Use job number as ID for preview
+        barcodeData: _jobData.jobNumber,
+        qrCodeData: _jobData.jobNumber,
+      );
+
+      // ── Step 3: generate image using the robust shared generator ──
+      final imageBytes = await LabelImageGenerator.captureLabelAsImage(
+        printer: printer,
+        labelSettings: settings,
+        labelData: labelData,
+      );
 
       if (imageBytes == null) {
         showCustomToast('Failed to generate label image', isError: true);
         return;
       }
 
-      debugPrint(
-        '📸 [LabelContentScreen] Label image: ${imageBytes.length} bytes',
-      );
+      debugPrint('📸 [LabelContentScreen] Label image: ${imageBytes.length} bytes');
 
-      // ── Step 2: send to printer ────────────────────────────────────────────
-      final result = await PrinterServiceFactory.printLabelImageWithFallback(
-        config: printer,
-        imageBytes: imageBytes,
-      );
+      // ── Step 4: send to printer ────────────────────────────────────────────
+      final result = await PrinterServiceFactory.printLabelImageWithFallback(config: printer, imageBytes: imageBytes);
 
       if (result.success) {
         showCustomToast('✅ Test print sent successfully');
@@ -190,101 +209,6 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
       debugPrint('❌ [LabelContentScreen] Test print error: $e');
       showCustomToast('Print failed: $e', isError: true);
     }
-  }
-
-  // ── Off-screen label render ───────────────────────────────────────────────
-  //
-  // Why off-screen?
-  // BarcodeWidget and QrImageView are vector/canvas-based widgets. When we call
-  // boundary.toImage() on the on-screen preview, they may not have completed
-  // their first paint (especially if the widget just rebuilt). Rendering the
-  // label into its own off-screen pipeline guarantees a full, clean paint
-  // before we rasterise.
-  //
-  // How it works:
-  //   1. Build the label widget inside an OffstageWidget so it never appears on
-  //      screen but goes through the full Flutter render pipeline.
-  //   2. Insert it into the widget tree temporarily via an Overlay entry.
-  //   3. Wait for the next frame (post-frame callback) so the widget is fully
-  //      laid out and painted.
-  //   4. Capture via RepaintBoundary → toImage().
-  //   5. Remove the overlay entry.
-
-  Future<Uint8List?> _renderLabelToImage() async {
-    debugPrint('📸 [LabelContentScreen] Rendering label off-screen');
-
-    final offscreenKey = GlobalKey();
-    Uint8List? result;
-    OverlayEntry? entry;
-
-    try {
-      final completer = Future<void>(() async {
-        // Wait until the overlay entry is inserted and laid out.
-        await Future.delayed(Duration.zero);
-      });
-
-      entry = OverlayEntry(
-        builder: (_) => Offstage(
-          // Offstage hides the widget visually but still renders it.
-          child: Material(
-            color: Colors.transparent,
-            child: RepaintBoundary(
-              key: offscreenKey,
-              child: _buildLabelWidget(
-                jobData: _jobData,
-                showBarcode: barcode,
-                showJobNo: jobNo,
-                showJobQR: jobQR,
-                showTrackingQR: trackingPortalQR,
-                showCustomerName: customerName,
-                showModelBrand: modelBrand,
-                showDate: date,
-                showJobType: jobType,
-                showSymptom: symptom,
-                showPhysicalLocation: physicalLocation,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Insert into the overlay so Flutter lays it out.
-      Overlay.of(context).insert(entry);
-
-      // Wait two frames: one for layout, one for paint.
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      final boundary =
-          offscreenKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
-
-      if (boundary == null) {
-        debugPrint('❌ [LabelContentScreen] Off-screen boundary not found');
-        return null;
-      }
-
-      // 3.0 pixel ratio gives sharp output for thermal/label printers.
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
-
-      if (byteData == null) {
-        debugPrint('❌ [LabelContentScreen] Failed to encode image');
-        return null;
-      }
-
-      result = byteData.buffer.asUint8List();
-      debugPrint(
-        '✅ [LabelContentScreen] Off-screen render: ${result.length} bytes',
-      );
-    } catch (e) {
-      debugPrint('❌ [LabelContentScreen] Off-screen render error: $e');
-    } finally {
-      entry?.remove();
-    }
-
-    return result;
   }
 
   // ── UI ────────────────────────────────────────────────────────────────────
@@ -320,11 +244,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                     children: [
                       Text(
                         'Label Preview',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black54,
-                        ),
+                        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black54),
                       ),
                       const SizedBox(height: 12),
                       // The on-screen preview uses the same builder as the
@@ -370,11 +290,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                     children: [
                       Text(
                         'Label Details',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black54,
-                        ),
+                        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black54),
                       ),
                       const SizedBox(height: 24),
                       _buildToggleItem(
@@ -393,41 +309,17 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                           if (value) trackingPortalQR = false;
                         }),
                       ),
-                      _buildToggleItem(
-                        'Barcode',
-                        barcode,
-                        (value) => setState(() => barcode = value),
-                      ),
-                      _buildToggleItem(
-                        'Job No.',
-                        jobNo,
-                        (value) => setState(() => jobNo = value),
-                      ),
+                      _buildToggleItem('Barcode', barcode, (value) => setState(() => barcode = value)),
+                      _buildToggleItem('Job No.', jobNo, (value) => setState(() => jobNo = value)),
                       _buildToggleItem(
                         'Customer Name / Company Name',
                         customerName,
                         (value) => setState(() => customerName = value),
                       ),
-                      _buildToggleItem(
-                        'Model, Brand',
-                        modelBrand,
-                        (value) => setState(() => modelBrand = value),
-                      ),
-                      _buildToggleItem(
-                        'Date',
-                        date,
-                        (value) => setState(() => date = value),
-                      ),
-                      _buildToggleItem(
-                        'Job type',
-                        jobType,
-                        (value) => setState(() => jobType = value),
-                      ),
-                      _buildToggleItem(
-                        'Symptom',
-                        symptom,
-                        (value) => setState(() => symptom = value),
-                      ),
+                      _buildToggleItem('Model, Brand', modelBrand, (value) => setState(() => modelBrand = value)),
+                      _buildToggleItem('Date', date, (value) => setState(() => date = value)),
+                      _buildToggleItem('Job type', jobType, (value) => setState(() => jobType = value)),
+                      _buildToggleItem('Symptom', symptom, (value) => setState(() => symptom = value)),
                       _buildToggleItem(
                         'Physical location',
                         physicalLocation,
@@ -452,16 +344,11 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                               backgroundColor: Colors.green,
                               foregroundColor: Colors.white,
                               elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(26),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                             ),
                             child: const Text(
                               'Save Settings',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -480,16 +367,11 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                               backgroundColor: const Color(0xFF4A90E2),
                               foregroundColor: Colors.white,
                               elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(26),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                             ),
                             child: const Text(
                               'Test Print',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -508,26 +390,13 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
             left: 0,
             right: 0,
             child: Container(
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top,
-                left: 16.w,
-                right: 16.w,
-                bottom: 8.h,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.kBg.withValues(alpha: 0.1),
-              ),
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, left: 16.w, right: 16.w, bottom: 8.h),
+              decoration: BoxDecoration(color: AppColors.kBg.withValues(alpha: 0.1)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CustomNavButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: CupertinoIcons.back,
-                  ),
-                  Text(
-                    'Label Content',
-                    style: AppTypography.sfProHeadLineTextStyle22,
-                  ),
+                  CustomNavButton(onPressed: () => Navigator.pop(context), icon: CupertinoIcons.back),
+                  Text('Label Content', style: AppTypography.sfProHeadLineTextStyle22),
                   const SizedBox(width: 44), // Spacer
                 ],
               ),
@@ -603,11 +472,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                         if (showJobNo)
                           Text(
                             jobData.jobNumber,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black,
-                            ),
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black),
                           ),
                       ],
                     ),
@@ -624,18 +489,13 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                         QrImageView(
                           // Job QR encodes the job number;
                           // Tracking QR encodes a URL with the job number.
-                          data: showJobQR
-                              ? jobData.jobNumber
-                              : 'https://tracking.portal/${jobData.jobNumber}',
+                          data: showJobQR ? jobData.jobNumber : 'https://tracking.portal/${jobData.jobNumber}',
                           version: QrVersions.auto,
                           size: 72,
                           backgroundColor: Colors.white,
                           // eyeStyle and dataModuleStyle are optional but
                           // ensure crisp black modules even at high dpi.
-                          eyeStyle: const QrEyeStyle(
-                            eyeShape: QrEyeShape.square,
-                            color: Colors.black,
-                          ),
+                          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
                           dataModuleStyle: const QrDataModuleStyle(
                             dataModuleShape: QrDataModuleShape.square,
                             color: Colors.black,
@@ -644,10 +504,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
                         const SizedBox(height: 2),
                         Text(
                           showJobQR ? 'Job QR' : 'Tracking QR',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.black54,
-                          ),
+                          style: const TextStyle(fontSize: 10, color: Colors.black54),
                         ),
                       ],
                     ),
@@ -656,21 +513,11 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
             ),
 
           if ((hasBarcodeArea || hasQR) &&
-              (showCustomerName ||
-                  showModelBrand ||
-                  showDate ||
-                  showJobType ||
-                  showSymptom ||
-                  showPhysicalLocation))
+              (showCustomerName || showModelBrand || showDate || showJobType || showSymptom || showPhysicalLocation))
             const SizedBox(height: 10),
 
           // ── Row 2: Text fields ───────────────────────────────────────
-          if (showCustomerName ||
-              showModelBrand ||
-              showDate ||
-              showJobType ||
-              showSymptom ||
-              showPhysicalLocation)
+          if (showCustomerName || showModelBrand || showDate || showJobType || showSymptom || showPhysicalLocation)
             Wrap(
               spacing: 12,
               runSpacing: 6,
@@ -691,27 +538,16 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
   /// Small helper so text styling is consistent everywhere.
   static Widget _labelText(String text) => Text(
     text,
-    style: const TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-      color: Colors.black,
-    ),
+    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
   );
 
   // ── Toggle row ────────────────────────────────────────────────────────────
 
-  Widget _buildToggleItem(
-    String title,
-    bool value,
-    ValueChanged<bool> onChanged, {
-    bool isLast = false,
-  }) {
+  Widget _buildToggleItem(String title, bool value, ValueChanged<bool> onChanged, {bool isLast = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
+        border: isLast ? null : Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -719,11 +555,7 @@ class _LabelContentScreenState extends State<LabelContentScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-                fontWeight: FontWeight.w400,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.w400),
             ),
           ),
           Transform.scale(

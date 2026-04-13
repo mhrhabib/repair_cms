@@ -33,18 +33,16 @@ class StepImeiWidgetState extends State<StepImeiWidget> {
     // IMEI is optional – always allow proceeding
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onCanProceedChanged(true);
+      _imeiFocusNode.requestFocus();
       final bookingState = context.read<JobBookingCubit>().state;
-      if (bookingState is JobBookingData &&
-          bookingState.device.imei.isNotEmpty) {
+      if (bookingState is JobBookingData && bookingState.device.imei.isNotEmpty) {
         _imeiController.text = bookingState.device.imei;
       }
     });
   }
 
   void _updateImeiInCubit() {
-    context.read<JobBookingCubit>().updateDeviceInfo(
-      imei: _imeiController.text.trim(),
-    );
+    context.read<JobBookingCubit>().updateDeviceInfo(imei: _imeiController.text.trim());
   }
 
   @override
@@ -55,20 +53,12 @@ class StepImeiWidgetState extends State<StepImeiWidget> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(height: 24.h),
-          TitleWidget(
-            stepNumber: 4,
-            title: 'Enter Device IMEI / Serial No.',
-            subTitle: '(Optional)',
-          ),
+          TitleWidget(stepNumber: 4, title: 'Enter Device IMEI / Serial No.', subTitle: '(Optional)'),
           SizedBox(height: 32.h),
           TextField(
             controller: _imeiController,
             focusNode: _imeiFocusNode,
-            style: GoogleFonts.roboto(
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w400,
-              color: AppColors.fontMainColor,
-            ),
+            style: GoogleFonts.roboto(fontSize: 22.sp, fontWeight: FontWeight.w400, color: AppColors.fontMainColor),
             cursorColor: AppColors.warningColor,
             decoration: InputDecoration(
               hintText: 'Answer here',
@@ -89,10 +79,7 @@ class StepImeiWidgetState extends State<StepImeiWidget> {
                 // borderRadius: BorderRadius.circular(8.r),
                 borderSide: BorderSide(color: AppColors.primary),
               ),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 16.h,
-              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
               suffixIcon: _imeiController.text.isNotEmpty
                   ? IconButton(
                       icon: Icon(Icons.clear, color: Colors.grey, size: 20.sp),
