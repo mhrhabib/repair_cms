@@ -8,6 +8,8 @@ class ApiEndpoints {
   static const String verifyOtp = '$baseUrl/auth/check-forgot-otp';
   static const String updatePassword = '$baseUrl/user/email/password/';
   static const String passwordForgotten = '$baseUrl/auth/forget-password';
+  static const String verify2FA = '$baseUrl/auth/2fa-login-code-verification';
+  static const String resend2FAEmailOtp = '$baseUrl/auth/resend-2fa-email-otp';
 
   //user profile
   static const String getProfile = '$baseUrl/auth/me';

@@ -208,6 +208,18 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
 
                       _navigateToHome(state.user!);
                     }
+                  } else if (state is TwoFactorRequired) {
+                    // Navigate to 2FA screen
+                    context.push(
+                      RouteNames.twoFactorAuth,
+                      extra: {
+                        'email': state.email,
+                        'twoFactorEmail': state.twoFactorEmail,
+                        'bothEnabled': state.bothEnabled,
+                        'appBasedAuthEnabled': state.appBasedAuthEnabled,
+                        'emailBasedAuthEnabled': state.emailBasedAuthEnabled,
+                      },
+                    );
                   } else if (state is SignInError) {
                     // Show snackbar and an external error below the password field
                     setState(() {

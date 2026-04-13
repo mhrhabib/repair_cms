@@ -4,20 +4,44 @@ class LoginResponseModel {
   final String message;
   final String? error;
   final LoginData? data;
+  final bool? secure;
+  final String? twoFactorEmail;
+  final bool? bothEnabled;
+  final bool? appBasedAuthEnabled;
+  final bool? emailBasedAuthEnabled;
 
   LoginResponseModel({
     required this.success,
     required this.message,
     this.error,
     this.data,
+    this.secure,
+    this.twoFactorEmail,
+    this.bothEnabled,
+    this.appBasedAuthEnabled,
+    this.emailBasedAuthEnabled,
   });
 
   factory LoginResponseModel.fromJson(Map<String, dynamic> json) {
+    // If accessToken is at root, this is a successful 2FA/Login response without 'data' wrapper
+    if (json.containsKey('accessToken')) {
+      return LoginResponseModel(
+        success: true,
+        message: 'Authentication successful',
+        data: LoginData.fromJson(json),
+      );
+    }
+
     return LoginResponseModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
       error: json['error'],
       data: json['data'] != null ? LoginData.fromJson(json['data']) : null,
+      secure: json['secure'],
+      twoFactorEmail: json['two_factor_email'],
+      bothEnabled: json['both_enabled'],
+      appBasedAuthEnabled: json['app_based_auth_enabled'],
+      emailBasedAuthEnabled: json['email_based_auth_enabled'],
     );
   }
 }
