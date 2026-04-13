@@ -42,18 +42,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ];
 
     try {
-      _animationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+      _animationController = AnimationController(
+        duration: const Duration(milliseconds: 200),
+        vsync: this,
+      );
 
-      _rotationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+      _rotationController = AnimationController(
+        duration: const Duration(milliseconds: 200),
+        vsync: this,
+      );
 
-      _expandAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+      _expandAnimation = CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      );
 
-      _rotationAnimation = Tween<double>(
-        begin: 0.0,
-        end: 0.125, // 45 degrees (0.125 * 360° = 45°)
-      ).animate(CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut));
+      _rotationAnimation =
+          Tween<double>(
+            begin: 0.0,
+            end: 0.125, // 45 degrees (0.125 * 360° = 45°)
+          ).animate(
+            CurvedAnimation(
+              parent: _rotationController,
+              curve: Curves.easeInOut,
+            ),
+          );
 
-      debugPrint('✅ [HomeScreen] Animation controllers initialized successfully');
+      debugPrint(
+        '✅ [HomeScreen] Animation controllers initialized successfully',
+      );
     } catch (e, stackTrace) {
       debugPrint('❌ [HomeScreen] Error initializing animations: $e');
       debugPrint('📋 [HomeScreen] Stack trace: $stackTrace');
@@ -97,9 +114,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.black,
-        statusBarIconBrightness: Brightness.dark, // Android
-        statusBarBrightness: Brightness.dark, // iOS
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // Android: dark icons
+        statusBarBrightness:
+            Brightness.light, // iOS: light background = dark icons
       ),
       child: Scaffold(
         body: Stack(
@@ -108,7 +126,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Apply backdrop filter only when expanded
             if (_isExpanded)
               BackdropFilter(
-                filter: ImageFilter.compose(inner: ImageFilter.dilate(), outer: ImageFilter.blur(sigmaX: 1, sigmaY: 1)),
+                filter: ImageFilter.compose(
+                  inner: ImageFilter.dilate(),
+                  outer: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+                ),
                 child: Container(
                   color: Colors.black.withValues(alpha: 0.5),
                   width: double.infinity,
@@ -135,7 +156,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
             ],
           ),
           child: Row(
@@ -259,21 +284,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                             await Navigator.of(context).push(
                               PageRouteBuilder(
-                                pageBuilder: (context, animation, secondaryAnimation) => JobBookingFirstScreen(),
-                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                  const begin = Offset(1.0, 0.0);
-                                  const end = Offset.zero;
-                                  const curve = Curves.easeInOut;
-                                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                                  var offsetAnimation = animation.drive(tween);
-                                  return SlideTransition(position: offsetAnimation, child: child);
-                                },
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        JobBookingFirstScreen(),
+                                transitionsBuilder:
+                                    (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      const begin = Offset(1.0, 0.0);
+                                      const end = Offset.zero;
+                                      const curve = Curves.easeInOut;
+                                      var tween = Tween(
+                                        begin: begin,
+                                        end: end,
+                                      ).chain(CurveTween(curve: curve));
+                                      var offsetAnimation = animation.drive(
+                                        tween,
+                                      );
+                                      return SlideTransition(
+                                        position: offsetAnimation,
+                                        child: child,
+                                      );
+                                    },
                               ),
                             );
 
-                            debugPrint('✅ [HomeScreen] Returned from New Job screen');
+                            debugPrint(
+                              '✅ [HomeScreen] Returned from New Job screen',
+                            );
                           } catch (e) {
-                            debugPrint('❌ [HomeScreen] Error navigating to New Job: $e');
+                            debugPrint(
+                              '❌ [HomeScreen] Error navigating to New Job: $e',
+                            );
                           }
                         },
                       ),
@@ -323,17 +368,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           if (!mounted) return;
 
                           try {
-                            debugPrint('🚀 [HomeScreen] Navigating to QR Scanner');
+                            debugPrint(
+                              '🚀 [HomeScreen] Navigating to QR Scanner',
+                            );
                             _toggleExpansion();
 
                             await Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const JobScannerScreen(isBarcodeMode: false)),
+                              MaterialPageRoute(
+                                builder: (context) => const JobScannerScreen(
+                                  isBarcodeMode: false,
+                                ),
+                              ),
                             );
 
-                            debugPrint('✅ [HomeScreen] Returned from QR Scanner');
+                            debugPrint(
+                              '✅ [HomeScreen] Returned from QR Scanner',
+                            );
                           } catch (e) {
-                            debugPrint('❌ [HomeScreen] Error navigating to QR Scanner: $e');
+                            debugPrint(
+                              '❌ [HomeScreen] Error navigating to QR Scanner: $e',
+                            );
                           }
                         },
                       ),
@@ -372,7 +427,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: AppTypography.fontSize20.copyWith(color: Colors.white)),
+            Text(
+              label,
+              style: AppTypography.fontSize20.copyWith(color: Colors.white),
+            ),
             SizedBox(width: 8.w),
             Container(
               height: 64.w,
@@ -382,7 +440,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(30.r),
                 boxShadow: [
-                  BoxShadow(color: backgroundColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: backgroundColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Icon(icon, color: Colors.white, size: 32.sp),
@@ -413,14 +475,18 @@ class _BottomNavItem extends StatefulWidget {
   State<_BottomNavItem> createState() => _BottomNavItemState();
 }
 
-class _BottomNavItemState extends State<_BottomNavItem> with SingleTickerProviderStateMixin {
+class _BottomNavItemState extends State<_BottomNavItem>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
 
     _opacityAnimation = Tween<double>(
       begin: 1.0,
@@ -434,9 +500,8 @@ class _BottomNavItemState extends State<_BottomNavItem> with SingleTickerProvide
     super.dispose();
   }
 
-  void _handleTap() async {
-    await _controller.forward();
-    await _controller.reverse();
+  void _handleTap() {
+    _controller.forward().then((_) => _controller.reverse());
     widget.onTap();
   }
 
@@ -461,9 +526,16 @@ class _BottomNavItemState extends State<_BottomNavItem> with SingleTickerProvide
                   width: 42.w,
                   height: 42.h,
                   decoration: BoxDecoration(
-                    color: widget.isSelected ? const Color(0xFFF7F7F8) : Colors.transparent,
+                    color: widget.isSelected
+                        ? const Color(0xFFF7F7F8)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(46.r),
-                    border: Border.all(color: widget.isSelected ? AppColors.whiteColor : Colors.transparent, width: 1),
+                    border: Border.all(
+                      color: widget.isSelected
+                          ? AppColors.whiteColor
+                          : Colors.transparent,
+                      width: 1,
+                    ),
                     boxShadow: widget.isSelected
                         ? [
                             const BoxShadow(
@@ -478,7 +550,9 @@ class _BottomNavItemState extends State<_BottomNavItem> with SingleTickerProvide
                   child: Center(
                     child: Icon(
                       widget.icon,
-                      color: widget.isSelected ? AppColors.primary : AppColors.lightFontColor,
+                      color: widget.isSelected
+                          ? AppColors.primary
+                          : AppColors.lightFontColor,
                       size: 24.sp,
                     ),
                   ),
@@ -487,8 +561,12 @@ class _BottomNavItemState extends State<_BottomNavItem> with SingleTickerProvide
                 Text(
                   widget.label,
                   style: AppTypography.fontSize10.copyWith(
-                    color: widget.isSelected ? AppColors.primary : AppColors.lightFontColor,
-                    fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: widget.isSelected
+                        ? AppColors.primary
+                        : AppColors.lightFontColor,
+                    fontWeight: widget.isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ],

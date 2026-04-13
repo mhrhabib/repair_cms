@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -63,6 +64,50 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
     }
   }
 
+  /// Show dialog when local network permission is denied
+  void _showNetworkPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Row(
+          children: [
+            Icon(Icons.wifi_off, color: Colors.orange, size: 24.sp),
+            SizedBox(width: 8.w),
+            const Expanded(child: Text('Network Access Required')),
+          ],
+        ),
+        content: const Text(
+          'RepairCMS needs local network access to find printers on your Wi-Fi.\n\n'
+          'Please go to Settings > RepairCMS > Local Network and enable it, then try again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Open app settings on iOS
+              if (Platform.isIOS) {
+                // Opens the app's own settings page in iOS Settings
+                final uri = Uri.parse('app-settings:');
+                launchUrl(uri);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+            ),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Scan network for printers (optimized concurrent version)
   Future<void> _scanNetwork() async {
     if (_isScanning) return;
@@ -79,9 +124,10 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
       final localIp = await _getLocalIp();
       if (localIp == null) {
         setState(() {
-          _scanStatus = 'Unable to get network information';
+          _scanStatus = 'Network access denied or unavailable';
           _isScanning = false;
         });
+        _showNetworkPermissionDeniedDialog();
         return;
       }
 

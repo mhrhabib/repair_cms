@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -870,10 +871,49 @@ class _FilesScreenState extends State<FilesScreen> {
   // Fullscreen image viewer widget
 }
 
-class FullscreenImageViewer extends StatelessWidget {
+class FullscreenImageViewer extends StatefulWidget {
   final String imageUrl;
 
   const FullscreenImageViewer({super.key, required this.imageUrl});
+
+  @override
+  State<FullscreenImageViewer> createState() => _FullscreenImageViewerState();
+}
+
+class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
+  int _quarterTurns = 0;
+  ImageStream? _imageStream;
+  ImageStreamListener? _imageListener;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Resolve the network image to read intrinsic dimensions and decide rotation.
+    final provider = NetworkImage(widget.imageUrl);
+    _imageStream = provider.resolve(const ImageConfiguration());
+    _imageListener = ImageStreamListener((ImageInfo info, bool _) {
+      try {
+        final w = info.image.width;
+        final h = info.image.height;
+        final turns = (w > h) ? 1 : 0;
+        if (mounted) setState(() => _quarterTurns = turns);
+      } catch (_) {
+        if (mounted) setState(() => _quarterTurns = 0);
+      }
+    }, onError: (dynamic _, _) {
+      if (mounted) setState(() => _quarterTurns = 0);
+    });
+    _imageStream?.addListener(_imageListener!);
+  }
+
+  @override
+  void dispose() {
+    if (_imageStream != null && _imageListener != null) {
+      _imageStream!.removeListener(_imageListener!);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -893,30 +933,33 @@ class FullscreenImageViewer extends StatelessWidget {
         minScale: 1.0,
         maxScale: 4.0,
         child: Center(
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.contain,
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
-              final value = progress.expectedTotalBytes != null
-                  ? progress.cumulativeBytesLoaded /
-                        progress.expectedTotalBytes!
-                  : null;
-              return Center(
-                child: CircularProgressIndicator(
-                  value: value,
-                  color: const Color(0xFF007AFF),
-                ),
-              );
-            },
-            errorBuilder: (context, error, stack) {
-              return const Center(
-                child: Text(
-                  'Failed to load image',
-                  style: TextStyle(color: Colors.white),
-                ),
-              );
-            },
+          child: RotatedBox(
+            quarterTurns: _quarterTurns,
+            child: Image.network(
+              widget.imageUrl,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                final value = progress.expectedTotalBytes != null
+                    ? progress.cumulativeBytesLoaded /
+                          progress.expectedTotalBytes!
+                    : null;
+                return Center(
+                  child: CircularProgressIndicator(
+                    value: value,
+                    color: const Color(0xFF007AFF),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stack) {
+                return const Center(
+                  child: Text(
+                    'Failed to load image',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),

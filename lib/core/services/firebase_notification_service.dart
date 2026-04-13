@@ -38,12 +38,11 @@ class FirebaseNotificationService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // Disable iOS automatic foreground banners — we show local notifications
-        // manually via LocalNotificationService to avoid duplicate notifications
+        // Tell iOS to show notification banners even when app is in foreground
         await _fcm.setForegroundNotificationPresentationOptions(
-          alert: false,
-          badge: false,
-          sound: false,
+          alert: true,
+          badge: true,
+          sound: true,
         );
 
         // On iOS, we need to wait for the APNS token before getting FCM token
@@ -155,31 +154,47 @@ class FirebaseNotificationService {
     debugPrint(
       '📩 [FirebaseNotificationService] Foreground message received: ${message.messageId}',
     );
-    debugPrint(
-      'Title: ${message.notification?.title}, Body: ${message.notification?.body}',
-    );
-    debugPrint('Data: ${message.data}');
+    debugPrint('   Title: ${message.notification?.title}');
+    debugPrint('   Body: ${message.notification?.body}');
+    debugPrint('   Data: ${message.data}');
 
+    final localNotify = SetUpDI.getIt<LocalNotificationService>();
+
+    // Prefer the standard notification payload, but support data-only messages
+    final senderName =
+        message.notification?.title ??
+        message.data['title']?.toString() ??
+        'RepairCMS';
+    final messageText =
+        message.notification?.body ??
+        message.data['body']?.toString() ??
+        message.data['message']?.toString() ??
+        '';
     final conversationId = message.data['conversationId']?.toString() ?? '';
     final jobNo = message.data['jobNo']?.toString();
     final type = message.data['type']?.toString();
     final action = message.data['action']?.toString();
     final notifMessage = message.data['message']?.toString();
 
-    // Use notification payload if available, fall back to data payload
-    final title = message.notification?.title ?? message.data['title']?.toString() ?? 'New Notification';
-    final body = message.notification?.body ?? message.data['body']?.toString() ?? '';
-
-    final localNotify = SetUpDI.getIt<LocalNotificationService>();
-    localNotify.showMessageNotification(
-      senderName: title,
-      messageText: body,
-      conversationId: conversationId,
-      jobNo: jobNo,
-      type: type,
-      action: action,
-      notifMessage: notifMessage,
-    );
+    // Only show a local notification if there's something to display
+    if ((message.notification != null) || messageText.isNotEmpty) {
+      debugPrint(
+        '🔔 [FirebaseNotificationService] Showing local notification for foreground message',
+      );
+      localNotify.showMessageNotification(
+        senderName: senderName,
+        messageText: messageText,
+        conversationId: conversationId,
+        jobNo: jobNo,
+        type: type,
+        action: action,
+        notifMessage: notifMessage,
+      );
+    } else {
+      debugPrint(
+        '⚠️ [FirebaseNotificationService] Foreground message has no notification payload or displayable body in data',
+      );
+    }
   }
 
   /// Handle messages that opened the app from background/terminated state

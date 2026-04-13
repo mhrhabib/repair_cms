@@ -66,9 +66,9 @@ void main() async {
   // Set status bar configuration globally
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.black, // Sets the background color of the status bar to black
-      statusBarIconBrightness: Brightness.dark, // Sets the icons/text to white so they are visible on black
-      statusBarBrightness: Brightness.dark, // For iOS
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark, // Android: dark icons
+      statusBarBrightness: Brightness.light, // iOS: light background = dark icons
     ),
   );
 
@@ -150,18 +150,18 @@ class MyApp extends StatelessWidget {
               colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
               appBarTheme: const AppBarTheme(
                 systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: Colors.black,
-                  statusBarIconBrightness: Brightness.light, // Android
-                  statusBarBrightness: Brightness.dark, // iOS
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.dark, // Android: dark icons
+                  statusBarBrightness: Brightness.light, // iOS: light background = dark icons
                 ),
               ),
             ),
             builder: (context, child) {
               return AnnotatedRegion<SystemUiOverlayStyle>(
                 value: const SystemUiOverlayStyle(
-                  statusBarColor: Colors.black,
-                  statusBarIconBrightness: Brightness.dark, // Android
-                  statusBarBrightness: Brightness.dark, // iOS
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.dark, // Android: dark icons
+                  statusBarBrightness: Brightness.light, // iOS: light background = dark icons
                 ),
                 child: child ?? const SizedBox.shrink(),
               );

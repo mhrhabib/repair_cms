@@ -132,23 +132,23 @@ class LabelSize {
   // Predefined label sizes for different brands
   static List<LabelSize> getBrotherSizes() {
     return [
-      LabelSize(
-        width: 50,
-        height: 26,
-        name: '50x26 (TD-2350D)',
-      ), // 591×307 dots @ 300 DPI
+      // LabelSize(
+      //   width: 50,
+      //   height: 26,
+      //   name: '50x26 (TD-2350D)',
+      // ), // 591×307 dots @ 300 DPI
       LabelSize(width: 51, height: 26, name: '51x26'),
-      LabelSize(width: 62, height: 29, name: '62x29'),
-      LabelSize(width: 62, height: 100, name: '62x100'),
+      // LabelSize(width: 62, height: 29, name: '62x29'),
+      // LabelSize(width: 62, height: 100, name: '62x100'),
       LabelSize(
         width: 100,
         height: 150,
-        name: '100x150 (TD-4)',
+        name: '100x150',
       ), // For TD-4 series
-      LabelSize(width: 102, height: 150, name: '102x150'),
-      LabelSize(width: 102, height: 152, name: '102x152'),
-      LabelSize(width: 102, height: 51, name: '102x51'),
-      LabelSize(width: 29, height: 90, name: '29x90'),
+      // LabelSize(width: 102, height: 150, name: '102x150'),
+      // LabelSize(width: 102, height: 152, name: '102x152'),
+      // LabelSize(width: 102, height: 51, name: '102x51'),
+      // LabelSize(width: 29, height: 90, name: '29x90'),
     ];
   }
 
@@ -164,12 +164,12 @@ class LabelSize {
   static List<LabelSize> getXprinterSizes() {
     return [
       LabelSize(width: 50, height: 25, name: '50x25'),
-      LabelSize(width: 50, height: 30, name: '50x30'),
-      LabelSize(width: 40, height: 30, name: '40x30'),
-      LabelSize(width: 60, height: 40, name: '60x40'),
-      LabelSize(width: 80, height: 50, name: '80x50'),
-      LabelSize(width: 100, height: 150, name: '100x150'),
-      LabelSize(width: 80, height: 80, name: '80x80'),
+      // LabelSize(width: 50, height: 30, name: '50x30'),
+      // LabelSize(width: 40, height: 30, name: '40x30'),
+      // LabelSize(width: 60, height: 40, name: '60x40'),
+      // LabelSize(width: 80, height: 50, name: '80x50'),
+      // LabelSize(width: 100, height: 150, name: '100x150'),
+      // LabelSize(width: 80, height: 80, name: '80x80'),
     ];
   }
 }
