@@ -14,6 +14,7 @@ import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/utils/label_formatter.dart';
 import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
+import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_thermal_receipt_preview_screen.dart';
 import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
@@ -79,6 +80,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           else if (s is JobFileDeleteSuccess)
             updated = s.job;
           if (updated != null) setState(() => _currentJob = updated);
+        }
+
+        // Auto-refresh dashboard stats when any job status changes
+        if (state is JobStatusUpdated || state is JobStatusUpdateSuccess) {
+          debugPrint('🔄 [JobDetailsScreen] Job status changed — refreshing dashboard silently');
+          context.read<DashboardCubit>().loadAllDashboardData(force: true);
         }
       },
       child: PopScope(

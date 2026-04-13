@@ -18,6 +18,7 @@ import 'package:repair_cms/features/quickTask/screens/quick_task_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'dart:math' as math;
+import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'widgets/job_progress_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -131,15 +132,30 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     }
   }
 
-  void _loadAllDashboardData() {
+  void _loadAllDashboardData({bool force = false}) {
+    final userId = storage.read('userId');
     if (_selectedStartDate != null && _selectedEndDate != null) {
       context.read<DashboardCubit>().loadAllDashboardData(
         startDate: _selectedStartDate,
         endDate: _selectedEndDate,
-        userId: storage.read('userId'),
+        userId: userId,
+        force: force,
       );
     } else {
-      context.read<DashboardCubit>().getThisMonthStats(storage.read('userId'));
+      // Default to this month but handle forcing
+      if (force) {
+        final now = DateTime.now();
+        final startOfMonth = DateTime(now.year, now.month, 1);
+        final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59, 999);
+        context.read<DashboardCubit>().loadAllDashboardData(
+          startDate: startOfMonth,
+          endDate: endOfMonth,
+          userId: userId,
+          force: true,
+        );
+      } else {
+        context.read<DashboardCubit>().getThisMonthStats(userId);
+      }
     }
   }
 
@@ -392,66 +408,73 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             }
           },
         ),
+        // 🔄 Listen to JobCubit — refresh dashboard whenever any job status changes
+        BlocListener<JobCubit, JobStates>(
+          listener: (context, state) {
+            if (state is JobStatusUpdated || state is JobStatusUpdateSuccess) {
+              debugPrint('🔄 [DashboardScreen] Job status changed — forcing explicit dashboard refresh');
+              _loadAllDashboardData(force: true);
+              context.read<QuickTaskCubit>().getTodos();
+            }
+          },
+        ),
       ],
-      child: BlocProvider<DashboardCubit>(
-        create: (context) => context.read<DashboardCubit>(),
-        child: Scaffold(
-          backgroundColor: AppColors.scaffoldBackgroundColor,
-          body: SafeArea(
-            child: Stack(
-              children: [
-                Column(
-                  children: [
-                    // SizedBox(height: 28.h),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // SizedBox(height: 12.h),
-                            // Greeting Section
-                            _buildGreetingSection(),
-                            SizedBox(height: 12.h),
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  // SizedBox(height: 28.h),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // SizedBox(height: 12.h),
+                          // Greeting Section
+                          _buildGreetingSection(),
+                          SizedBox(height: 12.h),
 
-                            // Incomplete To-Do's Card
-                            _buildIncompleteToDoCard(context),
-                            SizedBox(height: 12.h),
+                          // Incomplete To-Do's Card
+                          _buildIncompleteToDoCard(context),
+                          SizedBox(height: 12.h),
 
-                            // Completed Jobs Card
-                            _buildCompletedJobsCard(),
-                            SizedBox(height: 16.h),
+                          // Completed Jobs Card
+                          _buildCompletedJobsCard(),
+                          SizedBox(height: 16.h),
 
-                            // Job Progress Card - Using the new widget
-                            const JobProgressWidget(),
+                          // Job Progress Card - Using the new widget
+                          const JobProgressWidget(),
 
-                            // Add bottom padding for FAB
-                            SizedBox(height: 100.h),
-                          ],
-                        ),
+                          // Add bottom padding for FAB
+                          SizedBox(height: 100.h),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
 
-                // Enhanced Search Widget positioned at top
-                // Positioned(
-                //   top: 0,
-                //   left: 0,
-                //   right: 0,
-                //   child: EnhancedSearchWidget(
-                //     onSearchChanged: (query) {
-                //       // Handle search query changes
-                //       debugPrint('Search query: $query');
-                //     },
-                //     onQRScanPressed: () {
-                //       // Handle QR scan button press
-                //       _showQRScanDialog();
-                //     },
-                //   ),
-                // ),
-              ],
-            ),
+              // Enhanced Search Widget positioned at top
+              // Positioned(
+              //   top: 0,
+              //   left: 0,
+              //   right: 0,
+              //   child: EnhancedSearchWidget(
+              //     onSearchChanged: (query) {
+              //       // Handle search query changes
+              //       debugPrint('Search query: $query');
+              //     },
+              //     onQRScanPressed: () {
+              //       // Handle QR scan button press
+              //       _showQRScanDialog();
+              //     },
+              //   ),
+              // ),
+            ],
           ),
         ),
       ),
@@ -678,7 +701,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   Widget _buildCompletedJobsCard() {
     return BlocBuilder<DashboardCubit, DashboardState>(
       builder: (context, state) {
-        int completedJobs = 0;
+        final cubit = context.read<DashboardCubit>();
+        int completedJobs = cubit.dashboardStats?.completedJobs ?? 0;
         String dateRangeText = '01.02.2024 - 28.02.2024';
 
         if (state is DashboardLoaded) {
@@ -695,6 +719,16 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             } catch (e) {
               debugPrint('Error parsing dates: $e');
             }
+          }
+        } else if (state is DashboardLoading && cubit.dashboardStats != null) {
+          // Use cached data during loading to prevent flickering to 0
+          completedJobs = cubit.dashboardStats!.completedJobs;
+          final filterRange = cubit.dashboardStats!.filterRange;
+          if (filterRange.startDate.isNotEmpty && filterRange.endDate.isNotEmpty) {
+            try {
+              dateRangeText =
+                  '${DateFormat('dd.MM.yyyy').format(DateTime.parse(filterRange.startDate))} - ${DateFormat('dd.MM.yyyy').format(DateTime.parse(filterRange.endDate))}';
+            } catch (e) {}
           }
         } else if (_selectedStartDate != null && _selectedEndDate != null) {
           dateRangeText =
