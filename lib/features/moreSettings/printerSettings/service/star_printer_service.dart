@@ -214,4 +214,29 @@ class StarPrinterService implements BasePrinterService {
       );
     }
   }
+
+  @override
+  Future<PrinterResult> printBorderTest({
+    required String ipAddress,
+    int port = 9100,
+    LabelSize? labelSize,
+  }) async {
+    return PrinterResult(
+      success: false,
+      message: 'Border test not supported for Star',
+      code: -2,
+    );
+  }
+
+  @override
+  Future<PrinterResult> calibrate({
+    required String ipAddress,
+    int port = 9100,
+  }) async {
+    return PrinterResult(
+      success: false,
+      message: 'Calibration not supported for Star',
+      code: -2,
+    );
+  }
 }

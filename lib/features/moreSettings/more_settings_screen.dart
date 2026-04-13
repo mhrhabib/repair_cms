@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/services/socket_service.dart';
@@ -5,6 +6,7 @@ import 'package:repair_cms/features/moreSettings/labelContent/label_content_scre
 import 'package:repair_cms/features/moreSettings/notificationSetting/notification_settings_screen.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/printer_settings_screen.dart';
 import 'package:repair_cms/set_up_di.dart';
+import 'package:repair_cms/main.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class MoreSettingsScreen extends StatelessWidget {
@@ -14,11 +16,10 @@ class MoreSettingsScreen extends StatelessWidget {
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          backgroundColor: AppColors.kBg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
               Icon(Icons.logout, color: Colors.red),
@@ -26,16 +27,11 @@ class MoreSettingsScreen extends StatelessWidget {
               Text('Logout', style: TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),
-          content: const Text(
-            'Are you sure you want to logout?',
-            style: TextStyle(fontSize: 16),
-          ),
+          content: const Text('Are you sure you want to logout?', style: TextStyle(fontSize: 16)),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey.shade700,
-              ),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -43,9 +39,7 @@ class MoreSettingsScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Logout'),
             ),
@@ -56,41 +50,47 @@ class MoreSettingsScreen extends StatelessWidget {
   }
 
   // Method to perform logout
-  void _performLogout(BuildContext context) {
+  Future<void> _performLogout(BuildContext context) async {
     try {
       debugPrint('🚺 [Logout] Starting logout process');
 
-      // Close the dialog first
-      Navigator.of(context).pop();
+      // Close the confirmation dialog
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
 
       // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(child: CupertinoActivityIndicator());
+          },
+        );
+      }
 
-      // Perform logout operations
-      _clearUserData()
-          .then((_) {
-            debugPrint('✅ [Logout] Logout successful, navigating to sign in');
-            // Navigate to login screen and remove all routes
-            GoRouter.of(context).go(
-              RouteNames.signIn, // Replace with your actual login route
-            );
-          })
-          .catchError((error) {
-            debugPrint('❌ [Logout] Error during logout: $error');
-            // Handle any errors during logout
-            try {
-              Navigator.of(context).pop(); // Close loading dialog
-              _showLogoutError(context, error.toString());
-            } catch (e) {
-              debugPrint('❌ [Logout] Error showing error dialog: $e');
-            }
-          });
+      try {
+        await _clearUserData();
+
+        debugPrint('✅ [Logout] Logout successful, restarting app');
+
+        // Allow some time for state to settle - production safe
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        if (context.mounted) {
+          // Restart the app to clear all memory (cubits/blocs)
+          RestartWidget.restartApp(context);
+        }
+      } catch (error) {
+        debugPrint('❌ [Logout] Error during logout: $error');
+
+        if (context.mounted) {
+          // Close loading dialog if it's still open
+          Navigator.of(context).pop();
+          _showLogoutError(context, error.toString());
+        }
+      }
     } catch (e, stackTrace) {
       debugPrint('❌ [Logout] Critical error in logout: $e');
       debugPrint('📋 Stack trace: $stackTrace');
@@ -104,15 +104,8 @@ class MoreSettingsScreen extends StatelessWidget {
       debugPrint('🔌 [Logout] Disconnecting socket');
       SetUpDI.getIt<SocketService>().disconnect();
 
-      // Clear authentication token
-      await storage.remove('token');
-
-      // Clear any other user-related data
-      await storage.remove('user');
-      await storage.remove('userId');
-      await storage.remove('userType');
-      // Clear any other cached data if needed
-      // await StorageService.clearAll();
+      // Clear all local storage data
+      await clearLocalStorage();
 
       // Optional: Call logout API if needed
       // await ApiService.logout();
@@ -127,9 +120,7 @@ class MoreSettingsScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
               Icon(Icons.error_outline, color: Colors.orange),
@@ -138,12 +129,7 @@ class MoreSettingsScreen extends StatelessWidget {
             ],
           ),
           content: Text('There was an issue during logout: $error'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
+          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
         );
       },
     );
@@ -153,164 +139,140 @@ class MoreSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        title: const Text(
-          'More',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 72.h,
+              left: 10.0,
+              right: 10.0,
+              bottom: 10.0,
+            ),
+            child: Column(
+              children: [
+                // Printer Settings
+                _buildSettingsItem(
+                  iconsWidget: Icon(SolarIconsOutline.printer, color: Colors.blue),
+                  title: 'Printer Settings',
+                  onTap: () {
+                    try {
+                      debugPrint('🔄 [MoreSettings] Navigating to Printer Settings');
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute(builder: (context) => const PrinterSettingsScreen()));
+                    } catch (e) {
+                      debugPrint('❌ [MoreSettings] Error navigating to Printer Settings: $e');
+                    }
+                  },
+                ),
+
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppColors.deviderColor, width: 0.5)),
+                  ),
+                ),
+
+                // Label Content
+                _buildSettingsItem(
+                  iconsWidget: Image.asset('assets/icon/label.png', width: 24, height: 24),
+                  title: 'Label Content',
+                  onTap: () {
+                    try {
+                      debugPrint('🔄 [MoreSettings] Navigating to Label Content');
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => LabelContentScreen()));
+                    } catch (e) {
+                      debugPrint('❌ [MoreSettings] Error navigating to Label Content: $e');
+                    }
+                  },
+                ),
+
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppColors.deviderColor, width: 0.5)),
+                  ),
+                ),
+
+                // Notification Settings
+                _buildSettingsItem(
+                  iconsWidget: Icon(SolarIconsOutline.bell, color: Colors.blue),
+                  title: 'Notification Settings',
+                  onTap: () {
+                    try {
+                      debugPrint('🔄 [MoreSettings] Navigating to Notification Settings');
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => NotificationSettingsScreen()));
+                    } catch (e) {
+                      debugPrint('❌ [MoreSettings] Error navigating to Notification Settings: $e');
+                    }
+                  },
+                ),
+
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppColors.deviderColor, width: 0.5)),
+                  ),
+                ),
+
+                // Debug Logs - For remote troubleshooting
+                _buildSettingsItem(
+                  iconsWidget: Icon(SolarIconsOutline.bug, color: Colors.purple),
+                  title: 'Debug Logs',
+                  subtitle: 'Printer troubleshooting',
+                  onTap: () {
+                    try {
+                      debugPrint('🔄 [MoreSettings] Navigating to Debug Logs');
+                      context.push(RouteNames.logsViewer);
+                    } catch (e) {
+                      debugPrint('❌ [MoreSettings] Error navigating to Debug Logs: $e');
+                    }
+                  },
+                ),
+
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppColors.deviderColor, width: 0.5)),
+                  ),
+                ),
+
+                // Logout Button - Added at the bottom
+                _buildLogoutItem(context),
+              ],
+            ),
           ),
-        ),
-        centerTitle: true,
-        leading: Container(), // Empty container to hide back button
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          children: [
-            // Printer Settings
-            _buildSettingsItem(
-              icon: SolarIconsOutline.printer,
-              iconColor: Colors.blue,
-              title: 'Printer Settings',
-              onTap: () {
-                try {
-                  debugPrint(
-                    '🔄 [MoreSettings] Navigating to Printer Settings',
-                  );
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const PrinterSettingsScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [MoreSettings] Error navigating to Printer Settings: $e',
-                  );
-                }
-              },
-            ),
 
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, left: 16.w, right: 16.w, bottom: 8.h),
+              decoration: BoxDecoration(color: AppColors.scaffoldBackgroundColor.withValues(alpha: 0.1)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [Text('More', style: AppTypography.sfProHeadLineTextStyle22)],
               ),
             ),
-
-            // Label Content
-            _buildSettingsItem(
-              icon: SolarIconsOutline.laptop2,
-              iconColor: Colors.blue,
-              title: 'Label Content',
-              onTap: () {
-                try {
-                  debugPrint('🔄 [MoreSettings] Navigating to Label Content');
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => LabelContentScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [MoreSettings] Error navigating to Label Content: $e',
-                  );
-                }
-              },
-            ),
-
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
-              ),
-            ),
-
-            // Notification Settings
-            _buildSettingsItem(
-              icon: SolarIconsOutline.bell,
-              iconColor: Colors.blue,
-              title: 'Notification Settings',
-              onTap: () {
-                try {
-                  debugPrint(
-                    '🔄 [MoreSettings] Navigating to Notification Settings',
-                  );
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => NotificationSettingsScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [MoreSettings] Error navigating to Notification Settings: $e',
-                  );
-                }
-              },
-            ),
-
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
-              ),
-            ),
-
-            // Debug Logs - For remote troubleshooting
-            _buildSettingsItem(
-              icon: SolarIconsOutline.bug,
-              iconColor: Colors.purple,
-              title: 'Debug Logs',
-              subtitle: 'Printer troubleshooting',
-              onTap: () {
-                try {
-                  debugPrint('🔄 [MoreSettings] Navigating to Debug Logs');
-                  context.push(RouteNames.logsViewer);
-                } catch (e) {
-                  debugPrint(
-                    '❌ [MoreSettings] Error navigating to Debug Logs: $e',
-                  );
-                }
-              },
-            ),
-
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
-              ),
-            ),
-
-            // Logout Button - Added at the bottom
-            _buildLogoutItem(context),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSettingsItem({
-    required IconData icon,
-    required Color iconColor,
+    required Widget iconsWidget,
+
     required String title,
     String? subtitle,
     required VoidCallback onTap,
@@ -326,40 +288,31 @@ class MoreSettingsScreen extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: iconColor, size: 24),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                child: iconsWidget,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
+                      style: AppTypography.sfProText15.copyWith(
+                        fontSize: 16.sp,
+                        color: AppColors.fontMainColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     if (subtitle != null)
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
+                        style: AppTypography.sfProText15.copyWith(fontSize: 12, color: AppColors.fontMainColor),
                       ),
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.fontMainColor,
-                size: 24,
-              ),
+              const Icon(Icons.arrow_forward_ios, color: AppColors.fontMainColor, size: 24),
             ],
           ),
         ),
@@ -379,27 +332,17 @@ class MoreSettingsScreen extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  SolarIconsOutline.logout,
-                  color: Colors.red,
-                  size: 24,
-                ),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                child: const Icon(SolarIconsOutline.logout, color: Colors.red, size: 24),
               ),
               const SizedBox(width: 16),
               const Expanded(
                 child: Text(
                   'Logout',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.red, size: 24),
+              const Icon(Icons.arrow_forward_ios, color: Colors.red, size: 24),
             ],
           ),
         ),

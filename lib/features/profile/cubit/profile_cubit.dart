@@ -21,6 +21,15 @@ class ProfileCubit extends Cubit<ProfileStates> {
       debugPrint('✅ ProfileCubit: User data loaded successfully');
       debugPrint('👤 User Name: ${user.data?.fullName}');
       debugPrint('📧 User Email: ${user.data?.email}');
+
+      // Save user to storage for other features to use
+      if (user.data != null) {
+        await storage.write('user', user.data!.toJson());
+        await storage.write('fullName', user.data!.fullName);
+        await storage.write('locationId', user.data!.location?.id);
+        debugPrint('💾 ProfileCubit: Updated user data in storage');
+      }
+
       emit(ProfileLoaded(user: user.data!));
     } on ProfileException catch (e) {
       debugPrint('❌ ProfileCubit ProfileException: ${e.message}');
@@ -47,16 +56,10 @@ class ProfileCubit extends Cubit<ProfileStates> {
     }
   }
 
-  Future<void> updateUserProfile(
-    String userId,
-    Map<String, dynamic> updateData,
-  ) async {
+  Future<void> updateUserProfile(String userId, Map<String, dynamic> updateData) async {
     emit(ProfileLoading());
     try {
-      final UserData updatedUser = await repository.updateUserProfile(
-        userId,
-        updateData,
-      );
+      final UserData updatedUser = await repository.updateUserProfile(userId, updateData);
 
       // Update storage with new user data
       await storage.write('user', updatedUser.toJson());
@@ -73,16 +76,10 @@ class ProfileCubit extends Cubit<ProfileStates> {
     }
   }
 
-  Future<void> updateProfileField(
-    String userId,
-    String field,
-    dynamic value,
-  ) async {
+  Future<void> updateProfileField(String userId, String field, dynamic value) async {
     emit(ProfileLoading());
     try {
-      final UserData updatedUser = await repository.updateUserProfile(userId, {
-        field: value,
-      });
+      final UserData updatedUser = await repository.updateUserProfile(userId, {field: value});
 
       // Update storage with new user data
       await storage.write('user', updatedUser.toJson());
@@ -111,10 +108,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
       debugPrint('   📁 Avatar path: $avatarPath');
 
       // Step 1: Upload avatar and get response with file path and URL
-      final uploadResponse = await repository.updateUserAvatar(
-        userId,
-        avatarPath,
-      );
+      final uploadResponse = await repository.updateUserAvatar(userId, avatarPath);
       debugPrint('   ✅ Avatar uploaded, response: $uploadResponse');
 
       // Extract file path and URL from response
@@ -124,9 +118,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
       debugPrint('   🌐 Signed URL: $signedUrl');
 
       // Step 2: Update user profile with the S3 file path (not the signed URL which expires)
-      final UserData updatedUser = await repository.updateUserProfile(userId, {
-        'avatar': s3FilePath,
-      });
+      final UserData updatedUser = await repository.updateUserProfile(userId, {'avatar': s3FilePath});
 
       // Update storage with new user data
       await storage.write('user', updatedUser.toJson());
@@ -148,10 +140,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
     }
   }
 
-  Future<void> updateUserAvatarFromBase64(
-    String userId,
-    String base64Image,
-  ) async {
+  Future<void> updateUserAvatarFromBase64(String userId, String base64Image) async {
     emit(ProfileLoading());
     try {
       debugPrint('🔄 ProfileCubit: Updating user avatar from base64...');
@@ -160,9 +149,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
 
       // Create temporary file with base64 data
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File(
-        '${tempDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
-      );
+      final tempFile = File('${tempDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg');
 
       // Decode base64 and write to file
       final bytes = base64Decode(base64Image.split(',').last);
@@ -197,19 +184,11 @@ class ProfileCubit extends Cubit<ProfileStates> {
     }
   }
 
-  Future<void> changePassword(
-    String userId,
-    String currentPassword,
-    String newPassword,
-  ) async {
+  Future<void> changePassword(String userId, String currentPassword, String newPassword) async {
     emit(ProfileLoading());
     try {
       debugPrint('🔄 ProfileCubit: Changing password...');
-      final success = await repository.changePassword(
-        userId,
-        currentPassword,
-        newPassword,
-      );
+      final success = await repository.changePassword(userId, currentPassword, newPassword);
       if (success) {
         debugPrint('✅ ProfileCubit: Password changed successfully');
         emit(PasswordChanged());
@@ -229,11 +208,7 @@ class ProfileCubit extends Cubit<ProfileStates> {
     }
   }
 
-  Future<void> updateUserEmail(
-    String userId,
-    String email,
-    String password,
-  ) async {
+  Future<void> updateUserEmail(String userId, String email, String password) async {
     emit(ProfileLoading());
     try {
       debugPrint('🔄 ProfileCubit: Updating user email...');
@@ -257,17 +232,11 @@ class ProfileCubit extends Cubit<ProfileStates> {
     }
   }
 
-  Future<void> updateUserPreferences(
-    String userId,
-    Map<String, dynamic> preferences,
-  ) async {
+  Future<void> updateUserPreferences(String userId, Map<String, dynamic> preferences) async {
     emit(ProfileLoading());
     try {
       debugPrint('🔄 ProfileCubit: Updating user preferences...');
-      final UserData updatedUser = await repository.updateUserPreferences(
-        userId,
-        preferences,
-      );
+      final UserData updatedUser = await repository.updateUserPreferences(userId, preferences);
 
       // Update storage with new user data
       await storage.write('user', updatedUser.toJson());

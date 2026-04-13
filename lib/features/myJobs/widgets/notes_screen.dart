@@ -1,7 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
@@ -9,6 +9,7 @@ import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 // --- FIGMA STYLES ---
 final Color figmaYellow = const Color(0xFFF0D48C);
@@ -50,7 +51,11 @@ class _NotesScreenState extends State<NotesScreen> {
     });
   }
 
-  Future<dynamic> _showNoteBottomSheet(BuildContext context, SingleJobModel job, InternalNote? note) {
+  Future<dynamic> _showNoteBottomSheet(
+    BuildContext context,
+    SingleJobModel job,
+    InternalNote? note,
+  ) {
     return showCupertinoModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -82,7 +87,11 @@ class _NotesScreenState extends State<NotesScreen> {
     // notifies the parent via `onNoteSaved` to refresh local state.
   }
 
-  void _navigateToEditNote(BuildContext context, SingleJobModel job, InternalNote note) async {
+  void _navigateToEditNote(
+    BuildContext context,
+    SingleJobModel job,
+    InternalNote note,
+  ) async {
     await _showNoteBottomSheet(context, job, note);
     // Success snackbar is handled centrally by BlocListener to avoid duplicates.
   }
@@ -94,7 +103,10 @@ class _NotesScreenState extends State<NotesScreen> {
         title: const Text('Delete Note'),
         content: const Text('Are you sure you want to delete this note?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () {
               _performDeleteNote(note);
@@ -114,11 +126,16 @@ class _NotesScreenState extends State<NotesScreen> {
     final userName = storage.read('fullName');
 
     if (userId == null || userName == null) {
-      SnackbarDemo(message: 'User information not found').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'User information not found',
+      ).showCustomSnackbar(context);
       return;
     }
 
-    jobCubit.deleteJobNote(jobId: widget.job.data?.sId ?? '', noteId: note.id ?? '');
+    jobCubit.deleteJobNote(
+      jobId: widget.job.data?.sId ?? '',
+      noteId: note.id ?? '',
+    );
     Navigator.pop(context);
   }
 
@@ -135,55 +152,101 @@ class _NotesScreenState extends State<NotesScreen> {
           final updatedJob = state.job;
           setState(() {
             _internalNotes = updatedJob.data!.defect!.isNotEmpty
-                ? updatedJob.data!.defect!.first.internalNote ?? <InternalNote>[]
+                ? updatedJob.data!.defect!.first.internalNote ??
+                      <InternalNote>[]
                 : <InternalNote>[];
           });
 
-          SnackbarDemo(message: 'Operation completed successfully').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Operation completed successfully',
+          ).showCustomSnackbar(context);
         } else if (state is JobActionError) {
           SnackbarDemo(message: state.message).showCustomSnackbar(context);
         }
       },
       child: Scaffold(
         backgroundColor: AppColors.whiteColor,
-        appBar: CupertinoNavigationBar(
-          backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
-          // border: Border(bottom: BorderSide(color: CupertinoColors.separator.resolveFrom(context), width: 0.5)),
-          leading: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => Navigator.of(context).pop(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(CupertinoIcons.back, color: figmaBlue, size: 28.r),
-                Text(
-                  'Back',
-                  style: TextStyle(color: figmaBlue, fontSize: 17.sp),
+        body: Stack(
+          children: [
+            Container(
+              margin: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 72.h,
+                left: 8.w,
+                right: 8.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: figmaYellow,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: _buildNotesList(),
+            ),
+
+            // Custom Header
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 8.h,
                 ),
-              ],
+                decoration: BoxDecoration(
+                  color: AppColors.kBg.withValues(alpha: 0.1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomNavButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: CupertinoIcons.back,
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 2.w,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(28.r),
+                        border: Border.all(
+                          color: AppColors.whiteColor, // Figma: border #FFFFFF
+                          width: 1, // Figma: border-width 1px
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromARGB(
+                              28,
+                              116,
+                              115,
+                              115,
+                            ), // Figma: #0000001C
+                            blurRadius: 2, // Figma: blur 20px
+                            offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'Notes',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                    ),
+                    CustomNavButton(
+                      onPressed: () => _navigateToAddNote(context, widget.job),
+                      icon: CupertinoIcons.add_circled_solid,
+                      size: 28.sp,
+                      iconColor: figmaBlue,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          middle: Text(
-            'Notes',
-            style: TextStyle(
-              fontSize: 17.sp,
-              fontWeight: FontWeight.w600,
-              color: CupertinoColors.label.resolveFrom(context),
-            ),
-          ),
-          trailing: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => _navigateToAddNote(context, widget.job),
-            child: Icon(CupertinoIcons.add_circled_solid, color: figmaBlue, size: 28.r),
-          ),
-        ),
-        body: Container(
-          margin: EdgeInsets.all(8.h),
-          decoration: BoxDecoration(
-            color: figmaYellow,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16.r), bottom: Radius.circular(16.r)),
-          ),
-          child: _buildNotesList(),
+          ],
         ),
       ),
     );
@@ -201,7 +264,8 @@ class _NotesScreenState extends State<NotesScreen> {
       child: ListView(
         padding: EdgeInsets.all(16.r),
         children: [
-          if (_internalNotes.isNotEmpty) ..._internalNotes.map((note) => _buildNoteItem(note)),
+          if (_internalNotes.isNotEmpty)
+            ..._internalNotes.map((note) => _buildNoteItem(note)),
           if (_internalNotes.isEmpty)
             _buildNoteItem(
               InternalNote(
@@ -240,7 +304,10 @@ class _NotesScreenState extends State<NotesScreen> {
           SizedBox(height: 8.h),
           Text(
             isEmptyState ? content : "$time, $author",
-            style: GoogleFonts.roboto(fontSize: 12.sp, color: Colors.grey.shade600),
+            style: GoogleFonts.roboto(
+              fontSize: 12.sp,
+              color: Colors.grey.shade600,
+            ),
           ),
           SizedBox(height: 8.h),
           if (!isEmptyState)
@@ -251,11 +318,19 @@ class _NotesScreenState extends State<NotesScreen> {
                   onTap: () => _navigateToEditNote(context, widget.job, note),
                   child: Row(
                     children: [
-                      Icon(FontAwesomeIcons.solidPenToSquare, color: figmaBlue, size: 16.r),
+                      Icon(
+                        SolarIconsOutline.pen2,
+                        color: figmaBlue,
+                        size: 16.r,
+                      ),
                       SizedBox(width: 2.w),
                       Text(
                         'Edit',
-                        style: GoogleFonts.roboto(color: figmaBlue, fontSize: 14.sp, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.roboto(
+                          color: figmaBlue,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -269,14 +344,22 @@ class _NotesScreenState extends State<NotesScreen> {
                       SizedBox(width: 2.w),
                       Text(
                         'delete',
-                        style: GoogleFonts.roboto(color: Colors.red, fontSize: 14.sp, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.roboto(
+                          color: Colors.red,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-          Container(height: 2, width: double.infinity, color: Colors.grey.shade300),
+          Container(
+            height: 2,
+            width: double.infinity,
+            color: Colors.grey.shade300,
+          ),
         ],
       ),
     );
@@ -284,13 +367,18 @@ class _NotesScreenState extends State<NotesScreen> {
 }
 
 class _AddEditNoteSheetContent extends StatefulWidget {
-  const _AddEditNoteSheetContent({required this.job, this.note, required this.onNoteSaved});
+  const _AddEditNoteSheetContent({
+    required this.job,
+    this.note,
+    required this.onNoteSaved,
+  });
   final SingleJobModel job;
   final InternalNote? note;
   final VoidCallback onNoteSaved;
 
   @override
-  State<_AddEditNoteSheetContent> createState() => _AddEditNoteSheetContentState();
+  State<_AddEditNoteSheetContent> createState() =>
+      _AddEditNoteSheetContentState();
 }
 
 class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
@@ -339,7 +427,9 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
     final userName = storage.read('fullName');
 
     if (userId == null || userName == null) {
-      SnackbarDemo(message: 'User information not found').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'User information not found',
+      ).showCustomSnackbar(context);
       if (_isMounted) {
         setState(() {
           _isLoading = false;
@@ -382,7 +472,9 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
             setState(() {
               _isLoading = false;
             });
-            SnackbarDemo(message: 'Failed to save note: $error').showCustomSnackbar(context);
+            SnackbarDemo(
+              message: 'Failed to save note: $error',
+            ).showCustomSnackbar(context);
           }
         });
   }
@@ -395,7 +487,9 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
         top: false,
         child: Container(
           height: MediaQuery.of(context).size.height * 0.9,
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: Column(
             children: [
               Padding(
@@ -403,7 +497,10 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                 child: Container(
                   width: 40.w,
                   height: 5.h,
-                  decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2.5.r)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2.5.r),
+                  ),
                 ),
               ),
               Padding(
@@ -413,18 +510,19 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                   children: [
                     Text(
                       isEditing ? 'Edit note' : 'Add a note',
-                      style: GoogleFonts.roboto(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+                      style: GoogleFonts.roboto(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        icon: Icon(Icons.close, color: Colors.black87, size: 20.r),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.grey.shade300,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-                          padding: EdgeInsets.all(8.r),
-                        ),
-                        onPressed: _isLoading ? null : () => Navigator.pop(context),
+                      child: CustomNavButton(
+                        icon: SolarIconsOutline.penNewRound,
+                        iconColor: Colors.black87,
+                        size: 20.r,
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ),
                   ],
@@ -446,7 +544,10 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                         decoration: InputDecoration(
                           hintText: 'write a note...',
                           border: InputBorder.none,
-                          hintStyle: GoogleFonts.roboto(fontSize: 16.sp, color: Colors.grey.shade600),
+                          hintStyle: GoogleFonts.roboto(
+                            fontSize: 16.sp,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ),
                     ),
@@ -454,21 +555,31 @@ class _AddEditNoteSheetContentState extends State<_AddEditNoteSheetContent> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.only(bottom: 16.h, left: 16.w, right: 16.w, top: 16.h),
+                padding: EdgeInsets.only(
+                  bottom: 16.h,
+                  left: 16.w,
+                  right: 16.w,
+                  top: 16.h,
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _isLoading ? Colors.grey : figmaBlue,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
                     ),
                     onPressed: _isLoading ? null : _saveNote,
                     child: _isLoading
                         ? SizedBox(
                             width: 20.w,
                             height: 20.h,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : Text(
                             'Save',

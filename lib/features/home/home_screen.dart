@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_booking_first_screen.dart';
@@ -10,21 +12,17 @@ import 'package:repair_cms/features/scanner/job_scanner_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int initialIndex;
+  final String? initialStatus;
+  const HomeScreen({super.key, this.initialIndex = 0, this.initialStatus});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const MyJobsScreen(),
-    const MessagesScreen(),
-    const MoreSettingsScreen(),
-  ];
+  late int _currentIndex;
+  late List<Widget> _screens;
 
   bool _isExpanded = false;
   late AnimationController _animationController;
@@ -35,15 +33,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex;
+    _screens = [
+      const DashboardScreen(),
+      MyJobsScreen(initialStatus: widget.initialStatus),
+      const MessagesScreen(),
+      const MoreSettingsScreen(),
+    ];
 
     try {
       _animationController = AnimationController(
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 200),
         vsync: this,
       );
 
       _rotationController = AnimationController(
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 200),
         vsync: this,
       );
 
@@ -107,25 +112,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          _screens[_currentIndex],
-          // Apply backdrop filter only when expanded
-          if (_isExpanded)
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.4),
-                width: double.infinity,
-                height: double.infinity,
-              ),
-            ),
-          // Position the expandable FAB above all content
-          _buildExpandableFAB(),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // Android: dark icons
+        statusBarBrightness:
+            Brightness.light, // iOS: light background = dark icons
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            _screens[_currentIndex],
+            // Apply backdrop filter only when expanded
+            if (_isExpanded)
+              BackdropFilter(
+                filter: ImageFilter.compose(
+                  inner: ImageFilter.dilate(),
+                  outer: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+                ),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              ),
+            // Position the expandable FAB above all content
+            _buildExpandableFAB(),
+          ],
+        ),
+        bottomNavigationBar: _buildBottomNavigationBar(),
+      ),
     );
   }
 
@@ -136,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       children: [
         Container(
           height: 80.h,
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
           decoration: BoxDecoration(
             color: AppColors.whiteColor,
             boxShadow: [
@@ -153,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               _buildBottomNavItem(1, SolarIconsOutline.suitcaseTag, 'Jobs'),
               // Empty container to balance the space for the center button
               SizedBox(width: 56.w, height: 56.h),
-              _buildBottomNavItem(2, SolarIconsOutline.chatUnread, 'Messages'),
+              _buildBottomNavItem(2, SolarIconsOutline.dialog2, 'Messages'),
               _buildBottomNavItem(3, SolarIconsOutline.menuDots, 'More'),
             ],
           ),
@@ -168,32 +185,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildBottomNavItem(int index, IconData icon, String label) {
-    final bool isSelected = _currentIndex == index;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return _BottomNavItem(
+      index: index,
+      icon: icon,
+      label: label,
+      isSelected: _currentIndex == index,
       onTap: () => _onItemTapped(index),
-      child: SizedBox(
-        width: 60.w,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : Colors.grey.shade400,
-              size: 24.sp,
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              label,
-              style: AppTypography.fontSize10.copyWith(
-                color: isSelected ? AppColors.primary : Colors.grey.shade400,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -206,29 +203,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: AppColors.primary,
           shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+
           border: Border.all(color: AppColors.whiteColor, width: 4.w),
         ),
-        child: AnimatedBuilder(
-          animation: _rotationAnimation,
-          builder: (context, child) {
-            return Transform.rotate(
-              angle: _rotationAnimation.value * 4.2 * math.pi,
-              child: Icon(
-                _isExpanded ? Icons.close : Icons.add,
-                color: AppColors.whiteColor,
-                size: 32.sp,
-                weight: 800,
-                fill: 0.8,
-              ),
-            );
-          },
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _rotationAnimation,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: _rotationAnimation.value * 4.2 * math.pi,
+                child: FaIcon(
+                  _isExpanded ? FontAwesomeIcons.xmark : FontAwesomeIcons.plus,
+                  color: AppColors.whiteColor,
+                  size: 32.sp,
+                  weight: 800,
+                  fill: 0.8,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -245,6 +238,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       setState(() {
         _currentIndex = index;
+        // When tapping the Jobs tab manually, ensure no initial status persists
+        if (index == 1) {
+          _screens[1] = const MyJobsScreen();
+        }
       });
 
       debugPrint('📍 [HomeScreen] Navigated to tab: $index');
@@ -275,8 +272,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       // QR Scanner Button
                       _buildExpandableButton(
-                        icon: SolarIconsBold.caseRoundMinimalistic,
-                        label: 'New Job',
+                        icon: SolarIconsOutline.suitcaseTag,
+                        label: 'Express Job',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () async {
                           if (!mounted) return;
@@ -297,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       secondaryAnimation,
                                       child,
                                     ) {
-                                      const begin = Offset(0.0, 1.0);
+                                      const begin = Offset(1.0, 0.0);
                                       const end = Offset.zero;
                                       const curve = Curves.easeInOut;
                                       var tween = Tween(
@@ -364,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                       // QR Scanner Button
                       _buildExpandableButton(
-                        icon: SolarIconsBold.qrCode,
+                        icon: SolarIconsOutline.qrCode,
                         label: 'QR Scanner',
                         backgroundColor: const Color(0xFF2589F6),
                         onTap: () async {
@@ -453,6 +450,128 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Icon(icon, color: Colors.white, size: 32.sp),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavItem extends StatefulWidget {
+  final int index;
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _BottomNavItem({
+    required this.index,
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_BottomNavItem> createState() => _BottomNavItemState();
+}
+
+class _BottomNavItemState extends State<_BottomNavItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+
+    _opacityAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.4,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    _controller.forward().then((_) => _controller.reverse());
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _handleTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedBuilder(
+        animation: _opacityAnimation,
+        builder: (context, child) {
+          return Opacity(opacity: _opacityAnimation.value, child: child);
+        },
+        child: SizedBox(
+          width: 68.w,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 42.w,
+                  height: 42.h,
+                  decoration: BoxDecoration(
+                    color: widget.isSelected
+                        ? const Color(0xFFF7F7F8)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(46.r),
+                    border: Border.all(
+                      color: widget.isSelected
+                          ? AppColors.whiteColor
+                          : Colors.transparent,
+                      width: 1,
+                    ),
+                    boxShadow: widget.isSelected
+                        ? [
+                            const BoxShadow(
+                              color: Color.fromARGB(28, 116, 115, 115),
+                              blurRadius: 2,
+                              offset: Offset(0, 0),
+                              spreadRadius: 2,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      widget.icon,
+                      color: widget.isSelected
+                          ? AppColors.primary
+                          : AppColors.lightFontColor,
+                      size: 24.sp,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 1.h),
+                Text(
+                  widget.label,
+                  style: AppTypography.fontSize10.copyWith(
+                    color: widget.isSelected
+                        ? AppColors.primary
+                        : AppColors.lightFontColor,
+                    fontWeight: widget.isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

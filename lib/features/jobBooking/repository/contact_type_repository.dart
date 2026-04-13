@@ -17,6 +17,10 @@ abstract class ContactTypeRepository {
   Future<Customersorsuppliers> createBusiness({required Map<String, dynamic> payload});
 
   Future<Customersorsuppliers> updateBusiness({required String profileId, required Map<String, dynamic> payload});
+
+  Future<bool> updateShippingAddress({required String profileId, required List<Map<String, dynamic>> payload});
+
+  Future<bool> updateBillingAddress({required String profileId, required List<Map<String, dynamic>> payload});
 }
 
 class ContactTypeRepositoryImpl implements ContactTypeRepository {
@@ -205,6 +209,48 @@ class ContactTypeRepositoryImpl implements ContactTypeRepository {
     } catch (e, stackTrace) {
       debugPrint('💥 [ContactTypeRepository] Unexpected error during profile update: $e\n$stackTrace');
       throw ContactTypeException(message: 'Unexpected error while updating profile: $e');
+    }
+  }
+
+  @override
+  Future<bool> updateShippingAddress({
+    required String profileId,
+    required List<Map<String, dynamic>> payload,
+  }) async {
+    try {
+      debugPrint('🚀 [ContactTypeRepository] Updating shipping address for customer: $profileId');
+      final String url = ApiEndpoints.updateShippingAddress.replaceAll('<id>', profileId);
+      final response = await BaseClient.patch(url: url, payload: payload);
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('✅ [ContactTypeRepository] Shipping address updated successfully');
+        return true;
+      }
+      throw ContactTypeException(message: 'Failed to update shipping address', statusCode: response.statusCode);
+    } catch (e) {
+      debugPrint('💥 [ContactTypeRepository] Error updating shipping address: $e');
+      throw ContactTypeException(message: 'Update shipping address error: $e');
+    }
+  }
+
+  @override
+  Future<bool> updateBillingAddress({
+    required String profileId,
+    required List<Map<String, dynamic>> payload,
+  }) async {
+    try {
+      debugPrint('🚀 [ContactTypeRepository] Updating billing address for customer: $profileId');
+      final String url = ApiEndpoints.updateBillingAddress.replaceAll('<id>', profileId);
+      final response = await BaseClient.patch(url: url, payload: payload);
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('✅ [ContactTypeRepository] Billing address updated successfully');
+        return true;
+      }
+      throw ContactTypeException(message: 'Failed to update billing address', statusCode: response.statusCode);
+    } catch (e) {
+      debugPrint('💥 [ContactTypeRepository] Error updating billing address: $e');
+      throw ContactTypeException(message: 'Update billing address error: $e');
     }
   }
 }

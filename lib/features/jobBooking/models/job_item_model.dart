@@ -6,11 +6,13 @@ class JobItemsModel {
   JobItemsModel({this.items, this.totalItems, this.pages});
 
   JobItemsModel.fromJson(Map<String, dynamic> json) {
-    if (json['items'] != null) {
+    if (json['items'] != null && json['items'] is List) {
       items = <Item>[];
-      json['items'].forEach((v) {
-        items!.add(Item.fromJson(v));
-      });
+      for (var v in json['items']) {
+        if (v is Map<String, dynamic>) {
+          items!.add(Item.fromJson(v));
+        }
+      }
     }
     totalItems = json['totalItems'];
     pages = json['pages'];
@@ -30,7 +32,7 @@ class JobItemsModel {
 class Item {
   String? sId;
   String? productName;
-  dynamic itemNumber;
+  String? itemNumber;
   int? stockValue;
   String? stockUnit;
   String? manufacturer;
@@ -38,14 +40,14 @@ class Item {
   String? manufacturerNumber;
   String? color;
   String? condition;
-  dynamic vatPercent;
-  dynamic profitMarkup;
+  double? vatPercent;
+  double? profitMarkup;
   String? profitMarkupSymbol;
   String? description;
-  dynamic purchasePriceExlVat;
-  dynamic purchasePriceIncVat;
-  dynamic salePriceExlVat;
-  dynamic salePriceIncVat;
+  double? purchasePriceExlVat;
+  double? purchasePriceIncVat;
+  double? salePriceExlVat;
+  double? salePriceIncVat;
   List<Barcode>? barcode;
   List<SupplierList>? supplierList;
   bool? serialNoManagement;
@@ -91,34 +93,43 @@ class Item {
   Item.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     productName = json['productName'];
-    itemNumber = json['itemNumber'];
-    stockValue = json['stockValue'];
+    itemNumber = json['itemNumber']?.toString();
+    stockValue = json['stockValue'] is int
+        ? json['stockValue']
+        : (json['stockValue'] != null ? int.tryParse(json['stockValue'].toString()) : null);
     stockUnit = json['stockUnit'];
     manufacturer = json['manufacturer'];
     category = json['category'];
-    manufacturerNumber = json['manufacturerNumber'];
+    manufacturerNumber = json['manufacturerNumber']?.toString();
     color = json['color'];
     condition = json['condition'];
-    vatPercent = json['vatPercent'];
-    profitMarkup = json['profitMarkup'];
+
+    // Safely parse numbers from dynamic inputs (could be String, int, or double)
+    vatPercent = _parseDouble(json['vatPercent']);
+    profitMarkup = _parseDouble(json['profitMarkup']);
     profitMarkupSymbol = json['profitMarkupSymbol'];
     description = json['description'];
-    purchasePriceExlVat = json['purchasePriceExlVat'];
-    purchasePriceIncVat = json['purchasePriceIncVat'];
-    salePriceExlVat = json['salePriceExlVat'];
-    salePriceIncVat = json['salePriceIncVat'];
-    if (json['barcode'] != null) {
+    purchasePriceExlVat = _parseDouble(json['purchasePriceExlVat']);
+    purchasePriceIncVat = _parseDouble(json['purchasePriceIncVat']);
+    salePriceExlVat = _parseDouble(json['salePriceExlVat']);
+    salePriceIncVat = _parseDouble(json['salePriceIncVat']);
+
+    if (json['barcode'] != null && json['barcode'] is List) {
       barcode = <Barcode>[];
-      json['barcode'].forEach((v) {
-        barcode!.add(Barcode.fromJson(v));
-      });
+      for (var v in json['barcode']) {
+        if (v is Map<String, dynamic>) {
+          barcode!.add(Barcode.fromJson(v));
+        }
+      }
     }
 
-    if (json['supplierList'] != null) {
+    if (json['supplierList'] != null && json['supplierList'] is List) {
       supplierList = <SupplierList>[];
-      json['supplierList'].forEach((v) {
-        supplierList!.add(SupplierList.fromJson(v));
-      });
+      for (var v in json['supplierList']) {
+        if (v is Map<String, dynamic>) {
+          supplierList!.add(SupplierList.fromJson(v));
+        }
+      }
     }
     serialNoManagement = json['serialNoManagement'];
     pricingCalculator = json['pricingCalculator'];
@@ -128,12 +139,21 @@ class Item {
     updatedAt = json['updatedAt'];
     iV = json['__v'];
 
-    if (json['stockSetting'] != null) {
+    if (json['stockSetting'] != null && json['stockSetting'] is List) {
       stockSetting = <StockSetting>[];
-      json['stockSetting'].forEach((v) {
-        stockSetting!.add(StockSetting.fromJson(v));
-      });
+      for (var v in json['stockSetting']) {
+        if (v is Map<String, dynamic>) {
+          stockSetting!.add(StockSetting.fromJson(v));
+        }
+      }
     }
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -200,13 +220,13 @@ class SupplierList {
   String? fullName;
   String? id;
   String? supplierName;
-  dynamic salePriceExlVat;
+  double? salePriceExlVat;
   double? salePriceIncVat;
-  dynamic purchasePriceExlVat;
+  double? purchasePriceExlVat;
   double? purchasePriceIncVat;
   String? profitMarkupSymbol;
-  int? profitMarkup;
-  int? vatPercent;
+  double? profitMarkup;
+  double? vatPercent;
   bool? primary;
 
   SupplierList({
@@ -227,14 +247,21 @@ class SupplierList {
     fullName = json['fullName'];
     id = json['id'];
     supplierName = json['supplierName'];
-    salePriceExlVat = json['salePriceExlVat'];
-    salePriceIncVat = json['salePriceIncVat'];
-    purchasePriceExlVat = json['purchasePriceExlVat'];
-    purchasePriceIncVat = json['purchasePriceIncVat'];
+    salePriceExlVat = _parseDouble(json['salePriceExlVat']);
+    salePriceIncVat = _parseDouble(json['salePriceIncVat']);
+    purchasePriceExlVat = _parseDouble(json['purchasePriceExlVat']);
+    purchasePriceIncVat = _parseDouble(json['purchasePriceIncVat']);
     profitMarkupSymbol = json['profitMarkupSymbol'];
-    profitMarkup = json['profitMarkup'];
-    vatPercent = json['vatPercent'];
+    profitMarkup = _parseDouble(json['profitMarkup']);
+    vatPercent = _parseDouble(json['vatPercent']);
     primary = json['primary'];
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() {

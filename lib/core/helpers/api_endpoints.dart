@@ -1,5 +1,6 @@
 class ApiEndpoints {
-  static const String baseUrl = 'https://staging-api.repaircms.com';
+  // static const String baseUrl = 'https://api.repaircms.com';
+  static const String baseUrl = 'https://api-p.repaircms.com';
   static const String findUserByEmail = '$baseUrl/auth/find-by-email/';
   static const String findByOwner = '$baseUrl/user/find-by-owner/';
   static const String login = '$baseUrl/auth/login';
@@ -49,6 +50,10 @@ class ApiEndpoints {
       '$baseUrl/customer-or-supplier/user/<id>';
   static const String createBusiness = '$baseUrl/customer-or-supplier';
   static const String updateBusiness = '$baseUrl/customer-or-supplier/<id>';
+  static const String updateShippingAddress = 
+      '$baseUrl/customer-shipping-address/customer/<id>';
+  static const String updateBillingAddress = 
+      '$baseUrl/customer-billing-address/customer/<id>';
   //job types
   static const String jobTypeListUrl = '$baseUrl/job-type/user/<id>';
   static const String createJobType = '$baseUrl/job-type';
@@ -60,6 +65,8 @@ class ApiEndpoints {
   //notifications
   static const String getAllNotifications = '$baseUrl/notification/user/<id>';
   static const String deleteNotification = '$baseUrl/notification/<id>';
+  static const String markNotificationAsRead =
+      '$baseUrl/notification/<id>';
 
   //messages
 
@@ -68,4 +75,7 @@ class ApiEndpoints {
   // sub user management
   static const String findSubUsersByOwner =
       '$baseUrl/user/find-by-owner/<userId>';
+
+  // fcm token
+  static const String fcmToken = '$baseUrl/fcm-token';
 }

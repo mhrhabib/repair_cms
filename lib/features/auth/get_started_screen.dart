@@ -22,18 +22,12 @@ class GetStartedScreen extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(height: 30.h),
-              Image.asset(
-                AssetsConstant.logo1PNG,
-                height: 55.39.h,
-                width: 123.w,
-              ),
+              Image.asset(AssetsConstant.logo1PNG, height: 55.39.h, width: 123.w),
 
               SizedBox(height: 30.h),
               Image.asset(
                 AssetsConstant.startingGraphicsPNG,
-                height: isTablet
-                    ? 400.h
-                    : MediaQuery.of(context).size.height * 0.46,
+                height: isTablet ? 400.h : MediaQuery.of(context).size.height * 0.46,
                 width: double.infinity,
                 fit: BoxFit.contain,
               ),
@@ -42,50 +36,62 @@ class GetStartedScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'WORLD’S ',
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'WORLD’S ',
+                            textHeightBehavior: const TextHeightBehavior(
+                              applyHeightToFirstAscent: false,
+                              applyHeightToLastDescent: false,
+                            ),
+                            style: TextStyle(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'SF Pro Text',
+                              color: AppColors.fontMainColor,
+                            ),
+                          ),
+                          Text(
+                            'MOST USER-FRIENDLY',
+                            textHeightBehavior: const TextHeightBehavior(
+                              applyHeightToFirstAscent: false,
+                              applyHeightToLastDescent: false,
+                            ),
+                            style: TextStyle(
+                              fontSize: 20.sp,
+                              fontFamily: 'SF Pro Text',
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2589F6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'REPAIR MANAGER',
+
                         textHeightBehavior: const TextHeightBehavior(
                           applyHeightToFirstAscent: false,
                           applyHeightToLastDescent: false,
                         ),
                         style: TextStyle(
-                          fontSize: 20.sp,
+                          fontSize: 38.sp,
                           fontWeight: FontWeight.w700,
                           fontFamily: 'SF Pro Text',
                           color: AppColors.fontMainColor,
                         ),
                       ),
-                      Text(
-                        'MOST USER-FRIENDLY',
-                        textHeightBehavior: const TextHeightBehavior(
-                          applyHeightToFirstAscent: false,
-                          applyHeightToLastDescent: false,
-                        ),
-                        style: TextStyle(
-                          fontSize: 20.sp,
-                          fontFamily: 'SF Pro Text',
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2589F6),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    'REPAIR MANAGER',
-
-                    textHeightBehavior: const TextHeightBehavior(
-                      applyHeightToFirstAscent: false,
-                      applyHeightToLastDescent: false,
-                    ),
-                    style: TextStyle(
-                      fontSize: 38.sp,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'SF Pro Text',
-                      color: AppColors.fontMainColor,
                     ),
                   ),
                 ],
@@ -113,15 +119,12 @@ class GetStartedScreen extends StatelessWidget {
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w500,
                   color: AppColors.blackColor,
+                  letterSpacing: 0.7,
                 ),
               ),
               Text(
                 'Copyright © Candy Melon Software GmbH',
-                style: GoogleFonts.poppins(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF2B2B2B),
-                ),
+                style: GoogleFonts.poppins(fontSize: 11.sp, fontWeight: FontWeight.w400, color: Color(0xFF2B2B2B)),
               ),
             ],
           ),

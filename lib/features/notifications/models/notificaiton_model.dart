@@ -29,7 +29,10 @@ class Notifications {
   bool? isRead;
   String? notificationId;
   String? message;
+  String? jobNo;
   String? userId;
+  int? remindersSent;
+  Map<String, dynamic>? messageData;
   String? locationId;
   String? createdAt;
   String? updatedAt;
@@ -65,13 +68,39 @@ class Notifications {
     notificationId = json['notification_id'];
     message = json['message'];
     userId = json['userId'];
+    jobNo = json['jobNo'];
+    remindersSent = json['remindersSent'] is int
+      ? json['remindersSent'] as int
+      : (json['remindersSent'] != null ? int.tryParse(json['remindersSent'].toString()) : null);
+    messageData = json['messageData'] != null ? Map<String, dynamic>.from(json['messageData']) : null;
     locationId = json['locationId'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
     iV = json['__v'];
     id = json['id'];
-    senderDetails = json['sender_details'] != null ? SenderDetails.fromJson(json['sender_details']) : null;
-    receiverDetails = json['receiver_details'] != null ? SenderDetails.fromJson(json['receiver_details']) : null;
+    // sender_details may be Map, List, or String depending on API response
+    final sd = json['sender_details'];
+    if (sd is Map) {
+      senderDetails = SenderDetails.fromJson(Map<String, dynamic>.from(sd));
+    } else if (sd is List && sd.isNotEmpty && sd.first is Map) {
+      senderDetails = SenderDetails.fromJson(Map<String, dynamic>.from(sd.first));
+    } else if (sd is String) {
+      senderDetails = SenderDetails(name: sd);
+    } else {
+      senderDetails = null;
+    }
+
+    // receiver_details may be Map, List, or String depending on API response
+    final rd = json['receiver_details'];
+    if (rd is Map) {
+      receiverDetails = SenderDetails.fromJson(Map<String, dynamic>.from(rd));
+    } else if (rd is List && rd.isNotEmpty && rd.first is Map) {
+      receiverDetails = SenderDetails.fromJson(Map<String, dynamic>.from(rd.first));
+    } else if (rd is String) {
+      receiverDetails = SenderDetails(name: rd);
+    } else {
+      receiverDetails = null;
+    }
     messageType = json['messageType'];
     quotationNo = json['quotationNo'];
     conversationId = json['conversationId'];
@@ -83,6 +112,9 @@ class Notifications {
     data['isRead'] = isRead;
     data['notification_id'] = notificationId;
     data['message'] = message;
+    data['jobNo'] = jobNo;
+    data['remindersSent'] = remindersSent;
+    if (messageData != null) data['messageData'] = messageData;
     data['userId'] = userId;
     data['locationId'] = locationId;
     data['createdAt'] = createdAt;

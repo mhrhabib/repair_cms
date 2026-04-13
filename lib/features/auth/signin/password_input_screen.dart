@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -29,6 +30,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   String? _authError;
 
   bool _hasStoredCredentials = false;
+  bool _shouldSaveBiometric = false;
   String _biometricType = 'Biometric'; // Default fallback
 
   @override
@@ -36,7 +38,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     super.initState();
     _passwordController.addListener(_validatePassword);
     _passwordFocusNode.addListener(() {
-      setState(() {});
+      if (mounted) setState(() {});
     });
     _loadBiometricType();
   }
@@ -54,8 +56,8 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
   Future<void> _loadBiometricType() async {
     try {
       final biometricType = await BiometricStorageService.getBiometricType();
-      final hasStoredCredentials =
-          await BiometricStorageService.hasBiometricCredentials();
+      final hasStoredCredentials = await BiometricStorageService.hasBiometricCredentials();
+      if (!mounted) return;
       setState(() {
         _biometricType = biometricType;
         _hasStoredCredentials = hasStoredCredentials;
@@ -96,53 +98,50 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
         password: _passwordController.text,
         userId: userId,
       );
-      SnackbarDemo(
-        message: '$_biometricType authentication enabled',
-      ).showCustomSnackbar(context);
     } catch (e) {
-      SnackbarDemo(
-        message: 'Failed to save $_biometricType credentials',
-      ).showCustomSnackbar(context);
+      debugPrint('Error saving biometric credentials: $e');
     }
   }
 
   Future<void> _toggleBiometricAuthentication() async {
-    if (_hasStoredCredentials) {
+    if (_hasStoredCredentials || _shouldSaveBiometric) {
       // Disable biometric
       await BiometricStorageService.disableBiometric();
       setState(() {
         _hasStoredCredentials = false;
+        _shouldSaveBiometric = false;
       });
-      SnackbarDemo(
-        message: '$_biometricType authentication disabled',
-      ).showCustomSnackbar(context);
+      SnackbarDemo(message: '$_biometricType authentication disabled').showCustomSnackbar(context);
     } else {
+      // Check if password has been entered
+      if (!_isPasswordValid) {
+        SnackbarDemo(message: 'Please enter a valid password first').showCustomSnackbar(context);
+        return;
+      }
+
       // Enable biometric - Show confirmation dialog
       bool? shouldEnable = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => CupertinoAlertDialog(
           title: Text('Enable $_biometricType?'),
-          content: Text(
-            'Do you want to enable $_biometricType authentication for quick login?',
-          ),
+          content: Text('Do you want to enable $_biometricType authentication for quick login?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
+            CupertinoDialogAction(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            CupertinoDialogAction(
               onPressed: () => Navigator.pop(context, true),
-              child: Text('Enable'),
+              child: const Text('Enable', style: TextStyle(color: AppColors.primary)),
             ),
           ],
         ),
       );
 
       if (shouldEnable == true) {
-        await _saveBiometricCredentials();
         setState(() {
+          _shouldSaveBiometric = true;
+          // Optimistically show as enabled in the UI
           _hasStoredCredentials = true;
         });
+        SnackbarDemo(message: '$_biometricType will be enabled upon successful login').showCustomSnackbar(context);
       }
     }
   }
@@ -182,14 +181,11 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
     final isLargeScreen = screenWidth > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.kBg,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        iconTheme: IconThemeData(
-          color: AppColors.primary,
-          weight: 800,
-          fill: 0.4,
-        ),
+        backgroundColor: AppColors.kBg,
+        iconTheme: IconThemeData(color: AppColors.primary, weight: 800, fill: 0.4),
       ),
       body: SafeArea(
         child: Center(
@@ -200,20 +196,22 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
               child: BlocConsumer<SignInCubit, SignInStates>(
                 listener: (context, state) {
                   if (state is LoginSuccess) {
-                    //SnackbarDemo(message: state.message).showCustomSnackbar(context);
-
                     // Navigate based on user role or other conditions
                     if (state.user != null) {
                       setState(() {
                         _authError = null;
                       });
+
+                      if (_shouldSaveBiometric) {
+                        _saveBiometricCredentials();
+                      }
+
                       _navigateToHome(state.user!);
                     }
                   } else if (state is SignInError) {
                     // Show snackbar and an external error below the password field
                     setState(() {
-                      _authError =
-                          'Invalid email or password. Please try again.';
+                      _authError = 'Invalid email or password. Please try again.';
                     });
                   }
                 },
@@ -244,16 +242,11 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                         // Password Input Field
                         Container(
                           decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: AppColors.deviderColor),
-                            ),
+                            border: Border(bottom: BorderSide(color: AppColors.deviderColor)),
                           ),
                           child: Row(
                             children: [
-                              Text(
-                                'Password',
-                                style: AppTypography.sfProHintTextStyle17,
-                              ),
+                              Text('Password', style: AppTypography.sfProHintTextStyle17),
                               Expanded(
                                 child: TextFormField(
                                   controller: _passwordController,
@@ -264,16 +257,12 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                                   obscureText: _obscureText,
                                   decoration: InputDecoration(
                                     hintText: 'Enter your password',
-                                    hintStyle:
-                                        AppTypography.sfProHintTextStyle17,
+                                    hintStyle: AppTypography.sfProHintTextStyle17.copyWith(color: AppColors.lightFontColor),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide.none,
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 14,
-                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                     suffixIcon: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -281,13 +270,9 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                                           GestureDetector(
                                             onTap: _togglePasswordVisibility,
                                             child: Container(
-                                              margin: const EdgeInsets.only(
-                                                right: 8,
-                                              ),
+                                              margin: const EdgeInsets.only(right: 8),
                                               child: Icon(
-                                                _obscureText
-                                                    ? Icons.visibility_off
-                                                    : Icons.visibility,
+                                                _obscureText ? Icons.visibility_off : Icons.visibility,
                                                 color: Colors.grey[600],
                                                 size: 24,
                                               ),
@@ -296,21 +281,13 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                                       ],
                                     ),
                                     // hide default InputDecorator error text; we show a custom widget below
-                                    errorStyle: const TextStyle(
-                                      color: Colors.transparent,
-                                      fontSize: 0,
-                                      height: 0,
-                                    ),
+                                    errorStyle: const TextStyle(color: Colors.transparent, fontSize: 0, height: 0),
                                   ),
                                   keyboardType: TextInputType.visiblePassword,
                                   validator: _passwordValidator,
                                   onFieldSubmitted: (_) {
-                                    if (_formKey.currentState!.validate() &&
-                                        _isPasswordValid) {
-                                      context.read<SignInCubit>().login(
-                                        widget.email,
-                                        _passwordController.text,
-                                      );
+                                    if (_formKey.currentState!.validate() && _isPasswordValid) {
+                                      context.read<SignInCubit>().login(widget.email, _passwordController.text);
                                     }
                                   },
                                 ),
@@ -325,8 +302,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                           Center(
                             child: Text(
                               _authError!,
-                              style: AppTypography.sfProHintTextStyle17
-                                  .copyWith(color: Colors.red, fontSize: 15.sp),
+                              style: AppTypography.sfProHintTextStyle17.copyWith(color: Colors.red, fontSize: 15.sp),
                             ),
                           ),
                         ],
@@ -343,28 +319,14 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                                 width: 24,
                                 height: 24,
                                 decoration: BoxDecoration(
-                                  color: _hasStoredCredentials
-                                      ? AppColors.greenColor
-                                      : Colors.transparent,
+                                  color: _hasStoredCredentials ? AppColors.greenColor : Colors.transparent,
                                   shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.grey[400]!,
-                                    width: 1,
-                                  ),
+                                  border: Border.all(color: Colors.grey[400]!, width: 1),
                                 ),
-                                child: _hasStoredCredentials
-                                    ? Icon(
-                                        Icons.check,
-                                        color: Colors.white,
-                                        size: 18,
-                                      )
-                                    : null,
+                                child: _hasStoredCredentials ? Icon(Icons.check, color: Colors.white, size: 18) : null,
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                'Enable $_biometricType for quick login',
-                                style: AppTypography.sfProText15,
-                              ),
+                              Text('Enable $_biometricType for quick login', style: AppTypography.sfProText15),
                             ],
                           ),
                         ),
@@ -374,9 +336,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                         Container(
                           height: 1,
                           decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: AppColors.deviderColor),
-                            ),
+                            border: Border(bottom: BorderSide(color: AppColors.deviderColor)),
                           ),
                         ),
                         SizedBox(height: 12.h),
@@ -388,9 +348,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                             onPressed: _onForgotPassword,
                             child: Text(
                               'Forgot Password?',
-                              style: AppTypography.sfProText15.copyWith(
-                                color: AppColors.primary,
-                              ),
+                              style: AppTypography.sfProText15.copyWith(color: AppColors.primary),
                             ),
                           ),
                         ),
@@ -411,12 +369,7 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-          left: 16,
-          right: 16,
-          top: 8,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16, left: 16, right: 16, top: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
@@ -435,24 +388,15 @@ class _PasswordInputScreenState extends State<PasswordInputScreen> {
                   onPressed: state is SignInLoading
                       ? null
                       : () {
-                          if (_formKey.currentState!.validate() &&
-                              _isPasswordValid) {
-                            context.read<SignInCubit>().login(
-                              widget.email,
-                              _passwordController.text,
-                            );
+                          if (_formKey.currentState!.validate() && _isPasswordValid) {
+                            context.read<SignInCubit>().login(widget.email, _passwordController.text);
                           }
                         },
                   child: state is SignInLoading
                       ? SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.whiteColor,
-                            ),
-                          ),
+                          child: CupertinoActivityIndicator(color: AppColors.whiteColor, radius: 16),
                         )
                       : null,
                 );

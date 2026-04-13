@@ -1,17 +1,19 @@
-import 'package:flutter/cupertino.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/auth/signin/cubit/sign_in_cubit.dart';
 import 'package:repair_cms/features/profile/cubit/profile_cubit.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 class ChangePasswordBottomSheet extends StatefulWidget {
   const ChangePasswordBottomSheet({super.key});
 
   static void show(BuildContext context) {
-    showCupertinoSheet(
+    showCupertinoModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (context) => BlocProvider.value(
         value: BlocProvider.of<ProfileCubit>(context),
         child: const ChangePasswordBottomSheet(),
@@ -143,80 +145,68 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(top: 24.h),
-      height: MediaQuery.of(context).size.height * 0.95,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+    return Material(
+      color: AppColors.kBg,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.95,
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        resizeToAvoidBottomInset: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          title: Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  if (!_isLoading && mounted) {
-                    try {
-                      debugPrint(
-                        '🔄 [ChangePasswordBottomSheet] Closing bottom sheet',
-                      );
-                      Navigator.of(context).pop();
-                    } catch (e) {
-                      debugPrint(
-                        '❌ [ChangePasswordBottomSheet] Error closing: $e',
-                      );
-                    }
-                  }
-                },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    color: _isLoading ? Colors.grey : Colors.black54,
-                    size: 20,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  'Change Password',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.roboto(
-                    color: Colors.black87,
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 32),
-            ],
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16.r),
+            topRight: Radius.circular(16.r),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 20,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
-        body: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: SafeArea(
+          top: true,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
+              // Header
+              Container(
+                padding: EdgeInsets.all(20.r),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CustomNavButton(
+                      icon: Icons.close,
+                      iconColor: AppColors.fontSecondaryColor,
+                      size: 24.sp,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    SizedBox(width: 12.w),
+                    Text(
+                      'Change Password',
+                      style: GoogleFonts.roboto(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.fontMainColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Form Content
+              Flexible(
                 child: SingleChildScrollView(
+                  padding: EdgeInsets.all(16.r),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: 32.h),
-
                       // Current Password Field
                       _buildPasswordField(
                         label: 'Current Password',
@@ -225,177 +215,174 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                         obscureText: _obscureCurrentPassword,
                         onToggleVisibility: () {
                           if (!mounted) return;
-                          try {
-                            setState(() {
-                              _obscureCurrentPassword =
-                                  !_obscureCurrentPassword;
-                            });
-                          } catch (e) {
-                            debugPrint(
-                              '❌ [ChangePasswordBottomSheet] Error toggling current password visibility: $e',
-                            );
-                          }
+                          setState(() {
+                            _obscureCurrentPassword = !_obscureCurrentPassword;
+                          });
                         },
                       ),
 
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 20.h),
 
                       // New Password Field
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildPasswordField(
-                            label: 'New Password',
-                            controller: _newPasswordController,
-                            focusNode: _newPasswordFocusNode,
-                            obscureText: _obscureNewPassword,
-                            onToggleVisibility: () {
-                              if (!mounted) return;
-                              try {
-                                setState(() {
-                                  _obscureNewPassword = !_obscureNewPassword;
-                                });
-                              } catch (e) {
-                                debugPrint(
-                                  '❌ [ChangePasswordBottomSheet] Error toggling new password visibility: $e',
-                                );
-                              }
-                            },
-                          ),
-                          if (_newPasswordController.text.isNotEmpty &&
-                              !_isPasswordValid) ...[
-                            SizedBox(height: 8.h),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    SolarIconsBold.infoCircle,
-                                    color: Colors.red,
-                                    size: 16.w,
-                                  ),
-                                  SizedBox(width: 4.w),
-                                  Text(
-                                    'Password must be at least 8 characters',
-                                    style: GoogleFonts.roboto(
-                                      color: Colors.red,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
+                      _buildPasswordField(
+                        label: 'New Password',
+                        controller: _newPasswordController,
+                        focusNode: _newPasswordFocusNode,
+                        obscureText: _obscureNewPassword,
+                        onToggleVisibility: () {
+                          if (!mounted) return;
+                          setState(() {
+                            _obscureNewPassword = !_obscureNewPassword;
+                          });
+                        },
                       ),
+                      if (_newPasswordController.text.isNotEmpty &&
+                          !_isPasswordValid) ...[
+                        SizedBox(height: 8.h),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                SolarIconsBold.infoCircle,
+                                color: Colors.red,
+                                size: 16.w,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                'Password must be at least 8 characters',
+                                style: GoogleFonts.roboto(
+                                  color: Colors.red,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
 
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 20.h),
 
                       // Confirm Password Field
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildPasswordField(
-                            label: 'Confirm New Password',
-                            controller: _confirmPasswordController,
-                            focusNode: _confirmPasswordFocusNode,
-                            obscureText: _obscureConfirmPassword,
-                            onToggleVisibility: () {
-                              if (!mounted) return;
-                              try {
-                                setState(() {
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword;
-                                });
-                              } catch (e) {
-                                debugPrint(
-                                  '❌ [ChangePasswordBottomSheet] Error toggling confirm password visibility: $e',
-                                );
-                              }
-                            },
-                          ),
-                          if (_confirmPasswordController.text.isNotEmpty &&
-                              !_doPasswordsMatch) ...[
-                            SizedBox(height: 8.h),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    SolarIconsBold.infoCircle,
-                                    color: Colors.red,
-                                    size: 16.w,
-                                  ),
-                                  SizedBox(width: 4.w),
-                                  Text(
-                                    'Passwords do not match',
-                                    style: GoogleFonts.roboto(
-                                      color: Colors.red,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
+                      _buildPasswordField(
+                        label: 'Confirm New Password',
+                        controller: _confirmPasswordController,
+                        focusNode: _confirmPasswordFocusNode,
+                        obscureText: _obscureConfirmPassword,
+                        onToggleVisibility: () {
+                          if (!mounted) return;
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
                       ),
+                      if (_confirmPasswordController.text.isNotEmpty &&
+                          !_doPasswordsMatch) ...[
+                        SizedBox(height: 8.h),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                SolarIconsBold.infoCircle,
+                                color: Colors.red,
+                                size: 16.w,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                'Passwords do not match',
+                                style: GoogleFonts.roboto(
+                                  color: Colors.red,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
 
                       SizedBox(height: 24.h),
 
                       // Password Requirements
                       _buildPasswordRequirements(),
+
+                      SizedBox(height: 20.h),
                     ],
                   ),
                 ),
               ),
+
+              // Action Buttons Footer
+              Padding(
+                padding: EdgeInsets.all(16.r),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.h,
+                        child: OutlinedButton(
+                          onPressed: _isLoading ? null : _clearFields,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.grey.shade700,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24.r),
+                            ),
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          child: Text(
+                            'Clear',
+                            style: GoogleFonts.roboto(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      flex: 2,
+                      child: SizedBox(
+                        height: 48.h,
+                        child: ElevatedButton(
+                          onPressed: _canSave && !_isLoading
+                              ? _changePassword
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _canSave && !_isLoading
+                                ? AppColors.primary
+                                : Colors.grey,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24.r),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isLoading
+                              ? SizedBox(
+                                  width: 20.w,
+                                  height: 20.h,
+                                  child: const CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  'Change Password',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          ),
-        ),
-        bottomNavigationBar: Container(
-          color: Colors.transparent,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-              left: 16.w,
-              right: 16.w,
-              top: 16,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _isLoading ? null : _clearFields,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey.shade700,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      side: BorderSide(color: Colors.grey.shade400),
-                    ),
-                    child: Text(
-                      'Clear',
-                      style: GoogleFonts.roboto(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  flex: 2,
-                  child: CustomButton(
-                    text: _isLoading ? 'Changing...' : 'Change Password',
-                    onPressed: _canSave && !_isLoading ? _changePassword : null,
-                    isLoading: _isLoading,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -415,9 +402,9 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
         Text(
           label,
           style: GoogleFonts.roboto(
-            color: Colors.black54,
-            fontSize: 13.sp,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w500,
+            color: AppColors.fontMainColor,
           ),
         ),
         SizedBox(height: 8.h),
@@ -425,25 +412,28 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
           controller: controller,
           focusNode: focusNode,
           obscureText: obscureText,
+          textInputAction: TextInputAction.next,
           decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.grey.shade50,
             hintText: "Enter your ${label.toLowerCase()}",
+            hintStyle: GoogleFonts.roboto(
+              color: Colors.grey.shade400,
+              fontSize: 14.sp,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(24.r),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(24.r),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
+              borderRadius: BorderRadius.circular(24.r),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 12.h,
             ),
             suffixIcon: IconButton(
               icon: Icon(
@@ -456,7 +446,10 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
               onPressed: onToggleVisibility,
             ),
           ),
-          style: AppTypography.fontSize16Normal,
+          style: GoogleFonts.roboto(
+            fontSize: 16.sp,
+            color: AppColors.fontMainColor,
+          ),
         ),
       ],
     );
@@ -476,7 +469,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
           Text(
             'Password Requirements:',
             style: GoogleFonts.roboto(
-              color: Colors.blue.shade800,
+              color: AppColors.primary,
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
             ),

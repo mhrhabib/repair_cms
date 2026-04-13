@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
     as job_booking;
 import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
@@ -6,6 +7,9 @@ import 'package:repair_cms/features/jobBooking/screens/job_thermal_receipt_previ
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:repair_cms/features/myJobs/screens/receipt_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_typography.dart';
 
 class JobProgressReceiptsScreen extends StatefulWidget {
   final SingleJobModel job;
@@ -276,108 +280,41 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black87,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Print',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-
-                child: InkWell(
-                  onTap: () => _navigateToDeviceLabel(widget.job),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF007AFF,
-                            ).withValues(alpha: 0.1),
-
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Icon(
-                            SolarIconsOutline.tagHorizontal,
-                            color: const Color(0xFF007AFF),
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Job Label',
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.grey.shade400,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+      backgroundColor: AppColors.scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: 72.h,
+                left: 16.w,
+                right: 16.w,
+                bottom: 16.h,
               ),
+              child: Column(
+                children: [
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(20.r),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
                 child: Column(
                   children: [
+                    _buildPrintOption(
+                      context: context,
+                      icon: SolarIconsOutline.tagHorizontal,
+                      title: 'Job Label',
+                      isEnabled: true,
+                      onTap: () => _navigateToDeviceLabel(widget.job),
+                    ),
+                    _buildDivider(),
                     _buildPrintOption(
                       context: context,
                       icon: SolarIconsOutline.documentText,
@@ -429,8 +366,42 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
                 ),
               ),
             ],
+              ),
+            ),
           ),
-        ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.removeRoute(context, ModalRoute.of(context)!),
+                    icon: Icons.arrow_back_ios_new,
+                  ),
+                  Text(
+                    'Print',
+                    style: AppTypography.sfProHeadLineTextStyle22,
+                  ),
+                  const SizedBox(width: 44), // Spacer to balance leading
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

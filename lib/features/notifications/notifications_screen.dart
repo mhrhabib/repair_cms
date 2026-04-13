@@ -2,9 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/utils/label_formatter.dart';
 import 'package:repair_cms/features/notifications/cubits/notification_cubit.dart';
 import 'package:repair_cms/features/notifications/models/notificaiton_model.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:repair_cms/features/notifications/widgets/notification_list_item.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -43,98 +46,123 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: CupertinoNavigationBar(
-        backgroundColor: Colors.white,
-        border: null,
-        leading: GestureDetector(
-          onTap: () {
-            if (!mounted) return;
-            try {
-              debugPrint('🔄 [NotificationsScreen] Navigating back');
-              Navigator.pop(context);
-            } catch (e) {
-              debugPrint('❌ [NotificationsScreen] Error navigating back: $e');
-            }
-          },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                CupertinoIcons.back,
-                size: 28.r,
-                color: AppColors.fontMainColor,
-              ),
-              SizedBox(width: 4.w),
-              Text(
-                'Back',
-                style: TextStyle(
-                  fontSize: 17.sp,
-                  color: AppColors.fontMainColor,
-                ),
-              ),
-            ],
+      backgroundColor: AppColors.kBg,
+      body: Stack(
+        children: [
+          BlocConsumer<NotificationCubit, NotificationState>(
+            listener: (context, state) {
+              if (!mounted) return;
+              try {
+                if (state is NotificationLoaded) {
+                  setState(() => _notifications = state.notifications);
+                  debugPrint(
+                    '✅ [NotificationsScreen] Loaded ${state.notifications.length} notifications',
+                  );
+                }
+                if (state is NotificationError) {
+                  debugPrint('❌ [NotificationsScreen] Error: ${state.message}');
+                  showCustomToast(state.message, isError: true);
+                }
+              } catch (e) {
+                debugPrint('❌ [NotificationsScreen] Error in listener: $e');
+              }
+            },
+            builder: (context, state) {
+              if (state is NotificationLoading) {
+                return const Center(child: CupertinoActivityIndicator(color: AppColors.fontSecondaryColor,));
+              }
+
+              if (state is NotificationLoaded) {
+                if (state.notifications.isEmpty) return _buildEmptyState();
+                return _buildNotificationsList();
+              }
+
+              if (state is NotificationError) {
+                return _buildErrorState(state.message);
+              }
+
+              // initial or fallback
+              return _buildEmptyState();
+            },
           ),
-        ),
-        middle: Text(
-          'Notifications',
-          style: TextStyle(
-            color: AppColors.fontMainColor,
-            fontSize: 17.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        trailing: _notifications.isEmpty
-            ? null
-            : GestureDetector(
-                onTap: _showNotificationSettings,
-                child: Icon(
-                  SolarIconsBold.settings,
-                  size: 24.r,
-                  color: AppColors.fontMainColor,
-                ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
               ),
-      ),
-      body: BlocConsumer<NotificationCubit, NotificationState>(
-        listener: (context, state) {
-          if (!mounted) return;
-          try {
-            if (state is NotificationLoaded) {
-              setState(() => _notifications = state.notifications);
-              debugPrint(
-                '✅ [NotificationsScreen] Loaded ${state.notifications.length} notifications',
-              );
-            }
-            if (state is NotificationError) {
-              debugPrint('❌ [NotificationsScreen] Error: ${state.message}');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          } catch (e) {
-            debugPrint('❌ [NotificationsScreen] Error in listener: $e');
-          }
-        },
-        builder: (context, state) {
-          if (state is NotificationLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state is NotificationLoaded) {
-            if (state.notifications.isEmpty) return _buildEmptyState();
-            return _buildNotificationsList();
-          }
-
-          if (state is NotificationError) {
-            return _buildErrorState(state.message);
-          }
-
-          // initial or fallback
-          return _buildEmptyState();
-        },
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () {
+                      if (!mounted) return;
+                      try {
+                        debugPrint('🔄 [NotificationsScreen] Navigating back');
+                        Navigator.pop(context);
+                      } catch (e) {
+                        debugPrint(
+                          '❌ [NotificationsScreen] Error navigating back: $e',
+                        );
+                      }
+                    },
+                    icon: CupertinoIcons.back,
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 2.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(
+                        color: AppColors.whiteColor, // Figma: border #FFFFFF
+                        width: 1, // Figma: border-width 1px
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            28,
+                            116,
+                            115,
+                            115,
+                          ), // Figma: #0000001C
+                          blurRadius: 2, // Figma: blur 20px
+                          offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Notifications',
+                      style: AppTypography.sfProHeadLineTextStyle22,
+                    ),
+                  ),
+                  if (_notifications.isNotEmpty)
+                    CustomNavButton(
+                      onPressed: _showNotificationSettings,
+                      icon: SolarIconsOutline.settings,
+                      size: 24.sp,
+                    )
+                  else
+                    SizedBox(width: 40.w), // Spacer to balance the back button
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -230,6 +258,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SizedBox(height: MediaQuery.of(context).padding.top + 60.h),
         const Padding(
           padding: EdgeInsets.all(16),
           child: Text(
@@ -246,101 +275,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: _notifications.length,
             itemBuilder: (context, index) {
-              return _buildNotificationItem(_notifications[index]);
+              final notification = _notifications[index];
+              return NotificationListItem(
+                notification: notification,
+                onMarkAsRead: () {
+                  debugPrint(
+                    '✅ [NotificationsScreen] Marking notification as read',
+                  );
+                    // Optimistically update UI
+                    if (mounted) {
+                      setState(() {
+                        _notifications[index].isRead = true;
+                      });
+                    }
+                  final userId = storage.read('userId') ?? '';
+                  final notificationId = notification.sId ?? '';
+
+                  if (notificationId.isNotEmpty &&
+                      userId.toString().isNotEmpty) {
+                    context.read<NotificationCubit>().markAsRead(
+                      notificationId: notificationId,
+                      userId: userId.toString(),
+                    );
+                  }
+                },
+                onDelete: () => _showNotificationOptions(notification),
+                formatDate: _formatDate,
+                getIcon: _getNotificationIconWidget,
+              );
             },
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildNotificationItem(Notifications notification) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: notification.isRead! ? Colors.white : Color(0xFFCDE3FF),
-        // borderRadius: BorderRadius.circular(12),
-        //boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-            child: _getNotificationIconWidget(notification),
-          ),
-
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notification.message ?? '',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                    height: 1.3,
-                  ),
-                ),
-                if ((notification.quotationNo ?? '').isNotEmpty ||
-                    (notification.conversationId ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    notification.quotationNo ??
-                        notification.conversationId ??
-                        '',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Text(
-                  _formatDate(notification.createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_horiz, color: Colors.grey[400], size: 20),
-            onSelected: (value) {
-              if (!mounted) return;
-              try {
-                if (value == 'delete') {
-                  _showNotificationOptions(notification);
-                } else if (value == 'mark_read') {
-                  debugPrint(
-                    '✅ [NotificationsScreen] Marking notification as read',
-                  );
-                  setState(() {
-                    notification.isRead = true;
-                  });
-                }
-              } catch (e) {
-                debugPrint('❌ [NotificationsScreen] Error in popup menu: $e');
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem<String>(
-                value: 'mark_read',
-                child: Text('Mark as Read'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Text('Delete'),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -363,7 +329,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         );
       default:
         return const Icon(
-          Icons.notifications_none,
+          SolarIconsOutline.bell,
           size: 20,
           color: Colors.black,
         );
@@ -419,7 +385,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     alignment: Alignment.center,
                     child: SizedBox(
                       child: Text(
-                        notification.message ?? '',
+                      LabelFormatter
+                      .formatLabel(  notification.message ?? ''),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 16,
@@ -456,13 +423,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       userId: userId.toString(),
                                     );
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Notification deleted'),
-                                      backgroundColor: Colors.green,
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
+                                  showCustomToast('Notification deleted');
                                 }
                               }
                             } catch (e) {
@@ -470,13 +431,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 '❌ [NotificationsScreen] Error deleting notification: $e',
                               );
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Failed to delete notification',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
+                                showCustomToast(
+                                  'Failed to delete notification',
+                                  isError: true,
                                 );
                               }
                             }
@@ -566,11 +523,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               n.isRead = true;
                             }
                           });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('All notifications marked as read'),
-                              backgroundColor: Color(0xFF4A90E2),
-                            ),
+                          showCustomToast(
+                            'All notifications marked as read',
+                            isError: false,
                           );
                         }
                       } catch (e) {
@@ -678,12 +633,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   setState(() {
                     _notifications.clear();
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('All notifications deleted'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  showCustomToast('All notifications deleted');
                 }
               } catch (e) {
                 debugPrint('❌ [NotificationsScreen] Error deleting all: $e');

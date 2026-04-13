@@ -1,6 +1,9 @@
+import 'package:figma_squircle/figma_squircle.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_card_widget.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
@@ -41,6 +44,31 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   void initState() {
     super.initState();
 
+    // Sync local status with initial status if provided
+    if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
+      // Map backend slug to UI string if needed
+      if (widget.initialStatus == 'accepted_quotes') {
+        _status = 'Quote Accepted';
+      } else if (widget.initialStatus == 'rejected_quotes') {
+        _status = 'Quote Rejected';
+      } else if (widget.initialStatus == 'booked') {
+        _status = 'Booked In';
+      } else if (widget.initialStatus == 'in_progress') {
+        _status = 'In Progress';
+      } else if (widget.initialStatus == 'parts_not_available') {
+        _status = 'Parts not available';
+      } else if (widget.initialStatus == 'ready_to_return') {
+        _status = 'Ready To Return';
+      } else if (widget.initialStatus == 'completed') {
+        _status = 'Completed';
+      } else {
+        // Generic title case as fallback
+        _status =
+            widget.initialStatus![0].toUpperCase() +
+            widget.initialStatus!.substring(1).replaceAll('_', ' ');
+      }
+    }
+
     // Load initial jobs when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadJobs();
@@ -51,9 +79,17 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_hasLoadedInitially && ModalRoute.of(context)?.isCurrent == true) {
-      debugPrint('🔄 [MyJobsScreen] Screen is now active, reloading jobs');
-      _loadJobs();
+    // Refresh jobs when returning to this screen or when it becomes active
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      final state = context.read<JobCubit>().state;
+      // If we've loaded before and the screen is now active, refresh.
+      // Especially important if the cubit is in JobDetailSuccess from a preview screen.
+      if (_hasLoadedInitially || state is JobDetailSuccess) {
+        debugPrint(
+          '🔄 [MyJobsScreen] Screen is active, refreshing jobs. State: ${state.runtimeType}',
+        );
+        _loadJobs();
+      }
     }
     _hasLoadedInitially = true;
   }
@@ -96,12 +132,10 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     }
 
     try {
-      debugPrint('📋 [MyJobsScreen] Loading jobs');
-      if (widget.initialStatus != null && widget.initialStatus!.isNotEmpty) {
-        context.read<JobCubit>().filterJobsByStatus(widget.initialStatus!);
-      } else {
-        context.read<JobCubit>().getJobs();
-      }
+      debugPrint('📋 [MyJobsScreen] Loading jobs with current filters');
+      // Instead of resetting, we use the existing filter update logic
+      // which respects both widget.initialStatus and any user-selected filters
+      _updateActiveFilters();
     } catch (e, stackTrace) {
       debugPrint('❌ [MyJobsScreen] Error loading jobs: $e');
       debugPrint('📋 Stack trace: $stackTrace');
@@ -123,28 +157,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     alignment: Alignment.centerRight,
                     child: Padding(
                       padding: const EdgeInsets.only(right: 16.0, top: 8.0),
-                      child: GestureDetector(
-                        onTap: () => _showFilterBottomSheet(context),
-                        child: Container(
-                          width: 48.w,
-                          height: 48.h,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            SolarIconsOutline.sortVertical,
-                            color: const Color(0xFF3B82F6),
-                            size: 24.sp,
-                          ),
-                        ),
+                      child: CustomNavButton(
+                        icon: SolarIconsOutline.sortVertical,
+                        onPressed: () => _showFilterBottomSheet(context),
                       ),
                     ),
                   )
@@ -156,10 +171,15 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                         horizontal: 16.w,
                         vertical: 10.h,
                       ),
-                      decoration: BoxDecoration(
+                      decoration: ShapeDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(30.r),
-                        boxShadow: [
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(
+                            cornerRadius: 30.r,
+                            cornerSmoothing: 1.0,
+                          ),
+                        ),
+                        shadows: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
@@ -220,8 +240,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                       // Title and Sort Icon
                       Text(
                         'Jobs',
-                        style: GoogleFonts.roboto(
-                          fontSize: 36.sp,
+                        style: AppTypography.sfProHeadLineTextStyle28.copyWith(
+                          fontSize: 32.sp,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1E293B),
                           letterSpacing: -0.5,
@@ -237,15 +257,24 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                         },
                         child: Container(
                           height: 48.h,
-                          decoration: BoxDecoration(
+                          decoration: ShapeDecoration(
                             color: const Color(0xFFE2E8F0),
-                            borderRadius: BorderRadius.circular(12.r),
+                            shape: SmoothRectangleBorder(
+                              borderRadius: SmoothBorderRadius(
+                                cornerRadius: 22.r,
+                                cornerSmoothing: 1.0,
+                              ),
+                              side: const BorderSide(
+                                color: AppColors.whiteColor,
+                                width: 0.3,
+                              ),
+                            ),
                           ),
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Row(
                             children: [
                               Icon(
-                                Icons.search,
+                                SolarIconsOutline.magnifier,
                                 color: const Color(0xFF94A3B8),
                                 size: 22.sp,
                               ),
@@ -279,101 +308,117 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   }
 
   Widget _buildJobList() {
-    return BlocBuilder<JobCubit, JobStates>(
-      builder: (context, state) {
-        if (state is JobLoading) {
-          return Center(
-            child: CircularProgressIndicator(color: const Color(0xFF3B82F6)),
+    return BlocListener<JobCubit, JobStates>(
+      listener: (context, state) {
+        // If we are in detail state but on the list screen, we need to reload the list
+        if (state is JobDetailSuccess &&
+            ModalRoute.of(context)?.isCurrent == true) {
+          debugPrint(
+            '📋 [MyJobsScreen] Detected JobDetailSuccess on list screen, forcing reload',
           );
+          _loadJobs();
         }
-
-        if (state is JobError) {
-          return Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.w),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Error loading jobs',
-                    style: GoogleFonts.roboto(
-                      fontSize: 16.sp,
-                      color: Colors.red,
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<JobCubit>().getJobs();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                    child: const Text('Retry'),
-                  ),
-                ],
+      },
+      child: BlocBuilder<JobCubit, JobStates>(
+        builder: (context, state) {
+          if (state is JobLoading) {
+            return Center(
+              child: CupertinoActivityIndicator(
+                color: const Color(0xFF3B82F6),
+                radius: 16.r,
               ),
-            ),
-          );
-        }
+            );
+          }
 
-        if (state is JobSuccess) {
-          final jobs = state.jobs;
-
-          if (jobs.isEmpty) {
+          if (state is JobError) {
             return Center(
               child: Padding(
                 padding: EdgeInsets.all(32.w),
-                child: Text(
-                  'No jobs found',
-                  style: GoogleFonts.roboto(
-                    fontSize: 16.sp,
-                    color: const Color(0xFF94A3B8),
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Error loading jobs',
+                      style: GoogleFonts.roboto(
+                        fontSize: 16.sp,
+                        color: Colors.red,
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<JobCubit>().getJobs();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ),
             );
           }
 
-          return ListView.separated(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            itemCount: state.hasMore ? jobs.length + 1 : jobs.length,
-            separatorBuilder: (context, index) => SizedBox(height: 12.h),
-            itemBuilder: (context, index) {
-              if (index == jobs.length && state.hasMore) {
-                context.read<JobCubit>().loadMoreJobs();
-                return Padding(
-                  padding: EdgeInsets.all(16.h),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: const Color(0xFF3B82F6),
+          if (state is JobSuccess) {
+            final jobs = state.jobs;
+
+            if (jobs.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.w),
+                  child: Text(
+                    'No jobs found',
+                    style: GoogleFonts.roboto(
+                      fontSize: 16.sp,
+                      color: const Color(0xFF94A3B8),
                     ),
                   ),
-                );
-              }
+                ),
+              );
+            }
 
-              final job = jobs[index];
-              return JobCardWidget(job: job);
-            },
-          );
-        }
+            return ListView.separated(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              itemCount: state.hasMore ? jobs.length + 1 : jobs.length,
+              separatorBuilder: (context, index) => SizedBox(height: 12.h),
+              itemBuilder: (context, index) {
+                if (index == jobs.length && state.hasMore) {
+                  context.read<JobCubit>().loadMoreJobs();
+                  return Padding(
+                    padding: EdgeInsets.all(16.h),
+                    child: Center(
+                      child: CupertinoActivityIndicator(
+                        color: const Color(0xFF3B82F6),
+                        radius: 16.r,
+                      ),
+                    ),
+                  );
+                }
 
-        return Center(
-          child: Padding(
-            padding: EdgeInsets.all(32.w),
-            child: Text(
-              'No jobs available',
-              style: GoogleFonts.roboto(
-                fontSize: 16.sp,
-                color: const Color(0xFF94A3B8),
+                final job = jobs[index];
+                return JobCardWidget(job: job);
+              },
+            );
+          }
+
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.w),
+              child: Text(
+                'No jobs available',
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  color: const Color(0xFF94A3B8),
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -451,6 +496,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         case 'Ready To Return':
           backendStatus = 'ready_to_return';
           break;
+        case 'Completed':
+          backendStatus = 'completed';
+          break;
         default:
           backendStatus = _status;
       }
@@ -512,9 +560,12 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
             // Search Header
             Container(
               padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: Colors.white,
-                boxShadow: [
+                shape: const SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius.zero,
+                ),
+                shadows: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
@@ -528,9 +579,18 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                   Expanded(
                     child: Container(
                       height: 44.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12.r),
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(
+                            cornerRadius: 46.r,
+                            cornerSmoothing: 1.0,
+                          ),
+                          side: const BorderSide(
+                            color: AppColors.whiteColor,
+                            width: 1,
+                          ),
+                        ),
                       ),
                       child: TextField(
                         controller: _searchController,
@@ -539,14 +599,20 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                           fontSize: 16.sp,
                           color: const Color(0xFF1E293B),
                         ),
+                        cursorColor: AppColors.warningColor,
                         decoration: InputDecoration(
                           hintText: 'Customer, Job-ID, Device ....',
                           hintStyle: GoogleFonts.roboto(
                             fontSize: 16.sp,
                             color: const Color(0xFF94A3B8),
                           ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 8.h,
+                          ),
+
                           prefixIcon: Icon(
-                            Icons.search,
+                            SolarIconsOutline.magnifier,
                             color: const Color(0xFF64748B),
                             size: 22.sp,
                           ),
@@ -574,12 +640,29 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                   ),
                                 )
                               : null,
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 12.h,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(46.r),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFF7F7F8),
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(46.r),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFF7F7F8),
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(46.r),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFF7F7F8),
+                              width: 1,
+                            ),
                           ),
                         ),
+
                         onChanged: (query) {
                           setState(() {});
                           if (query.isNotEmpty) {
@@ -604,9 +687,18 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                     child: Container(
                       width: 44.w,
                       height: 44.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12.r),
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(
+                            cornerRadius: 46.r,
+                            cornerSmoothing: 1.0,
+                          ),
+                          side: const BorderSide(
+                            color: AppColors.whiteColor,
+                            width: 1,
+                          ),
+                        ),
                       ),
                       child: Icon(
                         Icons.close,
@@ -625,8 +717,9 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                 builder: (context, state) {
                   if (state is JobLoading) {
                     return Center(
-                      child: CircularProgressIndicator(
+                      child: CupertinoActivityIndicator(
                         color: const Color(0xFF3B82F6),
+                        radius: 16.r,
                       ),
                     );
                   }
@@ -938,8 +1031,11 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         return 'In Progress';
       case 'accepted_quotes':
         return 'Quote Accepted';
+      case 'completed':
+        return 'Completed';
       default:
-        return status;
+        return status[0].toUpperCase() +
+            status.substring(1).replaceAll('_', ' ');
     }
   }
 
@@ -952,6 +1048,8 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       case 'in_progress':
         return const Color(0xFFFF9800);
       case 'accepted_quotes':
+        return const Color(0xFF10B981);
+      case 'completed':
         return const Color(0xFF10B981);
       default:
         return const Color(0xFF3B82F6);
@@ -991,11 +1089,19 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20.r),
-                  topRight: Radius.circular(20.r),
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius.only(
+                    topLeft: SmoothRadius(
+                      cornerRadius: 20.r,
+                      cornerSmoothing: 1.0,
+                    ),
+                    topRight: SmoothRadius(
+                      cornerRadius: 20.r,
+                      cornerSmoothing: 1.0,
+                    ),
+                  ),
                 ),
               ),
               padding: EdgeInsets.only(
@@ -1071,9 +1177,14 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: const Color(0xFFE2E8F0),
-          borderRadius: BorderRadius.circular(12.r),
+          shape: SmoothRectangleBorder(
+            borderRadius: SmoothBorderRadius(
+              cornerRadius: 28.r,
+              cornerSmoothing: 1.0,
+            ),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1120,9 +1231,14 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   ) {
     return Container(
       padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(12.r),
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius(
+            cornerRadius: 32.r,
+            cornerSmoothing: 1.0,
+          ),
+        ),
       ),
       child: Column(
         children: [
@@ -1213,6 +1329,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
         'Quote Rejected',
         'Parts not available',
         'Ready To Return',
+        'Completed',
       ],
       _status,
       (value) {
@@ -1268,8 +1385,12 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
+          backgroundColor: Colors.white,
+          shape: SmoothRectangleBorder(
+            borderRadius: SmoothBorderRadius(
+              cornerRadius: 16.r,
+              cornerSmoothing: 1.0,
+            ),
           ),
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 16.h),

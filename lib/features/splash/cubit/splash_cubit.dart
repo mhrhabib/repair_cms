@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/services/firebase_notification_service.dart';
 import 'package:repair_cms/features/profile/repository/profile_repository.dart';
 import 'package:repair_cms/features/splash/cubit/splash_state.dart';
 
@@ -13,6 +14,7 @@ class SplashCubit extends Cubit<SplashState> {
       super(SplashInitial());
 
   Future<void> initializeApp() async {
+    if (isClosed) return;
     emit(SplashLoading());
 
     final startTime = DateTime.now();
@@ -20,14 +22,15 @@ class SplashCubit extends Cubit<SplashState> {
     try {
       // 1. Check Connectivity
       final connectivityResult = await Connectivity().checkConnectivity();
+      if (isClosed) return;
+
       if (connectivityResult.contains(ConnectivityResult.none)) {
-        // Allow proceeding even if offline if we have stored data,
-        // but here we might want to show a warning or a specific state.
-        // For production readiness, let's at least check if we can reach the profile API.
+        // Allow proceeding even if offline if we have stored data.
       }
 
       // 2. Check Authentication
       final isAuthenticated = await _checkAuthStatus();
+      if (isClosed) return;
 
       // 3. Ensure minimum splash time for branding
       final elapsedTime = DateTime.now().difference(startTime);
@@ -37,13 +40,15 @@ class SplashCubit extends Cubit<SplashState> {
         await Future.delayed(minDisplayTime - elapsedTime);
       }
 
+      if (isClosed) return;
+
       if (isAuthenticated) {
         emit(SplashAuthenticated());
       } else {
         emit(SplashUnauthenticated());
       }
     } catch (e) {
-      emit(SplashUnauthenticated());
+      if (!isClosed) emit(SplashUnauthenticated());
     }
   }
 
@@ -58,6 +63,10 @@ class SplashCubit extends Cubit<SplashState> {
 
       // Verify token with server
       await _profileRepository.getProfile();
+
+      // Trigger FCM token sync if authenticated
+      await FirebaseNotificationService().syncToken();
+
       return true;
     } on ProfileException catch (e) {
       if (e.statusCode == 401) {

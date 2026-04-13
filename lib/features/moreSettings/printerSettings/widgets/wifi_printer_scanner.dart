@@ -2,8 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:repair_cms/core/constants/app_typography.dart';
+import 'package:solar_icons/solar_icons.dart';
 import '../../../../core/constants/app_colors.dart';
 
 /// Model for discovered printer
@@ -13,7 +17,12 @@ class DiscoveredPrinter {
   final bool isReachable;
   final String? hostname;
 
-  DiscoveredPrinter({required this.ipAddress, required this.port, required this.isReachable, this.hostname});
+  DiscoveredPrinter({
+    required this.ipAddress,
+    required this.port,
+    required this.isReachable,
+    this.hostname,
+  });
 }
 
 /// WiFi Printer Scanner Widget
@@ -55,6 +64,50 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
     }
   }
 
+  /// Show dialog when local network permission is denied
+  void _showNetworkPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Row(
+          children: [
+            Icon(Icons.wifi_off, color: Colors.orange, size: 24.sp),
+            SizedBox(width: 8.w),
+            const Expanded(child: Text('Network Access Required')),
+          ],
+        ),
+        content: const Text(
+          'RepairCMS needs local network access to find printers on your Wi-Fi.\n\n'
+          'Please go to Settings > RepairCMS > Local Network and enable it, then try again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Open app settings on iOS
+              if (Platform.isIOS) {
+                // Opens the app's own settings page in iOS Settings
+                final uri = Uri.parse('app-settings:');
+                launchUrl(uri);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+            ),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Scan network for printers (optimized concurrent version)
   Future<void> _scanNetwork() async {
     if (_isScanning) return;
@@ -71,9 +124,10 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
       final localIp = await _getLocalIp();
       if (localIp == null) {
         setState(() {
-          _scanStatus = 'Unable to get network information';
+          _scanStatus = 'Network access denied or unavailable';
           _isScanning = false;
         });
+        _showNetworkPermissionDeniedDialog();
         return;
       }
 
@@ -103,14 +157,17 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
       await _scanInConcurrentBatches(prioritizedIps).timeout(
         _scanTimeout,
         onTimeout: () {
-          debugPrint('⏰ Scan timed out after ${_scanTimeout.inSeconds} seconds');
+          debugPrint(
+            '⏰ Scan timed out after ${_scanTimeout.inSeconds} seconds',
+          );
         },
       );
 
       setState(() {
         _isScanning = false;
         _scanProgress = 1.0;
-        _scanStatus = 'Scan complete. Found ${_discoveredPrinters.length} printer(s)';
+        _scanStatus =
+            'Scan complete. Found ${_discoveredPrinters.length} printer(s)';
       });
     } catch (e) {
       debugPrint('❌ Scan error: $e');
@@ -125,17 +182,25 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
   Future<void> _scanInConcurrentBatches(List<String> allIps) async {
     final totalHosts = allIps.length;
     int scannedHosts = 0;
-    final semaphore = _Semaphore(_maxConcurrentScans); // Limit concurrent operations
+    final semaphore = _Semaphore(
+      _maxConcurrentScans,
+    ); // Limit concurrent operations
 
     // Process IPs in batches
-    for (int batchStart = 0; batchStart < totalHosts; batchStart += _batchSize) {
+    for (
+      int batchStart = 0;
+      batchStart < totalHosts;
+      batchStart += _batchSize
+    ) {
       if (!_isScanning) break; // Allow cancellation
 
       final batchEnd = min(batchStart + _batchSize, totalHosts);
       final batchIps = allIps.sublist(batchStart, batchEnd);
 
       // Scan this batch concurrently
-      final batchFutures = batchIps.map((ip) => _scanSingleIpConcurrent(ip, semaphore));
+      final batchFutures = batchIps.map(
+        (ip) => _scanSingleIpConcurrent(ip, semaphore),
+      );
 
       // Wait for all IPs in this batch to complete
       await Future.wait(batchFutures);
@@ -144,7 +209,8 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
       scannedHosts += batchIps.length;
       setState(() {
         _scanProgress = scannedHosts / totalHosts;
-        _scanStatus = 'Scanning... $scannedHosts/$totalHosts IPs ($_discoveredPrinters.length printers found)';
+        _scanStatus =
+            'Scanning... $scannedHosts/$totalHosts IPs ($_discoveredPrinters.length printers found)';
       });
     }
   }
@@ -155,7 +221,9 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
 
     try {
       // Check all ports for this IP concurrently
-      final portFutures = widget.portsToScan.map((port) => _checkPortFast(ip, port));
+      final portFutures = widget.portsToScan.map(
+        (port) => _checkPortFast(ip, port),
+      );
 
       // Wait for all port checks to complete
       final results = await Future.wait(portFutures);
@@ -163,7 +231,11 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
       // Add any discovered printers
       for (int i = 0; i < results.length; i++) {
         if (results[i] && _isScanning) {
-          final printer = DiscoveredPrinter(ipAddress: ip, port: widget.portsToScan[i], isReachable: true);
+          final printer = DiscoveredPrinter(
+            ipAddress: ip,
+            port: widget.portsToScan[i],
+            isReachable: true,
+          );
 
           if (mounted) {
             setState(() {
@@ -203,7 +275,11 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
   /// Check if a port is open on given IP (optimized with shorter timeout)
   Future<bool> _checkPortFast(String ip, int port) async {
     try {
-      final socket = await Socket.connect(ip, port, timeout: const Duration(milliseconds: _socketTimeoutMs));
+      final socket = await Socket.connect(
+        ip,
+        port,
+        timeout: const Duration(milliseconds: _socketTimeoutMs),
+      );
       socket.destroy();
       return true;
     } catch (e) {
@@ -225,6 +301,10 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Container(
         padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
         constraints: BoxConstraints(maxHeight: 600.h, maxWidth: 500.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -237,10 +317,15 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                 Expanded(
                   child: Text(
                     'Discover WiFi Printers',
-                    style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+                    style: AppTypography.sfProHintTextStyle17.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ],
             ),
             SizedBox(height: 16.h),
@@ -250,17 +335,24 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(28.r),
                 border: Border.all(color: Colors.blue.shade200),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20.sp),
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue.shade700,
+                    size: 20.sp,
+                  ),
                   SizedBox(width: 8.w),
                   Expanded(
                     child: Text(
                       'This will scan your local network for printers on common ports (9100, 9101, 515, 631)',
-                      style: TextStyle(fontSize: 12.sp, color: Colors.blue.shade900),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.blue.shade900,
+                      ),
                     ),
                   ),
                 ],
@@ -272,13 +364,15 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
             if (!_isScanning)
               ElevatedButton.icon(
                 onPressed: _scanNetwork,
-                icon: const Icon(Icons.search),
-                label: const Text('Start Scanning'),
+                icon: Icon(SolarIconsOutline.magnifier),
+                label: Text('Start Scanning', style: GoogleFonts.poppins()),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   minimumSize: Size(double.infinity, 48.h),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28.r),
+                  ),
                 ),
               )
             else
@@ -287,12 +381,17 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                   LinearProgressIndicator(
                     value: _scanProgress,
                     backgroundColor: Colors.grey.shade300,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                   ),
                   SizedBox(height: 12.h),
                   Text(
                     _scanStatus,
-                    style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade700),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.grey.shade700,
+                    ),
                   ),
                   SizedBox(height: 12.h),
                   TextButton.icon(
@@ -311,7 +410,10 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Discovered Printers (${_discoveredPrinters.length})',
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               SizedBox(height: 12.h),
@@ -323,16 +425,26 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.print_disabled, size: 64.sp, color: Colors.grey.shade400),
+                          Icon(
+                            Icons.print_disabled,
+                            size: 64.sp,
+                            color: Colors.grey.shade400,
+                          ),
                           SizedBox(height: 16.h),
                           Text(
                             'No printers found yet',
-                            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                           SizedBox(height: 8.h),
                           Text(
                             'Click "Start Scanning" to search',
-                            style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500),
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.grey.shade500,
+                            ),
                           ),
                         ],
                       ),
@@ -342,36 +454,99 @@ class _WiFiPrinterScannerState extends State<WiFiPrinterScanner> {
                       itemCount: _discoveredPrinters.length,
                       itemBuilder: (context, index) {
                         final printer = _discoveredPrinters[index];
-                        return Card(
-                          margin: EdgeInsets.only(bottom: 8.h),
-                          child: ListTile(
-                            leading: Container(
-                              padding: EdgeInsets.all(8.w),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(8.r),
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 12.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 12.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7F7F8),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(
+                              color: AppColors.whiteColor,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color.fromARGB(28, 116, 115, 115),
+                                blurRadius: 2,
+                                offset: const Offset(0, 0),
+                                spreadRadius: 2,
                               ),
-                              child: Icon(Icons.print, color: Colors.green.shade700, size: 24.sp),
-                            ),
-                            title: Text(
-                              printer.ipAddress,
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp),
-                            ),
-                            subtitle: Text(
-                              'Port: ${printer.port}',
-                              style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
-                            ),
-                            trailing: ElevatedButton(
-                              onPressed: () {
-                                widget.onPrinterSelected(printer.ipAddress, printer.port);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(12.w),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  SolarIconsOutline.printer,
+                                  color: Colors.green.shade700,
+                                  size: 24.sp,
+                                ),
                               ),
-                              child: const Text('Use'),
-                            ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        printer.ipAddress,
+                                        style: AppTypography.sfProText15
+                                            .copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF1E2D4D),
+                                            ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 2.h),
+                                    Text(
+                                      'Port: ${printer.port}',
+                                      style: AppTypography.fontSize12.copyWith(
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              SizedBox(
+                                height: 36.h,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    widget.onPrinterSelected(
+                                      printer.ipAddress,
+                                      printer.port,
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 20.w,
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'Use',
+                                    style: AppTypography.fontSize12.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },

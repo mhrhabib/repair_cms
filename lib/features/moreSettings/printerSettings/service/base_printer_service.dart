@@ -42,6 +42,16 @@ abstract class BasePrinterService {
     required String ipAddress,
     int port = 9100,
   });
+
+  /// Print a border test to verify alignment
+  Future<PrinterResult> printBorderTest({
+    required String ipAddress,
+    int port = 9100,
+    LabelSize? labelSize,
+  });
+
+  /// Calibrate or feed the printer
+  Future<PrinterResult> calibrate({required String ipAddress, int port = 9100});
 }
 
 /// Simple result model returned by print methods

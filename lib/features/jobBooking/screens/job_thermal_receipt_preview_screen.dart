@@ -1,7 +1,13 @@
+import 'dart:convert';
+import 'package:repair_cms/core/constants/app_typography.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/core/services/file_service.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:repair_cms/features/home/home_screen.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -21,11 +27,13 @@ import 'package:repair_cms/features/myJobs/models/single_job_model.dart'
 class JobThermalReceiptPreviewScreen extends StatefulWidget {
   final job_booking.CreateJobResponse jobResponse;
   final String printOption;
+  final bool fromBooking;
 
   const JobThermalReceiptPreviewScreen({
     super.key,
     required this.jobResponse,
     required this.printOption,
+    this.fromBooking = false,
   });
 
   @override
@@ -61,14 +69,22 @@ class _JobThermalReceiptPreviewScreenState
   }
 
   void _goHome() {
-    Navigator.of(context).pop();
+    if (widget.fromBooking) {
+      // Go to Job List (index 1 of HomeScreen)
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen(initialIndex: 1)),
+        (route) => false,
+      );
+    } else {
+      // Just go back to wherever we came from (likely Job Details)
+      Navigator.of(context).pop();
+    }
   }
 
-  Future<void> _showPrinterSelection() async {
-    debugPrint('🖨️ Opening thermal printer selection');
-
+  /// Handle print button tap: show selection if multiple printers exist, otherwise print directly
+  Future<void> _handlePrintTap() async {
     final allPrinters = _settingsService.getAllPrinters();
-    final thermalPrinters = allPrinters['thermal'] ?? [];
+    final List<PrinterConfigModel> thermalPrinters = allPrinters['thermal'] ?? [];
 
     if (thermalPrinters.isEmpty) {
       showDialog(
@@ -89,40 +105,113 @@ class _JobThermalReceiptPreviewScreenState
       return;
     }
 
-    final selectedPrinter = await showDialog<PrinterConfigModel>(
+    if (thermalPrinters.length == 1) {
+      // Rule 2: if one printer setup just print
+      await _printThermalReceipt(thermalPrinters.first);
+    } else {
+      // Rule 1: if two or more printer setup show user to select
+      await _showPrinterSelectionDialog(thermalPrinters);
+    }
+  }
+
+  Future<void> _showPrinterSelectionDialog(List<PrinterConfigModel> thermalPrinters) async {
+    debugPrint('🖨️ Opening thermal printer selection');
+
+    showCupertinoModalPopup<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Thermal Printer'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: thermalPrinters.length,
-            itemBuilder: (context, index) {
-              final printer = thermalPrinters[index];
-              return ListTile(
-                leading: const Icon(Icons.print),
-                title: Text(
-                  '${printer.printerBrand} ${printer.printerModel ?? "Thermal Printer"}',
-                ),
-                subtitle: Text('${printer.ipAddress}:${printer.port}'),
-                onTap: () => Navigator.of(context).pop(printer),
-              );
-            },
-          ),
+      builder: (BuildContext context) => CupertinoActionSheet(
+        title: Text(
+          'Select Thermal Printer',
+          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
+        message: Text(
+          'Choose a printer to print the receipt',
+          style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+        ),
+        actions: thermalPrinters.map((printer) {
+          final isDefault = printer.isDefault;
+          return CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _printThermalReceipt(printer);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.receipt_long,
+                    size: 24.r,
+                    color: AppColors.fontMainColor,
+                  ),
+                  SizedBox(width: 12.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '${printer.printerBrand} ${printer.printerModel ?? ""}',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF007AFF),
+                            ),
+                          ),
+                          if (isDefault) ...[
+                            SizedBox(width: 8.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6.w,
+                                vertical: 2.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                'DEFAULT',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        printer.ipAddress,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Text(
+                        'Thermal',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(context).pop(),
+          isDefaultAction: true,
+          child: const Text('Cancel'),
+        ),
       ),
     );
-
-    if (selectedPrinter != null && mounted) {
-      _printThermalReceipt(selectedPrinter);
-    }
   }
 
   Future<void> _printThermalReceipt(PrinterConfigModel printer) async {
@@ -162,7 +251,7 @@ class _JobThermalReceiptPreviewScreenState
       // Convert job data to Map for ESC/POS generator
       _talker.debug('📝 Converting job data to Map...');
       final jobDataMap = _convertJobDataToMap();
-      
+
       // Generate ESC/POS bytes (no image capture!)
       _talker.debug('🔧 Generating ESC/POS commands...');
       final escposBytes = EscPosGeneratorService.generateThermalReceipt(
@@ -186,14 +275,7 @@ class _JobThermalReceiptPreviewScreenState
             child: Card(
               child: Padding(
                 padding: EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Printing...'),
-                  ],
-                ),
+                child: CupertinoActivityIndicator(radius: 16),
               ),
             ),
           ),
@@ -246,7 +328,7 @@ class _JobThermalReceiptPreviewScreenState
   Map<String, dynamic> _convertJobDataToMap() {
     final jobModel = _completeJobData ?? _convertToSingleJobModel();
     final data = jobModel.data;
-    
+
     return {
       'sId': data?.sId,
       'jobNo': data?.jobNo,
@@ -261,58 +343,69 @@ class _JobThermalReceiptPreviewScreenState
       'discount': data?.discount,
       'subTotal': data?.subTotal,
       'total': data?.total,
+      'services': data?.services,
       'assignedItems': data?.assignedItems,
-      'device': data?.device?.map((d) => {
-        'sId': d.sId,
-        'brand': d.brand,
-        'model': d.model,
-        'condition': d.condition?.map((c) => {
-          'value': c.value,
-          'id': c.id,
-        }).toList(),
-      }).toList(),
-      'defect': data?.defect?.map((d) => {
-        'sId': d.sId,
-        'description': d.description,
-        'defect': d.defect?.map((item) => {
-          'value': item.value,
-          'id': item.id,
-        }).toList(),
-      }).toList(),
-      'receiptFooter': data?.receiptFooter != null ? {
-        'companyLogoURL': data!.receiptFooter!.companyLogoURL,
-        'address': {
-          'companyName': data.receiptFooter!.address?.companyName,
-          'street': data.receiptFooter!.address?.street,
-          'num': data.receiptFooter!.address?.num,
-          'zip': data.receiptFooter!.address?.zip,
-          'city': data.receiptFooter!.address?.city,
-          'country': data.receiptFooter!.address?.country,
-        },
-        'contact': {
-          'ceo': data.receiptFooter!.contact?.ceo,
-          'telephone': data.receiptFooter!.contact?.telephone,
-          'email': data.receiptFooter!.contact?.email,
-          'website': data.receiptFooter!.contact?.website,
-        },
-        'bank': {
-          'bankName': data.receiptFooter!.bank?.bankName,
-          'iban': data.receiptFooter!.bank?.iban,
-          'bic': data.receiptFooter!.bank?.bic,
-        },
-      } : null,
-      'customerDetails': data?.customerDetails != null ? {
-        'customerId': data!.customerDetails!.customerId,
-        'type': data.customerDetails!.type,
-        'organization': data.customerDetails!.organization,
-        'customerNo': data.customerDetails!.customerNo,
-        'email': data.customerDetails!.email,
-        'telephone': data.customerDetails!.telephone,
-        'telephonePrefix': data.customerDetails!.telephonePrefix,
-        'salutation': data.customerDetails!.salutation,
-        'firstName': data.customerDetails!.firstName,
-        'lastName': data.customerDetails!.lastName,
-      } : null,
+      'device': data?.device
+          ?.map(
+            (d) => {
+              'sId': d.sId,
+              'brand': d.brand,
+              'model': d.model,
+              'condition': d.condition
+                  ?.map((c) => {'value': c.value, 'id': c.id})
+                  .toList(),
+            },
+          )
+          .toList(),
+      'defect': data?.defect
+          ?.map(
+            (d) => {
+              'sId': d.sId,
+              'description': d.description,
+              'defect': d.defect
+                  ?.map((item) => {'value': item.value, 'id': item.id})
+                  .toList(),
+            },
+          )
+          .toList(),
+      'receiptFooter': data?.receiptFooter != null
+          ? {
+              'companyLogoURL': data!.receiptFooter!.companyLogoURL,
+              'address': {
+                'companyName': data.receiptFooter!.address?.companyName,
+                'street': data.receiptFooter!.address?.street,
+                'num': data.receiptFooter!.address?.num,
+                'zip': data.receiptFooter!.address?.zip,
+                'city': data.receiptFooter!.address?.city,
+                'country': data.receiptFooter!.address?.country,
+              },
+              'contact': {
+                'ceo': data.receiptFooter!.contact?.ceo,
+                'telephone': data.receiptFooter!.contact?.telephone,
+                'email': data.receiptFooter!.contact?.email,
+                'website': data.receiptFooter!.contact?.website,
+              },
+              'bank': {
+                'bankName': data.receiptFooter!.bank?.bankName,
+                'iban': data.receiptFooter!.bank?.iban,
+                'bic': data.receiptFooter!.bank?.bic,
+              },
+            }
+          : null,
+      'customerDetails': data?.customerDetails != null
+          ? {
+              'customerId': data!.customerDetails!.customerId,
+              'type': data.customerDetails!.type,
+              'organization': data.customerDetails!.organization,
+              'customerNo': data.customerDetails!.customerNo,
+              'email': data.customerDetails!.email,
+              'telephone': data.customerDetails!.telephone,
+              'telephonePrefix': data.customerDetails!.telephonePrefix,
+              'salutation': data.customerDetails!.salutation,
+              'firstName': data.customerDetails!.firstName,
+              'lastName': data.customerDetails!.lastName,
+            }
+          : null,
     };
   }
 
@@ -340,29 +433,70 @@ class _JobThermalReceiptPreviewScreenState
       termsFromCubit = jobBookingState.job.termsAndConditionsHTMLmarkup;
     }
 
-    // Use data from response where available, fallback to cubit data
-    final finalReceiptFooter = data?.receiptFooter ?? receiptFooterFromCubit;
     final finalCustomerDetails =
         data?.customerDetails ?? customerDetailsFromCubit;
     final finalSalutation = data?.salutationHTMLmarkup ?? salutationFromCubit;
     final finalTerms = data?.termsAndConditionsHTMLmarkup ?? termsFromCubit;
 
-    // Convert assignedItems to dynamic list that widget expects
-    final assignedItemsList = data?.assignedItems?.map((item) {
-      return {
-        'productName': item.productName ?? '',
-        'name': item.productName ?? '',
-        'price_incl_vat': item.salePriceIncVat ?? 0,
-      };
-    }).toList();
+    // Helper: Select first non-null/non-empty value
+    T? pick<T>(T? resp, T? cubit, [T? storageFallback]) {
+      if (resp != null) {
+        if (resp is String && resp.isNotEmpty) return resp;
+        if (resp is! String) return resp;
+      }
+      if (cubit != null) {
+        if (cubit is String && cubit.isNotEmpty) return cubit;
+        if (cubit is! String) return cubit;
+      }
+      return storageFallback;
+    }
 
-    // Calculate totals from assigned items
-    final calculatedSubTotal =
-        data?.assignedItems?.fold<double>(
-          0.0,
-          (sum, item) => sum + (item.salePriceIncVat ?? 0),
-        ) ??
-        0.0;
+    final respFooter = data?.receiptFooter;
+    final cubitFooter = receiptFooterFromCubit;
+
+    // Get agent/user details from storage
+    List<my_jobs.LoggedUser>? agentUser;
+    final userData = storage.read('userData') ?? storage.read('user_data');
+    if (userData != null) {
+      final userMap = userData is String ? jsonDecode(userData) : userData;
+      agentUser = [
+        my_jobs.LoggedUser(
+          fullName: userMap['fullName'] ?? userMap['name'] ?? 'N/A',
+          email: userMap['email'] ?? '',
+        ),
+      ];
+    }
+
+    final List<Map<String, dynamic>> combinedItems = [];
+
+    if (data?.services != null) {
+      for (final service in data!.services!) {
+        combinedItems.add({
+          'productName': service.name ?? 'Service',
+          'name': service.name ?? 'Service',
+          'price_incl_vat': service.priceInclVat ?? 0,
+        });
+      }
+    }
+
+    if (data?.assignedItems != null) {
+      for (final item in data!.assignedItems!) {
+        combinedItems.add({
+          'productName': item.productName ?? 'Item',
+          'name': item.productName ?? 'Item',
+          'price_incl_vat': item.salePriceIncVat ?? 0,
+        });
+      }
+    }
+
+    final calculatedSubTotal = combinedItems.fold<double>(
+      0.0,
+      (sum, item) =>
+          sum +
+          (item['price_incl_vat'] is num
+              ? (item['price_incl_vat'] as num).toDouble()
+              : double.tryParse(item['price_incl_vat'].toString()) ?? 0.0),
+    );
 
     return my_jobs.SingleJobModel(
       success: widget.jobResponse.success,
@@ -372,7 +506,13 @@ class _JobThermalReceiptPreviewScreenState
         jobTypes: data?.jobType,
         model: data?.model,
         physicalLocation: data?.physicalLocation,
-        signatureFilePath: data?.signatureFilePath,
+        signatureFilePath:
+            (data?.signatureFilePath != null &&
+                data!.signatureFilePath!.isNotEmpty)
+            ? data.signatureFilePath
+            : (jobBookingState is JobBookingData
+                  ? jobBookingState.job.signatureFilePath
+                  : null),
         jobNo: data?.jobNo ?? data?.model ?? data?.sId ?? 'N/A',
         createdAt: data?.createdAt,
         updatedAt: data?.updatedAt,
@@ -383,7 +523,8 @@ class _JobThermalReceiptPreviewScreenState
             _completeJobData?.data?.jobTrackingNumber ??
             data?.jobTrackingNumber ??
             data?.jobNo,
-        assignedItems: assignedItemsList,
+        services: data?.services,
+        assignedItems: combinedItems,
         device: data?.device
             ?.map(
               (d) => my_jobs.Device(
@@ -410,39 +551,55 @@ class _JobThermalReceiptPreviewScreenState
               ),
             )
             .toList(),
-        receiptFooter: finalReceiptFooter != null
-            ? my_jobs.ReceiptFooter(
-                companyLogo: finalReceiptFooter.companyLogo,
-                companyLogoURL:
-                    finalReceiptFooter.companyLogoURL.isNotEmpty &&
-                        !finalReceiptFooter.companyLogoURL.startsWith('http')
-                    ? '${ApiEndpoints.baseUrl}/file-upload/download/new?imagePath=${finalReceiptFooter.companyLogoURL}'
-                    : finalReceiptFooter.companyLogoURL,
-                address: my_jobs.Address(
-                  companyName: finalReceiptFooter.address.companyName,
-                  street: finalReceiptFooter.address.street,
-                  num: finalReceiptFooter.address.num,
-                  zip: finalReceiptFooter.address.zip,
-                  city: finalReceiptFooter.address.city,
-                  country: finalReceiptFooter.address.country,
-                ),
-                contact: my_jobs.ContactInfo(
-                  ceo: finalReceiptFooter.contact.ceo,
-                  telephone: finalReceiptFooter.contact.telephone,
-                  email: finalReceiptFooter.contact.email,
-                  website: finalReceiptFooter.contact.website,
-                ),
-                bank: my_jobs.Bank(
-                  bankName: finalReceiptFooter.bank.bankName,
-                  iban: finalReceiptFooter.bank.iban,
-                  bic: finalReceiptFooter.bank.bic,
-                ),
-              )
-            : null,
+        receiptFooter: my_jobs.ReceiptFooter(
+          companyLogo: pick(respFooter?.companyLogo, cubitFooter?.companyLogo),
+          companyLogoURL: FileService.getImageUrl(
+            pick(respFooter?.companyLogoURL, cubitFooter?.companyLogoURL),
+          ),
+          address: my_jobs.Address(
+            companyName: pick(
+              respFooter?.address.companyName,
+              cubitFooter?.address.companyName,
+              storage.read('companyName') ?? '',
+            ),
+            street: pick(
+              respFooter?.address.street,
+              cubitFooter?.address.street,
+            ),
+            num: pick(respFooter?.address.num, cubitFooter?.address.num),
+            zip: pick(respFooter?.address.zip, cubitFooter?.address.zip),
+            city: pick(respFooter?.address.city, cubitFooter?.address.city),
+            country: pick(
+              respFooter?.address.country,
+              cubitFooter?.address.country,
+            ),
+          ),
+          contact: my_jobs.ContactInfo(
+            ceo: pick(respFooter?.contact.ceo, cubitFooter?.contact.ceo),
+            telephone: pick(
+              respFooter?.contact.telephone,
+              cubitFooter?.contact.telephone,
+            ),
+            email: pick(respFooter?.contact.email, cubitFooter?.contact.email),
+            website: pick(
+              respFooter?.contact.website,
+              cubitFooter?.contact.website,
+            ),
+          ),
+          bank: my_jobs.Bank(
+            bankName: pick(
+              respFooter?.bank.bankName,
+              cubitFooter?.bank.bankName,
+            ),
+            iban: pick(respFooter?.bank.iban, cubitFooter?.bank.iban),
+            bic: pick(respFooter?.bank.bic, cubitFooter?.bank.bic),
+          ),
+        ),
         customerDetails: finalCustomerDetails != null
             ? my_jobs.CustomerDetails(
                 customerId: finalCustomerDetails.customerId,
                 type: finalCustomerDetails.type,
+                type2: finalCustomerDetails.type2,
                 organization: finalCustomerDetails.organization,
                 customerNo: finalCustomerDetails.customerNo,
                 email: finalCustomerDetails.email,
@@ -451,10 +608,29 @@ class _JobThermalReceiptPreviewScreenState
                 salutation: finalCustomerDetails.salutation,
                 firstName: finalCustomerDetails.firstName,
                 lastName: finalCustomerDetails.lastName,
+                position: finalCustomerDetails.position,
+                billingAddress: my_jobs.BillingAddress(
+                  street:
+                      '${finalCustomerDetails.billingAddress.street ?? ''} ${finalCustomerDetails.billingAddress.no ?? ''}'
+                          .trim(),
+                  zip: finalCustomerDetails.billingAddress.zip,
+                  city: finalCustomerDetails.billingAddress.city,
+                  state: finalCustomerDetails.billingAddress.state,
+                  country: finalCustomerDetails.billingAddress.country,
+                ),
+                shippingAddress: my_jobs.ShippingAddress(
+                  street:
+                      '${finalCustomerDetails.shippingAddress.street ?? ''} ${finalCustomerDetails.shippingAddress.no ?? ''}'
+                          .trim(),
+                  zip: finalCustomerDetails.shippingAddress.zip,
+                  city: finalCustomerDetails.shippingAddress.city,
+                  country: finalCustomerDetails.shippingAddress.country,
+                ),
               )
             : null,
         salutationHTMLmarkup: finalSalutation,
         termsAndConditionsHTMLmarkup: finalTerms,
+        loggedUserId: agentUser,
       ),
     );
   }
@@ -477,66 +653,116 @@ class _JobThermalReceiptPreviewScreenState
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: AppColors.whiteColor,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => _goHome(),
-          ),
-          title: Text(
-            'Thermal Receipt Preview',
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.print),
-              onPressed: _showPrinterSelection,
-              tooltip: 'Print',
+        backgroundColor: AppColors.kBg,
+        body: Stack(
+          children: [
+            _isLoadingCompleteData
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Loading receipt data...'),
+                      ],
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).padding.top + 72.h,
+                      bottom: 16.h,
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 300,
+                        margin: EdgeInsets.symmetric(vertical: 16.h),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16.r),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ThermalReceiptWidget(
+                          jobData:
+                              _completeJobData ?? _convertToSingleJobModel(),
+                          logoEnabled: false,
+                          qrCodeEnabled: true,
+                          enableTelephoneNumber: true,
+                        ),
+                      ),
+                    ),
+                  ),
+            // Custom Header
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 8.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.kBg.withValues(alpha: 0.1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomNavButton(
+                      onPressed: () => _goHome(),
+                      icon: CupertinoIcons.back,
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F7F8),
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(28.r),
+                        border: Border.all(
+                          color: AppColors.whiteColor, // Figma: border #FFFFFF
+                          width: 1, // Figma: border-width 1px
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromARGB(
+                              28,
+                              116,
+                              115,
+                              115,
+                            ), // Figma: #0000001C
+                            blurRadius: 2, // Figma: blur 20px
+                            offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'Thermal Preview',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                    ),
+                    CustomNavButton(
+                      onPressed: _handlePrintTap,
+                      icon: Icons.print,
+                      size: 20.sp,
+                      iconColor: const Color(0xFF3A4A67),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-        body: _isLoadingCompleteData
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading receipt data...'),
-                  ],
-                ),
-              )
-            : SingleChildScrollView(
-                child: Center(
-                  child: Container(
-                    width: 300,
-                    margin: EdgeInsets.symmetric(vertical: 16.h),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ThermalReceiptWidget(
-                      jobData: _completeJobData ?? _convertToSingleJobModel(),
-                      logoEnabled: false, // Logo removed as per requirements
-                      qrCodeEnabled: true,
-                      enableTelephoneNumber: true,
-                    ),
-                  ),
-                ),
-              ),
         bottomNavigationBar: Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
@@ -571,7 +797,7 @@ class _JobThermalReceiptPreviewScreenState
               SizedBox(width: 12.w),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _showPrinterSelection,
+                  onPressed: _handlePrintTap,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 14.h),
                     backgroundColor: AppColors.primary,

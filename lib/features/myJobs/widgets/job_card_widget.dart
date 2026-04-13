@@ -1,6 +1,8 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:repair_cms/core/utils/label_formatter.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 
@@ -13,15 +15,29 @@ class JobCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: job.id)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JobDetailsScreen(jobId: job.id),
+          ),
+        );
       },
       child: Container(
         padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          shape: SmoothRectangleBorder(
+            borderRadius: SmoothBorderRadius(
+              cornerRadius: 16.r,
+              cornerSmoothing: 1.0,
+            ),
+          ),
+          shadows: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Column(
@@ -44,10 +60,14 @@ class JobCardWidget extends StatelessWidget {
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-                    SizedBox(width: 8.w),
+                    SizedBox(width: 2.w),
                     Text(
                       _getStatusText(job),
-                      style: GoogleFonts.roboto(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                      style: GoogleFonts.roboto(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
@@ -63,7 +83,11 @@ class JobCardWidget extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 4.w),
-                    Icon(Icons.flag, color: _getPriorityColor(job), size: 18.sp),
+                    Icon(
+                      Icons.flag,
+                      color: _getPriorityColor(job),
+                      size: 18.sp,
+                    ),
                   ],
                 ),
               ],
@@ -75,7 +99,7 @@ class JobCardWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'JOB ID ${job.jobNo} | ${_getCustomerName()}',
+                    '${job.jobNo} | ${_getCustomerName()}',
                     style: GoogleFonts.roboto(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
@@ -85,7 +109,11 @@ class JobCardWidget extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(Icons.chevron_right, color: const Color(0xFF94A3B8), size: 24.sp),
+                Icon(
+                  Icons.chevron_right,
+                  color: const Color(0xFF94A3B8),
+                  size: 24.sp,
+                ),
               ],
             ),
             SizedBox(height: 8.h),
@@ -95,31 +123,41 @@ class JobCardWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Employee Avatar
-                Container(
-                  width: 24.w,
-                  height: 24.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _getEmployeeInitial(),
-                      style: GoogleFonts.roboto(fontSize: 10.sp, fontWeight: FontWeight.w600, color: Colors.white),
-                    ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24.w,
+                        height: 24.h,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _getEmployeeInitial(),
+                            style: GoogleFonts.roboto(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        _getEmployeeName(),
+                        style: GoogleFonts.roboto(
+                          fontSize: 14.sp,
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(width: 8.w),
-                Text(
-                  _getEmployeeName(),
-                  style: GoogleFonts.roboto(
-                    fontSize: 14.sp,
-                    color: const Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Spacer(),
+
                 Expanded(
                   child: Text(
                     _getDeviceInfo(),
@@ -140,14 +178,19 @@ class JobCardWidget extends StatelessWidget {
     );
   }
 
+  // bring company name from customer details if no comany name not availabe
+  // then show customername
   String _getCustomerName() {
     final firstName = job.customerDetails.firstName;
     final lastName = job.customerDetails.lastName;
-    return '$firstName $lastName'.trim().isNotEmpty ? '$firstName $lastName'.trim() : 'Unknown Customer';
+    final companyName = job.receiptFooter.address.companyName;
+    return companyName.isNotEmpty ? companyName : '$firstName $lastName'.trim();
   }
 
   String _getEmployeeName() {
-    return job.assignerName.trim().isNotEmpty ? job.assignerName.trim() : 'Unknown';
+    return job.assignerName.trim().isNotEmpty
+        ? job.assignerName.trim()
+        : 'Unknown';
   }
 
   String _getEmployeeInitial() {
@@ -189,34 +232,7 @@ class JobCardWidget extends StatelessWidget {
       case 'draft':
         return 'Draft';
       default:
-        return status;
-    }
-  }
-
-  Color _getStatusColor(Job job) {
-    final status = job.status.toLowerCase().trim();
-
-    switch (status) {
-      case 'booked':
-        return const Color(0xFF3B82F6); // Blue
-      case 'in progress':
-      case 'in_progress':
-        return const Color(0xFFFF9800); // Orange
-      case 'accepted_quotes':
-        return const Color(0xFF10B981); // Green
-      case 'quotation_sent':
-        return const Color(0xFFEF4444); // Red
-      case 'parts_not_available':
-      case 'parts not available':
-        return const Color(0xFF8B5CF6); // Purple
-      case 'ready_to_return':
-        return const Color(0xFF14B8A6); // Teal
-      case 'completed':
-        return const Color(0xFF10B981); // Green
-      case 'draft':
-        return const Color(0xFF6B7280); // Gray
-      default:
-        return const Color(0xFF3B82F6); // Blue
+        return LabelFormatter.formatJobStatus(status);
     }
   }
 

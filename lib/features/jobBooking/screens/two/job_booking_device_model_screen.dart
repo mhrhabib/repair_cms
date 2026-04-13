@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:convert';
 import 'package:get_storage/get_storage.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
@@ -10,6 +11,7 @@ import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cu
 import 'package:repair_cms/features/jobBooking/cubits/model/models_cubit.dart';
 import 'package:repair_cms/features/jobBooking/models/models_model.dart';
 import 'package:repair_cms/features/jobBooking/widgets/bottom_buttons_group.dart';
+import 'package:repair_cms/features/jobBooking/widgets/job_booking_top_bar.dart';
 import '../three/job_booking_accessories_screen.dart';
 
 class JobBookingDeviceModelScreen extends StatefulWidget {
@@ -17,10 +19,12 @@ class JobBookingDeviceModelScreen extends StatefulWidget {
   const JobBookingDeviceModelScreen({super.key, required this.brandId});
 
   @override
-  State<JobBookingDeviceModelScreen> createState() => _JobBookingDeviceModelScreenState();
+  State<JobBookingDeviceModelScreen> createState() =>
+      _JobBookingDeviceModelScreenState();
 }
 
-class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScreen> {
+class _JobBookingDeviceModelScreenState
+    extends State<JobBookingDeviceModelScreen> {
   String _selectedModel = '';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -76,7 +80,9 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
     final companyState = context.read<CompanyCubit>().state;
     if (companyState is CompanyLoaded) {
       debugPrint('🏢 [DeviceModel] Company loaded, updating receipt footer');
-      context.read<JobBookingCubit>().updateReceiptFooterFromCompany(companyState.company);
+      context.read<JobBookingCubit>().updateReceiptFooterFromCompany(
+        companyState.company,
+      );
     }
 
     // Update receipt data (salutation and terms)
@@ -84,10 +90,10 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
     if (jobReceiptState is JobReceiptLoaded) {
       debugPrint('📄 [DeviceModel] Job receipt loaded, updating receipt data');
       final storage = GetStorage();
-      storage.write('jobReceiptData', {
+      storage.write('jobReceiptData', jsonEncode({
         'salutation': jobReceiptState.receipt.salutation,
         'termsAndConditions': jobReceiptState.receipt.termsAndConditions,
-      });
+      }));
       context.read<JobBookingCubit>().updateReceiptData();
     }
   }
@@ -95,7 +101,11 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
   Future<void> _addNewModel(String modelName) async {
     setState(() => _isAddingModel = true);
 
-    await context.read<ModelsCubit>().createModel(name: modelName, userId: _userId, brandId: widget.brandId);
+    await context.read<ModelsCubit>().createModel(
+      name: modelName,
+      userId: _userId,
+      brandId: widget.brandId,
+    );
 
     if (!mounted) return;
 
@@ -106,9 +116,13 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
         orElse: () => ModelsModel(),
       );
       _selectModel(modelName, newModel.sId ?? '');
-      SnackbarDemo(message: 'Model "$modelName" added successfully!').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Model "$modelName" added successfully!',
+      ).showCustomSnackbar(context);
     } else if (state is ModelsError) {
-      SnackbarDemo(message: 'Failed to add model: ${state.message}').showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'Failed to add model: ${state.message}',
+      ).showCustomSnackbar(context);
     }
 
     setState(() => _isAddingModel = false);
@@ -148,73 +162,33 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
             slivers: [
               SliverToBoxAdapter(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
-                      height: 12.h,
-                      width: MediaQuery.of(context).size.width * .071 * 2,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(6),
-                          topRight: Radius.circular(0),
-                        ),
-                        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 1, blurStyle: BlurStyle.outer)],
+                    SizedBox(height: 8.h),
+                    JobBookingTopBar(stepNumber: 2, onBack: _handleBack),
+                    SizedBox(height: 24.h),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Enter the device Model',
+                            style: AppTypography.fontSize22,
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            '(E.g. iPhone 16, Galaxy S24)',
+                            style: AppTypography.fontSize22.copyWith(
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                          SizedBox(height: 32.h),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ),
-
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 8.h),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: GestureDetector(
-                          onTap: _handleBack,
-                          child: Container(
-                            padding: EdgeInsets.all(4.w),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF71788F),
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: Icon(Icons.close, color: Colors.white, size: 24.sp),
-                          ),
-                        ),
-                      ),
-
-                      Align(
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: 42.w,
-                          height: 42.h,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                          child: Center(
-                            child: Text('2', style: AppTypography.fontSize24.copyWith(color: Colors.white)),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: 24.h),
-
-                      Text('Enter the device Model', style: AppTypography.fontSize22, textAlign: TextAlign.center),
-
-                      SizedBox(height: 4.h),
-
-                      Text(
-                        '(E.g. iPhone 16, Galaxy S24)',
-                        style: AppTypography.fontSize22.copyWith(fontWeight: FontWeight.normal),
-                      ),
-
-                      SizedBox(height: 32.h),
-                    ],
-                  ),
                 ),
               ),
 
@@ -243,11 +217,15 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                             children: [
                               Text(
                                 'Failed to load models',
-                                style: AppTypography.fontSize14.copyWith(color: Colors.red),
+                                style: AppTypography.fontSize14.copyWith(
+                                  color: Colors.red,
+                                ),
                               ),
                               SizedBox(height: 8.h),
                               ElevatedButton(
-                                onPressed: () => context.read<ModelsCubit>().getModels(brandId: widget.brandId),
+                                onPressed: () => context
+                                    .read<ModelsCubit>()
+                                    .getModels(brandId: widget.brandId),
                                 child: Text('Retry'),
                               ),
                             ],
@@ -255,8 +233,11 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                         );
                       }
 
-                      if (state is ModelsLoaded || state is ModelsSearchResult) {
-                        final models = state is ModelsLoaded ? state.models : (state as ModelsSearchResult).models;
+                      if (state is ModelsLoaded ||
+                          state is ModelsSearchResult) {
+                        final models = state is ModelsLoaded
+                            ? state.models
+                            : (state as ModelsSearchResult).models;
                         final allModels = state is ModelsLoaded
                             ? state.models
                             : (state as ModelsSearchResult).allModels;
@@ -269,23 +250,32 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                           displayAllSuggestionWhenTap: true,
                           isMultiSelectDropdown: false,
                           onSuggestionSelected: (model) async {
-                            if (model.sId == null && model.name?.startsWith('Add "') == true) {
+                            if (model.sId == null &&
+                                model.name?.startsWith('Add "') == true) {
                               final modelName = model.name?.split('"')[1] ?? '';
                               if (modelName.isNotEmpty) {
                                 await _addNewModel(modelName);
                               }
                             } else {
-                              _selectModel(model.name ?? 'Unknown Model', model.sId ?? '');
+                              _selectModel(
+                                model.name ?? 'Unknown Model',
+                                model.sId ?? '',
+                              );
                             }
                           },
                           itemBuilder: (context, model) {
-                            final isNewOption = model.sId == null && model.name?.startsWith('Add "') == true;
+                            final isNewOption =
+                                model.sId == null &&
+                                model.name?.startsWith('Add "') == true;
 
                             if (isNewOption) {
                               return Container(
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFE3F2FD),
-                                  border: Border.all(color: AppColors.primary, width: 1.5),
+                                  border: Border.all(
+                                    color: AppColors.primary,
+                                    width: 1.5,
+                                  ),
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: ListTile(
@@ -293,24 +283,31 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                     children: [
                                       Text(
                                         model.name?.split('"')[1] ?? '',
-                                        style: AppTypography.fontSize16.copyWith(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: AppTypography.fontSize16
+                                            .copyWith(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                       SizedBox(width: 8.w),
                                       Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8.w,
+                                          vertical: 2.h,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary,
-                                          borderRadius: BorderRadius.circular(4.r),
+                                          borderRadius: BorderRadius.circular(
+                                            4.r,
+                                          ),
                                         ),
                                         child: Text(
                                           'NEW',
-                                          style: AppTypography.fontSize12.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          style: AppTypography.fontSize12
+                                              .copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -321,7 +318,9 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
 
                             return Container(
                               decoration: BoxDecoration(
-                                color: _selectedModel == model.name ? const Color(0xFFFFF59D) : Colors.transparent,
+                                color: _selectedModel == model.name
+                                    ? const Color(0xFFFFF59D)
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
                               child: ListTile(
@@ -339,15 +338,27 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                             if (pattern.isEmpty) return allModels;
 
                             final filteredModels = allModels
-                                .where((model) => (model.name ?? '').toLowerCase().contains(pattern.toLowerCase()))
+                                .where(
+                                  (model) => (model.name ?? '')
+                                      .toLowerCase()
+                                      .contains(pattern.toLowerCase()),
+                                )
                                 .toList();
 
                             final exactMatch = filteredModels.any(
-                              (model) => model.name?.toLowerCase() == pattern.toLowerCase(),
+                              (model) =>
+                                  model.name?.toLowerCase() ==
+                                  pattern.toLowerCase(),
                             );
 
                             if (!exactMatch && pattern.isNotEmpty) {
-                              filteredModels.insert(0, ModelsModel(sId: null, name: 'Add "$pattern" as new model'));
+                              filteredModels.insert(
+                                0,
+                                ModelsModel(
+                                  sId: null,
+                                  name: 'Add "$pattern" as new model',
+                                ),
+                              );
                             }
 
                             return filteredModels;
@@ -363,7 +374,8 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                         displayAllSuggestionWhenTap: false,
                         isMultiSelectDropdown: false,
                         onSuggestionSelected: (model) {},
-                        itemBuilder: (context, model) => ListTile(title: Text(model.name ?? 'Unknown')),
+                        itemBuilder: (context, model) =>
+                            ListTile(title: Text(model.name ?? 'Unknown')),
                         suggestionsCallback: (pattern) => [],
                       );
                     },
@@ -374,12 +386,17 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
               // Show selected model info
               BlocBuilder<JobBookingCubit, JobBookingState>(
                 builder: (context, bookingState) {
-                  final deviceModel = bookingState is JobBookingData ? bookingState.device.model : '';
+                  final deviceModel = bookingState is JobBookingData
+                      ? bookingState.device.model
+                      : '';
 
                   if (deviceModel.isNotEmpty) {
                     return SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24.w,
+                          vertical: 16.h,
+                        ),
                         child: Container(
                           padding: EdgeInsets.all(16.w),
                           decoration: BoxDecoration(
@@ -389,7 +406,11 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.check_circle, color: AppColors.primary, size: 20.sp),
+                              Icon(
+                                Icons.check_circle,
+                                color: AppColors.primary,
+                                size: 20.sp,
+                              ),
                               SizedBox(width: 12.w),
                               Expanded(
                                 child: Column(
@@ -397,11 +418,14 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                   children: [
                                     Text(
                                       'Selected Model',
-                                      style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+                                      style: AppTypography.fontSize12.copyWith(
+                                        color: Colors.grey.shade600,
+                                      ),
                                     ),
                                     Text(
                                       deviceModel,
-                                      style: AppTypography.fontSize16Bold.copyWith(color: AppColors.primary),
+                                      style: AppTypography.fontSize16Bold
+                                          .copyWith(color: AppColors.primary),
                                     ),
                                   ],
                                 ),
@@ -412,9 +436,15 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                                     _selectedModel = '';
                                     _searchController.clear();
                                   });
-                                  context.read<JobBookingCubit>().updateDeviceInfo(model: '');
+                                  context
+                                      .read<JobBookingCubit>()
+                                      .updateDeviceInfo(model: '');
                                 },
-                                child: Icon(Icons.close, color: Colors.grey, size: 20.sp),
+                                child: Icon(
+                                  Icons.close,
+                                  color: Colors.grey,
+                                  size: 20.sp,
+                                ),
                               ),
                             ],
                           ),
@@ -431,13 +461,25 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
               if (_isAddingModel)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 24.w,
+                      vertical: 16.h,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(width: 16.w, height: 16.h, child: CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(
+                          width: 16.w,
+                          height: 16.h,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                         SizedBox(width: 8.w),
-                        Text('Adding model...', style: AppTypography.fontSize14.copyWith(color: Colors.grey)),
+                        Text(
+                          'Adding model...',
+                          style: AppTypography.fontSize14.copyWith(
+                            color: Colors.grey,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -452,7 +494,9 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                         padding: EdgeInsets.symmetric(horizontal: 24.w),
                         child: Text(
                           '${state.models.length} models available',
-                          style: AppTypography.fontSize12.copyWith(color: Colors.grey.shade600),
+                          style: AppTypography.fontSize12.copyWith(
+                            color: Colors.grey.shade600,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -462,31 +506,54 @@ class _JobBookingDeviceModelScreenState extends State<JobBookingDeviceModelScree
                 },
               ),
 
-              const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: SizedBox(),
+              ),
             ],
           ),
         ),
 
         bottomNavigationBar: BlocBuilder<JobBookingCubit, JobBookingState>(
           builder: (context, bookingState) {
-            final hasSelectedModel = bookingState is JobBookingData && bookingState.device.model.isNotEmpty;
+            final hasSelectedModel =
+                bookingState is JobBookingData &&
+                bookingState.device.model.isNotEmpty;
 
             return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 8.h, left: 24.w, right: 24.w),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 8.h,
+                left: 24.w,
+                right: 24.w,
+              ),
               child: BottomButtonsGroup(
                 onPressed: hasSelectedModel
                     ? () {
                         Navigator.of(context).push(
                           PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) => JobBookingAccessoriesScreen(),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              const begin = Offset(0.0, 1.0);
-                              const end = Offset.zero;
-                              const curve = Curves.easeInOut;
-                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                              var offsetAnimation = animation.drive(tween);
-                              return SlideTransition(position: offsetAnimation, child: child);
-                            },
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    JobBookingAccessoriesScreen(),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  const begin = Offset(1.0, 0.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.easeInOut;
+                                  var tween = Tween(
+                                    begin: begin,
+                                    end: end,
+                                  ).chain(CurveTween(curve: curve));
+                                  var offsetAnimation = animation.drive(tween);
+                                  return SlideTransition(
+                                    position: offsetAnimation,
+                                    child: child,
+                                  );
+                                },
                           ),
                         );
                       }

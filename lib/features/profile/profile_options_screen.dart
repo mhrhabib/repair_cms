@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/features/profile/password&security/password_security_screen.dart';
 import 'package:repair_cms/features/profile/personalDetails/personal_details_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -9,38 +11,17 @@ class ProfileOptionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            try {
-              debugPrint('🔄 [ProfileOptionsScreen] Navigating back');
-              Navigator.pop(context);
-            } catch (e) {
-              debugPrint('❌ [ProfileOptionsScreen] Error navigating back: $e');
-            }
-          },
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black87,
-            size: 20,
-          ),
-        ),
-        title: const Text(
-          'My Profile',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0.w),
-        child: Column(
+      backgroundColor: AppColors.kBg,
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 72.h,
+              left: 16.w,
+              right: 16.w,
+              bottom: 16.h,
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             // Personal Details
@@ -82,9 +63,9 @@ class ProfileOptionsScreen extends StatelessWidget {
               iconColor: Colors.blue,
               title: 'Language & Region',
               onTap: () {
-                //coming soon feature on toast center 
+                //coming soon feature on toast center
                 showCustomToast('Coming Soon!', isError: false);
-              }
+              },
             ),
             Container(
               height: 1,
@@ -130,8 +111,42 @@ class ProfileOptionsScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
+            ],
+          ),
+          ),
+
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: CupertinoIcons.back,
+                  ),
+                  Text(
+                    'My Profile',
+                    style: AppTypography.sfProHeadLineTextStyle22,
+                  ),
+                  const SizedBox(width: 48), // Spacer for centering title
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -159,7 +174,7 @@ class ProfileOptionsScreen extends StatelessWidget {
                 ),
                 child: Icon(icon, color: iconColor, size: 24.sp),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
@@ -171,7 +186,7 @@ class ProfileOptionsScreen extends StatelessWidget {
                 ),
               ),
               const Icon(
-                Icons.chevron_right,
+                Icons.arrow_forward_ios,
                 color: AppColors.fontMainColor,
                 size: 24,
               ),

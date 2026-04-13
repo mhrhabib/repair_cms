@@ -1,6 +1,8 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:repair_cms/core/services/local_notification_service.dart';
+import 'package:repair_cms/features/notifications/repository/fcm_token_repository.dart';
+import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/set_up_di.dart';
 
 /// Service for managing Firebase Cloud Messaging (FCM).
@@ -47,11 +49,11 @@ class FirebaseNotificationService {
         await _retrieveFCMToken();
 
         // Listen for token refreshes (handles cases where initial token wasn't available)
-        _fcm.onTokenRefresh.listen((newToken) {
+        _fcm.onTokenRefresh.listen((newToken) async {
           debugPrint(
             '🔄 [FirebaseNotificationService] FCM Token refreshed: $newToken',
           );
-          // To be implemented: Send updated token to your backend
+          await _syncTokenToBackend(newToken);
         });
 
         // Set up foreground message handler
@@ -100,7 +102,9 @@ class FirebaseNotificationService {
     try {
       String? token = await _fcm.getToken();
       debugPrint('🔑 [FirebaseNotificationService] FCM Token: $token');
-      // To be implemented: Send token to your backend
+      if (token != null) {
+        await _syncTokenToBackend(token);
+      }
     } catch (e) {
       debugPrint(
         '⚠️ [FirebaseNotificationService] Could not get FCM token: $e. '
@@ -109,30 +113,86 @@ class FirebaseNotificationService {
     }
   }
 
+  /// Sync FCM token to the backend
+  Future<void> _syncTokenToBackend(String token) async {
+    try {
+      // REQUIREMENT: Only call the sync API if the user is authenticated.
+      final authToken = storage.read('token');
+      if (authToken == null) {
+        debugPrint(
+          '⏭️ [FirebaseNotificationService] Skipping FCM sync: User not authenticated',
+        );
+        return;
+      }
+
+      debugPrint(
+        '⬆️ [FirebaseNotificationService] Syncing FCM token to backend...',
+      );
+      final fcmRepo = SetUpDI.getIt<FcmTokenRepository>();
+      await fcmRepo.registerToken(token: token);
+      debugPrint(
+        '✅ [FirebaseNotificationService] FCM token synced successfully',
+      );
+    } catch (e) {
+      debugPrint(
+        '❌ [FirebaseNotificationService] Failed to sync FCM token: $e',
+      );
+    }
+  }
+
+  /// Manually trigger FCM token synchronization with the backend.
+  /// Typically called after successful login or during app startup if already logged in.
+  Future<void> syncToken() async {
+    final token = await getToken();
+    if (token != null) {
+      await _syncTokenToBackend(token);
+    }
+  }
+
   /// Handle messages received while the app is in the foreground
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint(
       '📩 [FirebaseNotificationService] Foreground message received: ${message.messageId}',
     );
-    debugPrint(
-      'Title: ${message.notification?.title}, Body: ${message.notification?.body}',
-    );
-    debugPrint('Data: ${message.data}');
+    debugPrint('   Title: ${message.notification?.title}');
+    debugPrint('   Body: ${message.notification?.body}');
+    debugPrint('   Data: ${message.data}');
 
-    // If there's a notification object, show a local notification
-    if (message.notification != null) {
-      final localNotify = SetUpDI.getIt<LocalNotificationService>();
+    final localNotify = SetUpDI.getIt<LocalNotificationService>();
 
-      // Extract data for navigation if present
-      final conversationId = message.data['conversationId']?.toString();
-      final jobId = message.data['jobId']?.toString();
+    // Prefer the standard notification payload, but support data-only messages
+    final senderName =
+        message.notification?.title ??
+        message.data['title']?.toString() ??
+        'RepairCMS';
+    final messageText =
+        message.notification?.body ??
+        message.data['body']?.toString() ??
+        message.data['message']?.toString() ??
+        '';
+    final conversationId = message.data['conversationId']?.toString() ?? '';
+    final jobNo = message.data['jobNo']?.toString();
+    final type = message.data['type']?.toString();
+    final action = message.data['action']?.toString();
+    final notifMessage = message.data['message']?.toString();
 
-      // You might want to customize how specific types of notifications are shown
+    // Only show a local notification if there's something to display
+    if ((message.notification != null) || messageText.isNotEmpty) {
+      debugPrint(
+        '🔔 [FirebaseNotificationService] Showing local notification for foreground message',
+      );
       localNotify.showMessageNotification(
-        senderName: message.notification?.title ?? 'New Notification',
-        messageText: message.notification?.body ?? '',
-        conversationId: conversationId ?? '',
-        jobId: jobId,
+        senderName: senderName,
+        messageText: messageText,
+        conversationId: conversationId,
+        jobNo: jobNo,
+        type: type,
+        action: action,
+        notifMessage: notifMessage,
+      );
+    } else {
+      debugPrint(
+        '⚠️ [FirebaseNotificationService] Foreground message has no notification payload or displayable body in data',
       );
     }
   }
@@ -143,21 +203,25 @@ class FirebaseNotificationService {
       '🚀 [FirebaseNotificationService] App opened via notification: ${message.messageId}',
     );
 
-    final conversationId = message.data['conversationId']?.toString();
-    final jobId = message.data['jobId']?.toString();
+    final conversationId = message.data['conversationId']?.toString() ?? '';
+    final jobNo = message.data['jobNo']?.toString();
+    final type = message.data['type']?.toString();
+    final action = message.data['action']?.toString();
+    final notifMessage = message.data['message']?.toString();
 
-    if (conversationId != null) {
-      debugPrint(
-        '🚀 [FirebaseNotificationService] Navigating to: $conversationId, Job: $jobId',
-      );
-      // Trigger navigation via LocalNotificationService's logic
-      SetUpDI.getIt<LocalNotificationService>().showMessageNotification(
-        senderName: 'Opening...',
-        messageText: 'Navigating to conversation',
-        conversationId: conversationId,
-        jobId: jobId,
-      );
-    }
+    debugPrint(
+      '🚀 [FirebaseNotificationService] Deep link → conversation:$conversationId job:$jobNo type:$type action:$action',
+    );
+
+    SetUpDI.getIt<LocalNotificationService>().showMessageNotification(
+      senderName: '',
+      messageText: '',
+      conversationId: conversationId,
+      jobNo: jobNo,
+      type: type,
+      action: action,
+      notifMessage: notifMessage,
+    );
   }
 
   /// Get the current FCM token

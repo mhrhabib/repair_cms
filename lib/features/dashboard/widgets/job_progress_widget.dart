@@ -1,6 +1,7 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
-import 'package:repair_cms/features/myJobs/screens/my_jobs_screen.dart';
+import 'package:repair_cms/features/home/home_screen.dart';
 import 'dart:math' as math;
 
 class JobProgressWidget extends StatelessWidget {
@@ -10,15 +11,21 @@ class JobProgressWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<DashboardCubit, DashboardState>(
       builder: (context, state) {
+        final cubit = context.read<DashboardCubit>();
         int totalActiveJobs = 0;
         int onHoldJobs = 0;
         int repairInProgressJobs = 0;
         int quotationConfirmedJobs = 0;
         int quotationRejectedJobs = 0;
-        bool isLoading = state is DashboardLoading;
 
-        if (state is DashboardLoaded && state.jobProgress != null) {
-          final progress = state.jobProgress!;
+        // Try to get data from state, or from cubit cache if loading/initial
+        final progress = (state is DashboardLoaded)
+            ? state.jobProgress
+            : ((state is DashboardLoading || state is DashboardInitial) ? cubit.jobProgress : null);
+
+        bool isLoading = (state is DashboardLoading || state is DashboardInitial) && progress == null;
+
+        if (progress != null) {
           totalActiveJobs = progress.totalJobs;
           onHoldJobs = progress.partsNotAvailableJobs;
           repairInProgressJobs = progress.inProgressJobs;
@@ -27,16 +34,12 @@ class JobProgressWidget extends StatelessWidget {
         }
 
         return Container(
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
+          padding: EdgeInsets.all(16.w),
+          decoration: ShapeDecoration(
             color: AppColors.whiteColor,
-            borderRadius: BorderRadius.circular(12.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
+            shape: SmoothRectangleBorder(borderRadius: SmoothBorderRadius(cornerRadius: 28.r, cornerSmoothing: 1.0)),
+            shadows: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
             ],
           ),
           child: Column(
@@ -76,10 +79,7 @@ class JobProgressWidget extends StatelessWidget {
         Text('Job Progress', style: AppTypography.fontSize16Bold),
         Text(
           'Live Status',
-          style: AppTypography.fontSize14.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppTypography.fontSize14.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -125,24 +125,36 @@ class JobProgressWidget extends StatelessWidget {
                 totalActiveJobs: totalActiveJobs,
               ),
             ),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    totalActiveJobs.toString(),
-                    style: AppTypography.fontSize28.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+            Padding(
+              padding: EdgeInsets.all(8.w),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        totalActiveJobs.toString(),
+                        style: AppTypography.fontSize28.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                          fontSize: 24.sp,
+                          height: 1.0,
+                        ),
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Active Jobs',
-                    style: AppTypography.fontSize10.copyWith(
-                      color: AppColors.primary,
+                    Transform.translate(
+                      offset: Offset(0, -2.h),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Active Jobs',
+                          style: AppTypography.fontSize10.copyWith(color: AppColors.primary, height: 1.0),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -160,19 +172,9 @@ class JobProgressWidget extends StatelessWidget {
   }) {
     return Column(
       children: [
-        _buildLegendItem(
-          context,
-          'On Hold ($onHoldJobs)',
-          const Color(0xFFB84343),
-          'parts_not_available',
-        ),
+        _buildLegendItem(context, 'On Hold ($onHoldJobs)', const Color(0xFFB84343), 'parts_not_available'),
         SizedBox(height: 4.h),
-        _buildLegendItem(
-          context,
-          'Repair in Progress ($repairInProgressJobs)',
-          const Color(0xFFF39C12),
-          'in_progress',
-        ),
+        _buildLegendItem(context, 'Repair in Progress ($repairInProgressJobs)', const Color(0xFFF39C12), 'in_progress'),
         SizedBox(height: 4.h),
         _buildLegendItem(
           context,
@@ -185,25 +187,19 @@ class JobProgressWidget extends StatelessWidget {
           context,
           'Quotation Rejected ($quotationRejectedJobs)',
           const Color(0xFFFF5F5F),
-          'rejected',
+          'rejected_quotes',
         ),
       ],
     );
   }
 
-  Widget _buildLegendItem(
-    BuildContext context,
-    String label,
-    Color color,
-    String statusFilter,
-  ) {
+  Widget _buildLegendItem(BuildContext context, String label, Color color, String statusFilter) {
     return InkWell(
       onTap: () {
         // Navigate directly to MyJobsScreen with the respective status filter
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => MyJobsScreen(initialStatus: statusFilter),
-          ),
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => HomeScreen(initialIndex: 1, initialStatus: statusFilter)),
+          (route) => false,
         );
       },
       borderRadius: BorderRadius.circular(4.r),
@@ -214,9 +210,14 @@ class JobProgressWidget extends StatelessWidget {
             Container(
               width: 24.w,
               height: 12.h,
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: color,
-                borderRadius: BorderRadius.circular(16),
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius(
+                    cornerRadius: 16.r, // Kept similar to previous rounded value
+                    cornerSmoothing: 1.0,
+                  ),
+                ),
               ),
             ),
             SizedBox(width: 8.w),
@@ -256,11 +257,7 @@ class DonutChartPainter extends CustomPainter {
     }
 
     // Calculate total segments (sum of all job types)
-    final int totalSegments =
-        onHoldJobs +
-        repairInProgressJobs +
-        quotationConfirmedJobs +
-        quotationRejectedJobs;
+    final int totalSegments = onHoldJobs + repairInProgressJobs + quotationConfirmedJobs + quotationRejectedJobs;
 
     // If no segments, draw empty chart
     if (totalSegments == 0) {
@@ -271,18 +268,9 @@ class DonutChartPainter extends CustomPainter {
     // Create data with actual counts
     final data = [
       ChartData(value: onHoldJobs.toDouble(), color: const Color(0xFFB84343)),
-      ChartData(
-        value: repairInProgressJobs.toDouble(),
-        color: const Color(0xFFF39C12),
-      ),
-      ChartData(
-        value: quotationConfirmedJobs.toDouble(),
-        color: const Color(0xFF27AE60),
-      ),
-      ChartData(
-        value: quotationRejectedJobs.toDouble(),
-        color: const Color(0xFFFF5F5F),
-      ),
+      ChartData(value: repairInProgressJobs.toDouble(), color: const Color(0xFFF39C12)),
+      ChartData(value: quotationConfirmedJobs.toDouble(), color: const Color(0xFF27AE60)),
+      ChartData(value: quotationRejectedJobs.toDouble(), color: const Color(0xFFFF5F5F)),
     ];
 
     double startAngle = -math.pi / 2; // Start from top
@@ -319,18 +307,14 @@ class DonutChartPainter extends CustomPainter {
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              fontFamily:
-                  'Roboto', // Optional: specify font family for consistency
+              fontFamily: 'Roboto', // Optional: specify font family for consistency
             ),
           ),
           textDirection: TextDirection.ltr,
         );
 
         textPainter.layout();
-        textPainter.paint(
-          canvas,
-          Offset(textX - textPainter.width / 2, textY - textPainter.height / 2),
-        );
+        textPainter.paint(canvas, Offset(textX - textPainter.width / 2, textY - textPainter.height / 2));
 
         startAngle += sweepAngle;
       }
@@ -345,13 +329,7 @@ class DonutChartPainter extends CustomPainter {
     canvas.drawCircle(center, innerRadius - 12, innerCirclePaint);
   }
 
-  void _drawEmptyChart(
-    Canvas canvas,
-    Size size,
-    Offset center,
-    double radius,
-    double innerRadius,
-  ) {
+  void _drawEmptyChart(Canvas canvas, Size size, Offset center, double radius, double innerRadius) {
     // Draw empty gray circle
     final emptyPaint = Paint()
       ..color = Colors.grey.shade300

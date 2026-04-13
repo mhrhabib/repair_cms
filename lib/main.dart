@@ -52,8 +52,26 @@ import 'package:repair_cms/features/quickTask/repository/quick_task_repository.d
 import 'package:repair_cms/set_up_di.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
+import 'package:flutter/services.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Lock to portrait only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Set status bar configuration globally
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark, // Android: dark icons
+      statusBarBrightness: Brightness.light, // iOS: light background = dark icons
+    ),
+  );
+
   await GetStorage.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
@@ -72,7 +90,7 @@ void main() async {
   // Log Talker initialization
   SetUpDI.getIt<Talker>().info('RepairCMS App Started');
 
-  runApp(OKToast(child: const MyApp()));
+  runApp(RestartWidget(child: OKToast(child: const MyApp())));
 }
 
 class MyApp extends StatelessWidget {
@@ -83,88 +101,33 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ConnectivityCubit(Connectivity())),
-        BlocProvider(
-          create: (context) =>
-              SignInCubit(repository: SetUpDI.getIt<SignInRepository>()),
-        ),
-        BlocProvider(
-          create: (context) => ForgotPasswordCubit(
-            repository: SetUpDI.getIt<ForgotPasswordRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) =>
-              ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>()),
-        ),
-        BlocProvider(
-          create: (context) => CompanyCubit(
-            companyRepository: SetUpDI.getIt<CompanyRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) =>
-              JobCubit(repository: SetUpDI.getIt<JobRepository>()),
-        ),
-        BlocProvider(
-          create: (context) =>
-              DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>()),
-        ),
-        BlocProvider(
-          create: (context) =>
-              QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>()),
-        ),
-        BlocProvider(
-          create: (context) => ServiceCubit(
-            serviceRepository: SetUpDI.getIt<ServiceRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => JobCreateCubit(
-            jobRepository: SetUpDI.getIt<JobBookingRepository>(),
-          ),
-        ),
+        BlocProvider(create: (context) => SignInCubit(repository: SetUpDI.getIt<SignInRepository>())),
+        BlocProvider(create: (context) => ForgotPasswordCubit(repository: SetUpDI.getIt<ForgotPasswordRepository>())),
+        BlocProvider(create: (context) => ProfileCubit(repository: SetUpDI.getIt<ProfileRepository>())),
+        BlocProvider(create: (context) => CompanyCubit(companyRepository: SetUpDI.getIt<CompanyRepository>())),
+        BlocProvider(create: (context) => JobCubit(repository: SetUpDI.getIt<JobRepository>())),
+        BlocProvider(create: (context) => DashboardCubit(repository: SetUpDI.getIt<DashboardRepository>())),
+        BlocProvider(create: (context) => QuickTaskCubit(SetUpDI.getIt<QuickTaskRepository>())),
+        BlocProvider(create: (context) => ServiceCubit(serviceRepository: SetUpDI.getIt<ServiceRepository>())),
+        BlocProvider(create: (context) => JobCreateCubit(jobRepository: SetUpDI.getIt<JobBookingRepository>())),
         BlocProvider(create: (context) => JobBookingCubit()),
         BlocProvider(
-          create: (context) => JobFileUploadCubit(
-            fileUploadRepository:
-                SetUpDI.getIt<JobBookingFileUploadRepository>(),
-          ),
-        ),
-        BlocProvider(
           create: (context) =>
-              BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>()),
+              JobFileUploadCubit(fileUploadRepository: SetUpDI.getIt<JobBookingFileUploadRepository>()),
+        ),
+        BlocProvider(create: (context) => BrandCubit(brandRepository: SetUpDI.getIt<BrandRepository>())),
+        BlocProvider(create: (context) => ModelsCubit(modelsRepository: SetUpDI.getIt<ModelsRepository>())),
+        BlocProvider(
+          create: (context) => AccessoriesCubit(accessoriesRepository: SetUpDI.getIt<AccessoriesRepository>()),
         ),
         BlocProvider(
-          create: (context) =>
-              ModelsCubit(modelsRepository: SetUpDI.getIt<ModelsRepository>()),
+          create: (context) => ContactTypeCubit(contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>()),
         ),
+        BlocProvider(create: (context) => JobTypeCubit(jobTypeRepository: SetUpDI.getIt<JobTypeRepository>())),
+        BlocProvider(create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>())),
+        BlocProvider(create: (context) => JobReceiptCubit(jobReceiptRepository: SetUpDI.getIt<JobReceiptRepository>())),
         BlocProvider(
-          create: (context) => AccessoriesCubit(
-            accessoriesRepository: SetUpDI.getIt<AccessoriesRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => ContactTypeCubit(
-            contactTypeRepository: SetUpDI.getIt<ContactTypeRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => JobTypeCubit(
-            jobTypeRepository: SetUpDI.getIt<JobTypeRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => JobItemCubit(SetUpDI.getIt<JobItemRepository>()),
-        ),
-        BlocProvider(
-          create: (context) => JobReceiptCubit(
-            jobReceiptRepository: SetUpDI.getIt<JobReceiptRepository>(),
-          ),
-        ),
-        BlocProvider(
-          create: (context) => NotificationCubit(
-            notificationRepository: SetUpDI.getIt<NotificationRepository>(),
-          ),
+          create: (context) => NotificationCubit(notificationRepository: SetUpDI.getIt<NotificationRepository>()),
         ),
         BlocProvider(
           create: (context) => MessageCubit(
@@ -182,9 +145,27 @@ class MyApp extends StatelessWidget {
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'RepairCMS',
+
             theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+              appBarTheme: const AppBarTheme(
+                systemOverlayStyle: SystemUiOverlayStyle(
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.dark, // Android: dark icons
+                  statusBarBrightness: Brightness.light, // iOS: light background = dark icons
+                ),
+              ),
             ),
+            builder: (context, child) {
+              return AnnotatedRegion<SystemUiOverlayStyle>(
+                value: const SystemUiOverlayStyle(
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.dark, // Android: dark icons
+                  statusBarBrightness: Brightness.light, // iOS: light background = dark icons
+                ),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
             routerConfig: AppRouter.router,
           ),
         ),
@@ -210,5 +191,32 @@ class _ConnectivityWrapper extends StatelessWidget {
         return child;
       },
     );
+  }
+}
+
+class RestartWidget extends StatefulWidget {
+  final Widget child;
+  const RestartWidget({super.key, required this.child});
+
+  static void restartApp(BuildContext context) {
+    context.findAncestorStateOfType<_RestartWidgetState>()?.restartApp();
+  }
+
+  @override
+  State<RestartWidget> createState() => _RestartWidgetState();
+}
+
+class _RestartWidgetState extends State<RestartWidget> {
+  Key _key = UniqueKey();
+
+  void restartApp() {
+    setState(() {
+      _key = UniqueKey();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(key: _key, child: widget.child);
   }
 }

@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:repair_cms/core/constants/app_colors.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:solar_icons/solar_icons.dart';
 // Import the new screens
 import './screens/a4_receipt_printer_screen.dart';
@@ -12,131 +13,205 @@ class PrinterSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackgroundColor,
-        elevation: 0,
-        title: const Text(
-          'Printer Settings',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+      backgroundColor: AppColors.kBg,
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 72.h,
+              left: 10.0,
+              right: 10.0,
+              bottom: 10.0,
+            ),
+            child: Column(
+              children: [
+                // A4 Receipt Printer
+                _buildSettingsItem(
+                  iconsWidget: Icon(
+                    SolarIconsOutline.documentText,
+                    color: Colors.blue,
+                  ),
+                  title: 'A4 Receipt Printer',
+                  onTap: () {
+                    try {
+                      debugPrint(
+                        '🔄 [PrinterSettings] Navigating to A4 Printer',
+                      );
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const A4ReceiptPrinterScreen(),
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint(
+                        '❌ [PrinterSettings] Error navigating to A4 Printer: $e',
+                      );
+                    }
+                  },
+                ),
+
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.deviderColor,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Thermal Printer (80mm)
+                _buildSettingsItem(
+                  iconsWidget: Image.asset(
+                    'assets/icon/Vector (Stroke).png',
+                    height: 24,
+                    width: 24,
+                  ),
+                  title: 'Thermal Printer (80mm)',
+                  onTap: () {
+                    try {
+                      debugPrint(
+                        '🔄 [PrinterSettings] Navigating to Thermal Printer',
+                      );
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const ThermalPrinterScreen(),
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint(
+                        '❌ [PrinterSettings] Error navigating to Thermal Printer: $e',
+                      );
+                    }
+                  },
+                ),
+
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.deviderColor,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Label Printer
+                _buildSettingsItem(
+                  iconsWidget: Image.asset(
+                    'assets/icon/label.png',
+                    height: 24,
+                    width: 24,
+                  ),
+                  title: 'Label Printer',
+                  onTap: () {
+                    try {
+                      debugPrint(
+                        '🔄 [PrinterSettings] Navigating to Label Printer',
+                      );
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const LabelPrinterScreen(),
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint(
+                        '❌ [PrinterSettings] Error navigating to Label Printer: $e',
+                      );
+                    }
+                  },
+                ),
+                Container(
+                  height: 1,
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width * .78,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.deviderColor,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          children: [
-            // A4 Receipt Printer
-            _buildSettingsItem(
-              icon: SolarIconsOutline.document1,
-              iconColor: Colors.blue,
-              title: 'A4 Receipt Printer',
-              onTap: () {
-                try {
-                  debugPrint('🔄 [PrinterSettings] Navigating to A4 Printer');
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const A4PrinterScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [PrinterSettings] Error navigating to A4 Printer: $e',
-                  );
-                }
-              },
-            ),
 
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
+          // Custom Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16.w,
+                right: 16.w,
+                bottom: 8.h,
+              ),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomNavButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: CupertinoIcons.back,
+                  ),
+                  Container(
+                      padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 2.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(
+                        color: AppColors.whiteColor, // Figma: border #FFFFFF
+                        width: 1, // Figma: border-width 1px
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            28,
+                            116,
+                            115,
+                            115,
+                          ), // Figma: #0000001C
+                          blurRadius: 2, // Figma: blur 20px
+                          offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Printer Settings',
+                      style: AppTypography.sfProHeadLineTextStyle22,
+                    ),
+                  ),
+                  const SizedBox(width: 44), // Spacer
+                ],
               ),
             ),
-
-            // Thermal Printer (80mm)
-            _buildSettingsItem(
-              icon: SolarIconsOutline.documentMedicine,
-              iconColor: Colors.blue,
-              title: 'Thermal Printer (80mm)',
-              onTap: () {
-                try {
-                  debugPrint(
-                    '🔄 [PrinterSettings] Navigating to Thermal Printer',
-                  );
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const ThermalPrinterScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [PrinterSettings] Error navigating to Thermal Printer: $e',
-                  );
-                }
-              },
-            ),
-
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
-              ),
-            ),
-
-            // Label Printer
-            _buildSettingsItem(
-              icon: SolarIconsOutline.document,
-              iconColor: Colors.blue,
-              title: 'Label Printer',
-              onTap: () {
-                try {
-                  debugPrint(
-                    '🔄 [PrinterSettings] Navigating to Label Printer',
-                  );
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const LabelPrinterScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  debugPrint(
-                    '❌ [PrinterSettings] Error navigating to Label Printer: $e',
-                  );
-                }
-              },
-            ),
-            Container(
-              height: 1,
-              alignment: Alignment.centerRight,
-              width: MediaQuery.of(context).size.width * .78,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.deviderColor, width: 0.5),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSettingsItem({
-    required IconData icon,
-    required Color iconColor,
+    required Widget iconsWidget,
     required String title,
     required VoidCallback onTap,
   }) {
@@ -154,21 +229,21 @@ class PrinterSettingsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: iconColor, size: 24),
+                child: iconsWidget,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 2),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
+                  style: AppTypography.sfProText15.copyWith(
+                    fontSize: 16.sp,
+                    color: AppColors.fontMainColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
               const Icon(
-                Icons.chevron_right,
+                Icons.arrow_forward_ios,
                 color: AppColors.fontMainColor,
                 size: 24,
               ),

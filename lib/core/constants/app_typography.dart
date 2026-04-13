@@ -10,34 +10,34 @@ abstract class AppTypography {
   static TextStyle fontSize28 = GoogleFonts.roboto(
     fontSize: 28.sp,
     fontWeight: FontWeight.w400,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
 
   static TextStyle fontSize38 = GoogleFonts.roboto(
     fontSize: 38.sp,
     fontWeight: FontWeight.w700,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
 
   static TextStyle fontSize24 = GoogleFonts.roboto(
     fontSize: 24.sp,
     fontWeight: FontWeight.w700,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
   static TextStyle fontSize12 = GoogleFonts.roboto(
     fontSize: 12.sp,
     fontWeight: FontWeight.w400,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
   static TextStyle fontSize16 = GoogleFonts.roboto(
     fontSize: 16.sp,
     fontWeight: FontWeight.w400,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
   static TextStyle fontSize20 = GoogleFonts.roboto(
     fontSize: 20.sp,
     fontWeight: FontWeight.w700,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
   static TextStyle fontSize22 = GoogleFonts.roboto(
     fontSize: 22.sp,
@@ -47,24 +47,24 @@ abstract class AppTypography {
   static TextStyle fontSize16Normal = GoogleFonts.roboto(
     fontSize: 16.sp,
     fontWeight: FontWeight.w400,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
   static TextStyle fontSize16Bold = GoogleFonts.roboto(
     fontSize: 16.sp,
     fontWeight: FontWeight.w700,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
   static TextStyle fontSize14 = GoogleFonts.roboto(
     fontSize: 14.sp,
     fontWeight: FontWeight.w400,
 
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
   static TextStyle fontSize10 = TextStyle(
     fontFamily: fontFamilySFProText,
     fontSize: 10.sp,
     fontWeight: FontWeight.w400,
-    color: Color(0xFF000000),
+    color: AppColors.fontMainColor,
   );
 
   //button text style
@@ -79,8 +79,8 @@ abstract class AppTypography {
   static TextStyle sfProText15 = TextStyle(
     fontFamily: fontFamilySFProText,
     fontSize: 15.sp,
-    fontWeight: FontWeight.w400,
-    color: AppColors.blackColor,
+    fontWeight: FontWeight.w500,
+    color: AppColors.fontMainColor,
   );
 
   static TextStyle sfProHeadLineTextStyle28 = TextStyle(
