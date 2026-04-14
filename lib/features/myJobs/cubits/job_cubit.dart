@@ -253,6 +253,7 @@ class JobCubit extends Cubit<JobStates> {
     required String email,
     String? notes,
     bool sendNotification = true,
+    required SingleJobModel currentJob,
   }) async {
     emit(JobLoading());
     try {
@@ -264,6 +265,7 @@ class JobCubit extends Cubit<JobStates> {
         email,
         customNotes: notes,
         sendNotification: sendNotification,
+        currentJob: currentJob,
       );
 
       emit(JobStatusUpdated(job: updatedJob));
@@ -282,6 +284,7 @@ class JobCubit extends Cubit<JobStates> {
     required String email,
     String? notes,
     bool sendNotification = true,
+    required SingleJobModel currentJob,
   }) async {
     emit(JobLoading());
     try {
@@ -293,6 +296,7 @@ class JobCubit extends Cubit<JobStates> {
         email,
         customNotes: notes,
         sendNotification: sendNotification,
+        currentJob: currentJob,
       );
 
       emit(JobStatusUpdated(job: updatedJob));
@@ -313,6 +317,7 @@ class JobCubit extends Cubit<JobStates> {
     String email, {
     String? notes,
     bool sendNotification = true,
+    required SingleJobModel currentJob,
   }) async {
     if (isReturnDevice) {
       await setDeviceAsReturned(
@@ -322,6 +327,7 @@ class JobCubit extends Cubit<JobStates> {
         email: email,
         notes: notes,
         sendNotification: sendNotification,
+        currentJob: currentJob,
       );
     } else {
       await setDeviceAsNotReturned(
@@ -331,6 +337,7 @@ class JobCubit extends Cubit<JobStates> {
         email: email,
         notes: notes,
         sendNotification: sendNotification,
+        currentJob: currentJob,
       );
     }
   }

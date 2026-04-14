@@ -9,9 +9,12 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Set the UNUserNotificationCenter delegate BEFORE plugin registration
-    // so flutter_local_notifications can present notifications in the foreground
-    UNUserNotificationCenter.current().delegate = self
+    // Set the UNUserNotificationCenter delegate to FlutterAppDelegate so it
+    // forwards willPresent/didReceive calls to registered plugins
+    // (flutter_local_notifications and firebase_messaging).
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self
+    }
 
     GeneratedPluginRegistrant.register(with: self)
 
@@ -38,18 +41,5 @@ import UserNotifications
   ) {
     debugPrint("❌ [AppDelegate] Failed to register for remote notifications: \(error.localizedDescription)")
     super.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
-  }
-
-  // Manually forward remote notifications to Firebase since
-  // FirebaseAppDelegateProxyEnabled is disabled in Info.plist.
-  // Without this, background/terminated notifications are never delivered
-  // to the Flutter FirebaseMessaging handlers.
-  override func application(
-    _ application: UIApplication,
-    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
-    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
-  ) {
-    Messaging.messaging().appDidReceiveMessage(userInfo)
-    super.application(application, didReceiveRemoteNotification: userInfo, fetchCompletionHandler: completionHandler)
   }
 }

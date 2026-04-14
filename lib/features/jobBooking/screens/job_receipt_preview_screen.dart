@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:repair_cms/core/base/base_client.dart';
+import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -353,24 +354,23 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       } else if (printer.printerType == 'label') {
         await _printLabel(printer);
       } else {
-        // A4 printer
-        SnackbarDemo(
-          message: 'Preparing A4 PDF...',
-        ).showCustomSnackbar(context);
-
-        final imageBytes = await _captureReceiptAsImage();
-        if (imageBytes == null) {
-          throw Exception('Failed to capture receipt image');
+        // A4 printer — fetch server-rendered PDF
+        final jobId = widget.jobResponse.data?.sId;
+        if (jobId == null || jobId.isEmpty) {
+          throw Exception('Invalid job: missing job ID');
         }
 
-        final a4Service = PrinterServiceFactory.getA4NetworkPrinterService();
-        final pdfBytes = await a4Service.generatePdfFromImage(
-          imageBytes: imageBytes,
-        );
+        SnackbarDemo(
+          message: 'Fetching receipt PDF...',
+        ).showCustomSnackbar(context);
+
+        final pdfBytes = await _fetchReceiptPdfBytes(jobId);
 
         SnackbarDemo(
           message: 'Sending to A4 printer...',
         ).showCustomSnackbar(context);
+
+        final a4Service = PrinterServiceFactory.getA4NetworkPrinterService();
         final result = await a4Service.printA4Receipt(
           ipAddress: printer.ipAddress,
           pdfBytes: pdfBytes,
@@ -391,23 +391,37 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     }
   }
 
-  Future<Uint8List?> _captureReceiptAsImage() async {
-    try {
-      final boundary =
-          _receiptKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
-      if (boundary == null) return null;
+  Future<Uint8List> _fetchReceiptPdfBytes(String jobId) async {
+    final url = ApiEndpoints.jobReceiptPdf.replaceAll('<id>', jobId);
+    final dio.Response response = await BaseClient.post(url: url);
 
-      // Use high pixel ratio for A4 quality
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      image.dispose();
-
-      return byteData?.buffer.asUint8List();
-    } catch (e) {
-      debugPrint('❌ Error capturing receipt: $e');
-      return null;
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Receipt request failed: ${response.statusCode} ${response.data}',
+      );
     }
+
+    final dynamic raw = response.data;
+    final Map<String, dynamic> body = raw is String
+        ? jsonDecode(raw) as Map<String, dynamic>
+        : raw as Map<String, dynamic>;
+
+    if (body['success'] != true) {
+      throw Exception(
+        'Receipt request unsuccessful: ${body['message'] ?? body}',
+      );
+    }
+
+    final data = body['data'];
+    final String? base64Str =
+        data is Map<String, dynamic> ? data['base64'] as String? : null;
+    if (base64Str == null || base64Str.isEmpty) {
+      throw Exception('Receipt response missing base64 PDF');
+    }
+
+    final normalized =
+        base64Str.contains(',') ? base64Str.split(',').last : base64Str;
+    return base64Decode(normalized);
   }
 
   Future<void> _discoverPrinters() async {

@@ -24,6 +24,8 @@ class ApiEndpoints {
   static const String getAllJobs = '$baseUrl/job';
   static const String createJob = '$baseUrl/job';
   static const String getJobById = '$baseUrl/job/<id>';
+  static const String jobReceiptPdf =
+      'https://receipt.repaircms.com/api/v1/receipt/job-receipt/<id>';
 
   static const String completeUserJob = '$baseUrl/job/user/complete/<id>';
   static const String jobFileUpload =

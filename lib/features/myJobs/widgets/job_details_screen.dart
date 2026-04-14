@@ -386,7 +386,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => StatefulBuilder(
-        builder: (ctx, ss) => CupertinoActionSheet(
+        builder: (ctx, ss) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: CupertinoActionSheet(
           title: Text(
             'Set Job Complete',
             style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
@@ -447,6 +449,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             onPressed: () => Navigator.pop(ctx),
             child: Text('Cancel', style: TextStyle(fontSize: 17.sp)),
           ),
+        ),
         ),
       ),
     );
@@ -515,6 +518,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 email: storage.read('email'),
                 notes: 'move to trash',
                 sendNotification: true,
+                currentJob: widget.job,
               );
             },
             child: Text(
@@ -535,6 +539,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       email: storage.read('email'),
       notes: 'Device is in progress',
       sendNotification: true,
+      currentJob: widget.job,
     );
   }
 
