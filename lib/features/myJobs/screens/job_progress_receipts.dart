@@ -160,6 +160,7 @@ class _JobProgressReceiptsScreenState extends State<JobProgressReceiptsScreen> {
         receiptFooter: job.data?.receiptFooter != null
             ? job_booking.ReceiptFooter(
                 companyLogo: job.data!.receiptFooter!.companyLogo ?? '',
+                registrationNum: job.data!.receiptFooter!.registrationNum ?? '',
                 companyLogoURL: job.data!.receiptFooter!.companyLogoURL ?? '',
                 address: job_booking.CompanyAddress(
                   companyName:

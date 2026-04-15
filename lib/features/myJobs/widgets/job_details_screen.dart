@@ -849,6 +849,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             ? null
             : job_booking.ReceiptFooter(
                 companyLogo: job.data!.receiptFooter!.companyLogo ?? '',
+                registrationNum: job.data!.receiptFooter!.registrationNum ?? '',
                 companyLogoURL: job.data!.receiptFooter!.companyLogoURL ?? '',
                 address: job_booking.CompanyAddress(
                   companyName: job.data!.receiptFooter!.address?.companyName ?? '',
@@ -868,6 +869,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                   bankName: job.data!.receiptFooter!.bank?.bankName ?? '',
                   iban: job.data!.receiptFooter!.bank?.iban ?? '',
                   bic: job.data!.receiptFooter!.bank?.bic ?? '',
+                  taxId: job.data!.receiptFooter!.bank?.taxId ?? '',
+                  vatId: job.data!.receiptFooter!.bank?.vatId ?? '',
+
                 ),
               ),
         customerDetails: job.data?.customerDetails == null

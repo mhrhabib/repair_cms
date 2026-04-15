@@ -1,3 +1,4 @@
+
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -15,7 +16,6 @@ import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/core/services/file_service.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:io';
 
 import 'package:solar_icons/solar_icons.dart';
@@ -201,6 +201,15 @@ class ReceiptScreen extends StatelessWidget {
         data is Map<String, dynamic> ? data['base64'] as String? : null;
     if (base64Str == null || base64Str.isEmpty) {
       throw Exception('Receipt response missing base64 PDF');
+    }
+
+    const int chunkSize = 800;
+    for (int i = 0; i < base64Str.length; i += chunkSize) {
+      final end = (i + chunkSize < base64Str.length)
+          ? i + chunkSize
+          : base64Str.length;
+      // ignore: avoid_print
+      print('receipt.base64[$i-$end]: ${base64Str.substring(i, end)}');
     }
 
     final normalized =

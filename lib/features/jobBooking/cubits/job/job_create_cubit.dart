@@ -13,6 +13,7 @@ class JobCreateCubit extends Cubit<JobCreateState> {
 
     try {
       debugPrint('🚀 [JobCubit] Starting job creation...');
+      debugPrint('📋 [JobCubit] Request data: ${request.toJson()}');
       final response = await jobRepository.createJob(request: request);
 
       debugPrint('✅ [JobCubit] Job created successfully');

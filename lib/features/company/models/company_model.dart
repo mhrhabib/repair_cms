@@ -273,6 +273,7 @@ class CompanyTaxDetail {
   final String sId;
   final String registrationNum;
   final String uidTaxId;
+  final String taxId;
   final String taxIdentification;
   final String defaultTax;
   final String ceo;
@@ -284,6 +285,7 @@ class CompanyTaxDetail {
     required this.sId,
     required this.registrationNum,
     required this.uidTaxId,
+    required this.taxId,
     required this.taxIdentification,
     required this.defaultTax,
     required this.ceo,
@@ -297,6 +299,7 @@ class CompanyTaxDetail {
       sId: json['_id'] ?? '',
       registrationNum: json['registrationNum'] ?? '',
       uidTaxId: json['uidTaxId'] ?? '',
+      taxId: json['taxId'] ?? '',
       taxIdentification: json['taxIdentification'] ?? '',
       defaultTax: json['default'] ?? '',
       ceo: json['ceo'] ?? '',
@@ -311,6 +314,7 @@ class CompanyTaxDetail {
       '_id': sId,
       'registrationNum': registrationNum,
       'uidTaxId': uidTaxId,
+      'taxId': taxId,
       'taxIdentification': taxIdentification,
       'default': defaultTax,
       'ceo': ceo,

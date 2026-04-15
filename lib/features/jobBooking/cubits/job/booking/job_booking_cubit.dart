@@ -95,11 +95,13 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           salutationHTMLmarkup: salutationHTMLmarkup, // From receipt data
           termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup, // From receipt data
           receiptFooter: ReceiptFooter(
+
             companyLogo: "",
+            registrationNum: "",
             companyLogoURL: "",
             address: CompanyAddress(companyName: "", street: "", num: "", zip: "", city: "", country: ""),
             contact: CompanyContact(ceo: "", telephone: "", email: "", website: ""),
-            bank: BankDetails(bankName: "", iban: "", bic: ""),
+            bank: BankDetails(bankName: "", iban: "", bic: "", taxId: "", vatId: ""),
           ),
           printOption: "A4 Receipt",
           emailConfirmation: true,
@@ -811,17 +813,24 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           ? companyModel.companyBankDetail![0]
           : null;
 
+      final companyTaxId = companyTax?.taxId ?? '';
+      final companyVatId = companyTax?.uidTaxId ?? '';
+      final registrationNum = companyTax?.registrationNum ?? '';
+
       final bank = BankDetails(
         bankName: companyBank?.bankName ?? '',
         iban: companyBank?.iban ?? '',
         bic: companyBank?.bic ?? '',
+        taxId: companyTaxId,
+        vatId: companyVatId,
       );
       debugPrint('🏦 [JobBookingCubit] Bank - Name: ${bank.bankName}, IBAN: ${bank.iban}, BIC: ${bank.bic}');
 
       // Create updated receipt footer
       final updatedReceiptFooter = ReceiptFooter(
-        companyLogo: '', // Empty as it's stored in URL
-        companyLogoURL: companyLogoURL,
+        companyLogo: companyLogoURL, // Empty as it's stored in URL
+        registrationNum: registrationNum, // Empty as it's stored in the company model
+        companyLogoURL: '',
         address: address,
         contact: contact,
         bank: bank,
