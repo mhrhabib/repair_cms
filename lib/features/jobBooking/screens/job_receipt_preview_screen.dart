@@ -393,7 +393,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
   Future<Uint8List> _fetchReceiptPdfBytes(String jobId) async {
     final url = ApiEndpoints.jobReceiptPdf.replaceAll('<id>', jobId);
-    final dio.Response response = await BaseClient.post(url: url);
+    final dio.Response response = await BaseClient.post(url: url, payload: {});
 
     if (response.statusCode != 200) {
       throw Exception(

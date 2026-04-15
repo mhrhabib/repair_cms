@@ -402,18 +402,20 @@ class CustomerDetails {
 class CustomerAddress {
   final String? id;
   final String? street;
+  final String? address2;
   final String? no;
   final String? zip;
   final String? city;
   final String? state;
   final String? country;
 
-  CustomerAddress({this.id, this.street, this.no, this.zip, this.city, this.state, this.country});
+  CustomerAddress({this.id, this.street, this.address2, this.no, this.zip, this.city, this.state, this.country});
 
   factory CustomerAddress.fromJson(Map<String, dynamic> json) {
     return CustomerAddress(
       id: json['_id'],
       street: json['street'] ?? '',
+      address2: json['address2'] ?? '',
       // no: json['no'] ?? '',
       zip: json['zip'] ?? '',
       city: json['city'] ?? '',
@@ -426,6 +428,7 @@ class CustomerAddress {
     return {
       if (id != null) '_id': id,
       'street': street,
+      'address2': address2,
       // 'no': no,
       'zip': zip,
       'city': city,
@@ -437,6 +440,7 @@ class CustomerAddress {
   CustomerAddress copyWith({
     String? id,
     String? street,
+    String? address2,
     // String? no,
     String? zip,
     String? city,
@@ -446,6 +450,7 @@ class CustomerAddress {
     return CustomerAddress(
       id: id ?? this.id,
       street: street ?? this.street,
+      address2: address2 ?? this.address2,
       // no: no ?? this.no,
       zip: zip ?? this.zip,
       city: city ?? this.city,

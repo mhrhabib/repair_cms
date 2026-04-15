@@ -118,7 +118,7 @@ class ReceiptScreen extends StatelessWidget {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
-      final dio.Response response = await BaseClient.post(url: url);
+      final dio.Response response = await BaseClient.post(url: url, payload: {});
       debugPrint('🧪 [ReceiptApiTest] status=${response.statusCode}');
       debugPrint('🧪 [ReceiptApiTest] headers=${response.headers.map}');
 
@@ -179,7 +179,7 @@ class ReceiptScreen extends StatelessWidget {
   /// Fetch job receipt PDF bytes from the receipt API.
   Future<Uint8List> _fetchReceiptPdfBytes(String jobId) async {
     final url = ApiEndpoints.jobReceiptPdf.replaceAll('<id>', jobId);
-    final dio.Response response = await BaseClient.post(url: url);
+    final dio.Response response = await BaseClient.post(url: url, payload: {});
 
     if (response.statusCode != 200) {
       throw Exception(

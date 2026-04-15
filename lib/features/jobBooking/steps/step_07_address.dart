@@ -31,6 +31,7 @@ class StepAddressWidget extends StatefulWidget {
 
 class StepAddressWidgetState extends State<StepAddressWidget> {
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _address2Controller = TextEditingController();
   // final TextEditingController _houseNumberController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _postalCodeController = TextEditingController();
@@ -46,6 +47,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   // Original values to detect changes
   String _originalStreet = '';
+  String _originalAddress2 = '';
   // String _originalHouseNumber = '';
   String _originalCity = '';
   String _originalPostalCode = '';
@@ -109,6 +111,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     void checkForChanges() {
       final hasChanges =
           _addressController.text != _originalStreet ||
+          _address2Controller.text != _originalAddress2 ||
           // _houseNumberController.text != _originalHouseNumber ||
           _cityController.text != _originalCity ||
           _postalCodeController.text != _originalPostalCode ||
@@ -122,6 +125,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     }
 
     _addressController.addListener(checkForChanges);
+    _address2Controller.addListener(checkForChanges);
     // _houseNumberController.addListener(checkForChanges);
     _cityController.addListener(checkForChanges);
     _postalCodeController.addListener(checkForChanges);
@@ -136,6 +140,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     );
     if (shippingAddress != null) {
       _addressController.text = shippingAddress.street ?? '';
+      _address2Controller.text = shippingAddress.address2 ?? '';
       // _houseNumberController.text = shippingAddress.iV?.toString() ?? '';
       _cityController.text = shippingAddress.city ?? '';
       _postalCodeController.text = shippingAddress.zip ?? '';
@@ -151,6 +156,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     if (state is JobBookingData) {
       final sa = state.contact.shippingAddress;
       _addressController.text = sa.street ?? '';
+      _address2Controller.text = sa.address2 ?? '';
       // _houseNumberController.text = sa.no ?? '';
       _cityController.text = sa.city ?? '';
       _postalCodeController.text = sa.zip ?? '';
@@ -162,6 +168,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
 
   void _syncOriginals() {
     _originalStreet = _addressController.text;
+    _originalAddress2 = _address2Controller.text;
     // _originalHouseNumber = _houseNumberController.text;
     _originalCity = _cityController.text;
     _originalPostalCode = _postalCodeController.text;
@@ -217,6 +224,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     final address = CustomerAddress(
       id: "",
       street: _addressController.text,
+      address2: _address2Controller.text,
       // no: _houseNumberController.text,
       city: _cityController.text,
       zip: _postalCodeController.text,
@@ -251,6 +259,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
         (context.read<JobBookingCubit>().state as JobBookingData).contact;
     final addressData = {
       "street": _addressController.text,
+      "address2": _address2Controller.text,
       // "no": _houseNumberController.text,
       "city": _cityController.text,
       "zip": _postalCodeController.text,
@@ -296,6 +305,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
       // Often the API determines insert vs update based on the presence of _id or matching customerId.
       "_id": widget.selectedProfile!.shippingAddresses?.firstOrNull?.sId ?? "",
       "street": _addressController.text,
+      "address2": _address2Controller.text,
       "city": _cityController.text,
       "zip": _postalCodeController.text,
       "state": _provinceController.text,
@@ -307,6 +317,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
     final billingData = {
       "_id": widget.selectedProfile!.billingAddresses?.firstOrNull?.sId ?? "",
       "street": _addressController.text,
+      "address2": _address2Controller.text,
       "city": _cityController.text,
       "zip": _postalCodeController.text,
       "state": _provinceController.text,
@@ -410,6 +421,12 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
             ],
           ),
           SizedBox(height: 24.h),
+          _buildUnderlineField(
+            _address2Controller,
+            'Additional Address Information',
+            'Apartment, suite, unit, etc.',
+          ),
+          SizedBox(height: 24.h),
           _buildUnderlineField(_cityController, 'City*', 'City name'),
           SizedBox(height: 24.h),
           _buildUnderlineField(
@@ -465,6 +482,7 @@ class StepAddressWidgetState extends State<StepAddressWidget> {
   @override
   void dispose() {
     _addressController.dispose();
+    _address2Controller.dispose();
     // _houseNumberController.dispose();
     _cityController.dispose();
     _postalCodeController.dispose();
