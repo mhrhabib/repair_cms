@@ -165,50 +165,52 @@ class _PrinterConfigurationFormState extends State<PrinterConfigurationForm> {
           ),
           SizedBox(height: 16.h),
 
-          // Model
-          _buildLabel('Printer Model'),
-          CustomDropdownSearch<String>(
-            controller: _modelController,
-            items: widget.brandModels[_selectedBrand] ?? [],
-            textFieldConfiguration: TextFieldConfiguration(
+          // Model (hidden for A4 printers)
+          if (widget.printerType != 'a4') ...[
+            _buildLabel('Printer Model'),
+            CustomDropdownSearch<String>(
               controller: _modelController,
-              style: GoogleFonts.roboto(fontSize: 16.sp, color: AppColors.fontMainColor),
-              decoration: InputDecoration(
-                border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue), // You can customize this
+              items: widget.brandModels[_selectedBrand] ?? [],
+              textFieldConfiguration: TextFieldConfiguration(
+                controller: _modelController,
+                style: GoogleFonts.roboto(fontSize: 16.sp, color: AppColors.fontMainColor),
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue), // You can customize this
+                  ),
+                  hintText: 'Select Model',
+                  hintStyle: GoogleFonts.roboto(fontSize: 16.sp, color: Color(0xFFB2B5BE)),
+                  suffixIcon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.fontMainColor, size: 32),
                 ),
-                hintText: 'Select Model',
-                hintStyle: GoogleFonts.roboto(fontSize: 16.sp, color: Color(0xFFB2B5BE)),
-                suffixIcon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.fontMainColor, size: 32),
               ),
+              hintText: 'Select Model',
+              suggestionsCallback: (query) {
+                final models = widget.brandModels[_selectedBrand] ?? [];
+                return models.where((m) => m.toLowerCase().contains(query.toLowerCase())).toList();
+              },
+              itemBuilder: (context, model) => ListTile(title: Text(model, style: AppTypography.sfProText15)),
+              onSuggestionSelected: (model) {
+                setState(() {
+                  _selectedModel = model;
+                  _modelController.text = model;
+                  if (widget.printerType == 'label' && _selectedBrand == 'Brother') {
+                    if (model.startsWith('TD-4')) {
+                      _selectedLabelSize = LabelSize(width: 100, height: 150, name: '100x150 (TD-4)');
+                    } else if (model.startsWith('TD-2')) {
+                      _selectedLabelSize = LabelSize(width: 50, height: 26, name: '50x26 (TD-2)');
+                    }
+                    if (_selectedLabelSize != null) {
+                      _labelSizeController.text =
+                          '${_selectedLabelSize!.name} (${_selectedLabelSize!.width}×${_selectedLabelSize!.height} mm)';
+                    }
+                  }
+                });
+              },
             ),
-            hintText: 'Select Model',
-            suggestionsCallback: (query) {
-              final models = widget.brandModels[_selectedBrand] ?? [];
-              return models.where((m) => m.toLowerCase().contains(query.toLowerCase())).toList();
-            },
-            itemBuilder: (context, model) => ListTile(title: Text(model, style: AppTypography.sfProText15)),
-            onSuggestionSelected: (model) {
-              setState(() {
-                _selectedModel = model;
-                _modelController.text = model;
-                if (widget.printerType == 'label' && _selectedBrand == 'Brother') {
-                  if (model.startsWith('TD-4')) {
-                    _selectedLabelSize = LabelSize(width: 100, height: 150, name: '100x150 (TD-4)');
-                  } else if (model.startsWith('TD-2')) {
-                    _selectedLabelSize = LabelSize(width: 50, height: 26, name: '50x26 (TD-2)');
-                  }
-                  if (_selectedLabelSize != null) {
-                    _labelSizeController.text =
-                        '${_selectedLabelSize!.name} (${_selectedLabelSize!.width}×${_selectedLabelSize!.height} mm)';
-                  }
-                }
-              });
-            },
-          ),
-          SizedBox(height: 16.h),
+            SizedBox(height: 16.h),
+          ],
 
           // Paper Width (thermal only)
           if (widget.printerType == 'thermal') ...[

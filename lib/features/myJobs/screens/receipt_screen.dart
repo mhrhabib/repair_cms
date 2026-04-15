@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
@@ -98,6 +99,81 @@ class ReceiptScreen extends StatelessWidget {
         onPrint: (printer) => _printPdfBytes(context, pdfBytes, printer),
       ),
     );
+  }
+
+  /// Call the receipt API and dump the response to the console for debugging.
+  /// Does NOT send anything to a printer — use the print button for that.
+  Future<void> _testReceiptApi(BuildContext context) async {
+    final jobId = job.data?.sId;
+    if (jobId == null || jobId.isEmpty) {
+      SnackbarDemo(
+        message: 'Invalid job: missing job ID',
+      ).showCustomSnackbar(context);
+      return;
+    }
+
+    final url = ApiEndpoints.jobReceiptPdf.replaceAll('<id>', jobId);
+    debugPrint('🧪 [ReceiptApiTest] POST $url');
+
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    try {
+      final dio.Response response = await BaseClient.post(url: url);
+      debugPrint('🧪 [ReceiptApiTest] status=${response.statusCode}');
+      debugPrint('🧪 [ReceiptApiTest] headers=${response.headers.map}');
+
+      final dynamic raw = response.data;
+      debugPrint('🧪 [ReceiptApiTest] body type=${raw.runtimeType}');
+
+      final Map<String, dynamic> body = raw is String
+          ? jsonDecode(raw) as Map<String, dynamic>
+          : raw as Map<String, dynamic>;
+
+      debugPrint('🧪 [ReceiptApiTest] body keys=${body.keys.toList()}');
+      debugPrint('🧪 [ReceiptApiTest] success=${body['success']}');
+      debugPrint('🧪 [ReceiptApiTest] message=${body['message']}');
+
+      final data = body['data'];
+      debugPrint('🧪 [ReceiptApiTest] data type=${data.runtimeType}');
+
+      if (data is Map<String, dynamic>) {
+        debugPrint('🧪 [ReceiptApiTest] data keys=${data.keys.toList()}');
+        final base64Str = data['base64'] as String?;
+        if (base64Str == null || base64Str.isEmpty) {
+          debugPrint('🧪 [ReceiptApiTest] ⚠ base64 missing or empty');
+        } else {
+          final normalized = base64Str.contains(',')
+              ? base64Str.split(',').last
+              : base64Str;
+          debugPrint(
+            '🧪 [ReceiptApiTest] base64 raw length=${base64Str.length}, normalized length=${normalized.length}',
+          );
+          debugPrint(
+            '🧪 [ReceiptApiTest] base64 prefix=${base64Str.substring(0, base64Str.length.clamp(0, 80))}',
+          );
+          try {
+            final bytes = base64Decode(normalized);
+            debugPrint(
+              '🧪 [ReceiptApiTest] decoded PDF bytes=${bytes.length} (first 4=${bytes.take(4).toList()})',
+            );
+          } catch (e) {
+            debugPrint('🧪 [ReceiptApiTest] ❌ base64 decode failed: $e');
+          }
+        }
+      } else {
+        debugPrint('🧪 [ReceiptApiTest] data preview=$data');
+      }
+
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('API test complete — check console')),
+      );
+    } catch (e, st) {
+      debugPrint('🧪 [ReceiptApiTest] ❌ error: $e');
+      debugPrint('$st');
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('API test error: $e')),
+      );
+    }
   }
 
   /// Fetch job receipt PDF bytes from the receipt API.
@@ -288,11 +364,23 @@ class ReceiptScreen extends StatelessWidget {
                       style: AppTypography.sfProHeadLineTextStyle22,
                     ),
                   ),
-                  CustomNavButton(
-                    onPressed: () => _showPrinterSelection(context),
-                    icon: SolarIconsOutline.printer,
-                    iconColor: AppColors.fontSecondaryColor,
-                    size: 24.r,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (kDebugMode)  CustomNavButton(
+                        onPressed: () => _testReceiptApi(context),
+                        icon: SolarIconsOutline.bug,
+                        iconColor: AppColors.fontSecondaryColor,
+                        size: 24.r,
+                      ),
+                      SizedBox(width: 8.w),
+                      CustomNavButton(
+                        onPressed: () => _showPrinterSelection(context),
+                        icon: SolarIconsOutline.printer,
+                        iconColor: AppColors.fontSecondaryColor,
+                        size: 24.r,
+                      ),
+                    ],
                   ),
                 ],
               ),

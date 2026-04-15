@@ -1,18 +1,23 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/helpers/snakbar_demo.dart';
 import '../models/printer_config_model.dart';
 import '../service/printer_settings_service.dart';
-import '../service/printer_service_factory.dart';
 import '../widgets/wifi_printer_scanner.dart';
 import '../widgets/printer_empty_state.dart';
 import '../widgets/printer_list_item.dart';
 import '../widgets/printer_configuration_form.dart';
+import '_test_pdf_base64.dart';
 
 class A4ReceiptPrinterScreen extends StatefulWidget {
   const A4ReceiptPrinterScreen({super.key});
@@ -32,15 +37,6 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
     'Brother',
     'Generic',
   ];
-
-  // Common models for each brand
-  final Map<String, List<String>> _brandModels = {
-    'HP': ['LaserJet Pro', 'OfficeJet Pro', 'Ink Advantage'],
-    'Canon': ['PIXMA G Series', 'imageCLASS', 'MAXIFY'],
-    'Epson': ['EcoTank', 'WorkForce', 'L-Series'],
-    'Brother': ['HL-Series', 'DCP-Series', 'MFC-Series'],
-    'Generic': ['Standard A4 Printer'],
-  };
 
   List<PrinterConfigModel> _savedPrinters = [];
   bool _isAdding = false;
@@ -74,9 +70,11 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
         _isAdding = false;
         _editingPrinter = null;
       });
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('❌ Failed to save A4 printer settings: $e');
+      debugPrint('$stack');
       SnackbarDemo(
-        message: '❌ Failed to save settings',
+        message: '❌ Failed to save settings: $e',
       ).showCustomSnackbar(context);
     } finally {
       setState(() => _isSaving = false);
@@ -144,6 +142,9 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
     );
   }
 
+  /// Decode the bundled test PDF (base64) and send it to the configured
+  /// printer. For raw/JetDirect/9100 protocols the bytes are streamed over a
+  /// TCP socket directly; otherwise we fall back to the system print dialog.
   Future<void> _testPrint(PrinterConfigModel config) async {
     if (config.ipAddress.isEmpty) {
       SnackbarDemo(
@@ -155,31 +156,56 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
     setState(() => _isPrinting = true);
 
     try {
-      final printerService = PrinterServiceFactory.getPrinterServiceForConfig(
-        config,
-      );
-      final result = await printerService.printThermalReceipt(
-        ipAddress: config.ipAddress,
-        text:
-            'A4 Test Print Content', // In a real scenario, this would be a PDF or formatted text
-        port: config.port ?? 9100,
-      );
+      final base64String = kTestPdfBase64.contains(',')
+          ? kTestPdfBase64.split(',').last
+          : kTestPdfBase64;
+      final Uint8List pdfBytes = base64Decode(base64String);
 
-      if (result.success) {
-        SnackbarDemo(
-          message: '✅ Test print successful!',
-        ).showCustomSnackbar(context);
+      final protocol = config.protocol.toLowerCase();
+      final isRawTcp = const {'raw', 'tcp', 'jetdirect', '9100'}.contains(protocol);
+
+      bool success = false;
+      if (isRawTcp) {
+        final port = config.port ?? 9100;
+        try {
+          final socket = await Socket.connect(
+            config.ipAddress,
+            port,
+            timeout: const Duration(seconds: 5),
+          );
+          socket.add(pdfBytes);
+          await socket.flush();
+          socket.destroy();
+          success = true;
+        } catch (e) {
+          debugPrint('❌ TCP send failed, falling back to system dialog: $e');
+          success = await Printing.layoutPdf(
+            onLayout: (_) async => pdfBytes,
+            name: 'a4_test_print.pdf',
+            format: PdfPageFormat.a4,
+          );
+        }
       } else {
-        SnackbarDemo(
-          message: '❌ Test print failed: ${result.message}',
-        ).showCustomSnackbar(context);
+        success = await Printing.layoutPdf(
+          onLayout: (_) async => pdfBytes,
+          name: 'a4_test_print.pdf',
+          format: PdfPageFormat.a4,
+        );
       }
+
+      if (!mounted) return;
+      SnackbarDemo(
+        message: success
+            ? '✅ Test PDF sent to printer!'
+            : '❌ Print cancelled',
+      ).showCustomSnackbar(context);
     } catch (e) {
+      if (!mounted) return;
       SnackbarDemo(
         message: '❌ Test print error: $e',
       ).showCustomSnackbar(context);
     } finally {
-      setState(() => _isPrinting = false);
+      if (mounted) setState(() => _isPrinting = false);
     }
   }
 
@@ -201,7 +227,7 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
                         printerType: 'a4',
                         initialConfig: _editingPrinter,
                         supportedBrands: _supportedBrands,
-                        brandModels: _brandModels,
+                        brandModels: const {},
                         onSave: _saveSettings,
                         onScan: _showWiFiScanner,
                         onTestPrint: _testPrint,

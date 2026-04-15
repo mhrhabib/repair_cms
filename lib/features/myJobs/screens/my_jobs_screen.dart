@@ -10,6 +10,9 @@ import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/job_list_response.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
+import 'package:repair_cms/features/myJobs/models/status_settings_model.dart';
+import 'package:repair_cms/features/myJobs/repository/job_repository.dart';
+import 'package:repair_cms/set_up_di.dart';
 import 'package:solar_icons/solar_icons.dart';
 
 class MyJobsScreen extends StatefulWidget {
@@ -39,6 +42,31 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   // Assignee options
   List<String> _assigneeOptions = ['None'];
   List<User> _assigneeUsers = [];
+
+  // Status options loaded from /settings-status/user/:id
+  List<StatusSetting> _apiStatuses = [];
+
+  // Hardcoded baseline statuses (kept in sync with status_screen.dart).
+  static const List<Map<String, String>> _initialStatuses = [
+    {'value': 'repair_in_progress', 'label': 'Repair in Progress'},
+    {'value': 'quotation_accepted', 'label': 'Quotation Accepted'},
+    {'value': 'rejected_quotes', 'label': 'Rejected Quotes'},
+    {'value': 'ready_to_return', 'label': 'Ready to Return'},
+    {'value': 'parts_not_available', 'label': 'Parts Not Available'},
+    {'value': 'booked', 'label': 'Booked'},
+  ];
+
+  /// Merged status list: hardcoded baseline + API statuses, deduped by slug.
+  List<Map<String, String>> get _availableStatuses {
+    final map = <String, Map<String, String>>{
+      for (final s in _initialStatuses) s['value']!: s,
+    };
+    for (final api in _apiStatuses) {
+      final slug = api.statusName.toLowerCase().trim().replaceAll(' ', '_');
+      map[slug] = {'value': slug, 'label': api.statusName};
+    }
+    return map.values.toList();
+  }
 
   @override
   void initState() {
@@ -73,7 +101,20 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadJobs();
       _fetchAssignees();
+      _fetchStatuses();
     });
+  }
+
+  Future<void> _fetchStatuses() async {
+    final userId = storage.read('userId');
+    if (userId == null) return;
+    try {
+      final response = await SetUpDI.getIt<JobRepository>().getStatusSettings(userId);
+      if (!mounted) return;
+      setState(() => _apiStatuses = response.status);
+    } catch (e) {
+      debugPrint('❌ Failed to fetch status settings: $e');
+    }
   }
 
   @override
@@ -477,31 +518,23 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
     String? backendStatus;
     if (_status != 'All') {
-      switch (_status) {
-        case 'Booked In':
-          backendStatus = 'booked';
-          break;
-        case 'In Progress':
-          backendStatus = 'in_progress';
-          break;
-        case 'Quote Accepted':
-          backendStatus = 'accepted_quotes';
-          break;
-        case 'Quote Rejected':
-          backendStatus = 'rejected_quotes';
-          break;
-        case 'Parts not available':
-          backendStatus = 'parts_not_available';
-          break;
-        case 'Ready To Return':
-          backendStatus = 'ready_to_return';
-          break;
-        case 'Completed':
-          backendStatus = 'completed';
-          break;
-        default:
-          backendStatus = _status;
-      }
+      // Legacy labels forwarded via route navigation (initialStatus) don't
+      // appear in _availableStatuses, so keep a small map for them.
+      const legacyMap = <String, String>{
+        'Booked In': 'booked',
+        'In Progress': 'in_progress',
+        'Quote Accepted': 'accepted_quotes',
+        'Quote Rejected': 'rejected_quotes',
+        'Parts not available': 'parts_not_available',
+        'Ready To Return': 'ready_to_return',
+        'Completed': 'completed',
+      };
+
+      final match = _availableStatuses.firstWhere(
+        (s) => s['label'] == _status,
+        orElse: () => const {},
+      );
+      backendStatus = match['value'] ?? legacyMap[_status] ?? _status;
     }
 
     String? backendDueDate;
@@ -1318,19 +1351,14 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   }
 
   void _showStatusOptions(BuildContext context, StateSetter setModalState) {
+    final options = <String>[
+      'All',
+      ..._availableStatuses.map((s) => s['label']!),
+    ];
     _showOptionsDialog(
       context,
       'Status',
-      [
-        'All',
-        'Booked In',
-        'In Progress',
-        'Quote Accepted',
-        'Quote Rejected',
-        'Parts not available',
-        'Ready To Return',
-        'Completed',
-      ],
+      options,
       _status,
       (value) {
         setState(() => _status = value);
