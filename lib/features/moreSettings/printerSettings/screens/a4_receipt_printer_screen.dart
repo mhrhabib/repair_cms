@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -142,17 +141,11 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
     );
   }
 
-  /// Decode the bundled test PDF (base64) and send it to the configured
-  /// printer. For raw/JetDirect/9100 protocols the bytes are streamed over a
-  /// TCP socket directly; otherwise we fall back to the system print dialog.
+  /// Decode the bundled test PDF (base64) and send it via the system print
+  /// dialog. A4 printers do NOT accept raw PDF bytes over TCP — doing so
+  /// crashes the printer firmware and causes a reboot. Always use
+  /// Printing.layoutPdf which properly renders & converts before sending.
   Future<void> _testPrint(PrinterConfigModel config) async {
-    if (config.ipAddress.isEmpty) {
-      SnackbarDemo(
-        message: 'Please enter IP address to test print',
-      ).showCustomSnackbar(context);
-      return;
-    }
-
     setState(() => _isPrinting = true);
 
     try {
@@ -161,37 +154,11 @@ class _A4ReceiptPrinterScreenState extends State<A4ReceiptPrinterScreen> {
           : kTestPdfBase64;
       final Uint8List pdfBytes = base64Decode(base64String);
 
-      final protocol = config.protocol.toLowerCase();
-      final isRawTcp = const {'raw', 'tcp', 'jetdirect', '9100'}.contains(protocol);
-
-      bool success = false;
-      if (isRawTcp) {
-        final port = config.port ?? 9100;
-        try {
-          final socket = await Socket.connect(
-            config.ipAddress,
-            port,
-            timeout: const Duration(seconds: 5),
-          );
-          socket.add(pdfBytes);
-          await socket.flush();
-          socket.destroy();
-          success = true;
-        } catch (e) {
-          debugPrint('❌ TCP send failed, falling back to system dialog: $e');
-          success = await Printing.layoutPdf(
-            onLayout: (_) async => pdfBytes,
-            name: 'a4_test_print.pdf',
-            format: PdfPageFormat.a4,
-          );
-        }
-      } else {
-        success = await Printing.layoutPdf(
-          onLayout: (_) async => pdfBytes,
-          name: 'a4_test_print.pdf',
-          format: PdfPageFormat.a4,
-        );
-      }
+      final success = await Printing.layoutPdf(
+        onLayout: (_) async => pdfBytes,
+        name: 'a4_test_print.pdf',
+        format: PdfPageFormat.a4,
+      );
 
       if (!mounted) return;
       SnackbarDemo(

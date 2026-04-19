@@ -16,7 +16,6 @@ import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/core/services/file_service.dart';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:solar_icons/solar_icons.dart';
 
@@ -236,34 +235,13 @@ class ReceiptScreen extends StatelessWidget {
       bool success = false;
       final pdfName = 'Job_Receipt_${job.data?.jobNo ?? jobId}.pdf';
 
-      if (['raw', 'tcp', 'jetdirect', '9100']
-          .contains(printer.protocol.toLowerCase())) {
-        final port = printer.port ?? 9100;
-        try {
-          final socket = await Socket.connect(
-            printer.ipAddress,
-            port,
-            timeout: const Duration(seconds: 5),
-          );
-          socket.add(pdfBytes);
-          await socket.flush();
-          socket.destroy();
-          success = true;
-        } catch (e) {
-          debugPrint('❌ TCP send failed, falling back to system dialog: $e');
-          success = await Printing.layoutPdf(
-            onLayout: (_) async => pdfBytes,
-            name: pdfName,
-            format: PdfPageFormat.a4,
-          );
-        }
-      } else {
-        success = await Printing.layoutPdf(
-          onLayout: (_) async => pdfBytes,
-          name: pdfName,
-          format: PdfPageFormat.a4,
-        );
-      }
+      // Always use system print dialog for A4 printers.
+      // Sending raw PDF bytes over TCP crashes A4 printer firmware.
+      success = await Printing.layoutPdf(
+        onLayout: (_) async => pdfBytes,
+        name: pdfName,
+        format: PdfPageFormat.a4,
+      );
 
       try {
         navigator.pop();

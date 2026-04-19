@@ -1,14 +1,26 @@
+import 'dart:convert';
+import 'dart:io' as io;
 import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:mime/mime.dart';
+import 'package:uuid/uuid.dart';
 import 'package:repair_cms/core/app_exports.dart';
+import 'package:repair_cms/core/base/base_client.dart';
+import 'package:repair_cms/core/helpers/api_endpoints.dart';
+import 'package:repair_cms/core/services/file_service.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/messeges/cubits/message_cubit.dart';
 import 'package:repair_cms/features/messeges/models/conversation_model.dart';
 import 'package:repair_cms/features/messeges/models/message_model.dart';
 import 'package:repair_cms/features/messeges/models/sub_user_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:repair_cms/features/myJobs/widgets/files_screen.dart'
+    show FullscreenImageViewer;
 
 class ChatConversationScreen extends StatefulWidget {
   final String conversationId;
@@ -25,17 +37,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _messageFocusNode = FocusNode();
+  final ImagePicker _imagePicker = ImagePicker();
   final storage = GetStorage();
   String? _loggedUserEmail;
   String? _fallbackRecipientEmail;
   String? _fallbackRecipientName;
   bool _isInternalMode = false;
+  bool _isUploading = false;
   final List<String> _mentionIds = [];
   String _searchQuery = '';
   bool _showMentionSuggestions = false;
   int _mentionStartIndex = -1;
   List<SubUser> _subUsers = [];
   List<Conversation> _messages = [];
+  final Map<String, Future<String>> _imageUrlCache = {};
   @override
   void initState() {
     super.initState();
@@ -571,7 +586,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   Widget _buildMessageBubble(Conversation message, bool isMe) {
     final messageText = message.message?.message ?? '';
     final messageType = message.message?.messageType ?? 'standard';
-    final hasAttachments = false;
+    final attachments = message.message?.attachment;
+    final hasAttachment = attachments != null && attachments.isNotEmpty;
+    final fileUrl = message.message?.file;
+    final hasFile = (fileUrl != null && fileUrl.isNotEmpty) || hasAttachment;
     final hasQuotation = messageType == 'quotation' && message.message?.quotation != null;
     final hasComment = message.comment != null || (message.comments != null && message.comments!.isNotEmpty);
 
@@ -619,8 +637,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     _buildCommentMessage(message.comment!),
                 ] else if (hasQuotation)
                   _buildQuotationCard(message.message!.quotation!, isMe)
+                else if (hasFile)
+                  _buildFileMessage(
+                    hasAttachment ? attachments.first.file ?? '' : fileUrl!,
+                    hasAttachment ? (attachments.first.fileName ?? messageText) : messageText,
+                    message,
+                    isMe,
+                  )
                 else
-                  _buildStandardMessage(messageText, messageType, hasAttachments, message, isMe),
+                  _buildStandardMessage(messageText, messageType, message, isMe),
               ],
             ),
           ),
@@ -643,10 +668,206 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
+  /// Resolves the file path to a viewable URL and opens it.
+  /// Images open in the FullscreenImageViewer (from files_screen.dart),
+  /// other files open in an external browser/app.
+  Future<void> _openFile(String filePath) async {
+    try {
+      final url = await FileService.getImageUrlAsync(filePath);
+      if (url.isEmpty) {
+        if (mounted) {
+          SnackbarDemo(message: 'Could not load file').showCustomSnackbar(context);
+        }
+        return;
+      }
+
+      if (!mounted) return;
+
+      final ext = filePath.split('.').last.toLowerCase();
+      final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext);
+
+      if (isImage) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FullscreenImageViewer(imageUrl: url),
+          ),
+        );
+      } else {
+        final uri = Uri.tryParse(url);
+        if (uri != null) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error opening file: $e');
+      if (mounted) {
+        SnackbarDemo(message: 'Failed to open file').showCustomSnackbar(context);
+      }
+    }
+  }
+
+  Widget _buildFileMessage(
+    String fileUrl,
+    String messageText,
+    Conversation message,
+    bool isMe,
+  ) {
+    final timestamp = _formatTimeOnly(_parseDateTime(message.createdAt));
+    final ext = fileUrl.split('.').last.toLowerCase();
+    final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext);
+    final displayName = messageText.isNotEmpty ? messageText : fileUrl.split('/').last;
+
+    return GestureDetector(
+      onTap: () => _openFile(fileUrl),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isMe ? const Color(0xFFDFEEFF) : const Color(0xFFE7E8EC),
+            borderRadius: BorderRadius.only(
+              topLeft: isMe ? const Radius.circular(16) : Radius.zero,
+              topRight: isMe ? Radius.zero : const Radius.circular(16),
+              bottomLeft: const Radius.circular(16),
+              bottomRight: const Radius.circular(16),
+            ),
+            border: Border.all(color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9), width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isImage)
+                // Use FutureBuilder to resolve URL for image display
+                FutureBuilder<String>(
+                  future: _imageUrlCache.putIfAbsent(
+                    fileUrl,
+                    () => FileService.getImageUrlAsync(fileUrl),
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Container(
+                        height: 150,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      );
+                    }
+                    final resolvedUrl = snapshot.data ?? '';
+                    if (resolvedUrl.isEmpty) {
+                      return Container(
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
+                      );
+                    }
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        resolvedUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 120,
+                          color: Colors.grey[200],
+                          child: const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
+                        ),
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return Container(
+                            height: 150,
+                            color: Colors.grey[100],
+                            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        ext == 'pdf'
+                            ? Icons.picture_as_pdf
+                            : ext == 'doc' || ext == 'docx'
+                                ? Icons.description
+                                : Icons.insert_drive_file,
+                        color: ext == 'pdf' ? Colors.red : Colors.grey[600],
+                        size: 32,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Tap to open',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.download_rounded, color: AppColors.primary, size: 24.sp),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Spacer(),
+                    Text(
+                      timestamp,
+                      style: TextStyle(color: AppColors.fontSecondaryColor.withValues(alpha: 0.6), fontSize: 11.sp),
+                    ),
+                    if (isMe) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        message.seen == true ? Icons.done_all : Icons.done,
+                        size: 14.sp,
+                        color: message.seen == true
+                            ? AppColors.primary
+                            : AppColors.fontSecondaryColor.withValues(alpha: 0.4),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildStandardMessage(
     String messageText,
     String messageType,
-    bool hasAttachments,
     Conversation message,
     bool isMe,
   ) {
@@ -1089,7 +1310,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         children: [
           // Separate circular add button
           GestureDetector(
-            onTap: _showAttachmentOptions,
+            onTap: _isUploading ? null : _showAttachmentOptions,
             child: Container(
               width: 44.r,
               height: 44.r,
@@ -1100,7 +1321,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 3)),
                 ],
               ),
-              child: Icon(Icons.add, color: AppColors.fontMainColor.withValues(alpha: 0.7), size: 24.sp),
+              child: _isUploading
+                  ? Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    )
+                  : Icon(Icons.add, color: AppColors.fontMainColor.withValues(alpha: 0.7), size: 24.sp),
             ),
           ),
           const SizedBox(width: 12),
@@ -1186,6 +1412,224 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
+  Future<void> _uploadAndSendFile(String filePath, String fileName) async {
+    if (!mounted) return;
+
+    final userId = storage.read('userId') ?? '';
+    if (userId.isEmpty) {
+      SnackbarDemo(message: 'User not found').showCustomSnackbar(context);
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      final file = io.File(filePath);
+      final bytes = await file.readAsBytes();
+      final fileSize = bytes.length;
+      final mimeType = lookupMimeType(fileName) ?? 'application/octet-stream';
+      final base64File = base64Encode(bytes);
+      final fileId = const Uuid().v4();
+      final base64String = 'data:$mimeType;base64,$base64File';
+
+      final uploadUrl =
+          '${ApiEndpoints.fileUplaodUrl}$userId/job-message/${widget.conversationId}';
+
+      debugPrint('📤 Uploading file: $fileName ($fileSize bytes) to $uploadUrl');
+
+      final uploadPayload = {
+        'file': base64String,
+        'fileName': fileName,
+        'id': fileId,
+        'size': fileSize,
+      };
+
+      final response = await BaseClient.post(
+        url: uploadUrl,
+        payload: uploadPayload,
+      );
+
+      if (response.statusCode != 201 && response.statusCode != 200) {
+        throw Exception('Upload failed: ${response.statusCode}');
+      }
+
+      // The API returns the uploaded file path
+      final uploadedFilePath =
+          response.data is String ? response.data as String : null;
+
+      debugPrint('✅ File uploaded: $uploadedFilePath');
+
+      if (!mounted) return;
+
+      // Send a message via socket with the file in attachment array
+      // matching the web app pattern: messageType "attachment"
+      final userEmail = storage.read('email') ?? '';
+      final userName = storage.read('fullName') ?? '';
+
+      // Find the other participant
+      SenderReceiver? otherParticipant;
+      for (var message in _messages) {
+        if (message.sender?.email != null &&
+            message.sender?.email != userEmail) {
+          otherParticipant = SenderReceiver(
+            email: message.sender!.email,
+            name: message.sender!.name,
+          );
+          break;
+        }
+        if (message.receiver?.email != null &&
+            message.receiver?.email != userEmail) {
+          otherParticipant = SenderReceiver(
+            email: message.receiver!.email,
+            name: message.receiver!.name,
+          );
+          break;
+        }
+      }
+
+      otherParticipant ??= _fallbackRecipientEmail != null
+          ? SenderReceiver(
+              email: _fallbackRecipientEmail!,
+              name: _fallbackRecipientName ?? 'User',
+            )
+          : null;
+
+      if (otherParticipant == null) {
+        SnackbarDemo(message: 'Cannot determine recipient')
+            .showCustomSnackbar(context);
+        return;
+      }
+
+      // Build the socket payload with attachment in the message object
+      final attachmentData = {
+        'file': uploadedFilePath,
+        'id': fileId,
+        'fileName': fileName,
+        'size': fileSize,
+      };
+
+      final socketPayload = {
+        'sender': {'email': userEmail, 'name': userName},
+        'receiver': {
+          'email': otherParticipant.email,
+          'name': otherParticipant.name,
+        },
+        'message': {
+          'message': '',
+          'attachment': [attachmentData],
+          'messageType': 'attachment',
+          'jobId': widget.conversationId,
+        },
+        'seen': false,
+        'conversationId': widget.conversationId,
+        'userId': userId,
+        'participants':
+            '$userEmail-${widget.conversationId}-${otherParticipant.email}',
+        'loggedUserId': userId,
+      };
+
+      context.read<MessageCubit>().socketService.sendMessage(socketPayload);
+
+      // Add to cubit state for proper display (same pattern as text messages)
+      final localConversation = Conversation(
+        sender: Sender(email: userEmail, name: userName),
+        receiver: Sender(
+          email: otherParticipant.email,
+          name: otherParticipant.name,
+        ),
+        message: Message(
+          message: '',
+          messageType: 'attachment',
+          jobId: widget.conversationId,
+          attachment: [
+            MessageAttachment(
+              file: uploadedFilePath,
+              id: fileId,
+              fileName: fileName,
+              size: fileSize,
+            ),
+          ],
+        ),
+        seen: false,
+        conversationId: widget.conversationId,
+        createdAt: DateTime.now().toIso8601String(),
+      );
+
+      context.read<MessageCubit>().addFileMessage(localConversation);
+
+      SnackbarDemo(message: 'File sent successfully')
+          .showCustomSnackbar(context);
+    } catch (e) {
+      debugPrint('❌ File upload error: $e');
+      if (mounted) {
+        SnackbarDemo(message: 'Failed to upload file: $e')
+            .showCustomSnackbar(context);
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _pickFromCamera() async {
+    try {
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (photo != null && mounted) {
+        await _uploadAndSendFile(photo.path, photo.name);
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarDemo(message: 'Failed to capture image: $e')
+            .showCustomSnackbar(context);
+      }
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image != null && mounted) {
+        await _uploadAndSendFile(image.path, image.name);
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarDemo(message: 'Failed to pick image: $e')
+            .showCustomSnackbar(context);
+      }
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: [
+          'doc', 'docx', 'xls', 'xlsx',
+          'jpg', 'jpeg', 'png',
+          'mp4', 'pdf',
+        ],
+      );
+      if (result != null &&
+          result.files.single.path != null &&
+          mounted) {
+        await _uploadAndSendFile(
+          result.files.single.path!,
+          result.files.single.name,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarDemo(message: 'Failed to pick document: $e')
+            .showCustomSnackbar(context);
+      }
+    }
+  }
+
   void _showAttachmentOptions() {
     showModalBottomSheet(
       context: context,
@@ -1216,7 +1660,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.purple,
                   onTap: () {
                     Navigator.pop(context);
-                    // SnackbarDemo(message: 'Gallery picker coming soon').showCustomSnackbar(context);
+                    _pickFromGallery();
                   },
                 ),
                 _buildAttachmentOption(
@@ -1225,7 +1669,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.blue,
                   onTap: () {
                     Navigator.pop(context);
-                    //  SnackbarDemo(message: 'Camera coming soon').showCustomSnackbar(context);
+                    _pickFromCamera();
                   },
                 ),
                 _buildAttachmentOption(
@@ -1234,7 +1678,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: Colors.orange,
                   onTap: () {
                     Navigator.pop(context);
-                    //(message: 'Document picker coming soon').showCustomSnackbar(context);
+                    _pickDocument();
                   },
                 ),
               ],

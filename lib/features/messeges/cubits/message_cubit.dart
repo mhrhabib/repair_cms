@@ -617,6 +617,24 @@ class MessageCubit extends Cubit<MessageState> {
     );
   }
 
+  /// Add a file/attachment message to the conversation list.
+  /// Works like [sendMessage] but for file uploads that bypass the cubit.
+  void addFileMessage(Conversation message) {
+    _conversations.add(message);
+    _sortMessages();
+    debugPrint(
+      '📝 [MessageCubit] Added file message to list. Total: ${_conversations.length}',
+    );
+    emit(
+      MessageSent(
+        message: message,
+        messages: List.from(_conversations),
+        conversationId:
+            _currentConversationId ?? message.conversationId ?? '',
+      ),
+    );
+  }
+
   void markAsRead(Conversation message) {
     debugPrint('✅ [MessageCubit] Marking message as read');
     if (!socketService.isConnected) {
