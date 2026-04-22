@@ -273,27 +273,32 @@ class ReceiptScreen extends StatelessWidget {
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: EdgeInsets.only(top: 82.h),
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                constraints: const BoxConstraints(maxWidth: 800),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
+           
+            child: Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).padding.top + 72.h),
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.all(16),
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: RepaintBoundary(
+                      key: _printKey,
+                      child: JobReceiptWidgetNew(jobData: job),
+                    ),
+                  ),
                 ),
-                child: RepaintBoundary(
-                  key: _printKey,
-                  child: JobReceiptWidgetNew(jobData: job),
-                ),
-              ),
+              ],
             ),
           ),
 

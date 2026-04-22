@@ -169,6 +169,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void _showDateRangePicker() {
     DateTime? tempStartDate = _selectedStartDate;
     DateTime? tempEndDate = _selectedEndDate;
+    final DateRangePickerController pickerController = DateRangePickerController();
+    DateTime displayedDate = DateTime.now();
 
     showModalBottomSheet(
       context: context,
@@ -248,33 +250,105 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: SfDateRangePicker(
-                    backgroundColor: Colors.transparent,
-                    selectionMode: DateRangePickerSelectionMode.range,
-                    initialSelectedRange: tempStartDate != null && tempEndDate != null
-                        ? PickerDateRange(tempStartDate, tempEndDate)
-                        : null,
-                    onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
-                      if (args.value is PickerDateRange) {
-                        setModalState(() {
-                          tempStartDate = args.value.startDate;
-                          tempEndDate = args.value.endDate;
-                        });
-                      }
-                    },
-                    headerStyle: DateRangePickerHeaderStyle(
-                      backgroundColor: Colors.transparent,
-                      textStyle: AppTypography.fontSize16.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    monthViewSettings: const DateRangePickerMonthViewSettings(
-                      enableSwipeSelection: false,
-                      firstDayOfWeek: 1,
-                    ),
-                    selectionColor: AppColors.primary,
-                    startRangeSelectionColor: AppColors.primary,
-                    endRangeSelectionColor: AppColors.primary,
-                    rangeSelectionColor: AppColors.primary.withValues(alpha: 0.2),
-                    todayHighlightColor: AppColors.primary,
+                  child: Column(
+                    children: [
+                      // Custom header: month/year + arrow down + nav arrows
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                pickerController.view = DateRangePickerView.year;
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    DateFormat('MMMM yyyy').format(displayedDate),
+                                    style: AppTypography.fontSize16.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.lightFontColor,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Icon(
+                                    Icons.keyboard_arrow_down,
+                                    size: 20.sp,
+                                    color: AppColors.lightFontColor,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () {
+                                pickerController.backward!();
+                              },
+                              child: Icon(
+                                Icons.chevron_left,
+                                size: 24.sp,
+                                color: AppColors.lightFontColor,
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            GestureDetector(
+                              onTap: () {
+                                pickerController.forward!();
+                              },
+                              child: Icon(
+                                Icons.chevron_right,
+                                size: 24.sp,
+                                color: AppColors.secondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: SfDateRangePicker(
+                          controller: pickerController,
+                          backgroundColor: Colors.transparent,
+                          headerHeight: 0,
+                          selectionMode: DateRangePickerSelectionMode.range,
+                          initialSelectedRange: tempStartDate != null && tempEndDate != null
+                              ? PickerDateRange(tempStartDate, tempEndDate)
+                              : null,
+                          onViewChanged: (DateRangePickerViewChangedArgs args) {
+                            final visibleRange = args.visibleDateRange;
+                            if (visibleRange.startDate != null && visibleRange.endDate != null) {
+                              final midTime =
+                                  (visibleRange.startDate!.millisecondsSinceEpoch +
+                                      visibleRange.endDate!.millisecondsSinceEpoch) ~/
+                                  2;
+                              final midDate = DateTime.fromMillisecondsSinceEpoch(midTime);
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                setModalState(() {
+                                  displayedDate = midDate;
+                                });
+                              });
+                            }
+                          },
+                          onSelectionChanged: (DateRangePickerSelectionChangedArgs args) {
+                            if (args.value is PickerDateRange) {
+                              setModalState(() {
+                                tempStartDate = args.value.startDate;
+                                tempEndDate = args.value.endDate;
+                              });
+                            }
+                          },
+                          monthViewSettings: const DateRangePickerMonthViewSettings(
+                            enableSwipeSelection: false,
+                            firstDayOfWeek: 1,
+                          ),
+                          selectionColor: AppColors.primary,
+                          startRangeSelectionColor: AppColors.primary,
+                          endRangeSelectionColor: AppColors.primary,
+                          rangeSelectionColor: AppColors.primary.withValues(alpha: 0.2),
+                          todayHighlightColor: AppColors.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -814,10 +888,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               // Loading state
               if (state is DashboardLoading) ...[
                 SizedBox(height: 12.h),
-                LinearProgressIndicator(
-                  backgroundColor: AppColors.borderColor,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
+                CupertinoActivityIndicator(color: AppColors.whiteColor,)
               ],
 
               // Error state

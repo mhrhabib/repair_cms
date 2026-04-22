@@ -38,171 +38,175 @@ class _NotificationSettingsScreenState
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: EdgeInsets.only(top: 82.h),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Push Notification Section
-                      Text(
-                        'Push Notification',
-                        style: AppTypography.sfProHeadLineTextStyle22,
-                      ),
-                      const SizedBox(height: 20),
-
-                      _buildNotificationItem(
-                        title: 'Quotes accepted',
-                        value: pushQuotesAccepted,
-                        onChanged: (value) {
-                          setState(() {
-                            pushQuotesAccepted = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'Quotes rejected',
-                        value: pushQuotesRejected,
-                        onChanged: (value) {
-                          setState(() {
-                            pushQuotesRejected = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'Job overdue',
-                        value: pushJobOverdue,
-                        onChanged: (value) {
-                          setState(() {
-                            pushJobOverdue = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'Job assigned',
-                        value: pushJobAssigned,
-                        onChanged: (value) {
-                          setState(() {
-                            pushJobAssigned = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'New message',
-                        value: pushNewMessage,
-                        onChanged: (value) {
-                          setState(() {
-                            pushNewMessage = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'Stock level alert',
-                        value: pushStockLevelAlert,
-                        onChanged: (value) {
-                          setState(() {
-                            pushStockLevelAlert = value;
-                          });
-                        },
-                        isLast: false,
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Email Notification Section
-                      const Text(
-                        'Email Notification',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+            child: Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).padding.top + 72.h),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Push Notification Section
+                          Text(
+                            'Push Notification',
+                            style: AppTypography.sfProHeadLineTextStyle22,
+                          ),
+                          const SizedBox(height: 20),
+                
+                          _buildNotificationItem(
+                            title: 'Quotes accepted',
+                            value: pushQuotesAccepted,
+                            onChanged: (value) {
+                              setState(() {
+                                pushQuotesAccepted = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'Quotes rejected',
+                            value: pushQuotesRejected,
+                            onChanged: (value) {
+                              setState(() {
+                                pushQuotesRejected = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'Job overdue',
+                            value: pushJobOverdue,
+                            onChanged: (value) {
+                              setState(() {
+                                pushJobOverdue = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'Job assigned',
+                            value: pushJobAssigned,
+                            onChanged: (value) {
+                              setState(() {
+                                pushJobAssigned = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'New message',
+                            value: pushNewMessage,
+                            onChanged: (value) {
+                              setState(() {
+                                pushNewMessage = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'Stock level alert',
+                            value: pushStockLevelAlert,
+                            onChanged: (value) {
+                              setState(() {
+                                pushStockLevelAlert = value;
+                              });
+                            },
+                            isLast: false,
+                          ),
+                
+                          const SizedBox(height: 32),
+                
+                          // Email Notification Section
+                          const Text(
+                            'Email Notification',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                
+                          _buildNotificationItem(
+                            title: 'Quotes accepted',
+                            value: emailQuotesAccepted,
+                            onChanged: (value) {
+                              setState(() {
+                                emailQuotesAccepted = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'Quotes rejected',
+                            value: emailQuotesRejected,
+                            onChanged: (value) {
+                              setState(() {
+                                emailQuotesRejected = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'Job overdue',
+                            value: emailJobOverdue,
+                            onChanged: (value) {
+                              setState(() {
+                                emailJobOverdue = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'Job assigned',
+                            value: emailJobAssigned,
+                            onChanged: (value) {
+                              setState(() {
+                                emailJobAssigned = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'New message',
+                            value: emailNewMessage,
+                            onChanged: (value) {
+                              setState(() {
+                                emailNewMessage = value;
+                              });
+                            },
+                          ),
+                
+                          _buildNotificationItem(
+                            title: 'Stock level alert',
+                            value: emailStockLevelAlert,
+                            onChanged: (value) {
+                              setState(() {
+                                emailStockLevelAlert = value;
+                              });
+                            },
+                            isLast: true,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 20),
-
-                      _buildNotificationItem(
-                        title: 'Quotes accepted',
-                        value: emailQuotesAccepted,
-                        onChanged: (value) {
-                          setState(() {
-                            emailQuotesAccepted = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'Quotes rejected',
-                        value: emailQuotesRejected,
-                        onChanged: (value) {
-                          setState(() {
-                            emailQuotesRejected = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'Job overdue',
-                        value: emailJobOverdue,
-                        onChanged: (value) {
-                          setState(() {
-                            emailJobOverdue = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'Job assigned',
-                        value: emailJobAssigned,
-                        onChanged: (value) {
-                          setState(() {
-                            emailJobAssigned = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'New message',
-                        value: emailNewMessage,
-                        onChanged: (value) {
-                          setState(() {
-                            emailNewMessage = value;
-                          });
-                        },
-                      ),
-
-                      _buildNotificationItem(
-                        title: 'Stock level alert',
-                        value: emailStockLevelAlert,
-                        onChanged: (value) {
-                          setState(() {
-                            emailStockLevelAlert = value;
-                          });
-                        },
-                        isLast: true,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
 
