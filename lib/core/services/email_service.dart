@@ -1,10 +1,11 @@
 // email_service.dart
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/base/base_client.dart';
+import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:dio/dio.dart' as dio;
 
 class EmailService {
-  static const String baseUrl = 'https://api.repaircms.com';
+  static String get baseUrl => ApiEndpoints.baseUrl;
 
   static Future<void> sendJobCompleteEmail({
     required String jobNo,

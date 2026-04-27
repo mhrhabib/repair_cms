@@ -80,12 +80,14 @@ class BaseClient {
     final baseOptions = await getBaseOptions();
     dio.options = baseOptions;
 
+    final dynamic body = payload ?? <String, dynamic>{};
+
     debugPrint('\n🌐 POST Request:');
     debugPrint('📝 URL: $url');
-    debugPrint('📦 Payload Type: ${payload.runtimeType}');
+    debugPrint('📦 Payload Type: ${body.runtimeType}');
 
     try {
-      var response = await dio.post(url, data: payload);
+      var response = await dio.post(url, data: body);
 
       debugPrint('✅ Response Status: ${response.statusCode}');
       debugPrint('📄 Response Data Type: ${response.data.runtimeType}');

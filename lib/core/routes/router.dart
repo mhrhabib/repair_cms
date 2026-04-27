@@ -11,6 +11,7 @@ import 'package:repair_cms/features/auth/signin/sign_in_screen.dart';
 import 'package:repair_cms/features/dashboard/dashboard_screen.dart';
 import 'package:repair_cms/features/home/home_screen.dart';
 import 'package:repair_cms/features/splash/splash_screen.dart';
+import 'package:repair_cms/features/auth/signin/two_factor_authentication_screen.dart';
 import 'package:repair_cms/features/moreSettings/logs/logs_viewer_screen.dart';
 
 class AppRouter {
@@ -23,6 +24,7 @@ class AppRouter {
     RouteNames.passwordForgotten,
     RouteNames.verifyCode,
     RouteNames.setNewPassword,
+    RouteNames.twoFactorAuth,
   ];
 
   static final GoRouter router = GoRouter(
@@ -110,6 +112,19 @@ class AppRouter {
       GoRoute(
         path: RouteNames.logsViewer,
         builder: (context, state) => const LogsViewerScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.twoFactorAuth,
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>?;
+          return TwoFactorAuthenticationScreen(
+            email: extras?['email'],
+            twoFactorEmail: extras?['twoFactorEmail'],
+            bothEnabled: extras?['bothEnabled'] ?? false,
+            appBasedAuthEnabled: extras?['appBasedAuthEnabled'] ?? false,
+            emailBasedAuthEnabled: extras?['emailBasedAuthEnabled'] ?? false,
+          );
+        },
       ),
     ],
   );

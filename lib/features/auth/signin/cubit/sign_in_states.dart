@@ -23,6 +23,24 @@ class LoginSuccess extends SignInStates {
   LoginSuccess({required this.email, required this.message, this.token, this.user});
 }
 
+class TwoFactorRequired extends SignInStates {
+  final String email;
+  final String message;
+  final String? twoFactorEmail;
+  final bool bothEnabled;
+  final bool appBasedAuthEnabled;
+  final bool emailBasedAuthEnabled;
+
+  TwoFactorRequired({
+    required this.email,
+    required this.message,
+    this.twoFactorEmail,
+    this.bothEnabled = false,
+    this.appBasedAuthEnabled = false,
+    this.emailBasedAuthEnabled = false,
+  });
+}
+
 class SignInError extends SignInStates {
   final String message;
 

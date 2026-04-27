@@ -238,6 +238,7 @@ class Message {
   String? progress;
   List<Services>? services;
   String? file;
+  List<MessageAttachment>? attachment;
   Invoice? invoice;
   String? quotationNo;
   String? quotationId;
@@ -252,6 +253,7 @@ class Message {
     this.progress,
     this.services,
     this.file,
+    this.attachment,
     this.invoice,
     this.quotationNo,
     this.quotationId,
@@ -275,6 +277,15 @@ class Message {
       }
     }
     file = json.getString('file');
+    var attachmentList = json.getList('attachment');
+    if (attachmentList != null) {
+      attachment = <MessageAttachment>[];
+      for (var v in attachmentList) {
+        if (v is Map<String, dynamic>) {
+          attachment!.add(MessageAttachment.fromJson(v));
+        }
+      }
+    }
     var invoiceMap = json.getMap('invoice');
     invoice = invoiceMap != null ? Invoice.fromJson(invoiceMap) : null;
     quotationNo = json.getString('quotationNo');
@@ -299,6 +310,9 @@ class Message {
       data['services'] = services!.map((v) => v.toJson()).toList();
     }
     data['file'] = file;
+    if (attachment != null) {
+      data['attachment'] = attachment!.map((v) => v.toJson()).toList();
+    }
     if (invoice != null) {
       data['invoice'] = invoice!.toJson();
     }
@@ -313,6 +327,31 @@ class Message {
     if (comment != null) {
       data['comment'] = comment!.toJson();
     }
+    return data;
+  }
+}
+
+class MessageAttachment {
+  String? file;
+  String? id;
+  String? fileName;
+  int? size;
+
+  MessageAttachment({this.file, this.id, this.fileName, this.size});
+
+  MessageAttachment.fromJson(Map<String, dynamic> json) {
+    file = json.getString('file');
+    id = json.getString('id');
+    fileName = json.getString('fileName');
+    size = json.getInt('size');
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['file'] = file;
+    data['id'] = id;
+    data['fileName'] = fileName;
+    data['size'] = size;
     return data;
   }
 }

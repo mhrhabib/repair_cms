@@ -14,6 +14,7 @@ import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/utils/label_formatter.dart';
 import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
+import 'package:repair_cms/features/dashboard/cubits/dashboard_cubit.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_device_label_screen.dart';
 import 'package:repair_cms/features/jobBooking/screens/job_thermal_receipt_preview_screen.dart';
 import 'package:repair_cms/features/messeges/chat_conversation_screen.dart';
@@ -79,6 +80,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           else if (s is JobFileDeleteSuccess)
             updated = s.job;
           if (updated != null) setState(() => _currentJob = updated);
+        }
+
+        // Auto-refresh dashboard stats when any job status changes
+        if (state is JobStatusUpdated || state is JobStatusUpdateSuccess) {
+          debugPrint('🔄 [JobDetailsScreen] Job status changed — refreshing dashboard silently');
+          context.read<DashboardCubit>().loadAllDashboardData(force: true);
         }
       },
       child: PopScope(
@@ -379,7 +386,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => StatefulBuilder(
-        builder: (ctx, ss) => CupertinoActionSheet(
+        builder: (ctx, ss) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: CupertinoActionSheet(
           title: Text(
             'Set Job Complete',
             style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.w600),
@@ -440,6 +449,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             onPressed: () => Navigator.pop(ctx),
             child: Text('Cancel', style: TextStyle(fontSize: 17.sp)),
           ),
+        ),
         ),
       ),
     );
@@ -508,6 +518,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                 email: storage.read('email'),
                 notes: 'move to trash',
                 sendNotification: true,
+                currentJob: widget.job,
               );
             },
             child: Text(
@@ -528,6 +539,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
       email: storage.read('email'),
       notes: 'Device is in progress',
       sendNotification: true,
+      currentJob: widget.job,
     );
   }
 
@@ -837,6 +849,7 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
             ? null
             : job_booking.ReceiptFooter(
                 companyLogo: job.data!.receiptFooter!.companyLogo ?? '',
+                registrationNum: job.data!.receiptFooter!.registrationNum ?? '',
                 companyLogoURL: job.data!.receiptFooter!.companyLogoURL ?? '',
                 address: job_booking.CompanyAddress(
                   companyName: job.data!.receiptFooter!.address?.companyName ?? '',
@@ -856,6 +869,9 @@ class _UnifiedJobDetailsState extends State<_UnifiedJobDetails> {
                   bankName: job.data!.receiptFooter!.bank?.bankName ?? '',
                   iban: job.data!.receiptFooter!.bank?.iban ?? '',
                   bic: job.data!.receiptFooter!.bank?.bic ?? '',
+                  taxId: job.data!.receiptFooter!.bank?.taxId ?? '',
+                  vatId: job.data!.receiptFooter!.bank?.vatId ?? '',
+
                 ),
               ),
         customerDetails: job.data?.customerDetails == null

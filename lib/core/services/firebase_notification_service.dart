@@ -1,8 +1,10 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:repair_cms/core/services/local_notification_service.dart';
 import 'package:repair_cms/features/notifications/repository/fcm_token_repository.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/firebase_options.dart';
 import 'package:repair_cms/set_up_di.dart';
 
 /// Service for managing Firebase Cloud Messaging (FCM).
@@ -38,11 +40,13 @@ class FirebaseNotificationService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // Tell iOS to show notification banners even when app is in foreground
+        // Suppress iOS's built-in foreground presentation — we show our own
+        // local notification in _handleForegroundMessage so the user can tap
+        // it and trigger navigation. Leaving this on causes duplicate banners.
         await _fcm.setForegroundNotificationPresentationOptions(
-          alert: true,
-          badge: true,
-          sound: true,
+          alert: false,
+          badge: false,
+          sound: false,
         );
 
         // On iOS, we need to wait for the APNS token before getting FCM token
@@ -234,7 +238,13 @@ class FirebaseNotificationService {
 /// This must be a top-level function (not a class member)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // It's recommended to initialize Firebase if you need to use its services here
-  // await Firebase.initializeApp();
+  // Background isolate spawns fresh — Firebase must be re-initialized
+  // before any FCM services can be used here.
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  }
   debugPrint('🌙 [FCM] Background message received: ${message.messageId}');
+  debugPrint('   Title: ${message.notification?.title}');
+  debugPrint('   Body: ${message.notification?.body}');
+  debugPrint('   Data: ${message.data}');
 }

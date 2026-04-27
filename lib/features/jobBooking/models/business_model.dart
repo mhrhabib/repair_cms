@@ -177,6 +177,7 @@ class BillingAddresses {
 class ShippingAddresses {
   String? sId;
   String? street;
+  String? address2;
   String? zip;
   String? city;
   String? country;
@@ -189,6 +190,7 @@ class ShippingAddresses {
   ShippingAddresses({
     this.sId,
     this.street,
+    this.address2,
     this.zip,
     this.city,
     this.country,
@@ -202,6 +204,7 @@ class ShippingAddresses {
   ShippingAddresses.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     street = json['street'];
+    address2 = json['address2'];
     zip = json['zip'];
     city = json['city'];
     country = json['country'];
@@ -216,6 +219,7 @@ class ShippingAddresses {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['_id'] = sId;
     data['street'] = street;
+    data['address2'] = address2;
     data['zip'] = zip;
     data['city'] = city;
     data['country'] = country;

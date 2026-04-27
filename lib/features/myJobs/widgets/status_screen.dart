@@ -11,6 +11,7 @@ import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
 import 'package:repair_cms/core/utils/widgets/custom_text_button.dart';
 import 'package:repair_cms/features/myJobs/cubits/job_cubit.dart';
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
+import 'package:repair_cms/features/myJobs/models/status_settings_model.dart';
 
 class StatusScreen extends StatefulWidget {
   final SingleJobModel jobId;
@@ -57,20 +58,10 @@ class _StatusScreenState extends State<StatusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<JobCubit, JobStates>(
-      listener: (context, state) {
-        // Handle side effects like showing snackbars
-        if (state is JobStatusUpdateSuccess) {
-          SnackbarDemo(
-            message: 'Status updated successfully',
-          ).showCustomSnackbar(context);
-        } else if (state is JobActionError) {
-          SnackbarDemo(
-            message: 'Failed to update status: ${state.message}',
-          ).showCustomSnackbar(context);
-        }
-      },
-      child: BlocBuilder<JobCubit, JobStates>(
+    // Snackbars for status update success/error are already handled by the
+    // parent JobDetailsScreen listener — don't re-emit them here or they
+    // appear twice while this screen is on top.
+    return BlocBuilder<JobCubit, JobStates>(
         builder: (context, state) {
           // Cache job data when available
           if (state is JobDetailSuccess) {
@@ -177,8 +168,8 @@ class _StatusScreenState extends State<StatusScreen> {
 
           return const SizedBox.shrink();
         },
-      ),
     );
+    
   }
 
   Widget _buildStatusScreen(BuildContext context, SingleJobModel job) {
@@ -370,6 +361,27 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
   String? selectedNotification = 'Yes';
   final TextEditingController notesController = TextEditingController();
 
+  // Cached API statuses — seeded from the current cubit state (if already
+  // loaded) and refreshed via BlocListener so they survive transitions to
+  // loading/success states that would otherwise drop the API list.
+  List<StatusSetting> _apiStatuses = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final cubit = context.read<JobCubit>();
+    final state = cubit.state;
+    if (state is JobStatusSettingsLoaded) {
+      _apiStatuses = state.statusSettings.status;
+    }
+    // Always refresh on open — after a save the cubit has moved on to
+    // JobStatusUpdateSuccess / JobDetailSuccess, so the cached API list
+    // from the parent screen's first fetch is no longer reachable via state.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) cubit.getStatusSettings();
+    });
+  }
+
   @override
   void dispose() {
     notesController.dispose();
@@ -418,14 +430,18 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<JobCubit, JobStates>(
+    return BlocListener<JobCubit, JobStates>(
+      listenWhen: (_, curr) => curr is JobStatusSettingsLoaded,
+      listener: (context, state) {
+        if (state is JobStatusSettingsLoaded) {
+          setState(() => _apiStatuses = state.statusSettings.status);
+        }
+      },
+      child: BlocBuilder<JobCubit, JobStates>(
       builder: (context, state) {
         final isLoading = state is JobActionLoading;
 
-        // Get dynamic statuses from state
-        List<Map<String, dynamic>> availableStatuses = [];
-
-        // Add hardcoded statuses first
+        // Hardcoded baseline, merged with cached API statuses (deduped by slug).
         final initialStatuses = [
           {
             'value': 'repair_in_progress',
@@ -459,23 +475,28 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
         for (var s in initialStatuses) {
           statusMap[s['value'] as String] = s;
         }
-
-        // Add API statuses if loaded
-        if (state is JobStatusSettingsLoaded) {
-          for (var statusSetting in state.statusSettings.status) {
-            final val = statusSetting.statusName
-                .toLowerCase()
-                .trim()
-                .replaceAll(' ', '_');
-            statusMap[val] = {
-              'value': val,
-              'label': statusSetting.statusName,
-              'color': _hexToColor(statusSetting.colorCode),
-            };
-          }
+        for (final statusSetting in _apiStatuses) {
+          final val = statusSetting.statusName
+              .toLowerCase()
+              .trim()
+              .replaceAll(' ', '_');
+          statusMap[val] = {
+            'value': val,
+            'label': statusSetting.statusName,
+            'color': _hexToColor(statusSetting.colorCode),
+          };
         }
 
-        availableStatuses = statusMap.values.toList();
+        final availableStatuses = statusMap.values.toList();
+
+        // Guard against stale selection — if the cached list no longer
+        // contains the previously picked status, reset it.
+        if (selectedStatus != null &&
+            !availableStatuses.any((s) => s['value'] == selectedStatus)) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => selectedStatus = null);
+          });
+        }
 
         return Material(
           child: Container(
@@ -770,6 +791,7 @@ class _AddStatusBottomSheetState extends State<AddStatusBottomSheet> {
           ),
         );
       },
+      ),
     );
   }
 }

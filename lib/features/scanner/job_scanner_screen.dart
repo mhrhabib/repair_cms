@@ -2,7 +2,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
-import 'package:repair_cms/core/helpers/snakbar_demo.dart';
 import 'package:repair_cms/features/myJobs/widgets/job_details_screen.dart';
 
 /// Job Scanner Screen - Scans QR/Barcode for Job IDs
@@ -16,9 +15,15 @@ class JobScannerScreen extends StatefulWidget {
 }
 
 class _JobScannerScreenState extends State<JobScannerScreen> {
-  MobileScannerController cameraController = MobileScannerController();
+  late MobileScannerController cameraController;
   bool isScanned = false;
   bool isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    cameraController = MobileScannerController();
+  }
 
   @override
   void dispose() {
@@ -27,29 +32,10 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
   }
 
   void _onDetect(BarcodeCapture capture) async {
-    // Always log the raw capture for debugging
-    try {
-      debugPrint(
-        '🔍 BarcodeCapture received: ${capture.barcodes.map((b) => b.rawValue).toList()}',
-      );
-      debugPrint(
-        '🔎 Barcode formats: ${capture.barcodes.map((b) => b.format).toList()}',
-      );
-    } catch (e) {
-      debugPrint('💥 Error printing capture: $e');
-    }
-
     if (isScanned || isProcessing) return;
 
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
-
-    // Print each barcode's raw value to console (covers nulls too)
-    for (final b in barcodes) {
-      debugPrint('📤 Detected barcode rawValue: ${b.rawValue}');
-      debugPrint('📤 Detected barcode displayValue: ${b.displayValue}');
-      debugPrint('📤 Detected barcode format: ${b.format}');
-    }
 
     final code = barcodes.first.rawValue;
     if (code == null || code.isEmpty) {
@@ -68,25 +54,14 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
       '📱 ${widget.isBarcodeMode ? 'Barcode' : 'QR Code'} detected: $code',
     );
 
-    // Stop camera
-    await cameraController.stop();
-
-    // Simulate API validation (you can add actual validation here)
-    await Future.delayed(const Duration(milliseconds: 500));
-
     if (!mounted) return;
 
-    // Navigate to Job Details screen with the scanned job ID
-    Navigator.pop(context); // Close scanner
-
-    // Use MaterialPageRoute to navigate exactly like my_jobs_screen.dart
-    Navigator.push(
+    // Replace scanner with job details in one step — avoids stale context
+    // and lets dispose() cleanly release the camera.
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: code)),
     );
-
-    // Removed snackbar as per user request
-    // SnackbarDemo(message: 'Job ID scanned: $code').showCustomSnackbar(context);
   }
 
   @override

@@ -121,7 +121,7 @@ class Job {
       'signatureFilePath': signatureFilePath,
       'salutationHTMLmarkup': salutationHTMLmarkup,
       'termsAndConditionsHTMLmarkup': termsAndConditionsHTMLmarkup,
-      'receiptFooter': receiptFooter.toJson(),
+      'receipt_footer': receiptFooter.toJson(),
       'printOption': printOption,
       'emailConfirmation': emailConfirmation,
       'printDeviceLabel': printDeviceLabel,
@@ -402,18 +402,20 @@ class CustomerDetails {
 class CustomerAddress {
   final String? id;
   final String? street;
+  final String? address2;
   final String? no;
   final String? zip;
   final String? city;
   final String? state;
   final String? country;
 
-  CustomerAddress({this.id, this.street, this.no, this.zip, this.city, this.state, this.country});
+  CustomerAddress({this.id, this.street, this.address2, this.no, this.zip, this.city, this.state, this.country});
 
   factory CustomerAddress.fromJson(Map<String, dynamic> json) {
     return CustomerAddress(
       id: json['_id'],
       street: json['street'] ?? '',
+      address2: json['address2'] ?? '',
       // no: json['no'] ?? '',
       zip: json['zip'] ?? '',
       city: json['city'] ?? '',
@@ -426,6 +428,7 @@ class CustomerAddress {
     return {
       if (id != null) '_id': id,
       'street': street,
+      'address2': address2,
       // 'no': no,
       'zip': zip,
       'city': city,
@@ -437,6 +440,7 @@ class CustomerAddress {
   CustomerAddress copyWith({
     String? id,
     String? street,
+    String? address2,
     // String? no,
     String? zip,
     String? city,
@@ -446,6 +450,7 @@ class CustomerAddress {
     return CustomerAddress(
       id: id ?? this.id,
       street: street ?? this.street,
+      address2: address2 ?? this.address2,
       // no: no ?? this.no,
       zip: zip ?? this.zip,
       city: city ?? this.city,
@@ -457,6 +462,7 @@ class CustomerAddress {
 
 class ReceiptFooter {
   final String companyLogo;
+  final String registrationNum;
   final String companyLogoURL;
   final CompanyAddress address;
   final CompanyContact contact;
@@ -464,6 +470,7 @@ class ReceiptFooter {
 
   ReceiptFooter({
     required this.companyLogo,
+    required this.registrationNum,
     required this.companyLogoURL,
     required this.address,
     required this.contact,
@@ -473,6 +480,7 @@ class ReceiptFooter {
   factory ReceiptFooter.fromJson(Map<String, dynamic> json) {
     return ReceiptFooter(
       companyLogo: json['companyLogo'] ?? '',
+      registrationNum: json['registrationNum'] ?? '',
       companyLogoURL: json['companyLogoURL'] ?? '',
       address: json['address'] != null
           ? CompanyAddress.fromJson(json['address'])
@@ -488,6 +496,7 @@ class ReceiptFooter {
     return {
       'companyLogo': companyLogo,
       'companyLogoURL': companyLogoURL,
+      'registrationNum': registrationNum,
       'address': address.toJson(),
       'contact': contact.toJson(),
       'bank': bank.toJson(),
@@ -497,6 +506,7 @@ class ReceiptFooter {
   ReceiptFooter copyWith({
     String? companyLogo,
     String? companyLogoURL,
+    String? registrationNum,
     CompanyAddress? address,
     CompanyContact? contact,
     BankDetails? bank,
@@ -504,6 +514,7 @@ class ReceiptFooter {
     return ReceiptFooter(
       companyLogo: companyLogo ?? this.companyLogo,
       companyLogoURL: companyLogoURL ?? this.companyLogoURL,
+      registrationNum: registrationNum ?? this.registrationNum,
       address: address ?? this.address,
       contact: contact ?? this.contact,
       bank: bank ?? this.bank,
@@ -513,6 +524,7 @@ class ReceiptFooter {
 
 class CompanyAddress {
   final String companyName;
+  // final String? organization;
   final String street;
   final String num;
   final String zip;
@@ -521,6 +533,7 @@ class CompanyAddress {
 
   CompanyAddress({
     required this.companyName,
+    // this.organization,
     required this.street,
     required this.num,
     required this.zip,
@@ -530,7 +543,8 @@ class CompanyAddress {
 
   factory CompanyAddress.fromJson(Map<String, dynamic> json) {
     return CompanyAddress(
-      companyName: json['companyName'] ?? '',
+      companyName: json['companyName'] ?? json['organization'] ?? '',
+      // organization: json['organization'],
       street: json['street'] ?? '',
       num: json['num'] ?? '',
       zip: json['zip'] ?? '',
@@ -540,11 +554,12 @@ class CompanyAddress {
   }
 
   Map<String, dynamic> toJson() {
-    return {'companyName': companyName, 'street': street, 'num': num, 'zip': zip, 'city': city, 'country': country};
+    return {'companyName': companyName,  'street': street, 'num': num, 'zip': zip, 'city': city, 'country': country};
   }
 
   CompanyAddress copyWith({
     String? companyName,
+    // String? organization,
     String? street,
     String? num,
     String? zip,
@@ -553,6 +568,7 @@ class CompanyAddress {
   }) {
     return CompanyAddress(
       companyName: companyName ?? this.companyName,
+      // organization: organization ?? this.organization,
       street: street ?? this.street,
       num: num ?? this.num,
       zip: zip ?? this.zip,
@@ -597,19 +613,21 @@ class BankDetails {
   final String bankName;
   final String iban;
   final String bic;
+  final String? taxId; 
+  final String? vatId;
 
-  BankDetails({required this.bankName, required this.iban, required this.bic});
+  BankDetails({required this.bankName, required this.iban, required this.bic, this.taxId, this.vatId});
 
   factory BankDetails.fromJson(Map<String, dynamic> json) {
-    return BankDetails(bankName: json['bankName'] ?? '', iban: json['iban'] ?? '', bic: json['bic'] ?? '');
+    return BankDetails(bankName: json['bankName'] ?? '', iban: json['iban'] ?? '', bic: json['bic'] ?? '', taxId: json['taxId'], vatId: json['vatId']);
   }
 
   Map<String, dynamic> toJson() {
-    return {'bankName': bankName, 'iban': iban, 'bic': bic};
+    return {'bankName': bankName, 'iban': iban, 'bic': bic, 'taxId': taxId, 'vatId': vatId};
   }
 
-  BankDetails copyWith({String? bankName, String? iban, String? bic}) {
-    return BankDetails(bankName: bankName ?? this.bankName, iban: iban ?? this.iban, bic: bic ?? this.bic);
+  BankDetails copyWith({String? bankName, String? iban, String? bic, String? taxId, String? vatId}) {
+    return BankDetails(bankName: bankName ?? this.bankName, iban: iban ?? this.iban, bic: bic ?? this.bic, taxId: taxId ?? this.taxId, vatId: vatId ?? this.vatId);
   }
 }
 

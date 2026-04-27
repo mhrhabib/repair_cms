@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
+import 'package:repair_cms/features/company/cubits/company_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/booking/job_booking_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/job/job_create_cubit.dart';
 import 'package:repair_cms/features/jobBooking/cubits/jobItem/job_item_cubit.dart';
@@ -89,6 +90,12 @@ class StepAddItemsWidgetState extends State<StepAddItemsWidget> {
     // Generate draft status
     final userName = storage.read('fullName') ?? 'User';
     context.read<JobBookingCubit>().generateJobStatus(userName);
+
+    // Refresh receipt footer from latest company data before building payload
+    final companyState = context.read<CompanyCubit>().state;
+    if (companyState is CompanyLoaded) {
+      context.read<JobBookingCubit>().updateReceiptFooterFromCompany(companyState.company);
+    }
 
     try {
       final jobRequest = context.read<JobBookingCubit>().getCreateJobRequest();

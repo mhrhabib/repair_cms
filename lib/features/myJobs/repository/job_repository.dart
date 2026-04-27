@@ -208,7 +208,7 @@ class JobRepository {
             }
           : {'title': 'in_progress', 'colorCode': '#FEC636', 'defaultNotes': 'Device is in progress', 'priority': 2};
 
-      // Create the job status entry
+      // Create the new job status entry
       final jobStatusEntry = {
         'title': statusConfig['title'],
         'userId': userId,
@@ -221,12 +221,19 @@ class JobRepository {
         'priority': statusConfig['priority'],
       };
 
+      // Preserve existing job status history and append the new entry
+      final List<Map<String, dynamic>> existingStatuses =
+          currentJob.data?.jobStatus
+                  ?.map((s) => s.toJson())
+                  .toList() ??
+              <Map<String, dynamic>>[];
+
       // Prepare the payload
       final payload = {
         'job': {
           'is_job_completed': isJobCompleted,
           'status': statusConfig['title'],
-          'jobStatus': [jobStatusEntry],
+          'jobStatus': [...existingStatuses, jobStatusEntry],
         },
       };
 
@@ -297,6 +304,7 @@ class JobRepository {
     String email, {
     String? customNotes,
     bool sendNotification = true,
+    required SingleJobModel currentJob,
   }) async {
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
@@ -306,7 +314,7 @@ class JobRepository {
           ? {'title': 'archive', 'colorCode': '#EDEEF1', 'defaultNotes': 'move to trash', 'priority': 'archive'}
           : {'title': 'in_progress', 'colorCode': '#008444', 'defaultNotes': 'Device is in progress', 'priority': 2};
 
-      // Create the job status entry
+      // Create the new job status entry
       final jobStatusEntry = {
         'title': statusConfig['title'],
         'userId': userId,
@@ -319,12 +327,19 @@ class JobRepository {
         'priority': statusConfig['priority'],
       };
 
+      // Preserve existing job status history and append the new entry
+      final List<Map<String, dynamic>> existingStatuses =
+          currentJob.data?.jobStatus
+                  ?.map((s) => s.toJson())
+                  .toList() ??
+              <Map<String, dynamic>>[];
+
       // Prepare the payload with nested structure
       final payload = {
         'job': {
           'is_device_returned': isReturnDevice,
           'status': statusConfig['title'],
-          'jobStatus': [jobStatusEntry],
+          'jobStatus': [...existingStatuses, jobStatusEntry],
         },
       };
 

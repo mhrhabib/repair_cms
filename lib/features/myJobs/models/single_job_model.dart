@@ -647,6 +647,7 @@ class Condition {
 
 class ReceiptFooter {
   String? companyLogo;
+  String? registrationNum;
   String? companyLogoURL;
   Address? address;
   ContactInfo? contact;
@@ -655,6 +656,7 @@ class ReceiptFooter {
 
   ReceiptFooter({
     this.companyLogo,
+    this.registrationNum,
     this.companyLogoURL,
     this.address,
     this.contact,
@@ -664,6 +666,7 @@ class ReceiptFooter {
 
   ReceiptFooter.fromJson(Map<String, dynamic> json) {
     companyLogo = json['companyLogo'];
+    registrationNum = json['registrationNum'];
     companyLogoURL = json['companyLogoURL'];
     address = json['address'] != null
         ? Address.fromJson(json['address'])
@@ -678,6 +681,7 @@ class ReceiptFooter {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['companyLogo'] = companyLogo;
+    data['registrationNum'] = registrationNum;
     data['companyLogoURL'] = companyLogoURL;
     if (address != null) {
       data['address'] = address!.toJson();
@@ -760,13 +764,17 @@ class Bank {
   String? bankName;
   String? iban;
   String? bic;
+  String? taxId;
+  String? vatId;
 
-  Bank({this.bankName, this.iban, this.bic});
+  Bank({this.bankName, this.iban, this.bic, this.taxId, this.vatId});
 
   Bank.fromJson(Map<String, dynamic> json) {
     bankName = json['bankName'];
     iban = json['iban'];
     bic = json['bic'];
+    taxId = json['taxId'];
+    vatId = json['vatId'];
   }
 
   Map<String, dynamic> toJson() {
@@ -774,6 +782,8 @@ class Bank {
     data['bankName'] = bankName;
     data['iban'] = iban;
     data['bic'] = bic;
+    data['taxId'] = taxId;
+    data['vatId'] = vatId;
     return data;
   }
 }

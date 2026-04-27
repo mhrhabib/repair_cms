@@ -8,6 +8,8 @@ class ApiEndpoints {
   static const String verifyOtp = '$baseUrl/auth/check-forgot-otp';
   static const String updatePassword = '$baseUrl/user/email/password/';
   static const String passwordForgotten = '$baseUrl/auth/forget-password';
+  static const String verify2FA = '$baseUrl/auth/2fa-login-code-verification';
+  static const String resend2FAEmailOtp = '$baseUrl/auth/resend-2fa-email-otp';
 
   //user profile
   static const String getProfile = '$baseUrl/auth/me';
@@ -22,6 +24,8 @@ class ApiEndpoints {
   static const String getAllJobs = '$baseUrl/job';
   static const String createJob = '$baseUrl/job';
   static const String getJobById = '$baseUrl/job/<id>';
+  static const String jobReceiptPdf =
+      'https://receipt.repaircms.com/api/v1/receipt/job-receipt/<id>';
 
   static const String completeUserJob = '$baseUrl/job/user/complete/<id>';
   static const String jobFileUpload =
