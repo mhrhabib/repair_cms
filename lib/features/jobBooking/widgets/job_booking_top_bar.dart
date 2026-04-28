@@ -31,29 +31,17 @@ class JobBookingTopBar extends StatefulWidget {
 class _JobBookingTopBarState extends State<JobBookingTopBar>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _progressAnimation;
-  late double _targetProgress;
 
   @override
   void initState() {
     super.initState();
-    _targetProgress = widget.stepNumber / widget.totalSteps;
 
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
 
-    _progressAnimation = Tween<double>(
-      begin: _targetProgress,
-      end: _targetProgress,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
     // Animate in from 0 on first build
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: _targetProgress,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _controller.forward();
   }
@@ -62,14 +50,6 @@ class _JobBookingTopBarState extends State<JobBookingTopBar>
   void didUpdateWidget(covariant JobBookingTopBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.stepNumber != widget.stepNumber) {
-      final double oldProgress = oldWidget.stepNumber / widget.totalSteps;
-      _targetProgress = widget.stepNumber / widget.totalSteps;
-
-      _progressAnimation = Tween<double>(
-        begin: oldProgress,
-        end: _targetProgress,
-      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
       _controller
         ..reset()
         ..forward();
@@ -114,9 +94,8 @@ class _JobBookingTopBarState extends State<JobBookingTopBar>
           //     },
           //   ),
           // ),
-      
           SizedBox(height: 8.h),
-      
+
           // ── Close button on the right ─────────────────────────────────────
           if (widget.showCancelButton)
             Padding(
@@ -126,7 +105,7 @@ class _JobBookingTopBarState extends State<JobBookingTopBar>
                 text: 'Close',
               ),
             ),
-      
+
           SizedBox(height: 8.h),
         ],
       ),

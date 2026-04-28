@@ -133,7 +133,7 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
           // Processing Overlay
           if (isProcessing)
             Container(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               child: Center(
                 child: ProcessingLoader(isBarcodeMode: widget.isBarcodeMode),
               ),

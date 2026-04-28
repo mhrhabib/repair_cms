@@ -188,10 +188,7 @@ class StepSignatureWidgetState extends State<StepSignatureWidget> {
                                 child: Container(
                                   width: double.infinity,
                                   height: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12.r),
-                                  ),
+                                  color: Colors.white,
                                   child: CustomPaint(
                                     painter: SignaturePainter(
                                       signaturePaths: _signaturePaths,
@@ -323,6 +320,11 @@ class SignaturePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Fill entire canvas with white so the captured PNG has no transparent
+    // pixels at the corners (prevents anti-aliased corner artifacts in PDF).
+    final bgPaint = Paint()..color = Colors.white;
+    canvas.drawRect(Offset.zero & size, bgPaint);
+
     final paint = Paint()
       ..color = Colors.black87
       ..strokeWidth = 3.0
@@ -330,6 +332,11 @@ class SignaturePainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
     for (final path in signaturePaths) {
+      if (path.length == 1) {
+        // Single tap — draw a small dot instead of an empty path
+        canvas.drawPoints(ui.PointMode.points, path, paint);
+        continue;
+      }
       if (path.isNotEmpty) {
         final p = Path()..moveTo(path.first.dx, path.first.dy);
         for (int i = 1; i < path.length; i++) {
@@ -339,11 +346,15 @@ class SignaturePainter extends CustomPainter {
       }
     }
     if (currentPath.isNotEmpty) {
-      final p = Path()..moveTo(currentPath.first.dx, currentPath.first.dy);
-      for (int i = 1; i < currentPath.length; i++) {
-        p.lineTo(currentPath[i].dx, currentPath[i].dy);
+      if (currentPath.length == 1) {
+        canvas.drawPoints(ui.PointMode.points, currentPath, paint);
+      } else {
+        final p = Path()..moveTo(currentPath.first.dx, currentPath.first.dy);
+        for (int i = 1; i < currentPath.length; i++) {
+          p.lineTo(currentPath[i].dx, currentPath[i].dy);
+        }
+        canvas.drawPath(p, paint);
       }
-      canvas.drawPath(p, paint);
     }
   }
 

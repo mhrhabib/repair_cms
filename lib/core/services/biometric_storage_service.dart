@@ -8,6 +8,7 @@ class BiometricStorageService {
   static final LocalAuthentication _localAuth = LocalAuthentication();
 
   // Android options for biometric storage
+  // ignore: deprecated_member_use
   static const AndroidOptions _androidOptions = AndroidOptions(encryptedSharedPreferences: true);
 
   // iOS options for biometric storage - using unlocked accessibility for better compatibility

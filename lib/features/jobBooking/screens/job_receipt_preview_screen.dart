@@ -829,7 +829,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('fromBooking: ${widget.fromBooking}');
+    debugPrint('fromBooking: ${widget.fromBooking}');
     return BlocListener<JobCubit, JobStates>(
       listener: (context, state) {
         if (state is JobDetailSuccess) {

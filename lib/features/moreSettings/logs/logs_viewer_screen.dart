@@ -100,6 +100,6 @@ class LogsViewerScreen extends StatelessWidget {
       return;
     }
 
-    Share.share(logs, subject: 'RepairCMS Debug Logs - ${DateTime.now()}');
+      SharePlus.instance.share( ShareParams(text: logs, subject: 'RepairCMS Debug Logs - ${DateTime.now()}'));
   }
 }

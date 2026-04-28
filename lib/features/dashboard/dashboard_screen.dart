@@ -1,3 +1,5 @@
+// ignore_for_file: empty_catches
+
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:figma_squircle/figma_squircle.dart';
@@ -42,13 +44,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   @override
   void initState() {
     super.initState();
-    final cachedAvatarKey = storage.read('cachedAvatarKey');
-    final cachedSignedUrl = storage.read('cachedAvatarSignedUrl');
-    if (cachedAvatarKey is String && cachedSignedUrl is String && cachedSignedUrl.isNotEmpty) {
-      _lastAvatarUrl = cachedAvatarKey;
-      _avatarImageKey = cachedSignedUrl;
-      _avatarImageProvider = NetworkImage(cachedSignedUrl);
-    }
+    // Do not restore a cached signed URL from storage — S3 signatures expire
+    // (default ~66h). Using a stale one causes 403s. Always fetch fresh via
+    // ProfileCubit.getImageUrl when the profile loads.
     try {
       debugPrint('🚀 [DashboardScreen] Initializing dashboard');
       debugPrint('👤 [DashboardScreen] User Type: ${context.read<SignInCubit>().userType}');
@@ -645,8 +643,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                               .getImageUrl(avatarUrl)
                               .then((signedUrl) {
                                 if (mounted && signedUrl.isNotEmpty && _avatarImageKey != signedUrl) {
-                                  storage.write('cachedAvatarKey', avatarUrl);
-                                  storage.write('cachedAvatarSignedUrl', signedUrl);
                                   setState(() {
                                     _avatarImageKey = signedUrl;
                                     _avatarImageProvider = NetworkImage(signedUrl);
@@ -657,8 +653,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                 debugPrint('Failed to fetch avatar signed URL: $error');
                               });
                         } else if (avatarUrl != null && avatarUrl.startsWith('http') && _avatarImageKey != avatarUrl) {
-                          storage.write('cachedAvatarKey', avatarUrl);
-                          storage.write('cachedAvatarSignedUrl', avatarUrl);
                           _avatarImageKey = avatarUrl;
                           _avatarImageProvider = NetworkImage(avatarUrl);
                         }

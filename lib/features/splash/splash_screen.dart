@@ -68,6 +68,8 @@ class _SplashViewState extends State<SplashView>
       listener: (context, state) {
         if (state is SplashAuthenticated) {
           context.go(RouteNames.home);
+        } else if (state is SplashSessionExpired) {
+          context.go(RouteNames.signIn);
         } else if (state is SplashUnauthenticated) {
           context.go(RouteNames.getStarted);
         }
@@ -141,7 +143,7 @@ class _SplashViewState extends State<SplashView>
                 right: 0,
                 child: Center(
                   child: Text(
-                    'Version 1.2.3+4',
+                    'Version 1.2.3+5',
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.deviderColor,

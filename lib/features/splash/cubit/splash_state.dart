@@ -15,4 +15,6 @@ class SplashAuthenticated extends SplashState {}
 
 class SplashUnauthenticated extends SplashState {}
 
+class SplashSessionExpired extends SplashState {}
+
 class SplashNoConnectivity extends SplashState {}

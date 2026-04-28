@@ -772,7 +772,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         resolvedUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (_, _, _) => Container(
                           height: 120,
                           color: Colors.grey[200],
                           child: const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
