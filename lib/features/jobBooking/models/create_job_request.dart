@@ -17,10 +17,20 @@ class CreateJobRequest {
   final Device device;
   final Contact contact;
 
-  CreateJobRequest({required this.job, required this.defect, required this.device, required this.contact});
+  CreateJobRequest({
+    required this.job,
+    required this.defect,
+    required this.device,
+    required this.contact,
+  });
 
   Map<String, dynamic> toJson() {
-    return {'job': job.toJson(), 'defect': defect.toJson(), 'device': device.toJson(), 'contact': contact.toJson()};
+    return {
+      'job': job.toJson(),
+      'defect': defect.toJson(),
+      'device': device.toJson(),
+      'contact': contact.toJson(),
+    };
   }
 }
 
@@ -87,7 +97,9 @@ class Job {
     final storedLocationId = storage.read('locationId');
 
     // Only include valid MongoDB ObjectIds
-    final validUserId = _isValidObjectId(userId) ? userId : (_isValidObjectId(storedUserId) ? storedUserId : null);
+    final validUserId = _isValidObjectId(userId)
+        ? userId
+        : (_isValidObjectId(storedUserId) ? storedUserId : null);
     final validLoggedUserId = _isValidObjectId(loggedUserId)
         ? loggedUserId
         : (_isValidObjectId(storedUserId) ? storedUserId : null);
@@ -178,7 +190,8 @@ class Job {
       physicalLocation: physicalLocation ?? this.physicalLocation,
       signatureFilePath: signatureFilePath ?? this.signatureFilePath,
       salutationHTMLmarkup: salutationHTMLmarkup ?? this.salutationHTMLmarkup,
-      termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup ?? this.termsAndConditionsHTMLmarkup,
+      termsAndConditionsHTMLmarkup:
+          termsAndConditionsHTMLmarkup ?? this.termsAndConditionsHTMLmarkup,
       receiptFooter: receiptFooter ?? this.receiptFooter,
       printOption: printOption ?? this.printOption,
       emailConfirmation: emailConfirmation ?? this.emailConfirmation,
@@ -326,10 +339,24 @@ class CustomerDetails {
       telephonePrefix: json['telephone_prefix'] ?? '+1',
       shippingAddress: json['shipping_address'] != null
           ? CustomerAddress.fromJson(json['shipping_address'])
-          : CustomerAddress(street: '', no: '', zip: '', city: '', state: '', country: ''),
+          : CustomerAddress(
+              street: '',
+              no: '',
+              zip: '',
+              city: '',
+              state: '',
+              country: '',
+            ),
       billingAddress: json['billing_address'] != null
           ? CustomerAddress.fromJson(json['billing_address'])
-          : CustomerAddress(street: '', no: '', zip: '', city: '', state: '', country: ''),
+          : CustomerAddress(
+              street: '',
+              no: '',
+              zip: '',
+              city: '',
+              state: '',
+              country: '',
+            ),
       salutation: json['salutation'] ?? '',
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
@@ -409,7 +436,16 @@ class CustomerAddress {
   final String? state;
   final String? country;
 
-  CustomerAddress({this.id, this.street, this.address2, this.no, this.zip, this.city, this.state, this.country});
+  CustomerAddress({
+    this.id,
+    this.street,
+    this.address2,
+    this.no,
+    this.zip,
+    this.city,
+    this.state,
+    this.country,
+  });
 
   factory CustomerAddress.fromJson(Map<String, dynamic> json) {
     return CustomerAddress(
@@ -484,11 +520,20 @@ class ReceiptFooter {
       companyLogoURL: json['companyLogoURL'] ?? '',
       address: json['address'] != null
           ? CompanyAddress.fromJson(json['address'])
-          : CompanyAddress(companyName: '', street: '', num: '', zip: '', city: '', country: ''),
+          : CompanyAddress(
+              companyName: '',
+              street: '',
+              num: '',
+              zip: '',
+              city: '',
+              country: '',
+            ),
       contact: json['contact'] != null
           ? CompanyContact.fromJson(json['contact'])
           : CompanyContact(ceo: '', telephone: '', email: '', website: ''),
-      bank: json['bank'] != null ? BankDetails.fromJson(json['bank']) : BankDetails(bankName: '', iban: '', bic: ''),
+      bank: json['bank'] != null
+          ? BankDetails.fromJson(json['bank'])
+          : BankDetails(bankName: '', iban: '', bic: ''),
     );
   }
 
@@ -554,7 +599,14 @@ class CompanyAddress {
   }
 
   Map<String, dynamic> toJson() {
-    return {'companyName': companyName,  'street': street, 'num': num, 'zip': zip, 'city': city, 'country': country};
+    return {
+      'companyName': companyName,
+      'street': street,
+      'num': num,
+      'zip': zip,
+      'city': city,
+      'country': country,
+    };
   }
 
   CompanyAddress copyWith({
@@ -584,7 +636,12 @@ class CompanyContact {
   final String email;
   final String website;
 
-  CompanyContact({required this.ceo, required this.telephone, required this.email, required this.website});
+  CompanyContact({
+    required this.ceo,
+    required this.telephone,
+    required this.email,
+    required this.website,
+  });
 
   factory CompanyContact.fromJson(Map<String, dynamic> json) {
     return CompanyContact(
@@ -596,10 +653,20 @@ class CompanyContact {
   }
 
   Map<String, dynamic> toJson() {
-    return {'ceo': ceo, 'telephone': telephone, 'email': email, 'website': website};
+    return {
+      'ceo': ceo,
+      'telephone': telephone,
+      'email': email,
+      'website': website,
+    };
   }
 
-  CompanyContact copyWith({String? ceo, String? telephone, String? email, String? website}) {
+  CompanyContact copyWith({
+    String? ceo,
+    String? telephone,
+    String? email,
+    String? website,
+  }) {
     return CompanyContact(
       ceo: ceo ?? this.ceo,
       telephone: telephone ?? this.telephone,
@@ -613,21 +680,51 @@ class BankDetails {
   final String bankName;
   final String iban;
   final String bic;
-  final String? taxId; 
+  final String? taxId;
   final String? vatId;
 
-  BankDetails({required this.bankName, required this.iban, required this.bic, this.taxId, this.vatId});
+  BankDetails({
+    required this.bankName,
+    required this.iban,
+    required this.bic,
+    this.taxId,
+    this.vatId,
+  });
 
   factory BankDetails.fromJson(Map<String, dynamic> json) {
-    return BankDetails(bankName: json['bankName'] ?? '', iban: json['iban'] ?? '', bic: json['bic'] ?? '', taxId: json['taxId'], vatId: json['vatId']);
+    return BankDetails(
+      bankName: json['bankName'] ?? '',
+      iban: json['iban'] ?? '',
+      bic: json['bic'] ?? '',
+      taxId: json['taxId'],
+      vatId: json['vatId'],
+    );
   }
 
   Map<String, dynamic> toJson() {
-    return {'bankName': bankName, 'iban': iban, 'bic': bic, 'taxId': taxId, 'vatId': vatId};
+    return {
+      'bankName': bankName,
+      'iban': iban,
+      'bic': bic,
+      'taxId': taxId,
+      'vatId': vatId,
+    };
   }
 
-  BankDetails copyWith({String? bankName, String? iban, String? bic, String? taxId, String? vatId}) {
-    return BankDetails(bankName: bankName ?? this.bankName, iban: iban ?? this.iban, bic: bic ?? this.bic, taxId: taxId ?? this.taxId, vatId: vatId ?? this.vatId);
+  BankDetails copyWith({
+    String? bankName,
+    String? iban,
+    String? bic,
+    String? taxId,
+    String? vatId,
+  }) {
+    return BankDetails(
+      bankName: bankName ?? this.bankName,
+      iban: iban ?? this.iban,
+      bic: bic ?? this.bic,
+      taxId: taxId ?? this.taxId,
+      vatId: vatId ?? this.vatId,
+    );
   }
 }
 
@@ -636,13 +733,25 @@ class Defect {
   final List<DefectItem> defect;
   final List<dynamic> internalNote;
 
-  Defect({required this.jobType, required this.defect, required this.internalNote});
+  Defect({
+    required this.jobType,
+    required this.defect,
+    required this.internalNote,
+  });
 
   Map<String, dynamic> toJson() {
-    return {'jobType': jobType, 'defect': defect.map((item) => item.toJson()).toList(), 'internalNote': internalNote};
+    return {
+      'jobType': jobType,
+      'defect': defect.map((item) => item.toJson()).toList(),
+      'internalNote': internalNote,
+    };
   }
 
-  Defect copyWith({String? jobType, List<DefectItem>? defect, List<dynamic>? internalNote}) {
+  Defect copyWith({
+    String? jobType,
+    List<DefectItem>? defect,
+    List<dynamic>? internalNote,
+  }) {
     return Defect(
       jobType: jobType ?? this.jobType,
       defect: defect ?? this.defect,
@@ -927,43 +1036,66 @@ class JobData {
       jobType: json['jobType'],
       deviceType: json['deviceType'],
       model: json['model'],
-      servicesIds: json['servicesIds'] != null ? List<String>.from(json['servicesIds']) : null,
+      servicesIds: json['servicesIds'] != null
+          ? List<String>.from(json['servicesIds'])
+          : null,
       deviceId: json['deviceId'],
       jobContactId: json['jobContactId'],
       defectId: json['defectId'],
-      assignedItemsIds: json['assignedItemsIds'] != null ? List<String>.from(json['assignedItemsIds']) : null,
+      assignedItemsIds: json['assignedItemsIds'] != null
+          ? List<String>.from(json['assignedItemsIds'])
+          : null,
       physicalLocation: json['physicalLocation'],
       emailConfirmation: json['emailConfirmation'],
-      files: json['files'] != null ? (json['files'] as List).map((file) => File.fromJson(file)).toList() : null,
+      files: json['files'] != null
+          ? (json['files'] as List).map((file) => File.fromJson(file)).toList()
+          : null,
       signatureFilePath: json['signatureFilePath'],
       printOption: json['printOption'],
       printDeviceLabel: json['printDeviceLabel'],
       jobStatus: json['jobStatus'] != null
-          ? (json['jobStatus'] as List).map((status) => JobStatus.fromJson(status)).toList()
+          ? (json['jobStatus'] as List)
+                .map((status) => JobStatus.fromJson(status))
+                .toList()
           : null,
       userId: json['userId'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
       v: json['__v'],
       services: json['services'] != null
-          ? (json['services'] as List).map((service) => ServiceData.fromJson(service)).toList()
+          ? (json['services'] as List)
+                .map((service) => ServiceData.fromJson(service))
+                .toList()
           : null,
       assignedItems: json['assignedItems'] != null
-          ? (json['assignedItems'] as List).map((item) => AssignedItemData.fromJson(item)).toList()
+          ? (json['assignedItems'] as List)
+                .map((item) => AssignedItemData.fromJson(item))
+                .toList()
           : null,
       device: json['device'] != null
-          ? (json['device'] as List).map((device) => DeviceData.fromJson(device)).toList()
+          ? (json['device'] as List)
+                .map((device) => DeviceData.fromJson(device))
+                .toList()
           : null,
       contact: json['contact'] != null
-          ? (json['contact'] as List).map((contact) => ContactData.fromJson(contact)).toList()
+          ? (json['contact'] as List)
+                .map((contact) => ContactData.fromJson(contact))
+                .toList()
           : null,
       defect: json['defect'] != null
-          ? (json['defect'] as List).map((defect) => DefectData.fromJson(defect)).toList()
+          ? (json['defect'] as List)
+                .map((defect) => DefectData.fromJson(defect))
+                .toList()
           : null,
-      receiptFooter: json['receiptFooter'] != null || json['receipt_footer'] != null
-          ? ReceiptFooter.fromJson(json['receiptFooter'] ?? json['receipt_footer'])
+      receiptFooter:
+          json['receiptFooter'] != null || json['receipt_footer'] != null
+          ? ReceiptFooter.fromJson(
+              json['receiptFooter'] ?? json['receipt_footer'],
+            )
           : null,
-      customerDetails: json['customerDetails'] != null ? CustomerDetails.fromJson(json['customerDetails']) : null,
+      customerDetails: json['customerDetails'] != null
+          ? CustomerDetails.fromJson(json['customerDetails'])
+          : null,
       jobTrackingNumber: json['jobTrackingNumber'],
       salutationHTMLmarkup: json['salutationHTMLmarkup'],
       termsAndConditionsHTMLmarkup: json['termsAndConditionsHTMLmarkup'],
@@ -1020,7 +1152,9 @@ class ServiceData {
       model: json['model'],
       tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
       images: json['images'] != null
-          ? (json['images'] as List).map((image) => ServiceImage.fromJson(image)).toList()
+          ? (json['images'] as List)
+                .map((image) => ServiceImage.fromJson(image))
+                .toList()
           : null,
       assignedItems: json['assignedItems'],
       userId: json['userId'],
@@ -1107,7 +1241,9 @@ class AssignedItemData {
       color: json['color'],
       condition: json['condition'] != null
           ? json['condition'] is List
-                ? (json['condition'] as List).map((item) => ConditionItem.fromJson(item)).toList()
+                ? (json['condition'] as List)
+                      .map((item) => ConditionItem.fromJson(item))
+                      .toList()
                 : [ConditionItem(value: json['condition'].toString(), id: '')]
           : null,
       vatPercent: json['vatPercent'],
@@ -1129,10 +1265,11 @@ class DeviceData {
   final String? brand;
   final String? model;
   final String? imei;
+  final String? deviceSecurity;
+  final List<int>? securityLock;
   final String? serialNo;
   final String? category;
   final List<ConditionItem>? condition;
-  final String? deviceSecurity;
   final String? createdAt;
   final String? updatedAt;
   final int? v;
@@ -1142,10 +1279,11 @@ class DeviceData {
     this.brand,
     this.model,
     this.imei,
+    this.securityLock,
+    this.deviceSecurity,
     this.serialNo,
     this.category,
     this.condition,
-    this.deviceSecurity,
     this.createdAt,
     this.updatedAt,
     this.v,
@@ -1157,12 +1295,17 @@ class DeviceData {
       brand: json['brand'],
       model: json['model'],
       imei: json['imei'],
+      securityLock: json['securityLock'] != null
+          ? List<int>.from(json['securityLock'])
+          : null,
+      deviceSecurity: json['deviceSecurity'],
       serialNo: json['serial_no'],
       category: json['category'],
       condition: json['condition'] != null
-          ? (json['condition'] as List).map((item) => ConditionItem.fromJson(item)).toList()
+          ? (json['condition'] as List)
+                .map((item) => ConditionItem.fromJson(item))
+                .toList()
           : null,
-      deviceSecurity: json['deviceSecurity'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
       v: json['__v'],
@@ -1255,12 +1398,18 @@ class DefectData {
       sId: json['_id'],
       defect: json['defect'] != null
           ? json['defect'] is List
-                ? (json['defect'] as List).map((item) => DefectItem.fromJson(item)).toList()
+                ? (json['defect'] as List)
+                      .map((item) => DefectItem.fromJson(item))
+                      .toList()
                 : [DefectItem(value: json['defect'].toString(), id: '')]
           : null,
       description: json['description'],
-      internalNote: json['internalNote'] != null ? List<dynamic>.from(json['internalNote']) : null,
-      assignItems: json['assignItems'] != null ? List<String>.from(json['assignItems']) : null,
+      internalNote: json['internalNote'] != null
+          ? List<dynamic>.from(json['internalNote'])
+          : null,
+      assignItems: json['assignItems'] != null
+          ? List<String>.from(json['assignItems'])
+          : null,
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
       v: json['__v'],

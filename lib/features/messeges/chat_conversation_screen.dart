@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io' as io;
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image/image.dart' as img;
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
@@ -27,7 +30,12 @@ class ChatConversationScreen extends StatefulWidget {
   final String? recipientEmail;
   final String? recipientName;
 
-  const ChatConversationScreen({super.key, required this.conversationId, this.recipientEmail, this.recipientName});
+  const ChatConversationScreen({
+    super.key,
+    required this.conversationId,
+    this.recipientEmail,
+    this.recipientName,
+  });
 
   @override
   State<ChatConversationScreen> createState() => _ChatConversationScreenState();
@@ -40,6 +48,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   final storage = GetStorage();
   String? _loggedUserEmail;
+  String? _ownerEmail;
   String? _fallbackRecipientEmail;
   String? _fallbackRecipientName;
   bool _isInternalMode = false;
@@ -55,16 +64,37 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   void initState() {
     super.initState();
     _loggedUserEmail = storage.read('email');
+
+    // Extract owner/company email from companyData
+    try {
+      final companyDataStr = storage.read('companyData');
+      if (companyDataStr != null) {
+        final companyData = jsonDecode(companyDataStr);
+        _ownerEmail = companyData['companyEmail'];
+        debugPrint(
+          '🏢 [ChatConversationScreen] Owner/Company Email: $_ownerEmail',
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ [ChatConversationScreen] Could not parse companyData: $e');
+    }
+
     _fallbackRecipientEmail = widget.recipientEmail;
     _fallbackRecipientName = widget.recipientName;
-    debugPrint('🚀 [ChatConversationScreen] Loading messages for conversation: ${widget.conversationId}');
+    debugPrint(
+      '🚀 [ChatConversationScreen] Loading messages for conversation: ${widget.conversationId}',
+    );
     if (_fallbackRecipientEmail != null) {
-      debugPrint('ℹ️ [ChatConversationScreen] Using fallback recipient: $_fallbackRecipientEmail');
+      debugPrint(
+        'ℹ️ [ChatConversationScreen] Using fallback recipient: $_fallbackRecipientEmail',
+      );
     }
 
     // Load messages for this conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MessageCubit>().loadConversation(conversationId: widget.conversationId);
+      context.read<MessageCubit>().loadConversation(
+        conversationId: widget.conversationId,
+      );
 
       // Load sub users for mentions
       final userId = storage.read('userId');
@@ -106,7 +136,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     if (atIndex != -1 && _isInternalMode) {
       // Extract search query after @
-      final searchText = text.substring(atIndex + 1, cursorPosition).toLowerCase();
+      final searchText = text
+          .substring(atIndex + 1, cursorPosition)
+          .toLowerCase();
       setState(() {
         _mentionStartIndex = atIndex;
         _searchQuery = searchText;
@@ -132,20 +164,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   void _insertMention(SubUser user) {
     if (!mounted) {
-      debugPrint('⚠️ [ChatConversationScreen] Widget not mounted, skipping mention');
+      debugPrint(
+        '⚠️ [ChatConversationScreen] Widget not mounted, skipping mention',
+      );
       return;
     }
 
     try {
       final text = _messageController.text;
       final beforeMention = text.substring(0, _mentionStartIndex);
-      final afterMention = text.substring(_messageController.selection.baseOffset);
+      final afterMention = text.substring(
+        _messageController.selection.baseOffset,
+      );
       final displayName = user.fullName ?? user.email ?? 'Unknown';
       final newText = '$beforeMention@$displayName $afterMention';
 
       _messageController.value = TextEditingValue(
         text: newText,
-        selection: TextSelection.collapsed(offset: beforeMention.length + displayName.length + 2),
+        selection: TextSelection.collapsed(
+          offset: beforeMention.length + displayName.length + 2,
+        ),
       );
 
       // Add to mentions list
@@ -169,13 +207,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   void _scrollToBottom() {
     if (!mounted) {
-      debugPrint('⚠️ [ChatConversationScreen] Widget not mounted, skipping scroll');
+      debugPrint(
+        '⚠️ [ChatConversationScreen] Widget not mounted, skipping scroll',
+      );
       return;
     }
 
     try {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+        _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
       }
     } catch (e) {
       debugPrint('❌ [ChatConversationScreen] Error scrolling: $e');
@@ -184,7 +228,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   void _sendMessage(List<Conversation> currentMessages) {
     if (!mounted) {
-      debugPrint('⚠️ [ChatConversationScreen] Widget not mounted, skipping send');
+      debugPrint(
+        '⚠️ [ChatConversationScreen] Widget not mounted, skipping send',
+      );
       return;
     }
 
@@ -199,13 +245,27 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final userEmail = storage.read('email') ?? '';
       final userName = storage.read('fullName') ?? '';
       final userId = storage.read('userId') ?? '';
+      final loggedInUserId = storage.read('loginUserId') ?? '';
 
       if (_isInternalMode) {
         // Send internal comment (not visible to regular receiver)
-        _sendInternalComment(messageText, userEmail, userName, userId);
+        _sendInternalComment(
+          messageText,
+          userEmail,
+          userName,
+          userId,
+          loggedInUserId,
+        );
       } else {
         // Send regular message
-        _sendRegularMessage(messageText, userEmail, userName, userId, currentMessages);
+        _sendRegularMessage(
+          messageText,
+          userEmail,
+          userName,
+          userId,
+          loggedInUserId,
+          currentMessages,
+        );
       }
 
       _messageController.clear();
@@ -224,12 +284,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       debugPrint('❌ [ChatConversationScreen] Error sending message: $e');
       debugPrint('📋 Stack trace: $stackTrace');
       if (mounted) {
-        SnackbarDemo(message: 'Failed to send message').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Failed to send message',
+        ).showCustomSnackbar(context);
       }
     }
   }
 
-  void _sendInternalComment(String messageText, String userEmail, String userName, String userId) {
+  void _sendInternalComment(
+    String messageText,
+    String userEmail,
+    String userName,
+    String userId,
+    String loggedInUserId,
+  ) {
     debugPrint('💬 Sending internal comment with mentions: $_mentionIds');
 
     // Build HTML text for the comment: replace plain @mentions with styled spans and exclude raw @names
@@ -238,11 +306,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final List<String> spans = [];
       for (final id in _mentionIds) {
         final sub = _subUsers.firstWhere(
-          (s) => (s.sId != null && s.sId == id) || (s.email != null && s.email == id),
+          (s) =>
+              (s.sId != null && s.sId == id) ||
+              (s.email != null && s.email == id),
           orElse: () => SubUser(),
         );
         final displayName = sub.fullName ?? sub.email ?? id;
-        spans.add('<span style="color:#ffe500;" class="internal-user input__mod1">@$displayName</span>');
+        spans.add(
+          '<span style="color:#ffe500;" class="internal-user input__mod1">@$displayName</span>',
+        );
         // Remove the plain @DisplayName occurrence from the text (first occurrence)
         final plain = '@$displayName';
         if (text.contains(plain)) {
@@ -254,7 +326,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final remaining = text.trim();
 
       // Join spans and remaining text with non-breaking space as in examples
-      final joinedSpans = spans.isNotEmpty ? '${spans.join('&nbsp;')}&nbsp;' : '';
+      final joinedSpans = spans.isNotEmpty
+          ? '${spans.join('&nbsp;')}&nbsp;'
+          : '';
       return '$joinedSpans$remaining';
     }
 
@@ -276,25 +350,69 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     final htmlText = buildCommentHtmlText(messageText);
 
+    // Find the other participant in the conversation (not the logged-in user)
+    SenderReceiver? otherParticipant;
+    for (var message in _messages) {
+      if (message.sender?.email != null && message.sender?.email != userEmail) {
+        otherParticipant = SenderReceiver(
+          email: message.sender!.email,
+          name: message.sender!.name,
+        );
+        break;
+      }
+      if (message.receiver?.email != null &&
+          message.receiver?.email != userEmail) {
+        otherParticipant = SenderReceiver(
+          email: message.receiver!.email,
+          name: message.receiver!.name,
+        );
+        break;
+      }
+    }
+
+    // Fallback if no messages exist yet
+    if (otherParticipant == null) {
+      if (_fallbackRecipientEmail != null) {
+        otherParticipant = SenderReceiver(
+          email: _fallbackRecipientEmail!,
+          name: _fallbackRecipientName ?? 'User',
+        );
+      } else {
+        SnackbarDemo(
+          message: 'Cannot determine conversation participant',
+        ).showCustomSnackbar(context);
+        return;
+      }
+    }
+
     // Build combined payload (message + comment) to send via socket
-    final participants = _fallbackRecipientEmail ?? userEmail;
+    final participantsString =
+        '$userEmail-${widget.conversationId}-${otherParticipant.email}';
 
     final payload = {
       'message': {
         'sender': {'email': userEmail, 'name': userName},
+        // 'receiver': {
+        //   'email': otherParticipant.email,
+        //   'name': otherParticipant.name,
+        // },
         'seen': true,
-        'message': {'message': '', 'messageType': 'comment', 'jobId': widget.conversationId},
+        'message': {
+          'message': '',
+          'messageType': 'comment',
+          'jobId': widget.conversationId,
+        },
         'conversationId': widget.conversationId,
         'userId': userId,
-        'participants': participants,
-        'loggedUserId': userId,
+        'participants': participantsString,
+        'loggedUserId': loggedInUserId,
       },
       'comment': {
         'text': htmlText,
         'authorId': userId,
         'userId': userId,
         'messageId': targetMessageId,
-        'parentCommentId': parentCommentId,
+        // 'parentCommentId': parentCommentId,
         'conversationId': widget.conversationId,
         'mentions': _mentionIds,
       },
@@ -313,6 +431,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     String userEmail,
     String userName,
     String userId,
+    String loggedInUserId,
     List<Conversation> currentMessages,
   ) {
     // Find the other participant in the conversation (not the logged-in user)
@@ -320,12 +439,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     for (var message in currentMessages) {
       // Check sender: if they sent a message and it's not me, they're the other participant
       if (message.sender?.email != null && message.sender?.email != userEmail) {
-        otherParticipant = SenderReceiver(email: message.sender!.email, name: message.sender!.name);
+        otherParticipant = SenderReceiver(
+          email: message.sender!.email,
+          name: message.sender!.name,
+        );
         break;
       }
       // Check receiver: if they received a message and it's not me, they're the other participant
-      if (message.receiver?.email != null && message.receiver?.email != userEmail) {
-        otherParticipant = SenderReceiver(email: message.receiver!.email, name: message.receiver!.name);
+      if (message.receiver?.email != null &&
+          message.receiver?.email != userEmail) {
+        otherParticipant = SenderReceiver(
+          email: message.receiver!.email,
+          name: message.receiver!.name,
+        );
         break;
       }
     }
@@ -333,10 +459,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     // Fallback if no messages exist yet (empty conversation)
     if (otherParticipant == null) {
       if (_fallbackRecipientEmail != null) {
-        debugPrint('ℹ️ [ChatConversationScreen] Using fallback recipient for sending: $_fallbackRecipientEmail');
-        otherParticipant = SenderReceiver(email: _fallbackRecipientEmail!, name: _fallbackRecipientName ?? 'User');
+        debugPrint(
+          'ℹ️ [ChatConversationScreen] Using fallback recipient for sending: $_fallbackRecipientEmail',
+        );
+        otherParticipant = SenderReceiver(
+          email: _fallbackRecipientEmail!,
+          name: _fallbackRecipientName ?? 'User',
+        );
       } else {
-        SnackbarDemo(message: 'Cannot determine conversation participant').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Cannot determine conversation participant',
+        ).showCustomSnackbar(context);
         return;
       }
     }
@@ -348,8 +481,22 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       messageText: messageText,
       messageType: 'standard',
       userId: userId,
-      loggedUserId: userId,
+      loggedUserId: loggedInUserId,
     );
+  }
+
+  bool _isMessageFromMe(Conversation message) {
+    final senderEmail = message.sender?.email;
+    if (senderEmail == null) return false;
+
+    // Check if it's the current logged-in user
+    if (senderEmail == _loggedUserEmail) return true;
+
+    // Check if it's the company owner
+    if (_ownerEmail != null && senderEmail == _ownerEmail) return true;
+
+    // Check if it's any of the sub-users in the company
+    return _subUsers.any((u) => u.email == senderEmail);
   }
 
   @override
@@ -363,7 +510,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
           // Mark unread messages as read
           for (var message in _messages) {
-            if (message.seen == false && message.receiver?.email == _loggedUserEmail) {
+            if (message.seen == false &&
+                message.receiver?.email == _loggedUserEmail) {
               context.read<MessageCubit>().markAsRead(message);
             }
           }
@@ -372,7 +520,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         if (state is MessageReceived) {
           // New message received via socket
           if (state.message.conversationId == widget.conversationId) {
-            debugPrint('✅ [ChatConversationScreen] New message received via socket');
+            debugPrint(
+              '✅ [ChatConversationScreen] New message received via socket',
+            );
             // Update local messages
             setState(() => _messages = List.from(state.messages));
             Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
@@ -393,11 +543,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           setState(() {
             _subUsers = state.subUsers;
           });
-          debugPrint('✅ [ChatConversationScreen] Loaded ${state.subUsers.length} sub users for mentions');
+          debugPrint(
+            '✅ [ChatConversationScreen] Loaded ${state.subUsers.length} sub users for mentions',
+          );
         }
 
         if (state is SubUsersError) {
-          debugPrint('❌ [ChatConversationScreen] Failed to load sub users: ${state.message}');
+          debugPrint(
+            '❌ [ChatConversationScreen] Failed to load sub users: ${state.message}',
+          );
         }
       },
       builder: (context, state) {
@@ -405,19 +559,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         final messages = _messages;
 
         // Debug: log messages count to help diagnose empty UI
-        debugPrint('📊 [ChatConversationScreen] Resolved messages count: ${messages.length}');
+        debugPrint(
+          '📊 [ChatConversationScreen] Resolved messages count: ${messages.length}',
+        );
         if (messages.isNotEmpty) {
-          debugPrint('   First message id: ${messages.first.sId}, conversationId: ${messages.first.conversationId}');
+          debugPrint(
+            '   First message id: ${messages.first.sId}, conversationId: ${messages.first.conversationId}',
+          );
         }
 
         // Determine participant name for the app bar
         String participantName = _fallbackRecipientName ?? 'Conversation';
         for (var message in messages) {
-          if (message.sender?.email != null && message.sender?.email != _loggedUserEmail) {
+          final isMessageFromMe = _isMessageFromMe(message);
+
+          if (message.sender?.email != null && !isMessageFromMe) {
             participantName = message.sender!.name ?? participantName;
             break;
           }
-          if (message.receiver?.email != null && message.receiver?.email != _loggedUserEmail) {
+          if (message.receiver?.email != null &&
+              message.receiver?.email != _loggedUserEmail) {
             participantName = message.receiver!.name ?? participantName;
             break;
           }
@@ -429,11 +590,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             children: [
               state is MessageLoading
                   ? Center(
-                      child: CupertinoActivityIndicator(color: Colors.blue, radius: 16.r),
+                      child: CupertinoActivityIndicator(
+                        color: Colors.blue,
+                        radius: 16.r,
+                      ),
                     )
                   : Column(
                       children: [
-                        SizedBox(height: MediaQuery.of(context).padding.top + 60.h),
+                        SizedBox(
+                          height: MediaQuery.of(context).padding.top + 60.h,
+                        ),
                         Expanded(
                           child: messages.isEmpty
                               ? _buildEmptyState()
@@ -445,16 +611,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                                   itemBuilder: (context, index) {
                                     // With reverse: true, index 0 is the last item (latest message)
                                     // So we need to access messages in reverse order
-                                    final reversedIndex = messages.length - 1 - index;
+                                    final reversedIndex =
+                                        messages.length - 1 - index;
                                     final message = messages[reversedIndex];
-                                    final isMe = message.sender?.email == _loggedUserEmail;
+                                    final isMe = _isMessageFromMe(message);
 
                                     return _buildMessageBubble(message, isMe);
                                   },
                                 ),
                         ),
                         // Mention suggestions overlay
-                        if (_showMentionSuggestions && _isInternalMode) _buildMentionSuggestions(),
+                        if (_showMentionSuggestions && _isInternalMode)
+                          _buildMentionSuggestions(),
                         _buildMessageInput(messages),
                       ],
                     ),
@@ -471,37 +639,55 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     right: 16.w,
                     bottom: 8.h,
                   ),
-                  decoration: BoxDecoration(color: AppColors.kBg.withValues(alpha: 0.1)),
+                  decoration: BoxDecoration(
+                    color: AppColors.kBg.withValues(alpha: 0.1),
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      CustomNavButton(onPressed: () => Navigator.of(context).pop(), icon: CupertinoIcons.back),
+                      CustomNavButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: CupertinoIcons.back,
+                      ),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.w),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 2.w,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF7F7F8),
                           shape: BoxShape.rectangle,
                           borderRadius: BorderRadius.circular(28.r),
                           border: Border.all(
-                            color: AppColors.whiteColor, // Figma: border #FFFFFF
+                            color:
+                                AppColors.whiteColor, // Figma: border #FFFFFF
                             width: 1, // Figma: border-width 1px
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color.fromARGB(28, 116, 115, 115), // Figma: #0000001C
+                              color: const Color.fromARGB(
+                                28,
+                                116,
+                                115,
+                                115,
+                              ), // Figma: #0000001C
                               blurRadius: 2, // Figma: blur 20px
-                              offset: Offset(0, 0), // Figma: 0px 0px (no offset)
+                              offset: Offset(
+                                0,
+                                0,
+                              ), // Figma: 0px 0px (no offset)
                               spreadRadius: 2,
                             ),
                           ],
                         ),
                         child: Text(
                           participantName,
-                          style: AppTypography.sfProHeadLineTextStyle22.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.fontMainColor,
-                            fontSize: 20.sp,
-                          ),
+                          style: AppTypography.sfProHeadLineTextStyle22
+                              .copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.fontMainColor,
+                                fontSize: 20.sp,
+                              ),
                         ),
                       ),
                       SizedBox(width: 42.w), // Balance back button
@@ -528,7 +714,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey[300]!)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, -2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: ListView.builder(
         shrinkWrap: true,
@@ -537,23 +729,37 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           final user = filteredUsers[index];
           final displayName = user.fullName ?? user.email ?? 'Unknown';
           final displayEmail = user.email ?? '';
-          final avatarText = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?';
+          final avatarText = displayName.isNotEmpty
+              ? displayName.substring(0, 1).toUpperCase()
+              : '?';
 
           return ListTile(
             dense: true,
             leading: CircleAvatar(
               radius: 18,
               backgroundColor: const Color(0xFF4A90E2),
-              backgroundImage: user.avatar != null && user.avatar!.isNotEmpty ? NetworkImage(user.avatar!) : null,
+              backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
+                  ? NetworkImage(user.avatar!)
+                  : null,
               child: user.avatar == null || user.avatar!.isEmpty
                   ? Text(
                       avatarText,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     )
                   : null,
             ),
-            title: Text(displayName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            subtitle: Text(displayEmail, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            title: Text(
+              displayName,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              displayEmail,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
             onTap: () => _insertMention(user),
           );
         },
@@ -566,17 +772,33 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(width: 100, height: 100, child: Image.asset("assets/icon/Dialog 2.png", height: 50, width: 50)),
+          SizedBox(
+            width: 100,
+            height: 100,
+            child: Image.asset(
+              "assets/icon/Dialog 2.png",
+              height: 50,
+              width: 50,
+            ),
+          ),
           const SizedBox(height: 24),
           const Text(
             'Empty Inbox',
-            style: TextStyle(fontSize: 20, color: Colors.black87, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'You have no messages\nin your inbox',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -590,13 +812,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final hasAttachment = attachments != null && attachments.isNotEmpty;
     final fileUrl = message.message?.file;
     final hasFile = (fileUrl != null && fileUrl.isNotEmpty) || hasAttachment;
-    final hasQuotation = messageType == 'quotation' && message.message?.quotation != null;
-    final hasComment = message.comment != null || (message.comments != null && message.comments!.isNotEmpty);
+    final hasQuotation =
+        messageType == 'quotation' && message.message?.quotation != null;
+    final hasComment =
+        message.comment != null ||
+        (message.comments != null && message.comments!.isNotEmpty);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMe) ...[
@@ -605,21 +832,31 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               backgroundColor: const Color(0xFF4A90E2),
               child: Text(
                 message.sender?.name?.substring(0, 1).toUpperCase() ?? '?',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 if (!isMe)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4, left: 4),
                     child: Text(
                       message.sender?.name ?? 'Unknown',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.fontSecondaryColor),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.fontSecondaryColor,
+                      ),
                     ),
                   ),
                 if (isMe)
@@ -627,7 +864,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     padding: const EdgeInsets.only(bottom: 4, right: 4),
                     child: Text(
                       'Jake Jung', // Fallback for me as seen in image
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.fontSecondaryColor),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.fontSecondaryColor,
+                      ),
                     ),
                   ),
                 if (hasComment) ...[
@@ -640,12 +881,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 else if (hasFile)
                   _buildFileMessage(
                     hasAttachment ? attachments.first.file ?? '' : fileUrl!,
-                    hasAttachment ? (attachments.first.fileName ?? messageText) : messageText,
+                    hasAttachment
+                        ? (attachments.first.fileName ?? messageText)
+                        : messageText,
                     message,
                     isMe,
                   )
                 else
-                  _buildStandardMessage(messageText, messageType, message, isMe),
+                  _buildStandardMessage(
+                    messageText,
+                    messageType,
+                    message,
+                    isMe,
+                  ),
               ],
             ),
           ),
@@ -654,11 +902,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             CircleAvatar(
               radius: 16,
               backgroundColor: const Color(0xFF4A90E2),
-              backgroundImage: storage.read('avatar') != null ? NetworkImage(storage.read('avatar')) : null,
+              backgroundImage: storage.read('avatar') != null
+                  ? NetworkImage(storage.read('avatar'))
+                  : null,
               child: storage.read('avatar') == null
                   ? Text(
                       'M', // Fallback
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     )
                   : null,
             ),
@@ -676,7 +930,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final url = await FileService.getImageUrlAsync(filePath);
       if (url.isEmpty) {
         if (mounted) {
-          SnackbarDemo(message: 'Could not load file').showCustomSnackbar(context);
+          SnackbarDemo(
+            message: 'Could not load file',
+          ).showCustomSnackbar(context);
         }
         return;
       }
@@ -702,7 +958,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     } catch (e) {
       debugPrint('❌ Error opening file: $e');
       if (mounted) {
-        SnackbarDemo(message: 'Failed to open file').showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Failed to open file',
+        ).showCustomSnackbar(context);
       }
     }
   }
@@ -716,12 +974,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final timestamp = _formatTimeOnly(_parseDateTime(message.createdAt));
     final ext = fileUrl.split('.').last.toLowerCase();
     final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext);
-    final displayName = messageText.isNotEmpty ? messageText : fileUrl.split('/').last;
+    final displayName = messageText.isNotEmpty
+        ? messageText
+        : fileUrl.split('/').last;
 
     return GestureDetector(
       onTap: () => _openFile(fileUrl),
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.7,
+        ),
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -732,7 +994,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               bottomLeft: const Radius.circular(16),
               bottomRight: const Radius.circular(16),
             ),
-            border: Border.all(color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9), width: 1),
+            border: Border.all(
+              color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9),
+              width: 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -752,7 +1017,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       );
                     }
                     final resolvedUrl = snapshot.data ?? '';
@@ -763,7 +1030,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
+                        child: const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
+                        ),
                       );
                     }
                     return ClipRRect(
@@ -775,14 +1048,22 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         errorBuilder: (_, _, _) => Container(
                           height: 120,
                           color: Colors.grey[200],
-                          child: const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
+                          child: const Center(
+                            child: Icon(
+                              Icons.broken_image,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ),
                         loadingBuilder: (context, child, progress) {
                           if (progress == null) return child;
                           return Container(
                             height: 150,
                             color: Colors.grey[100],
-                            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                           );
                         },
                       ),
@@ -802,8 +1083,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         ext == 'pdf'
                             ? Icons.picture_as_pdf
                             : ext == 'doc' || ext == 'docx'
-                                ? Icons.description
-                                : Icons.insert_drive_file,
+                            ? Icons.description
+                            : Icons.insert_drive_file,
                         color: ext == 'pdf' ? Colors.red : Colors.grey[600],
                         size: 32,
                       ),
@@ -814,7 +1095,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           children: [
                             Text(
                               displayName,
-                              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -830,7 +1114,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           ],
                         ),
                       ),
-                      Icon(Icons.download_rounded, color: AppColors.primary, size: 24.sp),
+                      Icon(
+                        Icons.download_rounded,
+                        color: AppColors.primary,
+                        size: 24.sp,
+                      ),
                     ],
                   ),
                 ),
@@ -843,7 +1131,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     const Spacer(),
                     Text(
                       timestamp,
-                      style: TextStyle(color: AppColors.fontSecondaryColor.withValues(alpha: 0.6), fontSize: 11.sp),
+                      style: TextStyle(
+                        color: AppColors.fontSecondaryColor.withValues(
+                          alpha: 0.6,
+                        ),
+                        fontSize: 11.sp,
+                      ),
                     ),
                     if (isMe) ...[
                       const SizedBox(width: 4),
@@ -852,7 +1145,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         size: 14.sp,
                         color: message.seen == true
                             ? AppColors.primary
-                            : AppColors.fontSecondaryColor.withValues(alpha: 0.4),
+                            : AppColors.fontSecondaryColor.withValues(
+                                alpha: 0.4,
+                              ),
                       ),
                     ],
                   ],
@@ -874,7 +1169,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final timestamp = _formatTimeOnly(_parseDateTime(message.createdAt));
 
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.7,
+      ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
         decoration: BoxDecoration(
@@ -886,9 +1183,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             bottomRight: const Radius.circular(16),
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
-          border: Border.all(color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9), width: 1),
+          border: Border.all(
+            color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9),
+            width: 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -898,7 +1202,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isMe ? Colors.white.withValues(alpha: 0.5) : AppColors.primary.withValues(alpha: 0.08),
+                  color: isMe
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -928,12 +1234,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 const Spacer(),
                 Text(
                   'Today',
-                  style: TextStyle(color: AppColors.fontSecondaryColor.withValues(alpha: 0.6), fontSize: 11.sp),
+                  style: TextStyle(
+                    color: AppColors.fontSecondaryColor.withValues(alpha: 0.6),
+                    fontSize: 11.sp,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   timestamp,
-                  style: TextStyle(color: AppColors.fontSecondaryColor.withValues(alpha: 0.6), fontSize: 11.sp),
+                  style: TextStyle(
+                    color: AppColors.fontSecondaryColor.withValues(alpha: 0.6),
+                    fontSize: 11.sp,
+                  ),
                 ),
                 if (isMe) ...[
                   const SizedBox(width: 4),
@@ -965,15 +1277,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
         ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.7,
+          ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isMe ? AppColors.primary.withValues(alpha: 0.08) : AppColors.primary.withValues(alpha: 0.05),
+              color: isMe
+                  ? AppColors.primary.withValues(alpha: 0.08)
+                  : AppColors.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                width: 1,
+              ),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Column(
@@ -982,7 +1305,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 // Comment header
                 Container(
                   margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
@@ -994,7 +1320,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       const SizedBox(width: 4),
                       Text(
                         'Internal Comment',
-                        style: TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -1017,7 +1347,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           //   ),
                           TextSpan(
                             text: cleaned,
-                            style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.4),
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
                           ),
                         ],
                       ),
@@ -1043,8 +1377,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           bottomLeft: Radius.circular(16.r),
           bottomRight: Radius.circular(16.r),
         ),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-        border: Border.all(color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1055,20 +1398,34 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               Container(
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: isMe ? const Color(0xFFBAE6FD) : const Color(0xFFF1F5F9),
+                  color: isMe
+                      ? const Color(0xFFBAE6FD)
+                      : const Color(0xFFF1F5F9),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(SolarIconsOutline.documentText, size: 16.sp, color: const Color(0xFF3B82F6)),
+                child: Icon(
+                  SolarIconsOutline.documentText,
+                  size: 16.sp,
+                  color: const Color(0xFF3B82F6),
+                ),
               ),
               SizedBox(width: 8.w),
               Text(
                 'Quotation',
-                style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1E293B),
+                ),
               ),
               const Spacer(),
               Text(
                 _formatTimeOnly(_parseDateTime(quotation.createdAt)),
-                style: GoogleFonts.roboto(fontSize: 12.sp, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                style: GoogleFonts.roboto(
+                  fontSize: 12.sp,
+                  color: const Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -1141,7 +1498,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         padding: EdgeInsets.only(top: 4.h),
                         child: Text(
                           quotation.text!,
-                          style: GoogleFonts.roboto(fontSize: 13.sp, color: const Color(0xFF64748B), height: 1.4),
+                          style: GoogleFonts.roboto(
+                            fontSize: 13.sp,
+                            color: const Color(0xFF64748B),
+                            height: 1.4,
+                          ),
                         ),
                       ),
                   ],
@@ -1185,11 +1546,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             children: [
               Text(
                 'Subtotal excl. VAT',
-                style: GoogleFonts.roboto(fontSize: 13.sp, color: const Color(0xFF64748B), fontWeight: FontWeight.w400),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w400,
+                ),
               ),
               Text(
                 '€${((quotation.subTotal ?? 0) / 100).toStringAsFixed(2)}',
-                style: GoogleFonts.roboto(fontSize: 13.sp, color: const Color(0xFF475569), fontWeight: FontWeight.w500),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF475569),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -1199,11 +1568,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             children: [
               Text(
                 'VAT',
-                style: GoogleFonts.roboto(fontSize: 13.sp, color: const Color(0xFF64748B), fontWeight: FontWeight.w400),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w400,
+                ),
               ),
               Text(
                 '€${((quotation.vat?.toInt() ?? 0) / 100).toStringAsFixed(2)}',
-                style: GoogleFonts.roboto(fontSize: 13.sp, color: const Color(0xFF475569), fontWeight: FontWeight.w500),
+                style: GoogleFonts.roboto(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF475569),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -1215,7 +1592,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             children: [
               Text(
                 'Total Amount',
-                style: GoogleFonts.roboto(fontSize: 16.sp, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
+                style: GoogleFonts.roboto(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                ),
               ),
               Text(
                 '€${((quotation.total?.toInt() ?? 0) / 100).toStringAsFixed(2)}',
@@ -1228,7 +1609,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             ],
           ),
 
-          if (quotation.accepted == true || quotation.paymentStatus != null) ...[
+          if (quotation.accepted == true ||
+              quotation.paymentStatus != null) ...[
             SizedBox(height: 16.h),
             Container(height: 1, color: const Color(0xFFE2E8F0)),
             SizedBox(height: 16.h),
@@ -1240,7 +1622,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               children: [
                 if (quotation.accepted == true)
                   Container(
-                    padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 12.w),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 6.h,
+                      horizontal: 12.w,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFDCFCE7),
                       border: Border.all(color: const Color(0xFF86EFAC)),
@@ -1249,7 +1634,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(SolarIconsBold.checkCircle, color: const Color(0xFF16A34A), size: 14.sp),
+                        Icon(
+                          SolarIconsBold.checkCircle,
+                          color: const Color(0xFF16A34A),
+                          size: 14.sp,
+                        ),
                         SizedBox(width: 6.w),
                         Text(
                           'Accepted',
@@ -1264,11 +1653,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ),
                 if (quotation.paymentStatus != null)
                   Container(
-                    padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 12.w),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 6.h,
+                      horizontal: 12.w,
+                    ),
                     decoration: BoxDecoration(
-                      color: quotation.paymentStatus == 'Paid' ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                      color: quotation.paymentStatus == 'Paid'
+                          ? const Color(0xFFDCFCE7)
+                          : const Color(0xFFFEE2E2),
                       border: Border.all(
-                        color: quotation.paymentStatus == 'Paid' ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5),
+                        color: quotation.paymentStatus == 'Paid'
+                            ? const Color(0xFF86EFAC)
+                            : const Color(0xFFFCA5A5),
                       ),
                       borderRadius: BorderRadius.circular(20.r),
                     ),
@@ -1276,8 +1672,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          quotation.paymentStatus == 'Paid' ? Icons.credit_card : Icons.credit_card_off,
-                          color: quotation.paymentStatus == 'Paid' ? const Color(0xFF16A34A) : const Color(0xFFEF4444),
+                          quotation.paymentStatus == 'Paid'
+                              ? Icons.credit_card
+                              : Icons.credit_card_off,
+                          color: quotation.paymentStatus == 'Paid'
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFEF4444),
                           size: 14.sp,
                         ),
                         SizedBox(width: 6.w),
@@ -1305,7 +1705,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   Widget _buildMessageInput(List<Conversation> currentMessages) {
     return Container(
       color: Colors.transparent, // Background handled by individual components
-      padding: EdgeInsets.only(left: 16, right: 16, top: 6, bottom: 12 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 6,
+        bottom: 12 + MediaQuery.of(context).padding.bottom,
+      ),
       child: Row(
         children: [
           // Separate circular add button
@@ -1318,15 +1723,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 color: Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 3)),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
                 ],
               ),
               child: _isUploading
                   ? Padding(
                       padding: const EdgeInsets.all(10),
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
                     )
-                  : Icon(Icons.add, color: AppColors.fontMainColor.withValues(alpha: 0.7), size: 24.sp),
+                  : Icon(
+                      Icons.add,
+                      color: AppColors.fontMainColor.withValues(alpha: 0.7),
+                      size: 24.sp,
+                    ),
             ),
           ),
           const SizedBox(width: 12),
@@ -1338,11 +1754,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 color: _isInternalMode ? const Color(0xFF5B6B7D) : Colors.white,
                 borderRadius: BorderRadius.circular(24.r),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Row(
-                crossAxisAlignment: _messageController.text.contains('\n') || _messageController.text.length > 30
+                crossAxisAlignment:
+                    _messageController.text.contains('\n') ||
+                        _messageController.text.length > 30
                     ? CrossAxisAlignment.end
                     : CrossAxisAlignment.center,
                 children: [
@@ -1357,15 +1779,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         minLines: 1,
                         maxLines: 5,
                         style: TextStyle(
-                          color: _isInternalMode ? Colors.white : AppColors.fontMainColor,
+                          color: _isInternalMode
+                              ? Colors.white
+                              : AppColors.fontMainColor,
                           fontSize: 15.sp,
                         ),
                         decoration: InputDecoration(
-                          hintText: _isInternalMode ? 'Internal message...' : 'Write a message...',
+                          hintText: _isInternalMode
+                              ? 'Internal message...'
+                              : 'Write a message...',
                           hintStyle: TextStyle(
                             color: _isInternalMode
                                 ? Colors.white70
-                                : AppColors.fontSecondaryColor.withValues(alpha: 0.4),
+                                : AppColors.fontSecondaryColor.withValues(
+                                    alpha: 0.4,
+                                  ),
                             fontSize: 15.sp,
                           ),
                           border: InputBorder.none,
@@ -1377,8 +1805,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ),
                   IconButton(
                     icon: Icon(
-                      _isInternalMode ? SolarIconsBold.lock : SolarIconsBold.lockUnlocked,
-                      color: _isInternalMode ? Colors.yellow[700] : AppColors.fontSecondaryColor.withValues(alpha: 0.6),
+                      _isInternalMode
+                          ? SolarIconsBold.lock
+                          : SolarIconsBold.lockUnlocked,
+                      color: _isInternalMode
+                          ? Colors.yellow[700]
+                          : AppColors.fontSecondaryColor.withValues(alpha: 0.6),
                       size: 22.sp,
                     ),
                     onPressed: () {
@@ -1397,7 +1829,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   IconButton(
                     icon: Icon(
                       Icons.send_rounded,
-                      color: _isInternalMode ? Colors.white : AppColors.fontSecondaryColor,
+                      color: _isInternalMode
+                          ? Colors.white
+                          : AppColors.fontSecondaryColor,
                       size: 22.sp,
                     ),
                     onPressed: () => _sendMessage(currentMessages),
@@ -1416,6 +1850,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     if (!mounted) return;
 
     final userId = storage.read('userId') ?? '';
+    final loggedInUserId = storage.read('loginUserId') ?? '';
     if (userId.isEmpty) {
       SnackbarDemo(message: 'User not found').showCustomSnackbar(context);
       return;
@@ -1425,7 +1860,39 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     try {
       final file = io.File(filePath);
-      final bytes = await file.readAsBytes();
+      Uint8List bytes = await file.readAsBytes();
+      final lowerFileName = fileName.toLowerCase();
+      final isImage =
+          lowerFileName.endsWith('.jpg') ||
+          lowerFileName.endsWith('.jpeg') ||
+          lowerFileName.endsWith('.png') ||
+          lowerFileName.endsWith('.gif');
+
+      // Fix orientation for images
+      if (isImage) {
+        try {
+          debugPrint(
+            '📸 [_uploadAndSendFile] Fixing orientation for image: $fileName',
+          );
+          img.Image? decodedImage = img.decodeImage(bytes);
+          if (decodedImage != null) {
+            decodedImage = img.bakeOrientation(decodedImage);
+            if (lowerFileName.endsWith('.png')) {
+              bytes = Uint8List.fromList(img.encodePng(decodedImage));
+            } else if (lowerFileName.endsWith('.gif')) {
+              bytes = Uint8List.fromList(img.encodeGif(decodedImage));
+            } else {
+              bytes = Uint8List.fromList(
+                img.encodeJpg(decodedImage, quality: 85),
+              );
+            }
+            debugPrint('✅ [_uploadAndSendFile] Orientation fixed');
+          }
+        } catch (e) {
+          debugPrint('⚠️ [_uploadAndSendFile] Orientation fix failed: $e');
+        }
+      }
+
       final fileSize = bytes.length;
       final mimeType = lookupMimeType(fileName) ?? 'application/octet-stream';
       final base64File = base64Encode(bytes);
@@ -1435,7 +1902,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final uploadUrl =
           '${ApiEndpoints.fileUplaodUrl}$userId/job-message/${widget.conversationId}';
 
-      debugPrint('📤 Uploading file: $fileName ($fileSize bytes) to $uploadUrl');
+      debugPrint(
+        '📤 Uploading file: $fileName ($fileSize bytes) to $uploadUrl',
+      );
 
       final uploadPayload = {
         'file': base64String,
@@ -1454,8 +1923,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       }
 
       // The API returns the uploaded file path
-      final uploadedFilePath =
-          response.data is String ? response.data as String : null;
+      final uploadedFilePath = response.data is String
+          ? response.data as String
+          : null;
 
       debugPrint('✅ File uploaded: $uploadedFilePath');
 
@@ -1495,8 +1965,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           : null;
 
       if (otherParticipant == null) {
-        SnackbarDemo(message: 'Cannot determine recipient')
-            .showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Cannot determine recipient',
+        ).showCustomSnackbar(context);
         return;
       }
 
@@ -1525,10 +1996,35 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         'userId': userId,
         'participants':
             '$userEmail-${widget.conversationId}-${otherParticipant.email}',
-        'loggedUserId': userId,
+        'loginUserId': loggedInUserId,
       };
+      debugPrint(
+        '📤 [_uploadAndSendFile] Socket payload: ${json.encode(socketPayload)}',
+      );
 
-      context.read<MessageCubit>().socketService.sendMessage(socketPayload);
+      // Ensure socket is connected before sending (same guard as MessageCubit.sendMessage)
+      final socketSvc = context.read<MessageCubit>().socketService;
+      if (!socketSvc.isConnected) {
+        debugPrint(
+          '⚠️ [_uploadAndSendFile] Socket disconnected. Attempting reconnect...',
+        );
+        socketSvc.reconnect();
+        int attempts = 0;
+        while (!socketSvc.isConnected && attempts < 20) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          attempts++;
+        }
+        debugPrint(
+          socketSvc.isConnected
+              ? '✅ [_uploadAndSendFile] Socket reconnected.'
+              : '❌ [_uploadAndSendFile] Socket still disconnected after reconnect attempt.',
+        );
+      } else {
+        debugPrint('✅ [_uploadAndSendFile] Socket is connected, sending now.');
+      }
+
+      socketSvc.sendMessage(socketPayload);
+      debugPrint('✅ [_uploadAndSendFile] sendMessage emitted to socket.');
 
       // Add to cubit state for proper display (same pattern as text messages)
       final localConversation = Conversation(
@@ -1557,13 +2053,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
       context.read<MessageCubit>().addFileMessage(localConversation);
 
-      SnackbarDemo(message: 'File sent successfully')
-          .showCustomSnackbar(context);
+      SnackbarDemo(
+        message: 'File sent successfully',
+      ).showCustomSnackbar(context);
     } catch (e) {
       debugPrint('❌ File upload error: $e');
       if (mounted) {
-        SnackbarDemo(message: 'Failed to upload file: $e')
-            .showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Failed to upload file: $e',
+        ).showCustomSnackbar(context);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -1581,8 +2079,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        SnackbarDemo(message: 'Failed to capture image: $e')
-            .showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Failed to capture image: $e',
+        ).showCustomSnackbar(context);
       }
     }
   }
@@ -1598,8 +2097,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        SnackbarDemo(message: 'Failed to pick image: $e')
-            .showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Failed to pick image: $e',
+        ).showCustomSnackbar(context);
       }
     }
   }
@@ -1609,14 +2109,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: [
-          'doc', 'docx', 'xls', 'xlsx',
-          'jpg', 'jpeg', 'png',
-          'mp4', 'pdf',
+          'doc',
+          'docx',
+          'xls',
+          'xlsx',
+          'jpg',
+          'jpeg',
+          'png',
+          'mp4',
+          'pdf',
         ],
       );
-      if (result != null &&
-          result.files.single.path != null &&
-          mounted) {
+      if (result != null && result.files.single.path != null && mounted) {
         await _uploadAndSendFile(
           result.files.single.path!,
           result.files.single.name,
@@ -1624,8 +2128,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        SnackbarDemo(message: 'Failed to pick document: $e')
-            .showCustomSnackbar(context);
+        SnackbarDemo(
+          message: 'Failed to pick document: $e',
+        ).showCustomSnackbar(context);
       }
     }
   }
@@ -1646,10 +2151,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             Container(
               width: 40,
               height: 4,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(height: 20),
-            const Text('Attach Files', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const Text(
+              'Attach Files',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1703,7 +2214,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           Container(
             width: 60,
             height: 60,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color, size: 28),
           ),
           const SizedBox(height: 8),

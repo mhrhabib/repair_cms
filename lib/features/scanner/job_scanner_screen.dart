@@ -1,4 +1,6 @@
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/utils/widgets/custom_nav_button.dart';
@@ -58,9 +60,24 @@ class _JobScannerScreenState extends State<JobScannerScreen> {
 
     // Replace scanner with job details in one step — avoids stale context
     // and lets dispose() cleanly release the camera.
+    // Some QR codes contain a JSON payload like {"jobId":"..."}.
+    // Try to parse and extract `jobId`, otherwise pass the raw string.
+    String jobIdToUse = code;
+    try {
+      final decoded = jsonDecode(code);
+      if (decoded is Map && decoded['jobId'] is String) {
+        final candidate = (decoded['jobId'] as String).trim();
+        if (candidate.isNotEmpty) jobIdToUse = candidate;
+      }
+    } catch (_) {
+      // Not JSON — keep raw code
+    }
+
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => JobDetailsScreen(jobId: code)),
+      MaterialPageRoute(
+        builder: (context) => JobDetailsScreen(jobId: jobIdToUse),
+      ),
     );
   }
 

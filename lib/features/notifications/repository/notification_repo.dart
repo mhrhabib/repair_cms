@@ -11,6 +11,8 @@ abstract class NotificationRepository {
   Future<List<Notifications>> getNotifications({required String userId});
   Future<void> deleteNotification({required String notificationId});
   Future<void> markAsRead({required String notificationId});
+  Future<void> markAllAsRead({required String loginUserId});
+  Future<void> deleteAllNotifications({required String loginUserId});
 }
 
 class NotificationRepositoryImpl implements NotificationRepository {
@@ -197,6 +199,59 @@ class NotificationRepositoryImpl implements NotificationRepository {
       throw NotificationException(message: 'Unexpected error: $e');
     }
   }
+  
+  @override
+  Future<void> deleteAllNotifications({required String loginUserId}) {
+    try {
+      debugPrint('🚀 [NotificationRepository] Deleting all notifications for user: $loginUserId');
+      final url = ApiEndpoints.deleteAllNotifications.replaceAll('<id>', loginUserId);
+      debugPrint('   📍 URL: $url');
+
+      return BaseClient.delete(url: url).then((response) {
+        debugPrint('✅ [NotificationRepository] Delete all response status: ${response.statusCode}');
+        if (response.statusCode == 200 || response.statusCode == 204) return;
+        throw NotificationException(
+          message: 'Failed to delete all notifications: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      });
+    } catch (e) {
+      debugPrint('💥 [NotificationRepository] Unexpected error during deleteAllNotifications: $e');
+      rethrow;
+    }
+  }
+  
+  @override
+  Future<void> markAllAsRead({required String loginUserId}) {
+    try {
+      debugPrint('🚀 [NotificationRepository] Marking all notifications as read for user: $loginUserId');
+       
+      final payload = {
+        
+      };
+
+      final url = ApiEndpoints.markAllAsRead.replaceAll('<id>', loginUserId);
+      debugPrint('   📍 URL: $url');
+
+      return BaseClient.patch(url: url, payload: payload).then((response) async {
+        debugPrint('✅ [NotificationRepository] Mark all as read response status: ${response.statusCode}');
+        if (response.statusCode == 200 || response.statusCode == 204) return;
+        // Some envs may return 404 for this route; surface as exception
+        throw NotificationException(
+          message: 'Failed to mark all as read: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      });
+    } catch (e) {
+      debugPrint('💥 [NotificationRepository] Unexpected error during markAllAsRead: $e');
+      rethrow;
+    }
+  }
+
+
+  // Additional methods for marking all as read and deleting all notifications can be implemented similarly, following the same pattern of detailed logging and error handling.
+
+
 }
 
 class NotificationException implements Exception {

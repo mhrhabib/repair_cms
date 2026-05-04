@@ -77,7 +77,7 @@ class StepFileUploadWidgetState extends State<StepFileUploadWidget> {
   String _generateRandomId() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     return List.generate(
-      10,
+      24,
       (index) => chars[_random.nextInt(chars.length)],
     ).join();
   }

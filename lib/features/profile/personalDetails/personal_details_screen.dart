@@ -153,9 +153,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   void _saveChanges() {
     final profileCubit = context.read<ProfileCubit>();
-    final signInCubit = context.read<SignInCubit>();
+    // final signInCubit = context.read<SignInCubit>();
 
-    final userId = signInCubit.userId == '' ? storage.read('userId') : signInCubit.userId;
+    final userId =  storage.read('loginUserId');
 
     if (userId == null || userId.isEmpty) {
       _showErrorSnackBar('User ID not found');

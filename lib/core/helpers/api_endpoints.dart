@@ -72,6 +72,11 @@ class ApiEndpoints {
   static const String markNotificationAsRead =
       '$baseUrl/notification/<id>';
 
+
+  // all mark read and delete 
+  static const String markAllAsRead = '$baseUrl/notification/mark-as-read-all/<id>';
+  static const String deleteAllNotifications = '$baseUrl/notification/delete-all/<id>';
+
   //messages
 
   static const String getConversation = '$baseUrl/message/<conversationId>';

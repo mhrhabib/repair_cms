@@ -562,7 +562,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
       location: _location,
       statusList: backendStatus != null
           ? [backendStatus]
-          : ['accepted_quotes', 'booked'],
+          : [],
       priority: backendPriority,
       assignee: assignUserId,
       dueDate: backendDueDate,

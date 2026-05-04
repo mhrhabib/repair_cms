@@ -1,4 +1,3 @@
-
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -12,30 +11,63 @@ import 'package:repair_cms/features/moreSettings/printerSettings/service/printer
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
-import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
-import 'package:repair_cms/features/company/cubits/company_cubit.dart';
-import 'package:repair_cms/core/services/file_service.dart';
 import 'dart:convert';
-
 import 'package:solar_icons/solar_icons.dart';
 
-class ReceiptScreen extends StatelessWidget {
-  ReceiptScreen({super.key, required this.job});
+class ReceiptScreen extends StatefulWidget {
+  const ReceiptScreen({super.key, required this.job});
   final SingleJobModel job;
 
-  final _settingsService = PrinterSettingsService();
+  @override
+  State<ReceiptScreen> createState() => _ReceiptScreenState();
+}
 
-  // Key to capture the on-screen receipt widget for printing
-  final GlobalKey _printKey = GlobalKey();
+class _ReceiptScreenState extends State<ReceiptScreen> {
+  final _settingsService = PrinterSettingsService();
+  Uint8List? _pdfBytes;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPdf();
+  }
+
+  Future<void> _loadPdf() async {
+    final jobId = widget.job.data?.sId;
+    if (jobId == null || jobId.isEmpty) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Invalid job: missing job ID';
+      });
+      return;
+    }
+
+    try {
+      final bytes = await _fetchReceiptPdfBytes(jobId);
+      if (mounted) {
+        setState(() {
+          _pdfBytes = bytes;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load PDF: $e';
+        });
+      }
+    }
+  }
 
   /// Fetch the receipt PDF (base64) from the server, then print it.
   Future<void> _showPrinterSelection(BuildContext context) async {
     debugPrint('🖨️ Starting receipt print flow');
 
-    final jobId = job.data?.sId;
-    if (jobId == null || jobId.isEmpty) {
-      SnackbarDemo(message: 'Invalid job: missing job ID')
-          .showCustomSnackbar(context);
+    if (_pdfBytes == null) {
+      SnackbarDemo(message: 'PDF not loaded yet').showCustomSnackbar(context);
       return;
     }
 
@@ -52,50 +84,20 @@ class ReceiptScreen extends StatelessWidget {
       return;
     }
 
-    final navigator = Navigator.of(context, rootNavigator: true);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    // ignore: use_build_context_synchronously
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
-    Uint8List pdfBytes;
-    try {
-      pdfBytes = await _fetchReceiptPdfBytes(jobId);
-    } catch (e) {
-      try {
-        navigator.pop();
-      } catch (_) {}
-      debugPrint('❌ Failed to fetch receipt PDF: $e');
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text('Failed to fetch receipt: $e')),
-      );
-      return;
-    }
-
-    try {
-      navigator.pop();
-    } catch (_) {}
-
     if (configuredPrinters.length == 1) {
-      // ignore: use_build_context_synchronously
-      await _printPdfBytes(context, pdfBytes, configuredPrinters.first);
+      await _printPdfBytes(context, _pdfBytes!, configuredPrinters.first);
       return;
     }
 
     final defaultA4 = _settingsService.getDefaultPrinter('a4');
     final defaultPrinterType = defaultA4 != null ? 'a4' : null;
 
-    // ignore: use_build_context_synchronously
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => _PrinterSelectionDialog(
         printers: configuredPrinters,
         defaultPrinterType: defaultPrinterType,
-        onPrint: (printer) => _printPdfBytes(context, pdfBytes, printer),
+        onPrint: (printer) => _printPdfBytes(context, _pdfBytes!, printer),
       ),
     );
   }
@@ -103,7 +105,7 @@ class ReceiptScreen extends StatelessWidget {
   /// Call the receipt API and dump the response to the console for debugging.
   /// Does NOT send anything to a printer — use the print button for that.
   Future<void> _testReceiptApi(BuildContext context) async {
-    final jobId = job.data?.sId;
+    final jobId = widget.job.data?.sId;
     if (jobId == null || jobId.isEmpty) {
       SnackbarDemo(
         message: 'Invalid job: missing job ID',
@@ -117,7 +119,10 @@ class ReceiptScreen extends StatelessWidget {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
-      final dio.Response response = await BaseClient.post(url: url, payload: {});
+      final dio.Response response = await BaseClient.post(
+        url: url,
+        payload: {},
+      );
       debugPrint('🧪 [ReceiptApiTest] status=${response.statusCode}');
       debugPrint('🧪 [ReceiptApiTest] headers=${response.headers.map}');
 
@@ -192,12 +197,15 @@ class ReceiptScreen extends StatelessWidget {
         : raw as Map<String, dynamic>;
 
     if (body['success'] != true) {
-      throw Exception('Receipt request unsuccessful: ${body['message'] ?? body}');
+      throw Exception(
+        'Receipt request unsuccessful: ${body['message'] ?? body}',
+      );
     }
 
     final data = body['data'];
-    final String? base64Str =
-        data is Map<String, dynamic> ? data['base64'] as String? : null;
+    final String? base64Str = data is Map<String, dynamic>
+        ? data['base64'] as String?
+        : null;
     if (base64Str == null || base64Str.isEmpty) {
       throw Exception('Receipt response missing base64 PDF');
     }
@@ -211,8 +219,9 @@ class ReceiptScreen extends StatelessWidget {
       print('receipt.base64[$i-$end]: ${base64Str.substring(i, end)}');
     }
 
-    final normalized =
-        base64Str.contains(',') ? base64Str.split(',').last : base64Str;
+    final normalized = base64Str.contains(',')
+        ? base64Str.split(',').last
+        : base64Str;
     return base64Decode(normalized);
   }
 
@@ -233,7 +242,7 @@ class ReceiptScreen extends StatelessWidget {
 
     try {
       bool success = false;
-      final pdfName = 'Job_Receipt_${job.data?.jobNo ?? jobId}.pdf';
+      final pdfName = 'Job_Receipt_${widget.job.data?.jobNo ?? 'pdf'}.pdf';
 
       // Always use system print dialog for A4 printers.
       // Sending raw PDF bytes over TCP crashes A4 printer firmware.
@@ -263,8 +272,7 @@ class ReceiptScreen extends StatelessWidget {
     }
   }
 
-  String get jobId => job.data?.sId ?? '';
-
+  String get jobId => widget.job.data?.sId ?? '';
 
   @override
   Widget build(BuildContext context) {
@@ -272,33 +280,36 @@ class ReceiptScreen extends StatelessWidget {
       backgroundColor: AppColors.kBg,
       body: Stack(
         children: [
-          SingleChildScrollView(
-           
-            child: Column(
-              children: [
-                SizedBox(height: MediaQuery.of(context).padding.top + 72.h),
-                Center(
-                  child: Container(
-                    margin: const EdgeInsets.all(16),
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 72.h,
+              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
                         ),
-                      ],
+                      ),
+                    )
+                  : _pdfBytes == null
+                  ? const Center(child: Text('No PDF data'))
+                  : PdfPreview(
+                      build: (_) async => _pdfBytes!,
+                      canChangeOrientation: false,
+                      canChangePageFormat: false,
+                      canDebug: false,
+                      allowPrinting: false,
+                      allowSharing: false,
+                      pdfFileName:
+                          'receipt_${widget.job.data?.jobNo ?? 'pdf'}.pdf',
                     ),
-                    child: RepaintBoundary(
-                      key: _printKey,
-                      child: JobReceiptWidgetNew(jobData: job),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
 
@@ -359,12 +370,13 @@ class ReceiptScreen extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (kDebugMode)  CustomNavButton(
-                        onPressed: () => _testReceiptApi(context),
-                        icon: SolarIconsOutline.bug,
-                        iconColor: AppColors.fontSecondaryColor,
-                        size: 24.r,
-                      ),
+                      if (kDebugMode)
+                        CustomNavButton(
+                          onPressed: () => _testReceiptApi(context),
+                          icon: SolarIconsOutline.bug,
+                          iconColor: AppColors.fontSecondaryColor,
+                          size: 24.r,
+                        ),
                       SizedBox(width: 8.w),
                       CustomNavButton(
                         onPressed: () => _showPrinterSelection(context),
@@ -383,745 +395,6 @@ class ReceiptScreen extends StatelessWidget {
     );
   }
 }
-
-// ... rest of the file remains the same (JobReceiptWidget, PrintSettingsPage, _PrinterSelectionDialog)
-
-class JobReceiptWidget extends StatelessWidget {
-  final SingleJobModel jobData;
-
-  const JobReceiptWidget({super.key, required this.jobData});
-
-  @override
-  Widget build(BuildContext context) {
-    final customer = jobData.data?.customerDetails;
-    final device = jobData.data?.deviceData;
-    final services = jobData.data?.services ?? [];
-    final defect = jobData.data?.defect?.isNotEmpty == true
-        ? jobData.data!.defect![0]
-        : null;
-    final contact = jobData.data?.contact?.isNotEmpty == true
-        ? jobData.data!.contact![0]
-        : null;
-    final receiptFooter = jobData.data?.receiptFooter;
-
-    // Format currency values
-    final formattedSubTotal = _formatCurrency(jobData.data?.subTotal);
-    final formattedTotal = _formatCurrency(jobData.data?.total);
-    final formattedVat = _formatCurrency(jobData.data?.vat);
-    final formattedDiscount = _formatCurrency(jobData.data?.discount);
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: 600,
-      ), // Add minimum width constraint
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with logo and company name
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: BlocBuilder<CompanyCubit, CompanyState>(
-                    builder: (context, companyState) {
-                      final company = companyState is CompanyLoaded
-                          ? companyState.company
-                          : null;
-                      final address = receiptFooter?.address;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Company address from receipt footer
-                          if (address != null ||
-                              (company != null &&
-                                  company.companyName.isNotEmpty)) ...[
-                            Text(
-                              address?.companyName ??
-                                  company?.companyName ??
-                                  'Company Name',
-                              style: const TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.right,
-                            ),
-                            if (address != null) ...[
-                              Text(
-                                '${address.street ?? ''} ${address.num ?? ''}',
-                                style: const TextStyle(fontSize: 8),
-                                textAlign: TextAlign.right,
-                              ),
-                              Text(
-                                '${address.zip ?? ''} ${address.city ?? ''}',
-                                style: const TextStyle(fontSize: 8),
-                                textAlign: TextAlign.right,
-                              ),
-                              Text(
-                                address.country ?? '',
-                                style: const TextStyle(fontSize: 8),
-                                textAlign: TextAlign.right,
-                              ),
-                            ] else if (company != null &&
-                                company.companyAddress != null &&
-                                company.companyAddress!.isNotEmpty) ...[
-                              Text(
-                                '${company.companyAddress![0].street ?? ''} ${company.companyAddress![0].num ?? ''}',
-                                style: const TextStyle(fontSize: 8),
-                                textAlign: TextAlign.right,
-                              ),
-                              Text(
-                                '${company.companyAddress![0].zip ?? ''} ${company.companyAddress![0].city ?? ''}',
-                                style: const TextStyle(fontSize: 8),
-                                textAlign: TextAlign.right,
-                              ),
-                              Text(
-                                company.companyAddress![0].country,
-                                style: const TextStyle(fontSize: 8),
-                                textAlign: TextAlign.right,
-                              ),
-                            ],
-                          ] else ...[
-                            const Text(
-                              'Company Name',
-                              style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.right,
-                            ),
-                            const Text(
-                              'Address not available',
-                              style: TextStyle(fontSize: 8),
-                              textAlign: TextAlign.right,
-                            ),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                BlocBuilder<CompanyCubit, CompanyState>(
-                  builder: (context, companyState) {
-                    String? logoUrl =
-                        (receiptFooter?.companyLogoURL != null &&
-                            receiptFooter!.companyLogoURL!.isNotEmpty)
-                        ? receiptFooter.companyLogoURL
-                        : null;
-
-                    if (logoUrl == null && companyState is CompanyLoaded) {
-                      final companyLogo = companyState.company.companyLogo;
-                      if (companyLogo != null && companyLogo.isNotEmpty) {
-                        logoUrl = FileService.getImageUrl(companyLogo[0].image);
-                      }
-                    }
-
-                    if (logoUrl != null && logoUrl.isNotEmpty) {
-                      return Image.network(
-                        logoUrl,
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.contain,
-                      );
-                    }
-
-                    return const Text(
-                      'Sakani',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.w300,
-                        color: Color(0xFF00A86B),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Date and Job Info - Fixed Row with proper constraints
-            Align(
-              alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Date:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 8,
-                        ),
-                      ),
-                      Text('Job No:', style: TextStyle(fontSize: 8)),
-                      Text('Customer No:', style: TextStyle(fontSize: 8)),
-                      Text('Tracking No:', style: TextStyle(fontSize: 8)),
-                    ],
-                  ),
-                  const SizedBox(width: 4),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        _formatDate(jobData.data?.createdAt),
-                        style: TextStyle(fontSize: 8),
-                      ),
-                      Text(
-                        jobData.data?.jobNo ?? 'N/A',
-                        style: TextStyle(fontSize: 8),
-                      ),
-                      Text(
-                        customer?.customerNo ?? 'N/A',
-                        style: TextStyle(fontSize: 8),
-                      ),
-                      Text(
-                        jobData.data?.jobTrackingNumber ?? 'N/A',
-                        style: TextStyle(fontSize: 8),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Barcode and job info
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                height: 60,
-                width: 100,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: 40,
-                      child: Row(
-                        children: List.generate(20, (index) {
-                          return Expanded(
-                            child: Container(
-                              color: index % 2 == 0
-                                  ? Colors.black
-                                  : Colors.white,
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                    Text(
-                      jobData.data?.jobNo ?? 'N/A',
-                      style: const TextStyle(fontSize: 8),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Job Receipt Title
-            const Text(
-              'Job Receipt',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-
-            // Salutation
-            if (jobData.data?.salutationHTMLmarkup != null)
-              _buildHtmlContent(jobData.data!.salutationHTMLmarkup!)
-            else
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Hi there,', style: TextStyle(fontSize: 8)),
-                  Text(
-                    'Thank you for your trust. We are committed to processing your order as quickly as possible.',
-                    style: TextStyle(fontSize: 8),
-                  ),
-                ],
-              ),
-            const SizedBox(height: 8),
-
-            // Device Details - Side by side
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    width: 120, // Fixed width for labels
-                    decoration: BoxDecoration(color: Colors.grey[300]),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Device details:',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Physical location:',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Job type:',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Description:',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: Colors.grey[200]),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            device != null
-                                ? '${device.brand} ${device.model ?? ''}, SN: ${device.serialNo ?? 'N/A'}'
-                                : 'Device information not available',
-                            style: TextStyle(fontSize: 8),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            jobData.data?.physicalLocation ?? 'Not specified',
-                            style: TextStyle(fontSize: 8),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            jobData.data?.jobTypes ??
-                                jobData.data?.jobType ??
-                                'N/A',
-                            style: TextStyle(fontSize: 8),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            defect?.description ?? 'No description provided',
-                            style: TextStyle(fontSize: 8),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Service Section
-            if (services.isNotEmpty)
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Column(
-                  children: [
-                    // Header
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey[300]!),
-                        ),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Service',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 100,
-                              child: Text(
-                                'Price',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Service items
-                    // ...services.map((service) {
-                    //   return Container(
-                    //     decoration: BoxDecoration(
-                    //       border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-                    //     ),
-                    //     child: Padding(
-                    //       padding: const EdgeInsets.all(12.0),
-                    //       child: Row(
-                    //         children: [
-                    //           Expanded(
-                    //             child: Column(
-                    //               crossAxisAlignment: CrossAxisAlignment.start,
-                    //               children: [
-                    //                 Text(service ?? 'Unnamed Service'),
-                    //                 if (service.description != null && service.description!.isNotEmpty)
-                    //                   Text(
-                    //                     service.description!,
-                    //                     style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    //                   ),
-                    //               ],
-                    //             ),
-                    //           ),
-                    //           SizedBox(
-                    //             width: 100,
-                    //             child: Text(
-                    //               _formatCurrency(service.priceInclVat ?? service.priceExclVat),
-                    //               textAlign: TextAlign.right,
-                    //             ),
-                    //           ),
-                    //         ],
-                    //       ),
-                    //     ),
-                    //   );
-                    // }).toList(),
-
-                    // Financial Summary
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey[300]!),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          children: [
-                            _buildFinancialRow('Subtotal:', formattedSubTotal),
-                            if (jobData.data?.vat != null &&
-                                jobData.data!.vat! > 0)
-                              _buildFinancialRow('VAT:', formattedVat),
-                            if (jobData.data?.discount != null &&
-                                jobData.data!.discount! > 0)
-                              _buildFinancialRow(
-                                'Discount:',
-                                formattedDiscount,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Total
-                    Container(
-                      decoration: BoxDecoration(color: Colors.grey[100]),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                'Total',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 100,
-                              child: Text(
-                                formattedTotal,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: const Center(
-                  child: Text(
-                    'No services added',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 32),
-
-            // Terms and Conditions
-            if (jobData.data?.termsAndConditionsHTMLmarkup != null)
-              _buildHtmlContent(jobData.data!.termsAndConditionsHTMLmarkup!)
-            else
-              Text(
-                'Terms of service: If the defect is not covered by the manufacturer\'s warranty, I agree to the following.The execution of a paid repair after the creation of a cost estimate at the price of XXX euros including VAT. (Note: If a repair order is subsequently issued, only the actual repair costs according to the cost estimate will be invoiced). I want to be informed before the execution of a paid repair. If I decide against the execution of a repair or if it is not feasible, a handling or inspection fee of XXX euros including VAT will be charged upon return of the device. Note: The repair service within the framework of the manufacturer\'s device warranty is a voluntary service to our customers. For repairs covered by the manufacturer\'s device warranty, there are no costs for the customer. The inspection of the device in the shop can only be superficial. If, upon closer inspection by a professional, it is found that the defect of the device is not covered by the manufacturer\'s device warranty, the repair is chargeable. This applies in particular to damages due to liquid or moisture ingress, impact damages, and proven self-interference. Any warranty claims remain unaffected. The repaired or replaced device must be picked up within 3 months from the date of submission at any shop where it was received. If not collected, the device becomes the property of the client. The device will be stored for another 3 months, after which it will be disposed of or recycled. We assume no liability for data loss or encryption, data stored in the device may be lost. The client is obligated to use the loaned device with care. If the loaned device is damaged or not returned after the completion of the order, the replacement of the respective loaned device plus a processing fee of EUR 50 plus VAT will be invoiced. The terms and conditions of XXXXX apply.',
-                style: TextStyle(fontSize: 10, color: Colors.grey[700]),
-              ),
-            const SizedBox(height: 24),
-
-            // QR Code placeholder
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: const Center(
-                  child: Text('QR', style: TextStyle(fontSize: 24)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Footer - Fixed with proper constraints
-            BlocBuilder<CompanyCubit, CompanyState>(
-              builder: (context, companyState) {
-                final company = companyState is CompanyLoaded
-                    ? companyState.company
-                    : null;
-
-                return Row(
-                  spacing: 8, // Horizontal spacing between columns
-
-                  children: [
-                    // Company Address
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Company Information',
-                            style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (receiptFooter?.address != null ||
-                              (company != null &&
-                                  company.companyName.isNotEmpty)) ...[
-                            Text(
-                              receiptFooter?.address?.companyName ??
-                                  company?.companyName ??
-                                  'Company Name',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                            if (receiptFooter?.address != null) ...[
-                              Text(
-                                '${receiptFooter!.address!.street ?? ''} ${receiptFooter.address!.num ?? ''}',
-                                style: const TextStyle(fontSize: 8),
-                              ),
-                              Text(
-                                '${receiptFooter.address!.zip ?? ''} ${receiptFooter.address!.city ?? ''}',
-                                style: const TextStyle(fontSize: 8),
-                              ),
-                              Text(
-                                receiptFooter.address!.country ?? '',
-                                style: const TextStyle(fontSize: 8),
-                              ),
-                            ] else if (company != null &&
-                                company.companyAddress != null &&
-                                company.companyAddress!.isNotEmpty) ...[
-                              Text(
-                                '${company.companyAddress![0].street ?? ''} ${company.companyAddress![0].num ?? ''}',
-                                style: const TextStyle(fontSize: 8),
-                              ),
-                              Text(
-                                '${company.companyAddress![0].zip ?? ''} ${company.companyAddress![0].city ?? ''}',
-                                style: const TextStyle(fontSize: 8),
-                              ),
-                              Text(
-                                company.companyAddress![0].country,
-                                style: const TextStyle(fontSize: 8),
-                              ),
-                            ],
-                          ] else
-                            const Text(
-                              'Address not available',
-                              style: TextStyle(fontSize: 8),
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    // Contact Information
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Contact Information',
-                            style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (receiptFooter?.contact != null ||
-                              (company != null &&
-                                  company.companyContactDetail != null &&
-                                  company
-                                      .companyContactDetail!
-                                      .isNotEmpty)) ...[
-                            Text(
-                              'CEO: ${receiptFooter?.contact?.ceo ?? (company?.companyTaxDetail?.isNotEmpty == true ? company!.companyTaxDetail![0].ceo : 'N/A')}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                            Text(
-                              'Tel: ${receiptFooter?.contact?.telephone ?? (company?.companyContactDetail?.isNotEmpty == true ? company!.companyContactDetail![0].telephone : 'N/A')}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                            Text(
-                              'Email: ${receiptFooter?.contact?.email ?? (company?.companyContactDetail?.isNotEmpty == true ? company!.companyContactDetail![0].email : 'N/A')}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                            Text(
-                              'Web: ${receiptFooter?.contact?.website ?? (company?.companyContactDetail?.isNotEmpty == true ? company!.companyContactDetail![0].website : 'N/A')}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                          ] else if (contact != null) ...[
-                            Text(
-                              'Tel: ${contact.telephone ?? 'N/A'}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                            Text(
-                              'Email: ${contact.email ?? 'N/A'}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                          ] else
-                            const Text(
-                              'Contact not available',
-                              style: TextStyle(fontSize: 8),
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    // Bank Information
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Bank Information',
-                            style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (receiptFooter?.bank != null ||
-                              (company != null &&
-                                  company.companyBankDetail != null &&
-                                  company.companyBankDetail!.isNotEmpty)) ...[
-                            Text(
-                              'Bank: ${receiptFooter?.bank?.bankName ?? (company?.companyBankDetail?.isNotEmpty == true ? company!.companyBankDetail![0].bankName : 'N/A')}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                            Text(
-                              'IBAN: ${receiptFooter?.bank?.iban ?? (company?.companyBankDetail?.isNotEmpty == true ? company!.companyBankDetail![0].iban : 'N/A')}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                            Text(
-                              'BIC: ${receiptFooter?.bank?.bic ?? (company?.companyBankDetail?.isNotEmpty == true ? company!.companyBankDetail![0].bic : 'N/A')}',
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                          ] else
-                            const Text(
-                              'Bank details not available',
-                              style: TextStyle(fontSize: 8),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatCurrency(dynamic amount) {
-    if (amount == null) return '€0.00';
-
-    try {
-      final numericAmount = double.tryParse(amount.toString()) ?? 0.0;
-      return '€${numericAmount.toStringAsFixed(2)}';
-    } catch (e) {
-      return '€0.00';
-    }
-  }
-
-  String _formatDate(String? dateString) {
-    if (dateString == null) return 'N/A';
-    try {
-      final date = DateTime.parse(dateString);
-      return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
-      return 'N/A';
-    }
-  }
-
-  Widget _buildFinancialRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          Text(value, style: const TextStyle(fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHtmlContent(String html) {
-    // Simple HTML content parser - you might want to use a proper HTML renderer
-    final cleanText = html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
-    return Text(
-      cleanText,
-      style: TextStyle(fontSize: 8, color: Colors.grey[700]),
-    );
-  }
-}
-
-// Keep the PrintSettingsPage class as it was...
 
 class PrintSettingsPage extends StatefulWidget {
   final SingleJobModel jobData;
@@ -1354,12 +627,12 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
   }
 
   String _formatCurrency(dynamic amount) {
-    if (amount == null) return '£0.00';
+    if (amount == null) return '0.00';
     try {
       final numericAmount = double.tryParse(amount.toString()) ?? 0.0;
-      return '£${numericAmount.toStringAsFixed(2)}';
+      return '${numericAmount.toStringAsFixed(2)}';
     } catch (e) {
-      return '£0.00';
+      return '0.00';
     }
   }
 

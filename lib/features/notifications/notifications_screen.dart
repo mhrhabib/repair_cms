@@ -510,28 +510,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       if (!mounted) return;
                       try {
-                        debugPrint(
-                          '✅ [NotificationsScreen] Marking all as read',
-                        );
+                        debugPrint('✅ [NotificationsScreen] Marking all as read');
                         Navigator.pop(context);
-                        if (mounted) {
-                          setState(() {
-                            for (var n in _notifications) {
-                              n.isRead = true;
-                            }
-                          });
-                          showCustomToast(
-                            'All notifications marked as read',
-                            isError: false,
-                          );
+                        final loginUserId = storage.read('loginUserId') ?? '';
+                        if (loginUserId.toString().isNotEmpty) {
+                          await context.read<NotificationCubit>().markAllAsRead(userId: loginUserId.toString());
+                          showCustomToast('All notifications marked as read', isError: false);
                         }
                       } catch (e) {
-                        debugPrint(
-                          '❌ [NotificationsScreen] Error marking all as read: $e',
-                        );
+                        debugPrint('❌ [NotificationsScreen] Error marking all as read: $e');
+                        if (mounted) showCustomToast('Failed to mark all as read', isError: true);
                       }
                     },
                     child: Row(
@@ -621,22 +612,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
+            ElevatedButton(
+            onPressed: () async {
               if (!mounted) return;
               try {
-                debugPrint(
-                  '🗑️ [NotificationsScreen] Deleting all notifications',
-                );
+                debugPrint('🗑️ [NotificationsScreen] Deleting all notifications');
                 Navigator.pop(context);
-                if (mounted) {
-                  setState(() {
-                    _notifications.clear();
-                  });
-                  showCustomToast('All notifications deleted');
+                final loginUserId = storage.read('loginUserId') ?? '';
+                if (loginUserId.toString().isNotEmpty) {
+                  await context.read<NotificationCubit>().deleteAllNotifications(userId: loginUserId.toString());
+                  if (mounted) showCustomToast('All notifications deleted');
                 }
               } catch (e) {
                 debugPrint('❌ [NotificationsScreen] Error deleting all: $e');
+                if (mounted) showCustomToast('Failed to delete all notifications', isError: true);
               }
             },
             style: ElevatedButton.styleFrom(

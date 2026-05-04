@@ -110,6 +110,7 @@ class SignInCubit extends Cubit<SignInStates> {
       debugPrint('🔐 User ID in: ${response.data!.user.id}');
       debugPrint('🔐 User Owner ID in: ${response.data!.user.ownerId}');
       debugPrint('🔐 User storage userId in: ${storage.read('userId')}');
+      await storage.write('loginUserId', response.data!.user.id);
       await storage.write('email', response.data!.user.email);
       await storage.write(
         'companyId',

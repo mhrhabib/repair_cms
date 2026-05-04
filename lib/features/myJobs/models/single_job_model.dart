@@ -576,6 +576,8 @@ class DeviceData {
   String? brandId;
   String? model;
   String? type;
+  String? deviceSecurity;
+  List<num>? securityLock;
   List<Condition>? condition;
   String? serialNo;
   String? imei;
@@ -585,6 +587,8 @@ class DeviceData {
     this.brandId,
     this.model,
     this.type,
+    this.deviceSecurity,
+    this.securityLock,
     this.condition,
     this.serialNo,
     this.imei,
@@ -595,6 +599,10 @@ class DeviceData {
     brandId = json['brandId'];
     model = json['model'];
     type = json['type'];
+    deviceSecurity = json['deviceSecurity'];
+    securityLock = json['securityLock'] != null
+        ? json['securityLock'].cast<num>()
+        : [];
     if (json['condition'] != null) {
       condition = <Condition>[];
       json['condition'].forEach((v) {
@@ -617,6 +625,8 @@ class DeviceData {
     data['brandId'] = brandId;
     data['model'] = model;
     data['type'] = type;
+    data['deviceSecurity'] = deviceSecurity;
+    data['securityLock'] = securityLock;
     if (condition != null) {
       data['condition'] = condition!.map((v) => v.toJson()).toList();
     }

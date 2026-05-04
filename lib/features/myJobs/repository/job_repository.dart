@@ -5,14 +5,17 @@ import 'package:dio/dio.dart' as dio;
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io' as io;
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:mime/mime.dart';
+import 'package:image/image.dart' as img;
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/services/email_service.dart';
 import 'package:repair_cms/features/myJobs/models/assign_user_list_model.dart';
-import 'package:repair_cms/features/myJobs/models/job_list_response.dart' hide InternalNote;
+import 'package:repair_cms/features/myJobs/models/job_list_response.dart'
+    hide InternalNote;
 import 'package:repair_cms/features/myJobs/models/status_settings_model.dart';
 
 class JobRepository {
@@ -36,8 +39,13 @@ class JobRepository {
         'limit': pageSize,
         'keyword': keyword ?? '',
         'status': '', // Always empty as per working URL
-        'assignUserId': (assignee != null && assignee != 'None') ? assignee : '',
-        'job_priority': (priority != null && priority.isNotEmpty && priority != 'All') ? priority : 'null',
+        'assignUserId': (assignee != null && assignee != 'None')
+            ? assignee
+            : '',
+        'job_priority':
+            (priority != null && priority.isNotEmpty && priority != 'All')
+            ? priority
+            : 'null',
         'due_date': dueDate ?? 'null',
       };
 
@@ -57,19 +65,25 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         // Parse JSON string to Map if needed
-        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+        final responseData = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
 
         // 🔍 DEBUG: Print field types before parsing
         _debugResponseFields(responseData);
 
         return JobListResponse.fromJson(responseData);
       } else {
-        throw Exception('Failed to fetch jobs: ${response.statusCode} - ${response.data}');
+        throw Exception(
+          'Failed to fetch jobs: ${response.statusCode} - ${response.data}',
+        );
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ Dio Error: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.statusCode} - ${e.response?.data}');
+        throw Exception(
+          'Server error: ${e.response?.statusCode} - ${e.response?.data}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
@@ -89,7 +103,9 @@ class JobRepository {
     });
 
     // Debug the first job result in detail
-    if (responseData['results'] != null && responseData['results'] is List && responseData['results'].isNotEmpty) {
+    if (responseData['results'] != null &&
+        responseData['results'] is List &&
+        responseData['results'].isNotEmpty) {
       debugPrint('\n🔍 DEBUG - FIRST JOB OBJECT FIELD TYPES:');
       final firstJob = responseData['results'][0];
 
@@ -123,7 +139,9 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         // Parse JSON string to Map if needed
-        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+        final responseData = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
 
         debugPrint('🔍 DEBUG - Single Job Response:');
         _debugSingleJobFields(responseData);
@@ -167,17 +185,28 @@ class JobRepository {
   // 🔍 NEW: Identify potential type issues
   bool _isPotentialTypeIssue(String key, dynamic value) {
     // Common numeric fields that might be sent as int but expected as String
-    final numericFields = ['subTotal', 'total', 'vat', 'discount', 'price', 'amount'];
+    final numericFields = [
+      'subTotal',
+      'total',
+      'vat',
+      'discount',
+      'price',
+      'amount',
+    ];
 
     if (numericFields.contains(key) && value is int) {
-      debugPrint('      💡 SUGGESTION: API sends $key as int, ensure model handles numeric types');
+      debugPrint(
+        '      💡 SUGGESTION: API sends $key as int, ensure model handles numeric types',
+      );
       return true;
     }
 
     // ID fields that should be strings
     if (key.contains('Id') || key.contains('_id')) {
       if (value is! String && value != null) {
-        debugPrint('      💡 SUGGESTION: $key is ${value.runtimeType}, but should be String?');
+        debugPrint(
+          '      💡 SUGGESTION: $key is ${value.runtimeType}, but should be String?',
+        );
         return true;
       }
     }
@@ -206,7 +235,12 @@ class JobRepository {
               'defaultNotes': 'Device is ready to return',
               'priority': 2,
             }
-          : {'title': 'in_progress', 'colorCode': '#FEC636', 'defaultNotes': 'Device is in progress', 'priority': 2};
+          : {
+              'title': 'in_progress',
+              'colorCode': '#FEC636',
+              'defaultNotes': 'Device is in progress',
+              'priority': 2,
+            };
 
       // Create the new job status entry
       final jobStatusEntry = {
@@ -223,10 +257,8 @@ class JobRepository {
 
       // Preserve existing job status history and append the new entry
       final List<Map<String, dynamic>> existingStatuses =
-          currentJob.data?.jobStatus
-                  ?.map((s) => s.toJson())
-                  .toList() ??
-              <Map<String, dynamic>>[];
+          currentJob.data?.jobStatus?.map((s) => s.toJson()).toList() ??
+          <Map<String, dynamic>>[];
 
       // Prepare the payload
       final payload = {
@@ -242,7 +274,10 @@ class JobRepository {
       debugPrint('🔄 is_job_completed: $isJobCompleted');
       debugPrint('🔄 New status: ${statusConfig['title']}');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('✅ Job completion status updated successfully');
@@ -271,12 +306,17 @@ class JobRepository {
   }
 
   // Helper method to send completion email
-  Future<void> _sendJobCompleteEmail(SingleJobModel job, String jobStatus) async {
+  Future<void> _sendJobCompleteEmail(
+    SingleJobModel job,
+    String jobStatus,
+  ) async {
     try {
       // Extract required data from the job
       final jobData = job.data!;
       final customerDetails = jobData.customerDetails!;
-      final contact = jobData.contact!.isNotEmpty ? jobData.contact!.first : null;
+      final contact = jobData.contact!.isNotEmpty
+          ? jobData.contact!.first
+          : null;
 
       await EmailService.sendJobCompleteEmail(
         jobNo: jobData.jobNo!,
@@ -311,8 +351,18 @@ class JobRepository {
 
       // Define status configuration based on return device status
       final Map<String, dynamic> statusConfig = isReturnDevice
-          ? {'title': 'archive', 'colorCode': '#EDEEF1', 'defaultNotes': 'move to trash', 'priority': 'archive'}
-          : {'title': 'in_progress', 'colorCode': '#008444', 'defaultNotes': 'Device is in progress', 'priority': 2};
+          ? {
+              'title': 'archive',
+              'colorCode': '#EDEEF1',
+              'defaultNotes': 'move to trash',
+              'priority': 'archive',
+            }
+          : {
+              'title': 'in_progress',
+              'colorCode': '#008444',
+              'defaultNotes': 'Device is in progress',
+              'priority': 2,
+            };
 
       // Create the new job status entry
       final jobStatusEntry = {
@@ -329,10 +379,8 @@ class JobRepository {
 
       // Preserve existing job status history and append the new entry
       final List<Map<String, dynamic>> existingStatuses =
-          currentJob.data?.jobStatus
-                  ?.map((s) => s.toJson())
-                  .toList() ??
-              <Map<String, dynamic>>[];
+          currentJob.data?.jobStatus?.map((s) => s.toJson()).toList() ??
+          <Map<String, dynamic>>[];
 
       // Prepare the payload with nested structure
       final payload = {
@@ -349,7 +397,10 @@ class JobRepository {
       debugPrint('🔄 New status: ${statusConfig['title']}');
       debugPrint('🔄 Notes: ${customNotes ?? statusConfig['defaultNotes']}');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job return status updated successfully');
@@ -361,12 +412,16 @@ class JobRepository {
           responseData = jsonDecode(responseData);
         }
 
-        debugPrint('✅ Response - is_device_returned: ${responseData['data']?['is_device_returned']}');
+        debugPrint(
+          '✅ Response - is_device_returned: ${responseData['data']?['is_device_returned']}',
+        );
         debugPrint('✅ Response - status: ${responseData['data']?['status']}');
 
         return SingleJobModel.fromJson(responseData);
       } else {
-        throw Exception('Failed to update job return status: ${response.statusCode}');
+        throw Exception(
+          'Failed to update job return status: ${response.statusCode}',
+        );
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error in updateJobReturnStatus: $e');
@@ -400,7 +455,10 @@ class JobRepository {
 
   // Add to JobRepository
 
-  Future<SingleJobModel> updateJobDueDate(String jobId, DateTime dueDate) async {
+  Future<SingleJobModel> updateJobDueDate(
+    String jobId,
+    DateTime dueDate,
+  ) async {
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
 
@@ -412,7 +470,10 @@ class JobRepository {
       debugPrint('🔄 Job ID: $jobId');
       debugPrint('🔄 Due Date: ${dueDate.toIso8601String()}');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job due date updated successfully');
@@ -423,7 +484,9 @@ class JobRepository {
         }
         return SingleJobModel.fromJson(responseData);
       } else {
-        throw Exception('Failed to update job due date: ${response.statusCode}');
+        throw Exception(
+          'Failed to update job due date: ${response.statusCode}',
+        );
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error in updateJobDueDate: $e');
@@ -432,7 +495,11 @@ class JobRepository {
     }
   }
 
-  Future<SingleJobModel> updateJobAssignee(String jobId, String assignUserId, String assignerName) async {
+  Future<SingleJobModel> updateJobAssignee(
+    String jobId,
+    String assignUserId,
+    String assignerName,
+  ) async {
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
 
@@ -445,7 +512,10 @@ class JobRepository {
       debugPrint('🔄 Assign User ID: $assignUserId');
       debugPrint('🔄 Assigner Name: $assignerName');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       // Handle string response
       dynamic responseData = response.data;
@@ -458,7 +528,9 @@ class JobRepository {
         debugPrint('✅ Job assignee updated successfully');
         return SingleJobModel.fromJson(responseData);
       } else {
-        throw Exception('Failed to update job assignee: ${response.statusCode}');
+        throw Exception(
+          'Failed to update job assignee: ${response.statusCode}',
+        );
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error in updateJobAssignee: $e');
@@ -468,8 +540,13 @@ class JobRepository {
   }
 
   // Update the existing updateJobPriority method to use nested structure
-  Future<SingleJobModel> updateJobPriority(String jobId, String priority) async {
-    debugPrint('🔄 JobRepository: Updating job priority for Job ID: $jobId to $priority');
+  Future<SingleJobModel> updateJobPriority(
+    String jobId,
+    String priority,
+  ) async {
+    debugPrint(
+      '🔄 JobRepository: Updating job priority for Job ID: $jobId to $priority',
+    );
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
 
@@ -477,7 +554,10 @@ class JobRepository {
         'job': {'job_priority': priority},
       };
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       // Handle string response
       dynamic responseData = response.data;
@@ -486,15 +566,21 @@ class JobRepository {
         responseData = jsonDecode(responseData);
       }
 
-      debugPrint('🔄 repo: Updated job priority for Job ID: ${responseData['data']?['_id']} to $priority');
+      debugPrint(
+        '🔄 repo: Updated job priority for Job ID: ${responseData['data']?['_id']} to $priority',
+      );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to update job priority: ${response.statusCode}');
+        throw Exception(
+          'Failed to update job priority: ${response.statusCode}',
+        );
       }
       return SingleJobModel.fromJson(responseData);
     } on dio.DioException catch (e) {
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.data['message'] ?? e.response?.statusCode}');
+        throw Exception(
+          'Server error: ${e.response?.data['message'] ?? e.response?.statusCode}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }
@@ -518,14 +604,18 @@ class JobRepository {
 
       if (response.statusCode == 200) {
         // Parse JSON string to Map if needed
-        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+        final responseData = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
 
         debugPrint('✅ Assign user list fetched successfully');
         debugPrint('✅ Total users: ${responseData['data']?.length ?? 0}');
 
         return AssignUserListModel.fromJson(responseData);
       } else {
-        throw Exception('Failed to fetch assign user list: ${response.statusCode}');
+        throw Exception(
+          'Failed to fetch assign user list: ${response.statusCode}',
+        );
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error in getAssignUserList: $e');
@@ -597,7 +687,10 @@ class JobRepository {
       debugPrint('🔄 Existing statuses: ${existingStatuses.length}');
       debugPrint('🔄 New total statuses: ${updatedStatuses.length}');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job status added successfully (appended)');
@@ -630,15 +723,18 @@ class JobRepository {
       return '#8a0505';
     } else if (statusLower.contains('invoice')) {
       return '#8a0505';
-    } else if (statusLower.contains('ready') || statusLower.contains('return')) {
+    } else if (statusLower.contains('ready') ||
+        statusLower.contains('return')) {
       return '#008444';
-    } else if (statusLower.contains('complete') || statusLower.contains('finished')) {
+    } else if (statusLower.contains('complete') ||
+        statusLower.contains('finished')) {
       return '#008444';
     } else if (statusLower.contains('cancel')) {
       return '#FF0000';
     } else if (statusLower.contains('archive')) {
       return '#EDEEF1';
-    } else if (statusLower.contains('pending') || statusLower.contains('waiting')) {
+    } else if (statusLower.contains('pending') ||
+        statusLower.contains('waiting')) {
       return '#FFA500';
     }
 
@@ -654,9 +750,11 @@ class JobRepository {
       return 'Quotation sent to customer';
     } else if (statusLower.contains('invoice')) {
       return 'Invoice sent to customer';
-    } else if (statusLower.contains('ready') || statusLower.contains('return')) {
+    } else if (statusLower.contains('ready') ||
+        statusLower.contains('return')) {
       return 'Device is ready to return';
-    } else if (statusLower.contains('complete') || statusLower.contains('finished')) {
+    } else if (statusLower.contains('complete') ||
+        statusLower.contains('finished')) {
       return 'Job completed successfully';
     } else if (statusLower.contains('cancel')) {
       return 'Job has been cancelled';
@@ -701,15 +799,21 @@ class JobRepository {
         'userId': userId,
         'userName': userName,
         'createdAt': DateTime.now().toIso8601String(),
-        'id': '${DateTime.now().millisecondsSinceEpoch}-${userId.substring(0, 8)}', // Generate unique ID
+        'id':
+            '${DateTime.now().millisecondsSinceEpoch}-${userId.substring(0, 8)}', // Generate unique ID
       };
 
       // Append the new note to existing ones
-      final updatedNotes = [...existingNotes, InternalNote.fromJson(newNoteEntry)];
+      final updatedNotes = [
+        ...existingNotes,
+        InternalNote.fromJson(newNoteEntry),
+      ];
 
       // Prepare the payload with nested structure
       final payload = {
-        'defect': {'internalNote': updatedNotes.map((note) => note.toJson()).toList()},
+        'defect': {
+          'internalNote': updatedNotes.map((note) => note.toJson()).toList(),
+        },
       };
 
       debugPrint('🔄 Adding job note:');
@@ -719,7 +823,10 @@ class JobRepository {
       debugPrint('🔄 Existing notes: ${existingNotes.length}');
       debugPrint('🔄 New total notes: ${updatedNotes.length}');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job note added successfully');
@@ -783,7 +890,9 @@ class JobRepository {
 
       // Prepare the payload
       final payload = {
-        'defect': {'internalNote': updatedNotes.map((note) => note.toJson()).toList()},
+        'defect': {
+          'internalNote': updatedNotes.map((note) => note.toJson()).toList(),
+        },
       };
 
       debugPrint('🔄 Updating job note:');
@@ -791,7 +900,10 @@ class JobRepository {
       debugPrint('🔄 Note ID: $noteId');
       debugPrint('🔄 Updated note: $noteText');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job note updated successfully');
@@ -811,7 +923,10 @@ class JobRepository {
     }
   }
 
-  Future<SingleJobModel> deleteJobNote({required String jobId, required String noteId}) async {
+  Future<SingleJobModel> deleteJobNote({
+    required String jobId,
+    required String noteId,
+  }) async {
     try {
       final url = ApiEndpoints.getJobById.replaceFirst('<id>', jobId);
 
@@ -833,11 +948,15 @@ class JobRepository {
       }
 
       // Remove the specific note
-      final updatedNotes = existingNotes.where((note) => note.id != noteId).toList();
+      final updatedNotes = existingNotes
+          .where((note) => note.id != noteId)
+          .toList();
 
       // Prepare the payload
       final payload = {
-        'defect': {'internalNote': updatedNotes.map((note) => note.toJson()).toList()},
+        'defect': {
+          'internalNote': updatedNotes.map((note) => note.toJson()).toList(),
+        },
       };
 
       debugPrint('🔄 Deleting job note:');
@@ -845,7 +964,10 @@ class JobRepository {
       debugPrint('🔄 Note ID: $noteId');
       debugPrint('🔄 Remaining notes: ${updatedNotes.length}');
 
-      dio.Response response = await BaseClient.patch(url: url, payload: payload);
+      dio.Response response = await BaseClient.patch(
+        url: url,
+        payload: payload,
+      );
 
       if (response.statusCode == 200) {
         debugPrint('✅ Job note deleted successfully');
@@ -892,7 +1014,39 @@ class JobRepository {
       }
 
       // Read and encode file as base64
-      final bytes = await file.readAsBytes();
+      Uint8List bytes = await file.readAsBytes();
+      final lowerFileName = fileName.toLowerCase();
+      final isImage =
+          lowerFileName.endsWith('.jpg') ||
+          lowerFileName.endsWith('.jpeg') ||
+          lowerFileName.endsWith('.png') ||
+          lowerFileName.endsWith('.gif');
+
+      // Fix orientation for images
+      if (isImage) {
+        try {
+          debugPrint(
+            '📸 [uploadJobFile] Fixing orientation for image: $fileName',
+          );
+          img.Image? decodedImage = img.decodeImage(bytes);
+          if (decodedImage != null) {
+            decodedImage = img.bakeOrientation(decodedImage);
+            if (lowerFileName.endsWith('.png')) {
+              bytes = Uint8List.fromList(img.encodePng(decodedImage));
+            } else if (lowerFileName.endsWith('.gif')) {
+              bytes = Uint8List.fromList(img.encodeGif(decodedImage));
+            } else {
+              bytes = Uint8List.fromList(
+                img.encodeJpg(decodedImage, quality: 85),
+              );
+            }
+            debugPrint('✅ [uploadJobFile] Orientation fixed');
+          }
+        } catch (e) {
+          debugPrint('⚠️ [uploadJobFile] Orientation fix failed: $e');
+        }
+      }
+
       final base64File = base64Encode(bytes);
       final mimeType = lookupMimeType(fileName) ?? 'application/octet-stream';
       final fileId = const Uuid().v4();
@@ -903,17 +1057,28 @@ class JobRepository {
       final base64String = 'data:$mimeType;base64,$base64File';
 
       // Step 1: POST file as base64 to get file path
-      final uploadPayload = {'file': base64String, 'id': fileId, 'fileName': fileName, 'size': fileSize};
+      final uploadPayload = {
+        'file': base64String,
+        'id': fileId,
+        'fileName': fileName,
+        'size': fileSize,
+      };
 
       debugPrint('📦 Uploading to: $uploadUrl');
-      final uploadResponse = await BaseClient.post(url: uploadUrl, payload: uploadPayload);
+      final uploadResponse = await BaseClient.post(
+        url: uploadUrl,
+        payload: uploadPayload,
+      );
 
-      if (uploadResponse.statusCode != 201 && uploadResponse.statusCode != 200) {
+      if (uploadResponse.statusCode != 201 &&
+          uploadResponse.statusCode != 200) {
         throw Exception('File upload failed: ${uploadResponse.statusCode}');
       }
 
       // Response is a plain string with the file path
-      final uploadedFilePath = uploadResponse.data is String ? uploadResponse.data as String : null;
+      final uploadedFilePath = uploadResponse.data is String
+          ? uploadResponse.data as String
+          : null;
 
       if (uploadedFilePath == null || uploadedFilePath.isEmpty) {
         throw Exception('No file path returned from upload');
@@ -926,7 +1091,8 @@ class JobRepository {
 
       String? signedUrl;
       try {
-        final imageUrl = '${ApiEndpoints.fileUplaodUrl}images?imagePath=$uploadedFilePath';
+        final imageUrl =
+            '${ApiEndpoints.fileUplaodUrl}images?imagePath=$uploadedFilePath';
         debugPrint('📥 Fetching signed URL: $imageUrl');
 
         final urlResponse = await BaseClient.get(url: imageUrl);
@@ -961,7 +1127,12 @@ class JobRepository {
 
       debugPrint('📊 Found ${existingFiles.length} existing files');
 
-      final fileMetadata = {'file': uploadedFilePath, 'id': fileId, 'fileName': fileName, 'size': fileSize};
+      final fileMetadata = {
+        'file': uploadedFilePath,
+        'id': fileId,
+        'fileName': fileName,
+        'size': fileSize,
+      };
 
       // Add signed URL if we got it
       if (signedUrl != null && signedUrl.isNotEmpty) {
@@ -979,7 +1150,10 @@ class JobRepository {
       };
 
       debugPrint('📦 Patching: $patchUrl');
-      final patchResponse = await BaseClient.patch(url: patchUrl, payload: patchPayload);
+      final patchResponse = await BaseClient.patch(
+        url: patchUrl,
+        payload: patchPayload,
+      );
 
       if (patchResponse.statusCode != 200 && patchResponse.statusCode != 201) {
         throw Exception('Job patch failed: ${patchResponse.statusCode}');
@@ -988,33 +1162,43 @@ class JobRepository {
       debugPrint('✅ Job patched successfully');
 
       // Parse the response (now it's plain text, so we need to parse it)
-      final responseData = patchResponse.data is String ? jsonDecode(patchResponse.data) : patchResponse.data;
+      final responseData = patchResponse.data is String
+          ? jsonDecode(patchResponse.data)
+          : patchResponse.data;
 
       // The response should contain the updated job with files
       if (responseData is Map && responseData['data'] != null) {
         final jobData = responseData['data'];
 
         // Fetch signed URLs for any files that don't have them yet
-        if (jobData is Map && jobData['files'] != null && jobData['files'] is List) {
+        if (jobData is Map &&
+            jobData['files'] != null &&
+            jobData['files'] is List) {
           final files = jobData['files'] as List;
 
           for (var fileData in files) {
-            if (fileData is Map && fileData['file'] != null && fileData['url'] == null) {
+            if (fileData is Map &&
+                fileData['file'] != null &&
+                fileData['url'] == null) {
               final filePath = fileData['file'] as String;
 
               try {
                 // Get signed URL
-                final imageUrl = '${ApiEndpoints.fileUplaodUrl}images?imagePath=$filePath';
+                final imageUrl =
+                    '${ApiEndpoints.fileUplaodUrl}images?imagePath=$filePath';
                 debugPrint('📥 Fetching signed URL: $imageUrl');
 
                 final urlResponse = await BaseClient.get(url: imageUrl);
 
-                if (urlResponse.statusCode == 200 && urlResponse.data is String) {
+                if (urlResponse.statusCode == 200 &&
+                    urlResponse.data is String) {
                   fileData['url'] = urlResponse.data as String;
                   debugPrint('✅ Got signed URL for: ${fileData['fileName']}');
                 }
               } catch (e) {
-                debugPrint('⚠️ Could not get signed URL for ${fileData['fileName']}: $e');
+                debugPrint(
+                  '⚠️ Could not get signed URL for ${fileData['fileName']}: $e',
+                );
               }
             }
           }
@@ -1022,7 +1206,10 @@ class JobRepository {
 
         return SingleJobModel.fromJson(Map<String, dynamic>.from(responseData));
       } else if (responseData is Map && responseData['job'] != null) {
-        return SingleJobModel.fromJson({'success': true, 'data': Map<String, dynamic>.from(responseData['job'])});
+        return SingleJobModel.fromJson({
+          'success': true,
+          'data': Map<String, dynamic>.from(responseData['job']),
+        });
       } else {
         // Fallback: fetch the updated job
         return await getJobById(jobId);
@@ -1037,7 +1224,10 @@ class JobRepository {
     }
   }
 
-  Future<SingleJobModel> deleteJobFile({required String jobId, required String filePath}) async {
+  Future<SingleJobModel> deleteJobFile({
+    required String jobId,
+    required String filePath,
+  }) async {
     try {
       debugPrint('🔄 Deleting job file:');
       debugPrint('🔄 Job ID: $jobId');
@@ -1050,7 +1240,8 @@ class JobRepository {
       debugPrint('📊 Current files count: ${currentFiles.length}');
 
       // Step 2: Remove the file from S3
-      final deleteUrl = '${ApiEndpoints.fileUplaodUrl}images?imagePath=$filePath';
+      final deleteUrl =
+          '${ApiEndpoints.fileUplaodUrl}images?imagePath=$filePath';
       debugPrint('🗑️ Deleting from S3: $deleteUrl');
 
       try {
@@ -1066,7 +1257,9 @@ class JobRepository {
       }
 
       // Step 3: Remove the file entry from the job's files array
-      final updatedFiles = currentFiles.where((file) => file.file != filePath).toList();
+      final updatedFiles = currentFiles
+          .where((file) => file.file != filePath)
+          .toList();
       debugPrint('📊 Updated files count: ${updatedFiles.length}');
 
       if (updatedFiles.length == currentFiles.length) {
@@ -1092,7 +1285,10 @@ class JobRepository {
       };
 
       debugPrint('🔄 Patching job to remove file entry');
-      final patchResponse = await BaseClient.patch(url: patchUrl, payload: patchPayload);
+      final patchResponse = await BaseClient.patch(
+        url: patchUrl,
+        payload: patchPayload,
+      );
 
       if (patchResponse.statusCode == 200 || patchResponse.statusCode == 201) {
         debugPrint('✅ Job file list updated successfully');
@@ -1106,7 +1302,9 @@ class JobRepository {
 
         return SingleJobModel.fromJson(responseData);
       } else {
-        throw Exception('Failed to update job file list: ${patchResponse.statusCode}');
+        throw Exception(
+          'Failed to update job file list: ${patchResponse.statusCode}',
+        );
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error in deleteJobFile: $e');
@@ -1117,24 +1315,36 @@ class JobRepository {
 
   Future<StatusSettingsResponse> getStatusSettings(String userId) async {
     try {
-      debugPrint('🚀 [JobRepository] Fetching status settings for user: $userId');
+      debugPrint(
+        '🚀 [JobRepository] Fetching status settings for user: $userId',
+      );
 
-      final dio.Response response = await BaseClient.get(url: '${ApiEndpoints.baseUrl}/settings-status/user/$userId');
+      final dio.Response response = await BaseClient.get(
+        url: '${ApiEndpoints.baseUrl}/settings-status/user/$userId',
+      );
 
       if (response.statusCode == 200) {
-        final responseData = response.data is String ? jsonDecode(response.data) : response.data;
+        final responseData = response.data is String
+            ? jsonDecode(response.data)
+            : response.data;
 
         debugPrint('✅ [JobRepository] Status settings fetched successfully');
-        debugPrint('📊 [JobRepository] Total statuses: ${responseData['totalStatus'] ?? 0}');
+        debugPrint(
+          '📊 [JobRepository] Total statuses: ${responseData['totalStatus'] ?? 0}',
+        );
 
         return StatusSettingsResponse.fromJson(responseData);
       } else {
-        throw Exception('Failed to fetch status settings: ${response.statusCode} - ${response.data}');
+        throw Exception(
+          'Failed to fetch status settings: ${response.statusCode} - ${response.data}',
+        );
       }
     } on dio.DioException catch (e) {
       debugPrint('❌ Dio Error in getStatusSettings: ${e.message}');
       if (e.response != null) {
-        throw Exception('Server error: ${e.response?.statusCode} - ${e.response?.data}');
+        throw Exception(
+          'Server error: ${e.response?.statusCode} - ${e.response?.data}',
+        );
       } else {
         throw Exception('Network error: ${e.message}');
       }

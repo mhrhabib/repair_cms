@@ -84,4 +84,34 @@ class NotificationCubit extends Cubit<NotificationState> {
       emit(NotificationError(message: 'Failed to mark notification as read'));
     }
   }
+
+  Future<void> markAllAsRead({required String userId}) async {
+    debugPrint('🚀 [NotificationCubit] Marking all notifications as read for user: $userId');
+    try {
+      await notificationRepository.markAllAsRead(loginUserId: userId);
+      debugPrint('✅ [NotificationCubit] All notifications marked as read');
+      await getNotifications(userId: userId);
+    } on NotificationException catch (e) {
+      debugPrint('❌ [NotificationCubit] Error marking all as read: ${e.message}');
+      emit(NotificationError(message: e.message));
+    } catch (e) {
+      debugPrint('💥 [NotificationCubit] Unexpected error during markAllAsRead: $e');
+      emit(NotificationError(message: 'Failed to mark all as read'));
+    }
+  }
+
+  Future<void> deleteAllNotifications({required String userId}) async {
+    debugPrint('🚀 [NotificationCubit] Deleting all notifications for user: $userId');
+    try {
+      await notificationRepository.deleteAllNotifications(loginUserId: userId);
+      debugPrint('✅ [NotificationCubit] All notifications deleted');
+      await getNotifications(userId: userId);
+    } on NotificationException catch (e) {
+      debugPrint('❌ [NotificationCubit] Error deleting all notifications: ${e.message}');
+      emit(NotificationError(message: e.message));
+    } catch (e) {
+      debugPrint('💥 [NotificationCubit] Unexpected error during deleteAllNotifications: $e');
+      emit(NotificationError(message: 'Failed to delete all notifications'));
+    }
+  }
 }

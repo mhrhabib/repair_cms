@@ -51,6 +51,7 @@ import 'package:repair_cms/features/quickTask/cubit/quick_task_cubit.dart';
 import 'package:repair_cms/features/quickTask/repository/quick_task_repository.dart';
 import 'package:repair_cms/set_up_di.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+import 'package:repair_cms/core/helpers/notification_navigation_helper.dart';
 
 import 'package:flutter/services.dart';
 
@@ -142,7 +143,13 @@ class MyApp extends StatelessWidget {
         minTextAdapt: true,
         splitScreenMode: true,
         child: _ConnectivityWrapper(
-          child: MaterialApp.router(
+          child: Builder(builder: (context) {
+            // Register notification navigation callback once the root context is available
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              NotificationNavigationHelper.setupNavigationCallback(context);
+            });
+
+            return MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'RepairCMS',
 
@@ -167,7 +174,8 @@ class MyApp extends StatelessWidget {
               );
             },
             routerConfig: AppRouter.router,
-          ),
+            );
+          }),
         ),
       ),
     );

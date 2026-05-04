@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 import 'package:repair_cms/core/base/base_client.dart';
 import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart';
+import 'package:pdf/pdf.dart';
 import 'package:repair_cms/core/constants/app_typography.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:repair_cms/core/constants/app_colors.dart';
@@ -24,7 +26,6 @@ import 'package:repair_cms/features/jobBooking/models/create_job_request.dart'
     as job_booking;
 import 'package:repair_cms/features/myJobs/models/single_job_model.dart'
     as my_jobs;
-import 'package:repair_cms/features/myJobs/widgets/job_receipt_widget_new.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_settings_service.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/service/printer_service_factory.dart';
 import 'package:repair_cms/features/moreSettings/printerSettings/models/printer_config_model.dart';
@@ -55,25 +56,51 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
   final _settingsService = PrinterSettingsService();
   final _labelContentService = LabelContentSettingsService();
   my_jobs.SingleJobModel? _completeJobData;
-  bool _isLoadingCompleteData = false;
   late LabelContentSettings _labelSettings;
-  final GlobalKey _receiptKey = GlobalKey();
+
+  // ─── PDF state ─────────────────────────────────────────────────────────────
+  Uint8List? _pdfBytes;
+  bool _isLoadingPdf = true;
+  String? _pdfError;
 
   @override
   void initState() {
     super.initState();
-    _fetchCompleteJobData();
+    _fetchPdf();
     _labelSettings = _labelContentService.getSettings();
   }
 
-  Future<void> _fetchCompleteJobData() async {
+  // ─── Fetch PDF from API ────────────────────────────────────────────────────
+
+  Future<void> _fetchPdf() async {
     final jobId = widget.jobResponse.data?.sId;
-    if (jobId == null || jobId.isEmpty) return;
-    setState(() => _isLoadingCompleteData = true);
-    context.read<JobCubit>().getJobById(jobId);
+    if (jobId == null || jobId.isEmpty) {
+      setState(() {
+        _isLoadingPdf = false;
+        _pdfError = 'Missing Job ID';
+      });
+      return;
+    }
+
+    try {
+      final bytes = await _fetchReceiptPdfBytes(jobId);
+      if (mounted) {
+        setState(() {
+          _pdfBytes = bytes;
+          _isLoadingPdf = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingPdf = false;
+          _pdfError = e.toString();
+        });
+      }
+    }
   }
 
-  // ─── Shared data getters (used by label section) ───────────────────────────
+  // ─── Shared data getters ───────────────────────────────────────────────────
 
   String _getJobNumber() => widget.jobResponse.data?.jobNo?.toString() ?? 'N/A';
 
@@ -299,10 +326,8 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         : 'a4';
 
     if (configuredPrinters.length == 1) {
-      // Rule 2: if one printer setup just print
       _printReceipt(configuredPrinters.first);
     } else {
-      // Rule 1: if two or more printer setup show user to select
       final selectedPrinter = await showDialog<PrinterConfigModel>(
         context: context,
         builder: (_) => _PrinterSelectionDialog(
@@ -339,6 +364,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         SnackbarDemo(
           message: 'Sending to thermal printer...',
         ).showCustomSnackbar(context);
+
         final result = await PrinterServiceFactory.printRawEscPos(
           config: printer,
           escposBytes: bytes,
@@ -354,35 +380,31 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
       } else if (printer.printerType == 'label') {
         await _printLabel(printer);
       } else {
-        // A4 printer — fetch server-rendered PDF
+        // A4 printer — use cached PDF bytes or fetch fresh
         final jobId = widget.jobResponse.data?.sId;
         if (jobId == null || jobId.isEmpty) {
           throw Exception('Invalid job: missing job ID');
         }
 
-        SnackbarDemo(
-          message: 'Fetching receipt PDF...',
-        ).showCustomSnackbar(context);
+        _pdfBytes ??= await _fetchReceiptPdfBytes(jobId);
 
-        final pdfBytes = await _fetchReceiptPdfBytes(jobId);
+        final pdfName =
+            'Job_Receipt_${widget.jobResponse.data?.jobNo ?? jobId}.pdf';
 
         SnackbarDemo(
           message: 'Sending to A4 printer...',
         ).showCustomSnackbar(context);
 
-        final a4Service = PrinterServiceFactory.getA4NetworkPrinterService();
-        final result = await a4Service.printA4Receipt(
-          ipAddress: printer.ipAddress,
-          pdfBytes: pdfBytes,
-          port: printer.port ?? 9100,
+        final success = await Printing.layoutPdf(
+          onLayout: (_) async => _pdfBytes!,
+          name: pdfName,
+          format: PdfPageFormat.a4,
         );
 
-        if (result.success) {
+        if (success) {
           SnackbarDemo(
-            message: 'Print successful!',
+            message: 'Print task completed!',
           ).showCustomSnackbar(context);
-        } else {
-          throw Exception(result.message);
         }
       }
     } catch (e) {
@@ -413,14 +435,16 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     }
 
     final data = body['data'];
-    final String? base64Str =
-        data is Map<String, dynamic> ? data['base64'] as String? : null;
+    final String? base64Str = data is Map<String, dynamic>
+        ? data['base64'] as String?
+        : null;
     if (base64Str == null || base64Str.isEmpty) {
       throw Exception('Receipt response missing base64 PDF');
     }
 
-    final normalized =
-        base64Str.contains(',') ? base64Str.split(',').last : base64Str;
+    final normalized = base64Str.contains(',')
+        ? base64Str.split(',').last
+        : base64Str;
     return base64Decode(normalized);
   }
 
@@ -557,7 +581,6 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     final finalSalutation = data?.salutationHTMLmarkup ?? salutationFromCubit;
     final finalTerms = data?.termsAndConditionsHTMLmarkup ?? termsFromCubit;
 
-    // Helper to pick the first non-empty value
     String pick(String? resp, String? cubit, [String fallback = '']) {
       if (resp != null && resp.trim().isNotEmpty) return resp;
       if (cubit != null && cubit.trim().isNotEmpty) return cubit;
@@ -567,7 +590,6 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     final respFooter = data?.receiptFooter;
     final cubitFooter = receiptFooterFromCubit;
 
-    // Get current logged-in user for the "Agent" field
     final userData = storage.read('user');
     List<my_jobs.LoggedUser>? agentUser;
     if (userData != null) {
@@ -581,7 +603,6 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     }
 
     final List<Map<String, dynamic>> combinedItems = [];
-
     if (data?.assignedItems != null) {
       for (final item in data!.assignedItems!) {
         combinedItems.add({
@@ -805,7 +826,7 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
     );
   }
 
-  // ─── Label image capture (uses shared LabelImageGenerator) ────────────────
+  // ─── Label image capture ───────────────────────────────────────────────────
 
   Future<Uint8List?> _captureLabelAsImage(PrinterConfigModel printer) async {
     return LabelImageGenerator.captureLabelAsImage(
@@ -829,141 +850,123 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('fromBooking: ${widget.fromBooking}');
-    return BlocListener<JobCubit, JobStates>(
-      listener: (context, state) {
-        if (state is JobDetailSuccess) {
-          setState(() {
-            _completeJobData = state.job;
-            _isLoadingCompleteData = false;
-          });
-        } else if (state is JobError) {
-          setState(() => _isLoadingCompleteData = false);
-        }
-      },
-      child: Scaffold(
-        body: Stack(
-          children: [
-            SingleChildScrollView(
+    return Scaffold(
+      backgroundColor: AppColors.kBg,
+      body: Stack(
+        children: [
+          // ─── Scrollable content ──────────────────────────────────────────
+          SingleChildScrollView(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 72.h,
+              left: 16.w,
+              right: 16.w,
+              bottom: 16.h,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 10.h),
+
+                // ─ Receipt PDF card ─────────────────────────────────────────
+                _buildReceiptPdfCard(),
+
+                SizedBox(height: 24.h),
+
+                // ─ Device Label section header ──────────────────────────────
+                _SectionHeader(
+                  icon: Icons.label_important_rounded,
+                  label: 'Device Label',
+                  color: const Color(0xFF6C63FF),
+                ),
+                SizedBox(height: 10.h),
+
+                // ─ Device label card ────────────────────────────────────────
+                _buildDeviceLabelCard(),
+
+                SizedBox(height: 36.h),
+              ],
+            ),
+          ),
+
+          // ─── Custom Header ───────────────────────────────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 72.h,
+                top: MediaQuery.of(context).padding.top,
                 left: 16.w,
                 right: 16.w,
-                bottom: 16.h,
+                bottom: 8.h,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              decoration: BoxDecoration(
+                color: AppColors.kBg.withValues(alpha: 0.1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ─ Section header: Job Receipt ──────────────────────────────
-                  // _SectionHeader(
-                  //   icon: Icons.receipt_long_rounded,
-                  //   label: 'Job Receipt',
-                  //   color: AppColors.primary,
-                  // ),
-                  SizedBox(height: 10.h),
-
-                  // ─ Receipt card ─────────────────────────────────────────────
-                  _buildReceiptCard(),
-
-                  SizedBox(height: 24.h),
-
-                  // ─ Section header: Device Label ─────────────────────────────
-                  _SectionHeader(
-                    icon: Icons.label_important_rounded,
-                    label: 'Device Label',
-                    color: const Color(0xFF6C63FF),
+                  CustomNavButton(
+                    onPressed: () {
+                      if (widget.fromBooking) {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const HomeScreen(initialIndex: 1),
+                          ),
+                          (route) => false,
+                        );
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    icon: widget.fromBooking
+                        ? CupertinoIcons.check_mark
+                        : CupertinoIcons.back,
                   ),
-                  SizedBox(height: 10.h),
-
-                  // ─ Device label card ─────────────────────────────────────────
-                  _buildDeviceLabelCard(),
-
-                  SizedBox(height: 36.h),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F7F8),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(color: AppColors.whiteColor, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(28, 116, 115, 115),
+                          blurRadius: 2,
+                          offset: const Offset(0, 0),
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                        vertical: 4.0,
+                      ),
+                      child: Text(
+                        'Receipt Preview',
+                        style: AppTypography.sfProHeadLineTextStyle22,
+                      ),
+                    ),
+                  ),
+                  CustomNavButton(
+                    onPressed: _showPrintOptionsSheet,
+                    icon: SolarIconsOutline.printer,
+                  ),
                 ],
               ),
             ),
-
-            // Custom Header
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top,
-                  left: 16.w,
-                  right: 16.w,
-                  bottom: 8.h,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.kBg.withValues(alpha: 0.1),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CustomNavButton(
-                      onPressed: () {
-                        if (widget.fromBooking) {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (_) => const HomeScreen(initialIndex: 1),
-                            ),
-                            (route) => false,
-                          );
-                        } else {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      icon: widget.fromBooking ? CupertinoIcons.check_mark : CupertinoIcons.back,
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F7F8),
-                        shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.circular(28.r),
-                        border: Border.all(
-                          color: AppColors.whiteColor, // Figma: border #FFFFFF
-                          width: 1, // Figma: border-width 1px
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color.fromARGB(
-                              28,
-                              116,
-                              115,
-                              115,
-                            ), // Figma: #0000001C
-                            blurRadius: 2, // Figma: blur 20px
-                            offset: Offset(0, 0), // Figma: 0px 0px (no offset)
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                        child: Text(
-                          'Receipt Preview',
-                          style: AppTypography.sfProHeadLineTextStyle22,
-                        ),
-                      ),
-                    ),
-                    CustomNavButton(
-                      onPressed: _showPrintOptionsSheet,
-                      icon: SolarIconsOutline.printer,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildReceiptCard() {
-    final jobModel = _convertToSingleJobModel();
+  // ─── Receipt PDF card ──────────────────────────────────────────────────────
+
+  Widget _buildReceiptPdfCard() {
     return Container(
+      height: 600.h,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14.r),
@@ -976,41 +979,71 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: 650.h),
-            child: RepaintBoundary(
-              key: _receiptKey,
-              child: JobReceiptWidgetNew(isPreview: true, jobData: jobModel),
-            ),
-          ),
-          if (_isLoadingCompleteData)
-            Positioned.fill(
-              child: Container(
-                color: Colors.white.withValues(alpha: 0.8),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(color: AppColors.primary),
-                      SizedBox(height: 12.h),
-                      Text(
-                        'Loading tracking number...',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey.shade600,
-                        ),
+      child: _isLoadingPdf
+          ? const Center(child: CircularProgressIndicator())
+          : _pdfError != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: Colors.red.shade400,
+                      size: 48,
+                    ),
+                    SizedBox(height: 12.h),
+                    Text(
+                      'Failed to load receipt',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: 6.h),
+                    Text(
+                      _pdfError!,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey.shade600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 16.h),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _isLoadingPdf = true;
+                          _pdfError = null;
+                          _pdfBytes = null;
+                        });
+                        _fetchPdf();
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ),
+            )
+          : _pdfBytes == null
+          ? const Center(child: Text('No PDF data'))
+          : PdfPreview(
+              build: (_) async => _pdfBytes!,
+              canChangeOrientation: false,
+              canChangePageFormat: false,
+              canDebug: false,
+              allowPrinting: false,
+              allowSharing: false,
+              pdfFileName:
+                  'receipt_${widget.jobResponse.data?.jobNo ?? 'pdf'}.pdf',
             ),
-        ],
-      ),
     );
   }
+
+  // ─── Device label card ─────────────────────────────────────────────────────
 
   Widget _buildDeviceLabelCard() {
     return Container(
@@ -1101,7 +1134,6 @@ class _JobReceiptPreviewScreenState extends State<JobReceiptPreviewScreen> {
                 _labelSettings.showSymptom ||
                 _labelSettings.showPhysicalLocation) ...[
               SizedBox(height: 16.h),
-              // Info text lines
               Text(
                 [
                   if (_labelSettings.showJobNo) _getJobNumber(),
@@ -1290,16 +1322,6 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Container(
-        //   width: 32.w,
-        //   height: 32.h,
-        //   decoration: BoxDecoration(
-        //     color: color.withValues(alpha: 0.12),
-        //     borderRadius: BorderRadius.circular(8.r),
-        //   ),
-        //   child: Icon(icon, color: color, size: 18.sp),
-        // ),
-        // SizedBox(width: 10.w),
         Text(
           label,
           style: TextStyle(
@@ -1356,7 +1378,7 @@ class _PrinterPickerSheet extends StatelessWidget {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Existing helper dialogs (kept for receipt print flow)
+// Printer selection dialog
 // ──────────────────────────────────────────────────────────────────────────────
 
 class _PrinterSelectionDialog extends StatelessWidget {
@@ -1463,6 +1485,10 @@ class _PrinterSelectionDialog extends StatelessWidget {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Discovered printers dialog
+// ──────────────────────────────────────────────────────────────────────────────
+
 class _DiscoveredPrintersDialog extends StatelessWidget {
   final List<Map<String, String>> printers;
 
@@ -1498,6 +1524,10 @@ class _DiscoveredPrintersDialog extends StatelessWidget {
     );
   }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Printer configuration dialog
+// ──────────────────────────────────────────────────────────────────────────────
 
 class _PrinterConfigurationDialog extends StatefulWidget {
   final Map<String, String> printerInfo;

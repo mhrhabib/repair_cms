@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:image/image.dart' as img;
 
 import 'package:repair_cms/core/app_exports.dart';
 import 'package:repair_cms/core/helpers/contact_data_helper.dart';
@@ -22,7 +24,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void updateCustomerSignature(String signatureBase64) {
     final state = this.state;
     if (state is JobBookingData) {
-      emit(state.copyWith(job: state.job.copyWith(signatureFilePath: signatureBase64)));
+      emit(
+        state.copyWith(
+          job: state.job.copyWith(signatureFilePath: signatureBase64),
+        ),
+      );
     }
   }
 
@@ -35,21 +41,32 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     // Get receipt data from storage
     final receiptDataJson = storage.read('jobReceiptData');
     String salutationHTMLmarkup = '<p>Thank you for choosing our services.</p>';
-    String termsAndConditionsHTMLmarkup = '<p>Standard terms and conditions apply.</p>';
+    String termsAndConditionsHTMLmarkup =
+        '<p>Standard terms and conditions apply.</p>';
 
     if (receiptDataJson != null) {
       try {
-        final dynamic receiptData = receiptDataJson is String ? jsonDecode(receiptDataJson) : receiptDataJson;
-        salutationHTMLmarkup = receiptData['salutation'] ?? salutationHTMLmarkup;
-        termsAndConditionsHTMLmarkup = receiptData['termsAndConditions'] ?? termsAndConditionsHTMLmarkup;
+        final dynamic receiptData = receiptDataJson is String
+            ? jsonDecode(receiptDataJson)
+            : receiptDataJson;
+        salutationHTMLmarkup =
+            receiptData['salutation'] ?? salutationHTMLmarkup;
+        termsAndConditionsHTMLmarkup =
+            receiptData['termsAndConditions'] ?? termsAndConditionsHTMLmarkup;
         debugPrint('✅ [JobBookingCubit] Loaded receipt data from storage');
-        debugPrint('📄 [JobBookingCubit] Salutation length: ${salutationHTMLmarkup.length}');
-        debugPrint('📄 [JobBookingCubit] Terms length: ${termsAndConditionsHTMLmarkup.length}');
+        debugPrint(
+          '📄 [JobBookingCubit] Salutation length: ${salutationHTMLmarkup.length}',
+        );
+        debugPrint(
+          '📄 [JobBookingCubit] Terms length: ${termsAndConditionsHTMLmarkup.length}',
+        );
       } catch (e) {
         debugPrint('❌ [JobBookingCubit] Error parsing receipt data: $e');
       }
     } else {
-      debugPrint('⚠️ [JobBookingCubit] No receipt data found in storage, using defaults');
+      debugPrint(
+        '⚠️ [JobBookingCubit] No receipt data found in storage, using defaults',
+      );
     }
 
     emit(
@@ -60,8 +77,12 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           model: "",
           servicesIds: [],
           assignedItemsIds: [],
-          userId: _isValidObjectId(storedUserId) ? storedUserId : "", // Set from storage if valid
-          loggedUserId: _isValidObjectId(storedUserId) ? storedUserId : "", // Set from storage if valid
+          userId: _isValidObjectId(storedUserId)
+              ? storedUserId
+              : "", // Set from storage if valid
+          loggedUserId: _isValidObjectId(storedUserId)
+              ? storedUserId
+              : "", // Set from storage if valid
           jobStatus: [],
           status: "draft",
           discount: 0,
@@ -79,8 +100,22 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             email: "",
             telephone: "",
             telephonePrefix: "+1", // Default prefix
-            shippingAddress: CustomerAddress(street: "", no: "", zip: "", city: "", state: "", country: ""),
-            billingAddress: CustomerAddress(street: "", no: "", zip: "", city: "", state: "", country: ""),
+            shippingAddress: CustomerAddress(
+              street: "",
+              no: "",
+              zip: "",
+              city: "",
+              state: "",
+              country: "",
+            ),
+            billingAddress: CustomerAddress(
+              street: "",
+              no: "",
+              zip: "",
+              city: "",
+              state: "",
+              country: "",
+            ),
             salutation: "",
             firstName: "",
             lastName: "",
@@ -89,26 +124,53 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             reverseCharge: false,
           ),
           files: [],
-          location: _isValidObjectId(storedLocationId) ? storedLocationId : "", // Set from storage if valid
+          location: _isValidObjectId(storedLocationId)
+              ? storedLocationId
+              : "", // Set from storage if valid
           physicalLocation: "",
           signatureFilePath: "",
           salutationHTMLmarkup: salutationHTMLmarkup, // From receipt data
-          termsAndConditionsHTMLmarkup: termsAndConditionsHTMLmarkup, // From receipt data
+          termsAndConditionsHTMLmarkup:
+              termsAndConditionsHTMLmarkup, // From receipt data
           receiptFooter: ReceiptFooter(
-
             companyLogo: "",
             registrationNum: "",
             companyLogoURL: "",
-            address: CompanyAddress(companyName: "", street: "", num: "", zip: "", city: "", country: ""),
-            contact: CompanyContact(ceo: "", telephone: "", email: "", website: ""),
-            bank: BankDetails(bankName: "", iban: "", bic: "", taxId: "", vatId: ""),
+            address: CompanyAddress(
+              companyName: "",
+              street: "",
+              num: "",
+              zip: "",
+              city: "",
+              country: "",
+            ),
+            contact: CompanyContact(
+              ceo: "",
+              telephone: "",
+              email: "",
+              website: "",
+            ),
+            bank: BankDetails(
+              bankName: "",
+              iban: "",
+              bic: "",
+              taxId: "",
+              vatId: "",
+            ),
           ),
           printOption: "A4 Receipt",
           emailConfirmation: true,
           printDeviceLabel: false,
         ),
         defect: Defect(jobType: "", defect: [], internalNote: []),
-        device: Device(category: "", brand: "", model: "", imei: "", condition: [], deviceSecurity: "no security"),
+        device: Device(
+          category: "",
+          brand: "",
+          model: "",
+          imei: "",
+          condition: [],
+          deviceSecurity: "no security",
+        ),
         contact: Contact(
           type: "Personal",
           customerId: "",
@@ -118,8 +180,22 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           email: "",
           telephone: "",
           telephonePrefix: "+1",
-          shippingAddress: CustomerAddress(street: "", no: "", zip: "", city: "", state: "", country: ""),
-          billingAddress: CustomerAddress(street: "", no: "", zip: "", city: "", state: "", country: ""),
+          shippingAddress: CustomerAddress(
+            street: "",
+            no: "",
+            zip: "",
+            city: "",
+            state: "",
+            country: "",
+          ),
+          billingAddress: CustomerAddress(
+            street: "",
+            no: "",
+            zip: "",
+            city: "",
+            state: "",
+            country: "",
+          ),
           salutation: "",
           firstName: "",
           lastName: "",
@@ -163,7 +239,8 @@ class JobBookingCubit extends Cubit<JobBookingState> {
               firstName: firstName ?? state.job.customerDetails.firstName,
               lastName: lastName ?? state.job.customerDetails.lastName,
               telephone: telephone ?? state.job.customerDetails.telephone,
-              telephonePrefix: telephonePrefix ?? state.job.customerDetails.telephonePrefix,
+              telephonePrefix:
+                  telephonePrefix ?? state.job.customerDetails.telephonePrefix,
               email: email ?? state.job.customerDetails.email,
               customerId: customerId ?? state.job.customerDetails.customerId,
             ),
@@ -208,11 +285,13 @@ class JobBookingCubit extends Cubit<JobBookingState> {
             customerDetails: state.job.customerDetails.copyWith(
               type: type ?? state.job.customerDetails.type,
               type2: type2 ?? state.job.customerDetails.type2,
-              organization: organization ?? state.job.customerDetails.organization,
+              organization:
+                  organization ?? state.job.customerDetails.organization,
               customerNo: customerNo ?? state.job.customerDetails.customerNo,
               position: position ?? state.job.customerDetails.position,
               vatNo: vatNo ?? state.job.customerDetails.vatNo,
-              reverseCharge: reverseCharge ?? state.job.customerDetails.reverseCharge,
+              reverseCharge:
+                  reverseCharge ?? state.job.customerDetails.reverseCharge,
             ),
           ),
         ),
@@ -259,8 +338,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void addService(ServiceModel service) {
     final state = this.state;
     if (state is JobBookingData) {
-      final updatedServicesIds = List<String>.from(state.job.servicesIds)..add(service.id);
-      final updatedSelectedServices = List<ServiceModel>.from(state.selectedServices)..add(service);
+      final updatedServicesIds = List<String>.from(state.job.servicesIds)
+        ..add(service.id);
+      final updatedSelectedServices = List<ServiceModel>.from(
+        state.selectedServices,
+      )..add(service);
       emit(
         state.copyWith(
           job: state.job.copyWith(servicesIds: updatedServicesIds),
@@ -274,9 +356,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void removeService(String serviceId) {
     final state = this.state;
     if (state is JobBookingData) {
-      final updatedServicesIds = List<String>.from(state.job.servicesIds)..remove(serviceId);
-      final updatedSelectedServices = List<ServiceModel>.from(state.selectedServices)
-        ..removeWhere((s) => s.id == serviceId);
+      final updatedServicesIds = List<String>.from(state.job.servicesIds)
+        ..remove(serviceId);
+      final updatedSelectedServices = List<ServiceModel>.from(
+        state.selectedServices,
+      )..removeWhere((s) => s.id == serviceId);
       emit(
         state.copyWith(
           job: state.job.copyWith(servicesIds: updatedServicesIds),
@@ -290,12 +374,20 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void updateAssignedItems(List<String> assignedItemsIds) {
     final state = this.state;
     if (state is JobBookingData) {
-      emit(state.copyWith(job: state.job.copyWith(assignedItemsIds: assignedItemsIds)));
+      emit(
+        state.copyWith(
+          job: state.job.copyWith(assignedItemsIds: assignedItemsIds),
+        ),
+      );
     }
   }
 
   // Update defect information
-  void updateDefectInfo({String? jobType, List<DefectItem>? defect, List<dynamic>? internalNote}) {
+  void updateDefectInfo({
+    String? jobType,
+    List<DefectItem>? defect,
+    List<dynamic>? internalNote,
+  }) {
     final state = this.state;
     if (state is JobBookingData) {
       emit(
@@ -312,7 +404,12 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   }
 
   // Update pricing information
-  void updatePricing({double? discount, double? vat, double? subTotal, double? total}) {
+  void updatePricing({
+    double? discount,
+    double? vat,
+    double? subTotal,
+    double? total,
+  }) {
     final state = this.state;
     if (state is JobBookingData) {
       emit(
@@ -335,7 +432,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       emit(
         state.copyWith(
           contact: state.contact.copyWith(shippingAddress: address),
-          job: state.job.copyWith(customerDetails: state.job.customerDetails.copyWith(shippingAddress: address)),
+          job: state.job.copyWith(
+            customerDetails: state.job.customerDetails.copyWith(
+              shippingAddress: address,
+            ),
+          ),
         ),
       );
     }
@@ -347,7 +448,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       emit(
         state.copyWith(
           contact: state.contact.copyWith(billingAddress: address),
-          job: state.job.copyWith(customerDetails: state.job.customerDetails.copyWith(billingAddress: address)),
+          job: state.job.copyWith(
+            customerDetails: state.job.customerDetails.copyWith(
+              billingAddress: address,
+            ),
+          ),
         ),
       );
     }
@@ -362,15 +467,23 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   }
 
   // Set user and location data (from authentication/context)
-  void setUserData({required String userId, required String loggedUserId, required String location}) {
+  void setUserData({
+    required String userId,
+    required String loggedUserId,
+    required String location,
+  }) {
     final state = this.state;
     if (state is JobBookingData) {
       emit(
         state.copyWith(
           job: state.job.copyWith(
             userId: _isValidObjectId(userId) ? userId : state.job.userId,
-            loggedUserId: _isValidObjectId(loggedUserId) ? loggedUserId : state.job.loggedUserId,
-            location: _isValidObjectId(location) ? location : state.job.location,
+            loggedUserId: _isValidObjectId(loggedUserId)
+                ? loggedUserId
+                : state.job.loggedUserId,
+            location: _isValidObjectId(location)
+                ? location
+                : state.job.location,
           ),
         ),
       );
@@ -388,7 +501,9 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           : (_isValidObjectId(storedUserId) ? storedUserId : '');
 
       if (validUserId.isEmpty) {
-        debugPrint('❌ [JobBookingCubit] No valid userId available for job status');
+        debugPrint(
+          '❌ [JobBookingCubit] No valid userId available for job status',
+        );
         return;
       }
 
@@ -407,19 +522,27 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           job: state.job.copyWith(status: 'draft', jobStatus: [jobStatus]),
         ),
       );
-      debugPrint('✅ [JobBookingCubit] Generated draft job status with userId: $validUserId');
+      debugPrint(
+        '✅ [JobBookingCubit] Generated draft job status with userId: $validUserId',
+      );
     }
   }
 
   // Update job status to booked
-  void updateJobStatusToBooked({required String userId, required String userName, required String email}) {
+  void updateJobStatusToBooked({
+    required String userId,
+    required String userName,
+    required String email,
+  }) {
     final state = this.state;
     if (state is JobBookingData) {
       // Get valid userId for job status
       final validUserId = _isValidObjectId(userId) ? userId : '';
 
       if (validUserId.isEmpty) {
-        debugPrint('❌ [JobBookingCubit] No valid userId available for booked job status');
+        debugPrint(
+          '❌ [JobBookingCubit] No valid userId available for booked job status',
+        );
         return;
       }
 
@@ -436,10 +559,15 @@ class JobBookingCubit extends Cubit<JobBookingState> {
 
       emit(
         state.copyWith(
-          job: state.job.copyWith(status: 'booked', jobStatus: [bookedJobStatus]),
+          job: state.job.copyWith(
+            status: 'booked',
+            jobStatus: [bookedJobStatus],
+          ),
         ),
       );
-      debugPrint('✅ [JobBookingCubit] Updated to booked status with userId: $validUserId');
+      debugPrint(
+        '✅ [JobBookingCubit] Updated to booked status with userId: $validUserId',
+      );
     }
   }
 
@@ -456,7 +584,9 @@ class JobBookingCubit extends Cubit<JobBookingState> {
           ),
         ),
       );
-      debugPrint('✅ [JobBookingCubit] Updated job with jobNo: ${createdJobData.jobNo}');
+      debugPrint(
+        '✅ [JobBookingCubit] Updated job with jobNo: ${createdJobData.jobNo}',
+      );
     }
   }
 
@@ -466,27 +596,42 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     if (state is JobBookingData) {
       // Ensure customerId is present in contact and job when available in storage
       final storedCustomerId = storage.read('customerId');
-      final validStoredCustomerId = _isValidObjectId(storedCustomerId) ? storedCustomerId : null;
+      final validStoredCustomerId = _isValidObjectId(storedCustomerId)
+          ? storedCustomerId
+          : null;
 
       var job = state.job;
       var contact = state.contact;
 
-      if ((contact.customerId.isEmpty || !_isValidObjectId(contact.customerId)) && validStoredCustomerId != null) {
+      if ((contact.customerId.isEmpty ||
+              !_isValidObjectId(contact.customerId)) &&
+          validStoredCustomerId != null) {
         contact = contact.copyWith(customerId: validStoredCustomerId);
         job = job.copyWith(
-          customerDetails: job.customerDetails.copyWith(customerId: validStoredCustomerId),
+          customerDetails: job.customerDetails.copyWith(
+            customerId: validStoredCustomerId,
+          ),
           customerId: validStoredCustomerId,
         );
-        debugPrint('💾 [JobBookingCubit] Injected stored customerId into job request: $validStoredCustomerId');
+        debugPrint(
+          '💾 [JobBookingCubit] Injected stored customerId into job request: $validStoredCustomerId',
+        );
       } else if (_isValidObjectId(contact.customerId)) {
         // Ensure job.customerId and customerDetails are in sync with contact
         job = job.copyWith(
-          customerDetails: job.customerDetails.copyWith(customerId: contact.customerId),
+          customerDetails: job.customerDetails.copyWith(
+            customerId: contact.customerId,
+          ),
           customerId: contact.customerId,
         );
       }
 
-      return CreateJobRequest(job: job, defect: state.defect, device: state.device, contact: contact);
+      return CreateJobRequest(
+        job: job,
+        defect: state.defect,
+        device: state.device,
+        contact: contact,
+      );
     }
     throw Exception("Job data not initialized");
   }
@@ -532,8 +677,14 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   }
 
   // Method to update from contact data (using your helper functions)
-  void updateFromContactData(Map<String, dynamic> contactData, {String option = 'select'}) {
-    final businessData = ContactDataHelper.getContactDataForJobContact(contactData, option: option);
+  void updateFromContactData(
+    Map<String, dynamic> contactData, {
+    String option = 'select',
+  }) {
+    final businessData = ContactDataHelper.getContactDataForJobContact(
+      contactData,
+      option: option,
+    );
 
     updateContactType(
       type: businessData['type'],
@@ -557,7 +708,8 @@ class JobBookingCubit extends Cubit<JobBookingState> {
 
     // Update addresses if available
     if (businessData['shipping_address'] != null) {
-      final shippingAddressData = businessData['shipping_address'] as Map<String, dynamic>;
+      final shippingAddressData =
+          businessData['shipping_address'] as Map<String, dynamic>;
       final shippingAddress = CustomerAddress(
         street: shippingAddressData['street'] ?? '',
         no: shippingAddressData['no'] ?? '',
@@ -570,7 +722,8 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     }
 
     if (businessData['billing_address'] != null) {
-      final billingAddressData = businessData['billing_address'] as Map<String, dynamic>;
+      final billingAddressData =
+          businessData['billing_address'] as Map<String, dynamic>;
       final billingAddress = CustomerAddress(
         street: billingAddressData['street'] ?? '',
         no: billingAddressData['no'] ?? '',
@@ -589,8 +742,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void addItem(String itemId) {
     final state = this.state;
     if (state is JobBookingData) {
-      final updatedItems = List<String>.from(state.job.assignedItemsIds)..add(itemId);
-      emit(state.copyWith(job: state.job.copyWith(assignedItemsIds: updatedItems)));
+      final updatedItems = List<String>.from(state.job.assignedItemsIds)
+        ..add(itemId);
+      emit(
+        state.copyWith(job: state.job.copyWith(assignedItemsIds: updatedItems)),
+      );
     }
   }
 
@@ -598,8 +754,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void removeItem(String itemId) {
     final state = this.state;
     if (state is JobBookingData) {
-      final updatedItems = List<String>.from(state.job.assignedItemsIds)..remove(itemId);
-      emit(state.copyWith(job: state.job.copyWith(assignedItemsIds: updatedItems)));
+      final updatedItems = List<String>.from(state.job.assignedItemsIds)
+        ..remove(itemId);
+      emit(
+        state.copyWith(job: state.job.copyWith(assignedItemsIds: updatedItems)),
+      );
     }
   }
 
@@ -640,9 +799,15 @@ class JobBookingCubit extends Cubit<JobBookingState> {
         state.copyWith(
           job: state.job.copyWith(
             physicalLocation: location,
-            location: _isValidObjectId(storage.read("locationId")) ? storage.read("locationId") : state.job.location,
-            loggedUserId: _isValidObjectId(storage.read("userId")) ? storage.read("userId") : state.job.loggedUserId,
-            userId: _isValidObjectId(storage.read("userId")) ? storage.read("userId") : state.job.userId,
+            location: _isValidObjectId(storage.read("locationId"))
+                ? storage.read("locationId")
+                : state.job.location,
+            loggedUserId: _isValidObjectId(storage.read("userId"))
+                ? storage.read("userId")
+                : state.job.loggedUserId,
+            userId: _isValidObjectId(storage.read("userId"))
+                ? storage.read("userId")
+                : state.job.userId,
           ),
         ),
       );
@@ -657,7 +822,10 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       final isPrintDeviceLabel = printOption == "Device Label";
       emit(
         state.copyWith(
-          job: state.job.copyWith(printOption: printOption, printDeviceLabel: isPrintDeviceLabel),
+          job: state.job.copyWith(
+            printOption: printOption,
+            printDeviceLabel: isPrintDeviceLabel,
+          ),
         ),
       );
     }
@@ -668,8 +836,10 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void addFileWithPreview(File localFile, AvatarFile avatarFile) {
     final state = this.state;
     if (state is JobBookingData) {
-      final updatedLocalFiles = List<File>.from(state.localFiles!)..add(localFile);
-      final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])..add(avatarFile);
+      final updatedLocalFiles = List<File>.from(state.localFiles!)
+        ..add(localFile);
+      final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])
+        ..add(avatarFile);
       final updatedJob = state.job.copyWith(files: updatedAvatarFiles);
 
       emit(state.copyWith(job: updatedJob, localFiles: updatedLocalFiles));
@@ -677,11 +847,16 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   }
 
   // Add multiple files
-  void addFilesWithPreviews(List<File> localFiles, List<AvatarFile> avatarFiles) {
+  void addFilesWithPreviews(
+    List<File> localFiles,
+    List<AvatarFile> avatarFiles,
+  ) {
     final state = this.state;
     if (state is JobBookingData) {
-      final updatedLocalFiles = List<File>.from(state.localFiles!)..addAll(localFiles);
-      final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])..addAll(avatarFiles);
+      final updatedLocalFiles = List<File>.from(state.localFiles!)
+        ..addAll(localFiles);
+      final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])
+        ..addAll(avatarFiles);
       final updatedJob = state.job.copyWith(files: updatedAvatarFiles);
 
       emit(state.copyWith(job: updatedJob, localFiles: updatedLocalFiles));
@@ -692,9 +867,13 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void removeFile(int index) {
     final state = this.state;
     if (state is JobBookingData) {
-      if (index >= 0 && index < state.localFiles!.length && index < (state.job.files?.length ?? 0)) {
-        final updatedLocalFiles = List<File>.from(state.localFiles!)..removeAt(index);
-        final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])..removeAt(index);
+      if (index >= 0 &&
+          index < state.localFiles!.length &&
+          index < (state.job.files?.length ?? 0)) {
+        final updatedLocalFiles = List<File>.from(state.localFiles!)
+          ..removeAt(index);
+        final updatedAvatarFiles = List<AvatarFile>.from(state.job.files ?? [])
+          ..removeAt(index);
         final updatedJob = state.job.copyWith(files: updatedAvatarFiles);
 
         emit(state.copyWith(job: updatedJob, localFiles: updatedLocalFiles));
@@ -724,9 +903,12 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     final receiptDataJson = storage.read('jobReceiptData');
     if (receiptDataJson != null && state is JobBookingData) {
       try {
-        final dynamic receiptData = receiptDataJson is String ? jsonDecode(receiptDataJson) : receiptDataJson;
+        final dynamic receiptData = receiptDataJson is String
+            ? jsonDecode(receiptDataJson)
+            : receiptDataJson;
         final salutationHTMLmarkup = receiptData['salutation'] ?? '';
-        final termsAndConditionsHTMLmarkup = receiptData['termsAndConditions'] ?? '';
+        final termsAndConditionsHTMLmarkup =
+            receiptData['termsAndConditions'] ?? '';
 
         final currentState = state as JobBookingData;
         emit(
@@ -739,8 +921,12 @@ class JobBookingCubit extends Cubit<JobBookingState> {
         );
 
         debugPrint('✅ [JobBookingCubit] Updated receipt data in job');
-        debugPrint('📄 [JobBookingCubit] Salutation length: ${salutationHTMLmarkup.length}');
-        debugPrint('📄 [JobBookingCubit] Terms length: ${termsAndConditionsHTMLmarkup.length}');
+        debugPrint(
+          '📄 [JobBookingCubit] Salutation length: ${salutationHTMLmarkup.length}',
+        );
+        debugPrint(
+          '📄 [JobBookingCubit] Terms length: ${termsAndConditionsHTMLmarkup.length}',
+        );
       } catch (e) {
         debugPrint('❌ [JobBookingCubit] Error updating receipt data: $e');
       }
@@ -751,28 +937,41 @@ class JobBookingCubit extends Cubit<JobBookingState> {
   void updateReceiptFooterFromCompany(dynamic companyModel) {
     final currentState = state;
     if (currentState is! JobBookingData) {
-      debugPrint('⚠️ [JobBookingCubit] Cannot update receipt footer - state is not JobBookingData');
+      debugPrint(
+        '⚠️ [JobBookingCubit] Cannot update receipt footer - state is not JobBookingData',
+      );
       return;
     }
 
     try {
-      debugPrint('🏢 [JobBookingCubit] Starting receipt footer update from company data');
-      debugPrint('📊 [JobBookingCubit] Company name: ${companyModel.companyName}');
+      debugPrint(
+        '🏢 [JobBookingCubit] Starting receipt footer update from company data',
+      );
+      debugPrint(
+        '📊 [JobBookingCubit] Company name: ${companyModel.companyName}',
+      );
 
       // Save company name to storage as a fallback for the preview screen
-      if (companyModel.companyName != null && companyModel.companyName!.isNotEmpty) {
+      if (companyModel.companyName != null &&
+          companyModel.companyName!.isNotEmpty) {
         storage.write('companyName', companyModel.companyName);
-        debugPrint('💾 [JobBookingCubit] Saved company name to storage: ${companyModel.companyName}');
+        debugPrint(
+          '💾 [JobBookingCubit] Saved company name to storage: ${companyModel.companyName}',
+        );
       }
 
       // Extract company logo
-      final companyLogoURL = companyModel.companyLogo != null && companyModel.companyLogo!.isNotEmpty
+      final companyLogoURL =
+          companyModel.companyLogo != null &&
+              companyModel.companyLogo!.isNotEmpty
           ? companyModel.companyLogo![0].image ?? ''
           : '';
       debugPrint('🖼️ [JobBookingCubit] Logo URL: $companyLogoURL');
 
       // Extract company address
-      final companyAddress = companyModel.companyAddress != null && companyModel.companyAddress!.isNotEmpty
+      final companyAddress =
+          companyModel.companyAddress != null &&
+              companyModel.companyAddress!.isNotEmpty
           ? companyModel.companyAddress![0]
           : null;
 
@@ -789,12 +988,16 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       );
 
       // Extract company contact details
-      final companyContact = companyModel.companyContactDetail != null && companyModel.companyContactDetail!.isNotEmpty
+      final companyContact =
+          companyModel.companyContactDetail != null &&
+              companyModel.companyContactDetail!.isNotEmpty
           ? companyModel.companyContactDetail![0]
           : null;
 
       // Extract company tax details (for CEO name)
-      final companyTax = companyModel.companyTaxDetail != null && companyModel.companyTaxDetail!.isNotEmpty
+      final companyTax =
+          companyModel.companyTaxDetail != null &&
+              companyModel.companyTaxDetail!.isNotEmpty
           ? companyModel.companyTaxDetail![0]
           : null;
 
@@ -809,7 +1012,9 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       );
 
       // Extract bank details
-      final companyBank = companyModel.companyBankDetail != null && companyModel.companyBankDetail!.isNotEmpty
+      final companyBank =
+          companyModel.companyBankDetail != null &&
+              companyModel.companyBankDetail!.isNotEmpty
           ? companyModel.companyBankDetail![0]
           : null;
 
@@ -824,12 +1029,15 @@ class JobBookingCubit extends Cubit<JobBookingState> {
         taxId: companyTaxId,
         vatId: companyVatId,
       );
-      debugPrint('🏦 [JobBookingCubit] Bank - Name: ${bank.bankName}, IBAN: ${bank.iban}, BIC: ${bank.bic}');
+      debugPrint(
+        '🏦 [JobBookingCubit] Bank - Name: ${bank.bankName}, IBAN: ${bank.iban}, BIC: ${bank.bic}',
+      );
 
       // Create updated receipt footer
       final updatedReceiptFooter = ReceiptFooter(
         companyLogo: companyLogoURL, // Empty as it's stored in URL
-        registrationNum: registrationNum, // Empty as it's stored in the company model
+        registrationNum:
+            registrationNum, // Empty as it's stored in the company model
         companyLogoURL: '',
         address: address,
         contact: contact,
@@ -837,7 +1045,11 @@ class JobBookingCubit extends Cubit<JobBookingState> {
       );
 
       // Update job with new receipt footer
-      emit(currentState.copyWith(job: currentState.job.copyWith(receiptFooter: updatedReceiptFooter)));
+      emit(
+        currentState.copyWith(
+          job: currentState.job.copyWith(receiptFooter: updatedReceiptFooter),
+        ),
+      );
 
       debugPrint('✅ [JobBookingCubit] Receipt footer updated successfully');
       debugPrint('📋 [JobBookingCubit] Summary:');
@@ -860,15 +1072,56 @@ class JobBookingCubit extends Cubit<JobBookingState> {
     setUploadingStatus(true);
 
     try {
-      // Read file and convert to base64
+      // Read file
       final localFile = File(filePath);
       if (!await localFile.exists()) {
         throw Exception("File does not exist: $filePath");
       }
 
-      final bytes = await localFile.readAsBytes();
+      Uint8List bytes = await localFile.readAsBytes();
+      final fileName = filePath.split('/').last.toLowerCase();
+      final isImage =
+          fileName.endsWith('.jpg') ||
+          fileName.endsWith('.jpeg') ||
+          fileName.endsWith('.png') ||
+          fileName.endsWith('.gif');
+
+      String mimeType = "image/jpeg";
+      if (fileName.endsWith('.png')) mimeType = "image/png";
+      if (fileName.endsWith('.gif')) mimeType = "image/gif";
+
+      // Fix orientation for images (especially important for iOS)
+      if (isImage) {
+        try {
+          debugPrint(
+            '📸 [JobBookingCubit] Fixing orientation for image: $fileName',
+          );
+          img.Image? decodedImage = img.decodeImage(bytes);
+          if (decodedImage != null) {
+            // bakeOrientation rotates the image based on EXIF metadata
+            decodedImage = img.bakeOrientation(decodedImage);
+
+            // Re-encode based on type
+            if (fileName.endsWith('.png')) {
+              bytes = Uint8List.fromList(img.encodePng(decodedImage));
+            } else if (fileName.endsWith('.gif')) {
+              bytes = Uint8List.fromList(img.encodeGif(decodedImage));
+            } else {
+              // Default to JPG for .jpg, .jpeg and others
+              bytes = Uint8List.fromList(
+                img.encodeJpg(decodedImage, quality: 85),
+              );
+            }
+            debugPrint('✅ [JobBookingCubit] Orientation fixed and re-encoded');
+          }
+        } catch (e) {
+          debugPrint(
+            '⚠️ [JobBookingCubit] Failed to fix orientation, using original: $e',
+          );
+        }
+      }
+
       final base64Image = base64Encode(bytes);
-      final mimeType = "image/jpeg"; // Default MIME type for images
       final base64String = "data:$mimeType;base64,$base64Image";
 
       // Create AvatarFile with base64 data

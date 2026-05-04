@@ -160,19 +160,7 @@ class _NotificationListItemState extends State<NotificationListItem>
                         );
                       },
                     ),
-
-                    Text(
-                      widget.notification.messageType ??
-                          widget.notification.messageType ??
-                          '',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       widget.formatDate(widget.notification.createdAt),
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),

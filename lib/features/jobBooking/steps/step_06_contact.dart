@@ -688,7 +688,7 @@ class StepContactWidgetState extends State<StepContactWidget> {
                                 color: const Color(0xFFB2B5BE),
                                 fontWeight: FontWeight.w400,
                               ),
-                              
+
                               border: UnderlineInputBorder(
                                 borderSide: BorderSide(
                                   color: Colors.grey.shade300,
@@ -998,11 +998,11 @@ class StepContactWidgetState extends State<StepContactWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-                 CustomDropdownSearch.highlightedText(
-      text: displayName,
-      query: currentSearchQuery,
-      style: TextStyle(fontSize: 20.sp, color:   AppColors.fontMainColor,),
-    ),
+            CustomDropdownSearch.highlightedText(
+              text: displayName,
+              query: currentSearchQuery,
+              style: TextStyle(fontSize: 20.sp, color: AppColors.fontMainColor),
+            ),
             Text(
               profile.customerNumber ?? 'No customer number',
               style: AppTypography.fontSize14.copyWith(
@@ -1080,23 +1080,26 @@ class StepContactWidgetState extends State<StepContactWidget> {
                     bottom: BorderSide(color: Colors.grey.shade300),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      selectedPhoneCode,
-                      style: GoogleFonts.roboto(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.fontMainColor,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        selectedPhoneCode,
+                        style: GoogleFonts.roboto(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.fontMainColor,
+                        ),
                       ),
-                    ),
-                    Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 16.sp,
-                      color: Colors.grey,
-                    ),
-                  ],
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 16.sp,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

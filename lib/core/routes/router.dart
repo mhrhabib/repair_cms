@@ -15,6 +15,8 @@ import 'package:repair_cms/features/auth/signin/two_factor_authentication_screen
 import 'package:repair_cms/features/moreSettings/logs/logs_viewer_screen.dart';
 
 class AppRouter {
+  // Global navigator key used for programmatic navigation (e.g., from services)
+  static final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
   // List of public routes that don't require authentication
   static final List<String> _publicRoutes = [
     RouteNames.splash,
@@ -28,6 +30,7 @@ class AppRouter {
   ];
 
   static final GoRouter router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: RouteNames.splash,
     redirect: (BuildContext context, GoRouterState state) {
       final storage = GetStorage();

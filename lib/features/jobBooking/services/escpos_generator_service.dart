@@ -580,9 +580,9 @@ class EscPosGeneratorService {
   }
 
   static String _formatCurrency(dynamic amount) {
-    if (amount == null) return '£0.00';
+    if (amount == null) return '0.00';
     final value = amount is num ? amount.toDouble() : 0.0;
-    return '£${value.toStringAsFixed(2)}';
+    return '${value.toStringAsFixed(2)}';
   }
 
   /// Strip HTML tags from text (for salutation and terms)

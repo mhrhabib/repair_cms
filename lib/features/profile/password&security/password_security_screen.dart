@@ -232,17 +232,17 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            'Two-factor authentication (2FA)',
-                            style: GoogleFonts.roboto(
-                              color: AppColors.fontMainColor,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 11.sp,
-                            ),
-                          ),
-                        ),
+                        // Align(
+                        //   alignment: Alignment.centerRight,
+                        //   child: Text(
+                        //     'Two-factor authentication (2FA)',
+                        //     style: GoogleFonts.roboto(
+                        //       color: AppColors.fontMainColor,
+                        //       fontWeight: FontWeight.w500,
+                        //       fontSize: 11.sp,
+                        //     ),
+                        //   ),
+                        // ),
                         const SizedBox(height: 16),
                         SizedBox(height: 30.h),
                       ],
@@ -344,16 +344,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
               horizontal: 16,
               vertical: 12,
             ),
-            suffixIcon: IconButton(
-              icon: Icon(
-                obscureText
-                    ? SolarIconsOutline.eyeClosed
-                    : SolarIconsOutline.eye,
-                color: Colors.grey.shade600,
-                size: 20,
-              ),
-              onPressed: onToggleVisibility,
-            ),
+          
           ),
           style: AppTypography.fontSize16Normal,
         ),

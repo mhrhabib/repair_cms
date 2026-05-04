@@ -984,14 +984,14 @@ class JobReceiptWidgetNew extends StatelessWidget {
   }
 
   String _formatCurrency(dynamic amount) {
-    if (amount == null) return '£0.00';
+    if (amount == null) return '0.00';
     try {
       final numericAmount = amount is num
           ? amount.toDouble()
           : double.tryParse(amount.toString()) ?? 0.0;
-      return '£${numericAmount.toStringAsFixed(2)}';
+      return '${numericAmount.toStringAsFixed(2)}';
     } catch (e) {
-      return '£0.00';
+      return '0.00';
     }
   }
 }
