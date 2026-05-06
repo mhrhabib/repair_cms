@@ -36,6 +36,8 @@ class MessageCubit extends Cubit<MessageState> {
     required this.notificationService,
   }) : super(MessageInitial()) {
     _initializeListeners();
+    // Attempt to connect socket if user is already logged in
+    socketService.reconnect();
   }
 
   /// Sort messages by createdAt to ensure chronological order (oldest first)
@@ -209,10 +211,25 @@ class MessageCubit extends Cubit<MessageState> {
         }
 
         // Fallback: match by sender, message content and timestamp
-        // (with a small tolerance for local vs server timestamps)
         final sameSender = c.sender?.email == message.sender?.email;
         final sameContent = c.message?.message == message.message?.message;
-        if (sameSender && sameContent) {
+
+        // Check if attachments match (for photos/files)
+        bool sameAttachment = false;
+        final attA = c.message?.attachment;
+        final attB = message.message?.attachment;
+        if (attA != null &&
+            attB != null &&
+            attA.isNotEmpty &&
+            attB.isNotEmpty) {
+          sameAttachment =
+              attA.first.fileName == attB.first.fileName ||
+              attA.first.file == attB.first.file;
+        } else if (attA == null && attB == null) {
+          sameAttachment = true;
+        }
+
+        if (sameSender && sameContent && sameAttachment) {
           final dateA = _parseDateTime(c.createdAt);
           final dateB = _parseDateTime(message.createdAt);
           if (dateA != null && dateB != null) {
@@ -629,8 +646,7 @@ class MessageCubit extends Cubit<MessageState> {
       MessageSent(
         message: message,
         messages: List.from(_conversations),
-        conversationId:
-            _currentConversationId ?? message.conversationId ?? '',
+        conversationId: _currentConversationId ?? message.conversationId ?? '',
       ),
     );
   }
@@ -740,8 +756,9 @@ class MessageCubit extends Cubit<MessageState> {
         if (receiverData != null && receiverData is Map<String, dynamic>) {
           optimisticReceiver = Sender.fromJson(receiverData);
         }
-      } catch (_) {
         // ignore parsing issues
+      } catch (e) {
+        debugPrint('❌ [MessageCubit] Error parsing sender/receiver: $e');
       }
 
       final localConversation = Conversation(

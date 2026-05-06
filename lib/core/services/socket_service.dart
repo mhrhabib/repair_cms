@@ -9,7 +9,12 @@ class SocketService {
   io.Socket? socket;
 
   /// Connect and optionally join the user room. Call once (for example from main())
-  void connect({required String baseUrl, required String userId, String? authToken, Map<String, dynamic>? options}) {
+  void connect({
+    required String baseUrl,
+    required String userId,
+    String? authToken,
+    Map<String, dynamic>? options,
+  }) {
     // Build socket options with authentication
     final optionsBuilder = io.OptionBuilder()
         .setTransports(['websocket'])
@@ -26,9 +31,15 @@ class SocketService {
     socket = io.io(baseUrl, optionsBuilder.build());
 
     // Basic event handlers
-    socket!.on('connect', (_) => debugPrint('🚀 Socket connected: \\${socket!.id}'));
+    socket!.on(
+      'connect',
+      (_) => debugPrint('🚀 Socket connected: \\${socket!.id}'),
+    );
     socket!.on('disconnect', (_) => debugPrint('🔌 Socket disconnected'));
-    socket!.on('connect_error', (err) => debugPrint('❌ Socket connect error: $err'));
+    socket!.on(
+      'connect_error',
+      (err) => debugPrint('❌ Socket connect error: $err'),
+    );
 
     socket!.connect();
 
@@ -57,7 +68,12 @@ class SocketService {
 
   /// Generic emit helper
   void emit(String event, dynamic payload) {
-    socket?.emit(event, payload);
+    try {
+      debugPrint('➡️ [SocketService] Emit → event: $event payload: ${payload != null ? payload.toString().replaceAll(RegExp(r'\s+'), ' ') : 'null'}');
+      socket?.emit(event, payload);
+    } catch (e) {
+      debugPrint('❌ [SocketService] Failed to emit $event: $e');
+    }
   }
 
   /// Send chat message or attachment. Message payload must follow server contract.
@@ -67,6 +83,7 @@ class SocketService {
 
   /// Send internal comment
   void sendInternalComment(Map<String, dynamic> data) {
+    debugPrint('💬 [SocketService] Sending internalCommentFromRCMS');
     emit('internalCommentFromRCMS', data);
   }
 
@@ -99,10 +116,14 @@ class SocketService {
         final baseUrl = ApiEndpoints.baseUrl;
 
         if (userId != null) {
-          debugPrint('🔄 [SocketService] Socket not initialized. Reinitializing from storage...');
+          debugPrint(
+            '🔄 [SocketService] Socket not initialized. Reinitializing from storage...',
+          );
           connect(baseUrl: baseUrl, userId: userId, authToken: authToken);
         } else {
-          debugPrint('⚠️ [SocketService] Cannot reconnect: No user credentials in storage. Please login.');
+          debugPrint(
+            '⚠️ [SocketService] Cannot reconnect: No user credentials in storage. Please login.',
+          );
         }
       } catch (e) {
         debugPrint('❌ [SocketService] Error reading from storage: $e');

@@ -1,8 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:repair_cms/core/helpers/api_endpoints.dart';
 import 'package:repair_cms/core/helpers/storage.dart';
 import 'package:repair_cms/core/services/firebase_notification_service.dart';
+import 'package:repair_cms/core/services/socket_service.dart';
 import 'package:repair_cms/features/auth/signin/repo/sign_in_repository.dart';
+import 'package:repair_cms/set_up_di.dart';
 
 import '../models/find_user_response_model.dart';
 import '../models/login_response_model.dart';
@@ -95,7 +98,10 @@ class SignInCubit extends Cubit<SignInStates> {
     }
   }
 
-  Future<void> _handleLoginSuccess(String email, LoginResponseModel response) async {
+  Future<void> _handleLoginSuccess(
+    String email,
+    LoginResponseModel response,
+  ) async {
     // Save token and user data to storage
     if (response.data != null) {
       await storage.write('token', response.data!.accessToken);
@@ -112,15 +118,10 @@ class SignInCubit extends Cubit<SignInStates> {
       debugPrint('🔐 User storage userId in: ${storage.read('userId')}');
       await storage.write('loginUserId', response.data!.user.id);
       await storage.write('email', response.data!.user.email);
-      await storage.write(
-        'companyId',
-        response.data!.user.location!.companyId,
-      );
+      await storage.write('companyId', response.data!.user.location!.companyId);
       await storage.write('fullName', response.data!.user.fullName);
       await storage.write('locationId', response.data!.user.location!.id);
-      debugPrint(
-        '🔐 User locationId in: ${response.data!.user.location!.id}',
-      );
+      debugPrint('🔐 User locationId in: ${response.data!.user.location!.id}');
       saveUserTypeandId(
         response.data!.user.userType,
         response.data!.user.userType == 'Owner'
@@ -129,6 +130,23 @@ class SignInCubit extends Cubit<SignInStates> {
       );
       // Trigger FCM token sync after successful login
       FirebaseNotificationService().syncToken();
+
+      // Start socket connection immediately after login
+      try {
+        final baseUrl = ApiEndpoints.baseUrl;
+        final userId = storage.read('userId');
+        final authToken = storage.read('token');
+        if (userId != null && authToken != null) {
+          debugPrint('🔌 [SignInCubit] Connecting socket after login...');
+          SetUpDI.getIt<SocketService>().connect(
+            baseUrl: baseUrl,
+            userId: userId,
+            authToken: authToken,
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ [SignInCubit] Error connecting socket after login: $e');
+      }
     }
 
     emit(
@@ -146,8 +164,8 @@ class SignInCubit extends Cubit<SignInStates> {
     try {
       final bool success = await repository.resend2FAEmailOtp(email);
       if (success) {
-        // We stay on the same screen, just show success. 
-        // We use SignInInitial temporarily to clear loading, 
+        // We stay on the same screen, just show success.
+        // We use SignInInitial temporarily to clear loading,
         // or we could add a ResendSuccess state if needed.
         emit(SignInInitial());
       }

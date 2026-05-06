@@ -818,6 +818,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         message.comment != null ||
         (message.comments != null && message.comments!.isNotEmpty);
 
+    debugPrint("message?.sender?: ${message.sender?.name}");
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -847,7 +849,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
-                if (!isMe)
+                if (isMe)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4, left: 4),
                     child: Text(
@@ -859,18 +861,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       ),
                     ),
                   ),
-                if (isMe)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4, right: 4),
-                    child: Text(
-                      'Jake Jung', // Fallback for me as seen in image
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.fontSecondaryColor,
-                      ),
-                    ),
-                  ),
+
                 if (hasComment) ...[
                   if (message.comments != null && message.comments!.isNotEmpty)
                     for (var c in message.comments!) _buildCommentMessage(c)
@@ -902,19 +893,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             CircleAvatar(
               radius: 16,
               backgroundColor: const Color(0xFF4A90E2),
-              backgroundImage: storage.read('avatar') != null
-                  ? NetworkImage(storage.read('avatar'))
-                  : null,
-              child: storage.read('avatar') == null
+              child: isMe
                   ? Text(
-                      'M', // Fallback
+                      message.sender?.name?.substring(0, 1).toUpperCase() ??
+                          '?',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
                     )
-                  : null,
+                  : Text('U'),
             ),
           ],
         ],

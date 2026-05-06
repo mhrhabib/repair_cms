@@ -35,10 +35,14 @@ class AppRouter {
     redirect: (BuildContext context, GoRouterState state) {
       final storage = GetStorage();
       final token = storage.read('token');
+      final userId = storage.read('userId');
+      final loginUserId = storage.read('loginUserId');
       final currentPath = state.matchedLocation;
 
       debugPrint('🔐 [RouteGuard] Checking route: $currentPath');
       debugPrint('🔐 [RouteGuard] Token present: ${token != null}');
+      debugPrint('🔐 [RouteGuard] userId present: ${userId != null}');
+      debugPrint('🔐 [RouteGuard] loginUserId present: ${loginUserId != null}');
 
       // Check if current route is public
       final isPublicRoute = _publicRoutes.contains(currentPath);
@@ -46,6 +50,12 @@ class AppRouter {
       // If token is null and trying to access protected route, redirect to signIn
       if (token == null && !isPublicRoute) {
         debugPrint('❌ [RouteGuard] No token found, redirecting to sign in');
+        return RouteNames.signIn;
+      }
+
+      // If token exists but user identifiers are missing, force sign-in
+      if (token != null && (userId == null || (userId is String && userId.isEmpty) || loginUserId == null || (loginUserId is String && loginUserId.isEmpty))) {
+        debugPrint('❌ [RouteGuard] Token found but userId/loginUserId missing - redirecting to sign in');
         return RouteNames.signIn;
       }
 
