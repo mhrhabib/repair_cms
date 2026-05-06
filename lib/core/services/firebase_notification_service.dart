@@ -66,6 +66,13 @@ class FirebaseNotificationService {
         // Set up background/terminated message handler (when app is opened via notification)
         FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
+        // Check if the app was opened via a notification (terminated state)
+        RemoteMessage? initialMessage = await _fcm.getInitialMessage();
+        if (initialMessage != null) {
+          debugPrint('🏁 [FirebaseNotificationService] Handling initial message');
+          _handleMessageOpenedApp(initialMessage);
+        }
+
         _isInitialized = true;
         debugPrint('✅ [FirebaseNotificationService] Initialized successfully');
       }
@@ -207,25 +214,13 @@ class FirebaseNotificationService {
       '🚀 [FirebaseNotificationService] App opened via notification: ${message.messageId}',
     );
 
-    final conversationId = message.data['conversationId']?.toString() ?? '';
-    final jobNo = message.data['jobNo']?.toString();
-    final type = message.data['type']?.toString();
-    final action = message.data['action']?.toString();
-    final notifMessage = message.data['message']?.toString();
-
+    final data = message.data;
     debugPrint(
-      '🚀 [FirebaseNotificationService] Deep link → conversation:$conversationId job:$jobNo type:$type action:$action',
+      '🚀 [FirebaseNotificationService] Deep link data: $data',
     );
 
-    SetUpDI.getIt<LocalNotificationService>().showMessageNotification(
-      senderName: '',
-      messageText: '',
-      conversationId: conversationId,
-      jobNo: jobNo,
-      type: type,
-      action: action,
-      notifMessage: notifMessage,
-    );
+    // Use LocalNotificationService to handle the navigation flow
+    SetUpDI.getIt<LocalNotificationService>().handleNotificationData(data);
   }
 
   /// Get the current FCM token

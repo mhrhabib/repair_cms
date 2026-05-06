@@ -144,11 +144,6 @@ class MyApp extends StatelessWidget {
         splitScreenMode: true,
         child: _ConnectivityWrapper(
           child: Builder(builder: (context) {
-            // Register notification navigation callback once the root context is available
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              NotificationNavigationHelper.setupNavigationCallback(context);
-            });
-
             return MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'RepairCMS',

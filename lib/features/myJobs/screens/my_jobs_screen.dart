@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,6 +28,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   bool _hasLoadedInitially = false;
   final TextEditingController _searchController = TextEditingController();
   bool _showSearchOverlay = false;
+  Timer? _debounce;
 
   // Filter states
   String _sortBy = 'Last_created';
@@ -138,6 +140,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -654,6 +657,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                                   onTap: () {
                                     setState(() {
                                       _searchController.clear();
+                                      _debounce?.cancel();
                                     });
                                     context
                                         .read<JobCubit>()
@@ -698,11 +702,14 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
 
                         onChanged: (query) {
                           setState(() {});
-                          if (query.isNotEmpty) {
-                            context.read<JobCubit>().searchJobs(query);
-                          } else {
-                            context.read<JobCubit>().clearSearchKeyword();
-                          }
+                          if (_debounce?.isActive ?? false) _debounce?.cancel();
+                          _debounce = Timer(const Duration(milliseconds: 300), () {
+                            if (query.isNotEmpty) {
+                              context.read<JobCubit>().searchJobs(query);
+                            } else {
+                              context.read<JobCubit>().clearSearchKeyword();
+                            }
+                          });
                         },
                       ),
                     ),
@@ -714,6 +721,7 @@ class _MyJobsScreenState extends State<MyJobsScreen> {
                       setState(() {
                         _showSearchOverlay = false;
                         _searchController.clear();
+                        _debounce?.cancel();
                       });
                       context.read<JobCubit>().clearSearchKeyword();
                     },

@@ -265,7 +265,7 @@ class MessageCubit extends Cubit<MessageState> {
     );
 
     // Show notification if message is from another user
-    _showNotificationForNewMessage(message);
+    // _showNotificationForNewMessage(message);
   }
 
   /// Show notification for new incoming message

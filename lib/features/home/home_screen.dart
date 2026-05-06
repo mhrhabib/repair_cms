@@ -10,6 +10,7 @@ import 'package:repair_cms/features/moreSettings/more_settings_screen.dart';
 import 'package:repair_cms/features/myJobs/screens/my_jobs_screen.dart';
 import 'package:repair_cms/features/scanner/job_scanner_screen.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:repair_cms/core/helpers/notification_navigation_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -40,6 +41,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       const MessagesScreen(),
       const MoreSettingsScreen(),
     ];
+
+    // Register notification navigation callback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationNavigationHelper.setupNavigationCallback(context);
+    });
 
     try {
       _animationController = AnimationController(

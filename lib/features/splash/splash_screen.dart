@@ -143,7 +143,7 @@ class _SplashViewState extends State<SplashView>
                 right: 0,
                 child: Center(
                   child: Text(
-                    'Version 1.2.3+9',
+                    'Version 1.2.3+10',
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.deviderColor,

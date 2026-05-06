@@ -29,6 +29,9 @@ class LocalNotificationService {
   /// Set this from your app's navigation context
   NotificationNavigationCallback? _onNavigateToConversation;
 
+  /// Stores a notification received before the navigation callback was registered
+  Map<String, dynamic>? _pendingNotificationData;
+
   /// Initialize the notification service
   Future<void> initialize() async {
     if (_isInitialized) {
@@ -63,6 +66,13 @@ class LocalNotificationService {
   void setNavigationCallback(NotificationNavigationCallback callback) {
     _onNavigateToConversation = callback;
     debugPrint('✅ [LocalNotificationService] Navigation callback registered');
+
+    // If there's a pending notification (e.g. from app launch), process it now
+    if (_pendingNotificationData != null) {
+      debugPrint('🚀 [LocalNotificationService] Processing pending notification');
+      handleNotificationData(_pendingNotificationData!);
+      _pendingNotificationData = null;
+    }
   }
 
   /// Request notification permissions (iOS specific, Android auto-grants)
@@ -194,40 +204,51 @@ class LocalNotificationService {
   void _handleNotificationPayload(String payload) {
     try {
       final parts = payload.split('|');
-      String? conversationId;
-      String? jobNo;
-      String? type;
-      String? action;
-      String? notifMessage;
+      final data = <String, dynamic>{};
 
       for (final part in parts) {
         if (part.startsWith('conversation:')) {
-          conversationId = part.replaceFirst('conversation:', '');
+          data['conversationId'] = part.replaceFirst('conversation:', '');
         } else if (part.startsWith('job:')) {
-          jobNo = part.replaceFirst('job:', '');
+          data['jobNo'] = part.replaceFirst('job:', '');
         } else if (part.startsWith('type:')) {
-          type = part.replaceFirst('type:', '');
+          data['type'] = part.replaceFirst('type:', '');
         } else if (part.startsWith('action:')) {
-          action = part.replaceFirst('action:', '');
+          data['action'] = part.replaceFirst('action:', '');
         } else if (part.startsWith('msg:')) {
-          notifMessage = part.replaceFirst('msg:', '');
+          data['message'] = part.replaceFirst('msg:', '');
         }
       }
 
-      if (conversationId != null) {
-        debugPrint(
-          '🚀 [LocalNotificationService] Navigate → conversation:$conversationId job:$jobNo type:$type action:$action msg:$notifMessage',
-        );
-        if (_onNavigateToConversation != null) {
-          _onNavigateToConversation!(conversationId, jobNo, type, action, notifMessage);
-        } else {
-          debugPrint(
-            '⚠️ [LocalNotificationService] Navigation callback not set. Call setNavigationCallback() from your app.',
-          );
-        }
-      }
+      handleNotificationData(data);
     } catch (e) {
       debugPrint('❌ [LocalNotificationService] Error parsing payload: $e');
+    }
+  }
+
+  /// Public method to handle raw notification data (e.g. from FCM) and trigger navigation.
+  /// If the navigation callback isn't ready, the data is queued.
+  void handleNotificationData(Map<String, dynamic> data) {
+    final conversationId = data['conversationId']?.toString() ?? '';
+    final jobNo = data['jobNo']?.toString();
+    final type = data['type']?.toString();
+    final action = data['action']?.toString();
+    final notifMessage = data['message']?.toString();
+
+    if (conversationId.isNotEmpty) {
+      if (_onNavigateToConversation != null) {
+        debugPrint(
+          '🚀 [LocalNotificationService] Triggering navigation → conversation:$conversationId job:$jobNo',
+        );
+        _onNavigateToConversation!(conversationId, jobNo, type, action, notifMessage);
+      } else {
+        debugPrint(
+          '⏳ [LocalNotificationService] Navigation callback not ready. Queuing notification for $conversationId',
+        );
+        _pendingNotificationData = data;
+      }
+    } else {
+      debugPrint('⚠️ [LocalNotificationService] Notification data missing conversationId, skipping navigation');
     }
   }
 
